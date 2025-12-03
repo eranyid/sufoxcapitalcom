@@ -1,0 +1,334 @@
+import { useState, useRef, useMemo } from 'react';
+import { usePortfolio } from '@/context/PortfolioContext';
+import { MonthlyValuation } from '@/types/investment';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { exportToCSV, importValuationsFromCSV } from '@/lib/storage';
+import { Plus, Upload, Download, Trash2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function Valuations() {
+  const { transactions, valuations, addValuation, deleteValuation, importValuations } = usePortfolio();
+  const [isOpen, setIsOpen] = useState(false);
+  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get unique assets from transactions
+  const uniqueAssets = useMemo(() => {
+    const assetMap = new Map<string, { ticker: string; name: string }>();
+    transactions.forEach(tx => {
+      if (!assetMap.has(tx.ticker)) {
+        assetMap.set(tx.ticker, { ticker: tx.ticker, name: tx.assetName });
+      }
+    });
+    return Array.from(assetMap.values());
+  }, [transactions]);
+
+  const [form, setForm] = useState({
+    ticker: '',
+    month: '',
+    pricePerUnit: '',
+    fxRate: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const asset = uniqueAssets.find(a => a.ticker === form.ticker);
+    addValuation({
+      assetId: form.ticker,
+      ticker: form.ticker,
+      assetName: asset?.name || form.ticker,
+      month: form.month,
+      pricePerUnit: parseFloat(form.pricePerUnit),
+      fxRate: form.fxRate ? parseFloat(form.fxRate) : undefined
+    });
+    setIsOpen(false);
+    setForm({ ticker: '', month: '', pricePerUnit: '', fxRate: '' });
+    toast.success('Valuation added successfully');
+  };
+
+  const handleExport = () => {
+    exportToCSV(valuations, `sufox_valuations_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success('Valuations exported');
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const csv = event.target?.result as string;
+        const imported = importValuationsFromCSV(csv);
+        importValuations(imported);
+        toast.success(`Imported ${imported.length} valuations`);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  // Group valuations by month
+  const groupedByMonth = useMemo(() => {
+    const groups: Record<string, MonthlyValuation[]> = {};
+    valuations.forEach(v => {
+      if (!groups[v.month]) groups[v.month] = [];
+      groups[v.month].push(v);
+    });
+    return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [valuations]);
+
+  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD'
+  }).format(value);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Monthly Valuations</h1>
+          <p className="text-muted-foreground mt-1">Record monthly NAV/prices for each asset</p>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImport}
+            accept=".csv"
+            className="hidden"
+          />
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4 mr-2" /> Import CSV
+          </Button>
+          <Button variant="outline" onClick={handleExport} disabled={valuations.length === 0}>
+            <Download className="h-4 w-4 mr-2" /> Export CSV
+          </Button>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button className="gradient-gold text-primary-foreground" disabled={uniqueAssets.length === 0}>
+                <Plus className="h-4 w-4 mr-2" /> Add Valuation
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Monthly Valuation</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Asset</Label>
+                  <Select value={form.ticker} onValueChange={(v) => setForm({ ...form, ticker: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select asset" /></SelectTrigger>
+                    <SelectContent>
+                      {uniqueAssets.map(a => (
+                        <SelectItem key={a.ticker} value={a.ticker}>
+                          {a.ticker} - {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Month</Label>
+                  <Input 
+                    type="month"
+                    value={form.month}
+                    onChange={(e) => setForm({ ...form, month: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Price per Unit / NAV</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={form.pricePerUnit}
+                      onChange={(e) => setForm({ ...form, pricePerUnit: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>FX Rate (optional)</Label>
+                    <Input 
+                      type="number"
+                      step="0.0001"
+                      value={form.fxRate}
+                      onChange={(e) => setForm({ ...form, fxRate: e.target.value })}
+                      placeholder="1.0000"
+                    />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full gradient-gold text-primary-foreground">
+                  Add Valuation
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Quick Add Panel */}
+      {uniqueAssets.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Quick Add for Current Month</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuickAddForm assets={uniqueAssets} onAdd={addValuation} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Valuations by Month */}
+      <Card className="glass-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-medium">Valuation History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {valuations.length === 0 ? (
+            <div className="py-12 text-center">
+              <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-medium mb-2">No Valuations Yet</h3>
+              <p className="text-muted-foreground">
+                {uniqueAssets.length === 0 
+                  ? 'Add transactions first, then record monthly valuations.' 
+                  : 'Add your first monthly valuation.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {groupedByMonth.map(([month, vals]) => (
+                <div key={month} className="border border-border rounded-lg overflow-hidden">
+                  <button
+                    className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
+                    onClick={() => setExpandedMonth(expandedMonth === month ? null : month)}
+                  >
+                    <span className="font-medium">{month}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-muted-foreground">{vals.length} assets</span>
+                      {expandedMonth === month ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </div>
+                  </button>
+                  {expandedMonth === month && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ticker</TableHead>
+                          <TableHead>Asset Name</TableHead>
+                          <TableHead className="text-right">Price/NAV</TableHead>
+                          <TableHead className="text-right">FX Rate</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {vals.map((v) => (
+                          <TableRow key={v.id}>
+                            <TableCell className="font-medium text-primary">{v.ticker}</TableCell>
+                            <TableCell>{v.assetName}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(v.pricePerUnit)}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {v.fxRate?.toFixed(4) || '1.0000'}
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  deleteValuation(v.id);
+                                  toast.success('Valuation deleted');
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Quick Add Component
+function QuickAddForm({ 
+  assets, 
+  onAdd 
+}: { 
+  assets: { ticker: string; name: string }[]; 
+  onAdd: (val: Omit<MonthlyValuation, 'id'>) => void;
+}) {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const [values, setValues] = useState<Record<string, { price: string; fx: string }>>({});
+
+  const handleQuickAdd = (ticker: string, name: string) => {
+    const val = values[ticker];
+    if (val?.price) {
+      onAdd({
+        assetId: ticker,
+        ticker,
+        assetName: name,
+        month: currentMonth,
+        pricePerUnit: parseFloat(val.price),
+        fxRate: val.fx ? parseFloat(val.fx) : undefined
+      });
+      setValues(prev => ({ ...prev, [ticker]: { price: '', fx: '' } }));
+      toast.success(`Added ${ticker} valuation`);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground mb-4">
+        Quickly add valuations for <strong>{currentMonth}</strong>
+      </p>
+      <div className="grid gap-3">
+        {assets.map(asset => (
+          <div key={asset.ticker} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
+            <div className="w-32">
+              <span className="font-medium text-primary">{asset.ticker}</span>
+            </div>
+            <Input 
+              type="number"
+              step="0.01"
+              placeholder="Price/NAV"
+              value={values[asset.ticker]?.price || ''}
+              onChange={(e) => setValues(prev => ({
+                ...prev,
+                [asset.ticker]: { ...prev[asset.ticker], price: e.target.value }
+              }))}
+              className="w-32"
+            />
+            <Input 
+              type="number"
+              step="0.0001"
+              placeholder="FX Rate"
+              value={values[asset.ticker]?.fx || ''}
+              onChange={(e) => setValues(prev => ({
+                ...prev,
+                [asset.ticker]: { ...prev[asset.ticker], fx: e.target.value }
+              }))}
+              className="w-28"
+            />
+            <Button 
+              size="sm"
+              onClick={() => handleQuickAdd(asset.ticker, asset.name)}
+              disabled={!values[asset.ticker]?.price}
+            >
+              Add
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
