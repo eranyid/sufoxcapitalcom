@@ -1,8 +1,7 @@
 import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge } from 'lucide-react';
 
 export default function Risk() {
@@ -11,14 +10,14 @@ export default function Risk() {
   const hasData = riskMetrics !== null && performanceMetrics !== null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="border-b border-border pb-4">
-        <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Risk Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1 font-mono">Risk metrics and volatility analysis</p>
+    <div className="space-y-4 animate-fade-in">
+      <div>
+        <h1 className="terminal-label text-base">Risk Dashboard</h1>
+        <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Risk metrics and volatility analysis</p>
       </div>
 
       {/* Risk KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2">
         <KPICard
           title="Volatility"
           value={hasData ? `${riskMetrics.volatility.toFixed(2)}%` : '0.00%'}
@@ -26,33 +25,33 @@ export default function Risk() {
           subtitle="Annualized"
         />
         <KPICard
-          title="Sharpe Ratio"
+          title="Sharpe"
           value={hasData ? riskMetrics.sharpeRatio.toFixed(2) : '0.00'}
           icon={Target}
           trend={hasData && riskMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
           subtitle={`Rf: ${settings.riskFreeRate}%`}
         />
         <KPICard
-          title="Sortino Ratio"
+          title="Sortino"
           value={hasData ? riskMetrics.sortinoRatio.toFixed(2) : '0.00'}
           icon={Target}
           trend={hasData && riskMetrics.sortinoRatio >= 1 ? 'up' : 'neutral'}
-          subtitle="Downside risk"
+          subtitle="Downside"
         />
         <KPICard
-          title="Max Drawdown"
+          title="Max DD"
           value={hasData ? `-${riskMetrics.maxDrawdown.toFixed(2)}%` : '0.00%'}
           icon={TrendingDown}
           trend="down"
         />
         <KPICard
-          title="VaR (95%)"
+          title="VaR 95%"
           value={hasData ? `${riskMetrics.var95.toFixed(2)}%` : '0.00%'}
           icon={AlertTriangle}
           subtitle="Monthly"
         />
         <KPICard
-          title="VaR (99%)"
+          title="VaR 99%"
           value={hasData ? `${riskMetrics.var99.toFixed(2)}%` : '0.00%'}
           icon={Shield}
           subtitle="Monthly"
@@ -71,134 +70,144 @@ export default function Risk() {
           <DrawdownChart data={performanceMetrics.drawdownSeries} />
 
           {/* Rolling Metrics */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {/* Rolling Volatility */}
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Rolling 12M Volatility</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px]">
+            <div className="bloomberg-panel">
+              <div className="bloomberg-header">
+                <span className="bloomberg-header-title">Rolling 12M Volatility</span>
+              </div>
+              <div className="p-3">
+                <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={riskMetrics.rollingVolatility} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <LineChart data={riskMetrics.rollingVolatility} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="1 3" stroke="hsl(var(--border))" opacity={0.5} />
                       <XAxis 
                         dataKey="month" 
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                         tickFormatter={(v) => v.slice(5)}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
                       />
                       <YAxis 
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                         tickFormatter={(v) => `${v.toFixed(0)}%`}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                        width={30}
                       />
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
+                          backgroundColor: 'hsl(var(--popover))', 
                           border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
+                          borderRadius: '0',
+                          fontSize: '11px',
+                          fontFamily: 'JetBrains Mono'
                         }}
-                        formatter={(value: number) => [`${value.toFixed(2)}%`, 'Volatility']}
+                        labelStyle={{ color: 'hsl(var(--primary))' }}
+                        formatter={(value: number) => [`${value.toFixed(2)}%`, 'Vol']}
                       />
                       <Line 
                         type="monotone" 
                         dataKey="volatility" 
                         stroke="hsl(var(--warning))"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         dot={false}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Rolling Sharpe */}
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Rolling 12M Sharpe Ratio</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px]">
+            <div className="bloomberg-panel">
+              <div className="bloomberg-header">
+                <span className="bloomberg-header-title">Rolling 12M Sharpe Ratio</span>
+              </div>
+              <div className="p-3">
+                <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={riskMetrics.rollingSharpe} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <LineChart data={riskMetrics.rollingSharpe} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="1 3" stroke="hsl(var(--border))" opacity={0.5} />
                       <XAxis 
                         dataKey="month" 
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                         tickFormatter={(v) => v.slice(5)}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
                       />
                       <YAxis 
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                        width={30}
                       />
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
+                          backgroundColor: 'hsl(var(--popover))', 
                           border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
+                          borderRadius: '0',
+                          fontSize: '11px',
+                          fontFamily: 'JetBrains Mono'
                         }}
+                        labelStyle={{ color: 'hsl(var(--primary))' }}
                         formatter={(value: number) => [value.toFixed(2), 'Sharpe']}
                       />
                       <Line 
                         type="monotone" 
                         dataKey="sharpe" 
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
+                        stroke="hsl(var(--chart-gold))"
+                        strokeWidth={1.5}
                         dot={false}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
-          {/* Risk Explanation Card */}
-          <Card className="glass-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">Risk Metrics Explained</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+          {/* Risk Explanation */}
+          <div className="bloomberg-panel">
+            <div className="bloomberg-header">
+              <span className="bloomberg-header-title">Risk Metrics Reference</span>
+            </div>
+            <div className="p-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[10px]">
                 <div>
-                  <h4 className="font-medium text-foreground mb-1">Volatility</h4>
-                  <p className="text-muted-foreground">Standard deviation of monthly returns, annualized. Higher values indicate greater price variability.</p>
+                  <h4 className="text-primary font-semibold mb-0.5">Volatility</h4>
+                  <p className="text-muted-foreground">Std dev of returns, annualized</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-foreground mb-1">Sharpe Ratio</h4>
-                  <p className="text-muted-foreground">Risk-adjusted return. Values above 1.0 are considered good; above 2.0 is excellent.</p>
+                  <h4 className="text-primary font-semibold mb-0.5">Sharpe Ratio</h4>
+                  <p className="text-muted-foreground">Risk-adjusted return (&gt;1 good)</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-foreground mb-1">Sortino Ratio</h4>
-                  <p className="text-muted-foreground">Like Sharpe but only penalizes downside volatility. Better for asymmetric return distributions.</p>
+                  <h4 className="text-primary font-semibold mb-0.5">Sortino Ratio</h4>
+                  <p className="text-muted-foreground">Downside deviation only</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-foreground mb-1">Maximum Drawdown</h4>
-                  <p className="text-muted-foreground">Largest peak-to-trough decline. Critical for understanding worst-case scenarios.</p>
+                  <h4 className="text-primary font-semibold mb-0.5">Max Drawdown</h4>
+                  <p className="text-muted-foreground">Peak-to-trough decline</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-foreground mb-1">Value at Risk (VaR)</h4>
-                  <p className="text-muted-foreground">Maximum expected loss at specified confidence level using variance-covariance method.</p>
+                  <h4 className="text-primary font-semibold mb-0.5">VaR</h4>
+                  <p className="text-muted-foreground">Max loss at confidence level</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-foreground mb-1">Beta</h4>
-                  <p className="text-muted-foreground">Sensitivity to benchmark. Beta of 1.0 means same volatility as market; &lt;1 is less volatile.</p>
+                  <h4 className="text-primary font-semibold mb-0.5">Beta</h4>
+                  <p className="text-muted-foreground">Sensitivity to benchmark</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-foreground mb-1">Risk-Free Rate</h4>
-                  <p className="text-muted-foreground">Currently set to {settings.riskFreeRate}%. Adjust in Settings based on current Treasury yields.</p>
+                  <h4 className="text-primary font-semibold mb-0.5">Risk-Free Rate</h4>
+                  <p className="text-muted-foreground">Set to {settings.riskFreeRate}%</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </>
       ) : (
-        <Card className="glass-card">
-          <CardContent className="py-12 text-center">
-            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-medium mb-2">No Risk Data Available</h3>
-            <p className="text-muted-foreground">Add transactions and valuations to calculate risk metrics.</p>
-          </CardContent>
-        </Card>
+        <div className="bloomberg-panel p-8 text-center">
+          <Shield className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <h3 className="text-sm font-medium mb-1 text-primary">No Risk Data Available</h3>
+          <p className="text-muted-foreground text-xs">Add transactions and valuations to calculate risk metrics.</p>
+        </div>
       )}
     </div>
   );
