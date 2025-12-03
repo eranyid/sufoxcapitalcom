@@ -7,7 +7,8 @@ import {
   Calendar,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Scan
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -17,6 +18,7 @@ const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'OVERVIEW' },
   { path: '/performance', icon: TrendingUp, label: 'PERFORMANCE' },
   { path: '/risk', icon: Shield, label: 'RISK' },
+  { path: '/xray', icon: Scan, label: 'X-RAY' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'TRANSACTIONS' },
   { path: '/valuations', icon: Calendar, label: 'VALUATIONS' },
   { path: '/settings', icon: Settings, label: 'SETTINGS' },
