@@ -4,10 +4,21 @@ import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { AllocationChart } from '@/components/dashboard/AllocationChart';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { calculateAllocations } from '@/lib/calculations';
-import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, PieChart } from 'lucide-react';
+import { generatePDFReport } from '@/lib/pdfReport';
+import { Button } from '@/components/ui/button';
+import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileDown } from 'lucide-react';
 
 export default function Overview() {
-  const { transactions, valuations, performanceMetrics } = usePortfolio();
+  const { transactions, valuations, performanceMetrics, riskMetrics } = usePortfolio();
+
+  const handleExportPDF = () => {
+    generatePDFReport({
+      transactions,
+      valuations,
+      performanceMetrics,
+      riskMetrics
+    });
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -35,9 +46,15 @@ export default function Overview() {
           <h1 className="text-3xl font-bold text-foreground">Portfolio Overview</h1>
           <p className="text-muted-foreground mt-1">Real-time performance snapshot</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-muted-foreground">Last Updated</p>
-          <p className="text-lg font-medium">{new Date().toLocaleDateString()}</p>
+        <div className="flex items-center gap-4">
+          <Button onClick={handleExportPDF} variant="outline" className="gap-2">
+            <FileDown className="h-4 w-4" />
+            Export PDF
+          </Button>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Last Updated</p>
+            <p className="text-lg font-medium">{new Date().toLocaleDateString()}</p>
+          </div>
         </div>
       </div>
 
