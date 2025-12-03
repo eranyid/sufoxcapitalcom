@@ -3,11 +3,11 @@ import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { AllocationChart } from '@/components/dashboard/AllocationChart';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
+import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
 import { calculateAllocations } from '@/lib/calculations';
 import { generatePDFReport } from '@/lib/pdfReport';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileDown } from 'lucide-react';
-
 export default function Overview() {
   const { transactions, valuations, performanceMetrics, riskMetrics } = usePortfolio();
 
@@ -123,6 +123,11 @@ export default function Overview() {
           subtitle="Ratio"
         />
       </div>
+
+      {/* Current Holdings */}
+      {transactions.length > 0 && valuations.length > 0 && (
+        <HoldingsTable transactions={transactions} valuations={valuations} />
+      )}
 
       {/* Charts Row 1 */}
       {hasData ? (
