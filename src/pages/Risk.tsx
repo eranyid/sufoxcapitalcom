@@ -12,9 +12,9 @@ export default function Risk() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Risk Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Risk metrics and volatility analysis</p>
+      <div className="border-b border-border pb-4">
+        <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Risk Dashboard</h1>
+        <p className="text-muted-foreground text-sm mt-1 font-mono">Risk metrics and volatility analysis</p>
       </div>
 
       {/* Risk KPIs */}

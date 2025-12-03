@@ -45,9 +45,9 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">Configure portfolio parameters</p>
+      <div className="border-b border-border pb-4">
+        <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Settings</h1>
+        <p className="text-muted-foreground text-sm mt-1 font-mono">Configure portfolio parameters</p>
       </div>
 
       {/* Risk Parameters */}
