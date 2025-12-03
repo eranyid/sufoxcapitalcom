@@ -1,5 +1,4 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface PerformanceChartProps {
   data: { month: string; return: number }[];
@@ -14,7 +13,7 @@ export function PerformanceChart({
   data, 
   title = "Performance", 
   dataKey = "return",
-  color = "hsl(var(--primary))",
+  color = "hsl(var(--chart-blue))",
   showCumulative = false,
   cumulativeData
 }: PerformanceChartProps) {
@@ -26,56 +25,64 @@ export function PerformanceChart({
     : data;
 
   return (
-    <Card className="glass-card">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[300px]">
+    <div className="bloomberg-panel">
+      <div className="bloomberg-header">
+        <span className="bloomberg-header-title">{title}</span>
+      </div>
+      <div className="p-3">
+        <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <LineChart data={chartData} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="1 3" stroke="hsl(var(--border))" opacity={0.5} />
               <XAxis 
                 dataKey="month" 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                 tickFormatter={(v) => v.slice(5)}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <YAxis 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                tickFormatter={(v) => `${v.toFixed(1)}%`}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+                tickFormatter={(v) => `${v.toFixed(0)}%`}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+                width={35}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
+                  backgroundColor: 'hsl(var(--popover))', 
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
+                  borderRadius: '0',
+                  fontSize: '11px',
+                  fontFamily: 'JetBrains Mono'
                 }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number) => [`${value.toFixed(2)}%`, 'Return']}
+                labelStyle={{ color: 'hsl(var(--primary))' }}
+                formatter={(value: number) => [`${value.toFixed(2)}%`]}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ fontSize: '10px' }}
+                formatter={(value) => <span className="text-muted-foreground">{value}</span>}
+              />
               <Line 
                 type="monotone" 
                 dataKey={dataKey} 
-                stroke={color}
-                strokeWidth={2}
+                stroke="hsl(var(--chart-blue))"
+                strokeWidth={1.5}
                 dot={false}
-                name="Monthly Return"
+                name="Monthly"
               />
               {showCumulative && (
                 <Line 
                   type="monotone" 
                   dataKey="cumulative" 
                   stroke="hsl(var(--chart-gold))"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                   dot={false}
-                  name="Cumulative Return"
+                  name="Cumulative"
                 />
               )}
             </LineChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

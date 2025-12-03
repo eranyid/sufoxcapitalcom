@@ -1,5 +1,4 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Allocation } from '@/types/investment';
 
 interface AllocationChartProps {
@@ -8,47 +7,47 @@ interface AllocationChartProps {
 }
 
 const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-navy))',
-  'hsl(217 50% 40%)',
-  'hsl(217 50% 50%)',
-  'hsl(45 65% 45%)',
-  'hsl(45 65% 60%)',
+  'hsl(var(--chart-gold))',
+  'hsl(var(--chart-blue))',
+  'hsl(var(--success))',
+  'hsl(var(--destructive))',
+  'hsl(var(--chart-white))',
+  'hsl(var(--warning))',
   'hsl(var(--muted-foreground))',
 ];
 
 export function AllocationChart({ data, title }: AllocationChartProps) {
   if (data.length === 0) {
     return (
-      <Card className="glass-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+      <div className="bloomberg-panel">
+        <div className="bloomberg-header">
+          <span className="bloomberg-header-title">{title}</span>
+        </div>
+        <div className="p-3">
+          <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs">
             No data available
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="glass-card">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[250px]">
+    <div className="bloomberg-panel">
+      <div className="bloomberg-header">
+        <span className="bloomberg-header-title">{title}</span>
+      </div>
+      <div className="p-3 flex">
+        <div className="h-[200px] flex-1">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                paddingAngle={2}
+                innerRadius={45}
+                outerRadius={70}
+                paddingAngle={1}
                 dataKey="percentage"
                 nameKey="name"
               >
@@ -58,19 +57,31 @@ export function AllocationChart({ data, title }: AllocationChartProps) {
               </Pie>
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
+                  backgroundColor: 'hsl(var(--popover))', 
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
+                  borderRadius: '0',
+                  fontSize: '11px',
+                  fontFamily: 'JetBrains Mono'
                 }}
-                formatter={(value: number) => [`${value.toFixed(1)}%`, 'Allocation']}
-              />
-              <Legend 
-                formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+                formatter={(value: number) => [`${value.toFixed(1)}%`]}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
-    </Card>
+        {/* Legend as list */}
+        <div className="w-32 flex flex-col justify-center gap-1">
+          {data.map((item, index) => (
+            <div key={item.name} className="flex items-center gap-2 text-[10px]">
+              <div 
+                className="w-2 h-2 flex-shrink-0" 
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+              />
+              <span className="text-muted-foreground truncate flex-1">{item.name}</span>
+              <span className="font-mono text-foreground">{item.percentage.toFixed(0)}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

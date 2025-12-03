@@ -39,27 +39,27 @@ export default function Overview() {
   const hasData = performanceMetrics !== null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border pb-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Portfolio Overview</h1>
-          <p className="text-muted-foreground text-sm mt-1 font-mono">Real-time performance snapshot</p>
+          <h1 className="terminal-label text-base">Portfolio Overview</h1>
+          <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Real-time performance snapshot</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Button onClick={handleExportPDF} variant="outline" className="gap-2 font-mono text-xs uppercase tracking-wider">
-            <FileDown className="h-4 w-4" />
-            Export PDF
+        <div className="flex items-center gap-3">
+          <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2">
+            <FileDown className="h-3 w-3" />
+            Export
           </Button>
           <div className="text-right">
-            <p className="text-xs text-primary uppercase tracking-wider">Last Updated</p>
-            <p className="text-lg font-mono tabular-nums">{new Date().toLocaleDateString()}</p>
+            <p className="terminal-label">Last Updated</p>
+            <p className="text-sm font-mono tabular-nums text-foreground">{new Date().toLocaleDateString()}</p>
           </div>
         </div>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Primary KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <KPICard
           title="Total Portfolio Value"
           value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
@@ -91,7 +91,7 @@ export default function Overview() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
@@ -127,7 +127,7 @@ export default function Overview() {
       {/* Charts Row 1 */}
       {hasData ? (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             <PerformanceChart 
               data={performanceMetrics.monthlyReturns}
               title="Monthly & Cumulative Returns"
@@ -138,17 +138,17 @@ export default function Overview() {
           </div>
 
           {/* Allocation Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <AllocationChart data={assetTypeAllocation} title="Asset Class Allocation" />
             <AllocationChart data={geographyAllocation} title="Geographic Allocation" />
           </div>
         </>
       ) : (
-        <div className="bg-card border border-border rounded-lg p-12 text-center">
-          <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-xl font-medium mb-2">No Data Available</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Start by adding transactions and monthly valuations to see your portfolio analytics and performance metrics.
+        <div className="bloomberg-panel p-8 text-center">
+          <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <h3 className="text-sm font-medium mb-1 text-primary">No Data Available</h3>
+          <p className="text-muted-foreground text-xs max-w-md mx-auto">
+            Add transactions and monthly valuations to see portfolio analytics.
           </p>
         </div>
       )}

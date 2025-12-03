@@ -13,12 +13,12 @@ interface KPICardProps {
 
 export function KPICard({ title, value, subtitle, icon: Icon, trend, trendValue, className }: KPICardProps) {
   return (
-    <div className={cn("kpi-card animate-fade-in", className)}>
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-xs text-primary uppercase tracking-wider font-medium">{title}</p>
+    <div className={cn("kpi-card", className)}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="terminal-label truncate">{title}</p>
           <p className={cn(
-            "text-2xl font-mono tabular-nums tracking-tight",
+            "terminal-value-lg mt-0.5",
             trend === 'up' && "text-success",
             trend === 'down' && "text-destructive",
             trend === 'neutral' && "text-foreground"
@@ -26,18 +26,18 @@ export function KPICard({ title, value, subtitle, icon: Icon, trend, trendValue,
             {value}
           </p>
           {subtitle && (
-            <p className="text-xs text-muted-foreground font-mono">{subtitle}</p>
+            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{subtitle}</p>
           )}
         </div>
         {Icon && (
-          <div className="p-1.5 rounded-sm bg-primary/10 border border-primary/20">
-            <Icon size={16} className="text-primary" />
+          <div className="p-1 bg-primary/10 border border-primary/30">
+            <Icon size={12} className="text-primary" />
           </div>
         )}
       </div>
       {trendValue && (
         <div className={cn(
-          "mt-2 text-xs font-mono font-medium",
+          "mt-1.5 text-[10px] font-mono font-medium",
           trend === 'up' && "positive",
           trend === 'down' && "negative"
         )}>
