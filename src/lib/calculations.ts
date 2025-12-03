@@ -154,6 +154,29 @@ export function calculateSharpeRatio(
   return (annualReturn - riskFreeRate) / volatility;
 }
 
+// Calculate Sortino ratio (uses downside deviation instead of total volatility)
+export function calculateSortinoRatio(
+  monthlyReturns: number[],
+  riskFreeRate: number
+): number {
+  if (monthlyReturns.length < 2) return 0;
+  
+  const monthlyRf = riskFreeRate / 12;
+  const excessReturns = monthlyReturns.map(r => r - monthlyRf);
+  const negativeReturns = excessReturns.filter(r => r < 0);
+  
+  if (negativeReturns.length === 0) return 0;
+  
+  // Downside deviation
+  const downsideVariance = negativeReturns.reduce((sum, r) => sum + r * r, 0) / negativeReturns.length;
+  const downsideDeviation = Math.sqrt(downsideVariance) * Math.sqrt(12); // Annualize
+  
+  const annualReturn = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length * 12;
+  
+  if (downsideDeviation === 0) return 0;
+  return (annualReturn - riskFreeRate) / downsideDeviation;
+}
+
 // Calculate maximum drawdown
 export function calculateDrawdown(cumulativeReturns: { month: string; return: number }[]) {
   let peak = 0;
@@ -431,6 +454,7 @@ export function calculateRiskMetrics(
   
   const volatility = calculateVolatility(returns);
   const sharpeRatio = calculateSharpeRatio(returns, riskFreeRate);
+  const sortinoRatio = calculateSortinoRatio(returns, riskFreeRate);
   const var95 = calculateVaR(returns, 0.95);
   const var99 = calculateVaR(returns, 0.99);
   
@@ -443,6 +467,7 @@ export function calculateRiskMetrics(
   return {
     volatility,
     sharpeRatio,
+    sortinoRatio,
     var95,
     var99,
     maxDrawdown,

@@ -18,7 +18,7 @@ export default function Risk() {
       </div>
 
       {/* Risk KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         <KPICard
           title="Volatility"
           value={hasData ? `${riskMetrics.volatility.toFixed(2)}%` : '0.00%'}
@@ -31,6 +31,13 @@ export default function Risk() {
           icon={Target}
           trend={hasData && riskMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
           subtitle={`Rf: ${settings.riskFreeRate}%`}
+        />
+        <KPICard
+          title="Sortino Ratio"
+          value={hasData ? riskMetrics.sortinoRatio.toFixed(2) : '0.00'}
+          icon={Target}
+          trend={hasData && riskMetrics.sortinoRatio >= 1 ? 'up' : 'neutral'}
+          subtitle="Downside risk"
         />
         <KPICard
           title="Max Drawdown"
@@ -159,6 +166,10 @@ export default function Risk() {
                 <div>
                   <h4 className="font-medium text-foreground mb-1">Sharpe Ratio</h4>
                   <p className="text-muted-foreground">Risk-adjusted return. Values above 1.0 are considered good; above 2.0 is excellent.</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground mb-1">Sortino Ratio</h4>
+                  <p className="text-muted-foreground">Like Sharpe but only penalizes downside volatility. Better for asymmetric return distributions.</p>
                 </div>
                 <div>
                   <h4 className="font-medium text-foreground mb-1">Maximum Drawdown</h4>

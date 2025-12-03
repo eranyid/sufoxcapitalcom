@@ -75,6 +75,7 @@ export function generatePDFReport(data: ReportData) {
     const riskData = [
       ['Volatility (Annualized)', formatPercent(data.riskMetrics.volatility)],
       ['Sharpe Ratio', data.riskMetrics.sharpeRatio.toFixed(2)],
+      ['Sortino Ratio', data.riskMetrics.sortinoRatio.toFixed(2)],
       ['Maximum Drawdown', formatPercent(data.riskMetrics.maxDrawdown)],
       ['Value at Risk (95%)', formatPercent(data.riskMetrics.var95)],
       ['Value at Risk (99%)', formatPercent(data.riskMetrics.var99)],
