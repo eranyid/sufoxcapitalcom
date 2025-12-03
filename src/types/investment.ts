@@ -63,6 +63,7 @@ export interface PerformanceMetrics {
 export interface RiskMetrics {
   volatility: number;
   sharpeRatio: number;
+  sortinoRatio: number;
   var95: number;
   var99: number;
   maxDrawdown: number;
