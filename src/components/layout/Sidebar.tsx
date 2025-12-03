@@ -39,8 +39,8 @@ export function Sidebar() {
           <div className="flex items-center gap-3">
             <img src={sufoxLogo} alt="SUFOX Capital" className="h-10 w-10 object-contain" />
             <div>
-              <h1 className="text-lg font-semibold text-foreground">SUFOX</h1>
-              <p className="text-xs text-muted-foreground">Capital</p>
+              <h1 className="text-lg font-semibold text-primary tracking-wide">SUFOX</h1>
+              <p className="text-xs text-muted-foreground font-mono">CAPITAL</p>
             </div>
           </div>
         )}
@@ -78,8 +78,8 @@ export function Sidebar() {
       {/* Footer */}
       {!collapsed && (
         <div className="p-4 border-t border-sidebar-border">
-          <p className="text-xs text-muted-foreground text-center">
-            Investment Dashboard v1.0
+          <p className="text-xs text-primary font-mono text-center tracking-wider">
+            TERMINAL v1.0
           </p>
         </div>
       )}

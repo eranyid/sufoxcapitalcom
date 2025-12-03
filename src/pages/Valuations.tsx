@@ -87,10 +87,10 @@ export default function Valuations() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Monthly Valuations</h1>
-          <p className="text-muted-foreground mt-1">Record monthly NAV/prices for each asset</p>
+          <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Monthly Valuations</h1>
+          <p className="text-muted-foreground text-sm mt-1 font-mono">Record monthly NAV/prices for each asset</p>
         </div>
         <div className="flex gap-2">
           <input

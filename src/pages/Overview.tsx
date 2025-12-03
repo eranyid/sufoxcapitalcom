@@ -41,19 +41,19 @@ export default function Overview() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Portfolio Overview</h1>
-          <p className="text-muted-foreground mt-1">Real-time performance snapshot</p>
+          <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Portfolio Overview</h1>
+          <p className="text-muted-foreground text-sm mt-1 font-mono">Real-time performance snapshot</p>
         </div>
         <div className="flex items-center gap-4">
-          <Button onClick={handleExportPDF} variant="outline" className="gap-2">
+          <Button onClick={handleExportPDF} variant="outline" className="gap-2 font-mono text-xs uppercase tracking-wider">
             <FileDown className="h-4 w-4" />
             Export PDF
           </Button>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">Last Updated</p>
-            <p className="text-lg font-medium">{new Date().toLocaleDateString()}</p>
+            <p className="text-xs text-primary uppercase tracking-wider">Last Updated</p>
+            <p className="text-lg font-mono tabular-nums">{new Date().toLocaleDateString()}</p>
           </div>
         </div>
       </div>

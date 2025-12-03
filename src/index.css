@@ -2,90 +2,91 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* Bloomberg Terminal Theme - Dark with Orange Accents */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 45 65% 55%;
-    --primary-foreground: 222 47% 6%;
+    --primary: 32 100% 50%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 217 33% 20%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 32 100% 50%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
+    --success: 120 70% 45%;
+    --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
+    --warning: 45 100% 50%;
+    --warning-foreground: 0 0% 0%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 17%;
-    --ring: 45 65% 55%;
+    --border: 0 0% 18%;
+    --input: 0 0% 12%;
+    --ring: 32 100% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
 
-    --chart-positive: 142 76% 36%;
-    --chart-negative: 0 72% 51%;
-    --chart-neutral: 217 33% 40%;
-    --chart-gold: 45 65% 55%;
-    --chart-navy: 217 50% 30%;
+    --chart-positive: 120 70% 45%;
+    --chart-negative: 0 85% 55%;
+    --chart-neutral: 0 0% 40%;
+    --chart-gold: 32 100% 50%;
+    --chart-navy: 210 50% 40%;
 
-    --sidebar-background: 222 47% 5%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 45 65% 55%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 217 33% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 15%;
-    --sidebar-ring: 45 65% 55%;
+    --sidebar-background: 0 0% 2%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 32 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 32 100% 50%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 32 100% 50%;
   }
 
   .light {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 217 50% 25%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 32 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 8%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 8%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 50% 25%;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 217 50% 25%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 5% 96%;
-    --sidebar-accent-foreground: 240 6% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 32 100% 45%;
+    --sidebar-background: 0 0% 96%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-primary: 32 100% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 92%;
+    --sidebar-accent-foreground: 0 0% 8%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 32 100% 45%;
   }
 }
 
@@ -95,14 +96,19 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Custom scrollbar */
+  /* Bloomberg-style monospace for numbers */
+  .font-mono, .tabular-nums {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+  }
+
+  /* Custom scrollbar - Bloomberg style */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
@@ -110,30 +116,26 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full;
+    @apply bg-muted rounded-sm;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+    @apply bg-primary/50;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-card/50 backdrop-blur-sm border border-border/50;
+    @apply bg-card border border-border;
   }
 
-  .gradient-gold {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(45 70% 45%) 100%);
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(32 100% 40%) 100%);
   }
 
-  .gradient-navy {
-    background: linear-gradient(135deg, hsl(217 50% 25%) 0%, hsl(222 47% 11%) 100%);
-  }
-
-  .text-gradient-gold {
+  .text-gradient-primary {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(45 70% 65%) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(45 100% 60%) 100%);
   }
 
   .animate-pulse-slow {
@@ -141,19 +143,19 @@
   }
 
   .kpi-card {
-    @apply bg-card border border-border rounded-lg p-4 transition-all duration-200 hover:border-primary/30;
+    @apply bg-card border border-border rounded-sm p-4 transition-all duration-200 hover:border-primary/50;
   }
 
   .data-table {
-    @apply w-full text-sm;
+    @apply w-full text-sm font-mono;
   }
 
   .data-table th {
-    @apply text-left text-muted-foreground font-medium py-3 px-4 border-b border-border;
+    @apply text-left text-primary font-medium py-2 px-3 border-b border-border uppercase text-xs tracking-wider;
   }
 
   .data-table td {
-    @apply py-3 px-4 border-b border-border/50;
+    @apply py-2 px-3 border-b border-border/50 tabular-nums;
   }
 
   .data-table tr:hover {
@@ -161,19 +163,29 @@
   }
 
   .positive {
-    @apply text-[hsl(var(--success))];
+    @apply text-success font-medium;
   }
 
   .negative {
-    @apply text-destructive;
+    @apply text-destructive font-medium;
   }
 
   .nav-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground transition-all duration-200 hover:bg-sidebar-accent hover:text-foreground;
+    @apply flex items-center gap-3 px-3 py-2 rounded-sm text-muted-foreground transition-all duration-150 hover:bg-sidebar-accent hover:text-primary text-sm;
   }
 
   .nav-link.active {
-    @apply bg-sidebar-accent text-primary font-medium;
+    @apply bg-sidebar-accent text-primary font-medium border-l-2 border-primary;
+  }
+
+  /* Bloomberg Terminal Style Headers */
+  .terminal-header {
+    @apply text-primary uppercase tracking-wider text-sm font-semibold;
+  }
+
+  /* Data highlight */
+  .data-highlight {
+    @apply text-primary font-mono tabular-nums;
   }
 }
 

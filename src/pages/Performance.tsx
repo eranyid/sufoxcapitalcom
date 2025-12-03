@@ -22,9 +22,9 @@ export default function Performance() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Performance Analytics</h1>
-        <p className="text-muted-foreground mt-1">Detailed return analysis and attribution</p>
+      <div className="border-b border-border pb-4">
+        <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Performance Analytics</h1>
+        <p className="text-muted-foreground text-sm mt-1 font-mono">Detailed return analysis and attribution</p>
       </div>
 
       {/* Key Metrics */}
