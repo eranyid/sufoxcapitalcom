@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Transaction, MonthlyValuation, PortfolioSettings, PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { loadTransactions, saveTransactions, loadValuations, saveValuations, loadSettings, saveSettings } from '@/lib/storage';
 import { calculatePerformanceMetrics, calculateRiskMetrics } from '@/lib/calculations';
+import { sampleTransactions, sampleValuations } from '@/lib/sampleData';
 
 interface PortfolioContextType {
   transactions: Transaction[];
@@ -9,6 +10,8 @@ interface PortfolioContextType {
   settings: PortfolioSettings;
   performanceMetrics: PerformanceMetrics | null;
   riskMetrics: RiskMetrics | null;
+  sampleDataMode: boolean;
+  setSampleDataMode: (enabled: boolean) => void;
   addTransaction: (tx: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, tx: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
@@ -25,8 +28,12 @@ interface PortfolioContextType {
 const PortfolioContext = createContext<PortfolioContextType | null>(null);
 
 export function PortfolioProvider({ children }: { children: React.ReactNode }) {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [valuations, setValuations] = useState<MonthlyValuation[]>([]);
+  const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
+  const [userValuations, setUserValuations] = useState<MonthlyValuation[]>([]);
+  const [sampleDataMode, setSampleDataModeState] = useState<boolean>(() => {
+    const stored = localStorage.getItem('sampleDataMode');
+    return stored === 'true';
+  });
   const [settings, setSettings] = useState<PortfolioSettings>({
     riskFreeRate: 4.5,
     benchmarkReturns: [],
@@ -35,10 +42,26 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null);
 
+  // Active data based on mode
+  const transactions = useMemo(() => 
+    sampleDataMode ? sampleTransactions : userTransactions,
+    [sampleDataMode, userTransactions]
+  );
+  
+  const valuations = useMemo(() => 
+    sampleDataMode ? sampleValuations : userValuations,
+    [sampleDataMode, userValuations]
+  );
+
+  const setSampleDataMode = (enabled: boolean) => {
+    setSampleDataModeState(enabled);
+    localStorage.setItem('sampleDataMode', String(enabled));
+  };
+
   // Load data on mount
   useEffect(() => {
-    setTransactions(loadTransactions());
-    setValuations(loadValuations());
+    setUserTransactions(loadTransactions());
+    setUserValuations(loadValuations());
     setSettings(loadSettings());
   }, []);
 
@@ -60,43 +83,43 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     refreshMetrics();
   }, [refreshMetrics]);
 
-  // Transaction operations
+  // Transaction operations (always affect user data)
   const addTransaction = (tx: Omit<Transaction, 'id'>) => {
     const newTx = { ...tx, id: crypto.randomUUID() };
-    const updated = [...transactions, newTx];
-    setTransactions(updated);
+    const updated = [...userTransactions, newTx];
+    setUserTransactions(updated);
     saveTransactions(updated);
   };
 
   const updateTransaction = (id: string, tx: Partial<Transaction>) => {
-    const updated = transactions.map(t => t.id === id ? { ...t, ...tx } : t);
-    setTransactions(updated);
+    const updated = userTransactions.map(t => t.id === id ? { ...t, ...tx } : t);
+    setUserTransactions(updated);
     saveTransactions(updated);
   };
 
   const deleteTransaction = (id: string) => {
-    const updated = transactions.filter(t => t.id !== id);
-    setTransactions(updated);
+    const updated = userTransactions.filter(t => t.id !== id);
+    setUserTransactions(updated);
     saveTransactions(updated);
   };
 
-  // Valuation operations
+  // Valuation operations (always affect user data)
   const addValuation = (val: Omit<MonthlyValuation, 'id'>) => {
     const newVal = { ...val, id: crypto.randomUUID() };
-    const updated = [...valuations, newVal];
-    setValuations(updated);
+    const updated = [...userValuations, newVal];
+    setUserValuations(updated);
     saveValuations(updated);
   };
 
   const updateValuation = (id: string, val: Partial<MonthlyValuation>) => {
-    const updated = valuations.map(v => v.id === id ? { ...v, ...val } : v);
-    setValuations(updated);
+    const updated = userValuations.map(v => v.id === id ? { ...v, ...val } : v);
+    setUserValuations(updated);
     saveValuations(updated);
   };
 
   const deleteValuation = (id: string) => {
-    const updated = valuations.filter(v => v.id !== id);
-    setValuations(updated);
+    const updated = userValuations.filter(v => v.id !== id);
+    setUserValuations(updated);
     saveValuations(updated);
   };
 
@@ -107,22 +130,22 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     saveSettings(updated);
   };
 
-  // Import operations
+  // Import operations (always affect user data)
   const importTransactions = (txs: Transaction[]) => {
-    const updated = [...transactions, ...txs];
-    setTransactions(updated);
+    const updated = [...userTransactions, ...txs];
+    setUserTransactions(updated);
     saveTransactions(updated);
   };
 
   const importValuations = (vals: MonthlyValuation[]) => {
-    const updated = [...valuations, ...vals];
-    setValuations(updated);
+    const updated = [...userValuations, ...vals];
+    setUserValuations(updated);
     saveValuations(updated);
   };
 
   const clearAllData = () => {
-    setTransactions([]);
-    setValuations([]);
+    setUserTransactions([]);
+    setUserValuations([]);
     saveTransactions([]);
     saveValuations([]);
   };
@@ -134,6 +157,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       settings,
       performanceMetrics,
       riskMetrics,
+      sampleDataMode,
+      setSampleDataMode,
       addTransaction,
       updateTransaction,
       deleteTransaction,

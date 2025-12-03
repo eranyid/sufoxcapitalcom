@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database } from 'lucide-react';
 import { toast } from 'sonner';
-import { sampleTransactions, sampleValuations } from '@/lib/sampleData';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
 export default function Settings() {
-  const { settings, updateSettings, transactions, valuations, refreshMetrics, importTransactions, importValuations, clearAllData } = usePortfolio();
+  const { settings, updateSettings, transactions, valuations, refreshMetrics, clearAllData, sampleDataMode, setSampleDataMode } = usePortfolio();
   
   const [riskFreeRate, setRiskFreeRate] = useState(settings.riskFreeRate.toString());
   const [baseCurrency, setBaseCurrency] = useState<Currency>(settings.baseCurrency);
@@ -38,18 +38,15 @@ export default function Settings() {
   };
 
   const handleClearData = () => {
-    if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+    if (confirm('Are you sure you want to clear all your data? This cannot be undone.')) {
       clearAllData();
       toast.success('All data cleared');
     }
   };
 
-  const handleLoadSampleData = () => {
-    importTransactions(sampleTransactions);
-    importValuations(sampleValuations);
-    toast.success('Sample data loaded', {
-      description: '14 transactions and 121 valuations added'
-    });
+  const handleSampleDataToggle = (enabled: boolean) => {
+    setSampleDataMode(enabled);
+    toast.success(enabled ? 'Sample data mode enabled' : 'Showing your data');
   };
 
   return (
@@ -120,10 +117,40 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Sample Data Toggle */}
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-lg font-medium flex items-center gap-2">
+            <Database className="h-5 w-5 text-primary" />
+            Sample Data Mode
+          </CardTitle>
+          <CardDescription>
+            Toggle to view sample portfolio data. Your own data is preserved and will return when you turn this off.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+            <div>
+              <p className="font-medium">{sampleDataMode ? 'Sample Data Active' : 'Your Data Active'}</p>
+              <p className="text-sm text-muted-foreground">
+                {sampleDataMode 
+                  ? 'Viewing demo portfolio with 14 transactions across equities, bonds & crypto' 
+                  : 'Viewing your personal portfolio data'}
+              </p>
+            </div>
+            <Switch 
+              checked={sampleDataMode} 
+              onCheckedChange={handleSampleDataToggle}
+              className="data-[state=checked]:bg-primary"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Data Summary */}
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-lg font-medium">Data Summary</CardTitle>
+          <CardTitle className="text-lg font-medium">Data Summary {sampleDataMode && <span className="text-xs text-primary ml-2">(Sample)</span>}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-6">
@@ -144,14 +171,11 @@ export default function Settings() {
           </div>
 
           <div className="flex gap-4 mt-6">
-            <Button variant="outline" onClick={handleLoadSampleData} className="border-primary/50 hover:bg-primary/10">
-              <Database className="h-4 w-4 mr-2" /> Load Sample Data
-            </Button>
             <Button variant="outline" onClick={refreshMetrics}>
               <RefreshCw className="h-4 w-4 mr-2" /> Recalculate Metrics
             </Button>
-            <Button variant="destructive" onClick={handleClearData}>
-              <Trash2 className="h-4 w-4 mr-2" /> Clear All Data
+            <Button variant="destructive" onClick={handleClearData} disabled={sampleDataMode}>
+              <Trash2 className="h-4 w-4 mr-2" /> Clear Your Data
             </Button>
           </div>
         </CardContent>
