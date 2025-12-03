@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { exportToCSV, importTransactionsFromCSV } from '@/lib/storage';
 import { Plus, Upload, Download, Trash2, Edit2, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -281,16 +282,33 @@ export default function Transactions() {
                         {formatCurrency(tx.quantity * tx.pricePerUnit + tx.fees)}
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {
-                            deleteTransaction(tx.id);
-                            toast.success('Transaction deleted');
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this {tx.transactionType.toUpperCase()} transaction for {tx.ticker}? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => {
+                                  deleteTransaction(tx.id);
+                                  toast.success('Transaction deleted');
+                                }}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}
