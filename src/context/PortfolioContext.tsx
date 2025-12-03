@@ -18,6 +18,7 @@ interface PortfolioContextType {
   updateSettings: (settings: Partial<PortfolioSettings>) => void;
   importTransactions: (txs: Transaction[]) => void;
   importValuations: (vals: MonthlyValuation[]) => void;
+  clearAllData: () => void;
   refreshMetrics: () => void;
 }
 
@@ -119,6 +120,13 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     saveValuations(updated);
   };
 
+  const clearAllData = () => {
+    setTransactions([]);
+    setValuations([]);
+    saveTransactions([]);
+    saveValuations([]);
+  };
+
   return (
     <PortfolioContext.Provider value={{
       transactions,
@@ -135,6 +143,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       updateSettings,
       importTransactions,
       importValuations,
+      clearAllData,
       refreshMetrics
     }}>
       {children}

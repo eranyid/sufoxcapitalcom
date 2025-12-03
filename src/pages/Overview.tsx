@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileDown, Database } from 'lucide-react';
 import { toast } from 'sonner';
 export default function Overview() {
-  const { transactions, valuations, performanceMetrics, riskMetrics, importTransactions, importValuations } = usePortfolio();
+  const { transactions, valuations, performanceMetrics, riskMetrics, importTransactions, importValuations, clearAllData } = usePortfolio();
 
   const handleExportPDF = () => {
     generatePDFReport({
@@ -22,12 +22,17 @@ export default function Overview() {
     });
   };
 
-  const handleLoadSampleData = () => {
-    importTransactions(sampleTransactions);
-    importValuations(sampleValuations);
-    toast.success('Sample data loaded', {
-      description: '14 transactions and 121 valuations added'
-    });
+  const handleToggleSampleData = () => {
+    if (hasData) {
+      clearAllData();
+      toast.success('Data cleared');
+    } else {
+      importTransactions(sampleTransactions);
+      importValuations(sampleValuations);
+      toast.success('Sample data loaded', {
+        description: '14 transactions and 121 valuations added'
+      });
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -57,12 +62,15 @@ export default function Overview() {
           <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Real-time performance snapshot</p>
         </div>
         <div className="flex items-center gap-3">
-          {!hasData && (
-            <Button onClick={handleLoadSampleData} variant="outline" size="sm" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2 border-primary/50 hover:bg-primary/10">
-              <Database className="h-3 w-3" />
-              Load Sample
-            </Button>
-          )}
+          <Button 
+            onClick={handleToggleSampleData} 
+            variant="outline" 
+            size="sm" 
+            className={`gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2 ${hasData ? 'border-destructive/50 hover:bg-destructive/10 text-destructive' : 'border-primary/50 hover:bg-primary/10'}`}
+          >
+            <Database className="h-3 w-3" />
+            {hasData ? 'Clear Data' : 'Load Sample'}
+          </Button>
           <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2">
             <FileDown className="h-3 w-3" />
             Export
