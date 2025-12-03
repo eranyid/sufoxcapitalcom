@@ -3,24 +3,39 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { PortfolioProvider } from "./context/PortfolioContext";
+import { DashboardLayout } from "./components/layout/DashboardLayout";
+import Overview from "./pages/Overview";
+import Performance from "./pages/Performance";
+import Risk from "./pages/Risk";
+import Transactions from "./pages/Transactions";
+import Valuations from "./pages/Valuations";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <PortfolioProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route element={<DashboardLayout />}>
+              <Route path="/" element={<Overview />} />
+              <Route path="/performance" element={<Performance />} />
+              <Route path="/risk" element={<Risk />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/valuations" element={<Valuations />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </PortfolioProvider>
   </QueryClientProvider>
 );
 
