@@ -1,7 +1,11 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { usePortfolio } from '@/context/PortfolioContext';
+import { Database } from 'lucide-react';
 
 export function DashboardLayout() {
+  const { sampleDataMode } = usePortfolio();
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar />
@@ -11,6 +15,12 @@ export function DashboardLayout() {
           <div className="flex items-center gap-4">
             <span className="text-primary font-semibold tracking-wider">SUFOX CAPITAL</span>
             <span className="text-muted-foreground">Portfolio & Risk Analytics</span>
+            {sampleDataMode && (
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/50 text-primary font-semibold rounded animate-pulse">
+                <Database className="h-3 w-3" />
+                SAMPLE DATA
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-4 font-mono text-muted-foreground">
             <span>USD</span>
