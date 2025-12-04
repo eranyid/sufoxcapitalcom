@@ -9,9 +9,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Scan,
-  Settings2,
-  LogOut,
-  FlaskConical
+  Briefcase,
+  FlaskConical,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -19,15 +19,15 @@ import { useAuth } from '@/hooks/useAuth';
 import sufoxLogo from '@/assets/sufox-logo.png';
 
 const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'OVERVIEW' },
-  { path: '/performance', icon: TrendingUp, label: 'PERFORMANCE' },
-  { path: '/risk', icon: Shield, label: 'RISK' },
-  { path: '/scenarios', icon: FlaskConical, label: 'SCENARIOS' },
-  { path: '/xray', icon: Scan, label: 'X-RAY' },
-  { path: '/management', icon: Settings2, label: 'MANAGEMENT' },
-  { path: '/transactions', icon: ArrowRightLeft, label: 'TRANSACTIONS' },
-  { path: '/valuations', icon: Calendar, label: 'VALUATIONS' },
-  { path: '/settings', icon: Settings, label: 'SETTINGS' },
+  { path: '/', code: 'OVRV', icon: LayoutDashboard, label: 'Overview' },
+  { path: '/performance', code: 'PERF', icon: TrendingUp, label: 'Performance' },
+  { path: '/risk', code: 'RISK', icon: Shield, label: 'Risk Analytics' },
+  { path: '/scenarios', code: 'SCN', icon: FlaskConical, label: 'Scenario Builder' },
+  { path: '/xray', code: 'XRAY', icon: Scan, label: 'Portfolio X-Ray' },
+  { path: '/transactions', code: 'TXN', icon: ArrowRightLeft, label: 'Transactions' },
+  { path: '/valuations', code: 'VAL', icon: Calendar, label: 'Valuations' },
+  { path: '/management', code: 'MGMT', icon: Briefcase, label: 'Management' },
+  { path: '/settings', code: 'SET', icon: Settings, label: 'Settings' },
 ];
 
 export function Sidebar() {
@@ -36,85 +36,87 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "h-screen bg-sidebar flex flex-col transition-all duration-200",
-      collapsed ? "w-12" : "w-56"
+      "h-screen bg-sidebar flex flex-col transition-all duration-150 border-r border-sidebar-border",
+      collapsed ? "w-14" : "w-48"
     )}>
       {/* Bloomberg gradient bar */}
       <div className="bloomberg-gradient-bar" />
       
       {/* Logo */}
       <div className={cn(
-        "px-2 py-3 border-b border-sidebar-border flex items-center",
+        "px-2 py-2 border-b border-sidebar-border flex items-center",
         collapsed ? "justify-center" : "justify-between"
       )}>
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <img src={sufoxLogo} alt="SUFOX Capital" className="h-7 w-7 object-contain" />
+            <img src={sufoxLogo} alt="SUFOX Capital" className="h-6 w-6 object-contain" />
             <div>
-              <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
-              <p className="text-[9px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
+              <h1 className="text-xs font-semibold text-primary tracking-widest font-mono">SUFOX</h1>
+              <p className="text-xxs text-muted-foreground font-mono tracking-widest">CAPITAL</p>
             </div>
           </div>
         )}
         {collapsed && (
-          <img src={sufoxLogo} alt="SUFOX" className="h-6 w-6 object-contain" />
+          <img src={sufoxLogo} alt="SUFOX" className="h-5 w-5 object-contain" />
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
             "p-1 hover:bg-sidebar-accent text-muted-foreground hover:text-primary transition-colors",
-            collapsed && "absolute left-12 top-4 bg-sidebar border border-sidebar-border z-10"
+            collapsed && "absolute left-14 top-3 bg-sidebar border border-sidebar-border z-10"
           )}
         >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-2 space-y-0.5">
-        {navItems.map(({ path, icon: Icon, label }) => (
+      <nav className="flex-1 py-1">
+        {navItems.map(({ path, code, icon: Icon, label }) => (
           <NavLink
             key={path}
             to={path}
             className={({ isActive }) => cn(
-              "nav-link mx-1",
+              "nav-link mx-1 my-px",
               isActive && "active"
             )}
           >
-            <Icon size={14} />
-            {!collapsed && <span className="text-[11px] tracking-wide">{label}</span>}
+            <Icon size={12} />
+            {!collapsed && (
+              <div className="flex items-center gap-2 flex-1">
+                <span className="text-primary font-semibold">{code}</span>
+                <span className="text-muted-foreground text-xxs truncate">{label}</span>
+              </div>
+            )}
           </NavLink>
         ))}
       </nav>
 
       {/* User & Sign Out */}
-      <div className="border-t border-sidebar-border p-2 space-y-2">
+      <div className="border-t border-sidebar-border p-2 space-y-1">
         {!collapsed && user && (
           <div className="px-2 py-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Signed in as</p>
-            <p className="text-xs text-foreground truncate font-mono">{user.email}</p>
+            <p className="text-xxs text-muted-foreground uppercase tracking-widest font-mono">USER</p>
+            <p className="text-xs text-foreground truncate font-mono">{user.email?.split('@')[0]}</p>
           </div>
         )}
         <button
           onClick={signOut}
           className={cn(
-            "w-full flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded",
+            "w-full flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors font-mono uppercase tracking-wider",
             collapsed && "justify-center"
           )}
         >
-          <LogOut size={14} />
-          {!collapsed && <span className="text-[11px] tracking-wide">SIGN OUT</span>}
+          <LogOut size={12} />
+          {!collapsed && <span className="text-xxs">LOGOUT</span>}
         </button>
       </div>
 
       {/* Footer */}
       {!collapsed && (
-        <div className="px-2 py-2 border-t border-sidebar-border">
-          <p className="text-[9px] text-primary font-mono text-center tracking-widest">
-            TERMINAL v1.0
-          </p>
-          <p className="text-[8px] text-muted-foreground font-mono text-center mt-0.5">
-            {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+        <div className="px-2 py-1 border-t border-sidebar-border">
+          <p className="text-xxs text-primary font-mono text-center tracking-widest">
+            TERMINAL v2.0
           </p>
         </div>
       )}
