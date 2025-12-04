@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from '@/hooks/use-toast';
 import { 
   Plus, 
   Play, 
@@ -24,7 +27,9 @@ import {
   Zap,
   BarChart3,
   PieChart,
-  FileDown
+  FileDown,
+  Loader2,
+  Cloud
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, PieChart as RechartsPie, Pie, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { 
@@ -33,6 +38,7 @@ import {
   ScenarioHorizon, 
   ScenarioShock,
   ScenarioShockTarget,
+  ScenarioShockUnit,
   systemScenarios, 
   shockTargetMeta, 
   getScenarioTypeColor,
@@ -51,13 +57,29 @@ const scenarioTypeLabels: Record<ScenarioType, string> = {
   custom: 'Custom'
 };
 
+// Database row type
+interface DbScenario {
+  id: string;
+  user_id: string;
+  name: string;
+  type: string;
+  description: string | null;
+  horizon: string;
+  shocks: ScenarioShock[];
+  created_at: string;
+  updated_at: string;
+}
+
 export default function ScenarioLab() {
   const { transactions, valuations } = usePortfolio();
+  const { user } = useAuth();
   const [selectedScenario, setSelectedScenario] = useState<ScenarioDefinition | null>(null);
   const [result, setResult] = useState<ScenarioResult | null>(null);
   const [filterType, setFilterType] = useState<ScenarioType | 'all'>('all');
   const [customScenarios, setCustomScenarios] = useState<ScenarioDefinition[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form state for new scenario
   const [newScenario, setNewScenario] = useState<Partial<ScenarioDefinition>>({
@@ -72,6 +94,41 @@ export default function ScenarioLab() {
     value: -10,
     unit: 'percent'
   });
+
+  // Load custom scenarios from database
+  useEffect(() => {
+    if (!user) return;
+
+    const loadScenarios = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('custom_scenarios')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading scenarios:', error);
+        toast({ title: 'Error loading scenarios', variant: 'destructive' });
+      } else if (data) {
+        const scenarios: ScenarioDefinition[] = (data as unknown as DbScenario[]).map((row) => ({
+          id: row.id,
+          name: row.name,
+          type: row.type as ScenarioType,
+          description: row.description || undefined,
+          horizon: row.horizon as ScenarioHorizon,
+          shocks: (row.shocks || []).map((s: ScenarioShock) => ({
+            ...s,
+            unit: s.unit as ScenarioShockUnit
+          })),
+          isSystemPreset: false
+        }));
+        setCustomScenarios(scenarios);
+      }
+      setIsLoading(false);
+    };
+
+    loadScenarios();
+  }, [user]);
 
   // All scenarios combined
   const allScenarios = useMemo(() => {
@@ -116,43 +173,111 @@ export default function ScenarioLab() {
     }));
   };
 
-  // Save new scenario
-  const handleSaveScenario = () => {
-    if (!newScenario.name || !newScenario.shocks?.length) return;
+  // Save new scenario to database
+  const handleSaveScenario = async () => {
+    if (!newScenario.name || !newScenario.shocks?.length || !user) return;
+    
+    setIsSaving(true);
+    const { data, error } = await supabase
+      .from('custom_scenarios')
+      .insert({
+        user_id: user.id,
+        name: newScenario.name,
+        type: newScenario.type || 'custom',
+        description: newScenario.description || null,
+        horizon: newScenario.horizon || '1m',
+        shocks: newScenario.shocks as unknown as object
+      } as never)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving scenario:', error);
+      toast({ title: 'Error saving scenario', variant: 'destructive' });
+      setIsSaving(false);
+      return;
+    }
+
+    const row = data as unknown as DbScenario;
     const scenario: ScenarioDefinition = {
-      id: `custom-${Date.now()}`,
-      name: newScenario.name,
-      type: newScenario.type as ScenarioType || 'custom',
-      description: newScenario.description,
-      horizon: newScenario.horizon as ScenarioHorizon || '1m',
-      shocks: newScenario.shocks,
+      id: row.id,
+      name: row.name,
+      type: row.type as ScenarioType,
+      description: row.description || undefined,
+      horizon: row.horizon as ScenarioHorizon,
+      shocks: row.shocks as ScenarioShock[],
       isSystemPreset: false
     };
-    setCustomScenarios(prev => [...prev, scenario]);
+
+    setCustomScenarios(prev => [scenario, ...prev]);
     setNewScenario({ name: '', type: 'custom', description: '', horizon: '1m', shocks: [] });
     setIsCreating(false);
     setSelectedScenario(scenario);
+    setIsSaving(false);
+    toast({ title: 'Scenario saved to cloud' });
   };
 
   // Duplicate scenario
-  const handleDuplicate = (scenario: ScenarioDefinition) => {
+  const handleDuplicate = async (scenario: ScenarioDefinition) => {
+    if (!user) return;
+
+    setIsSaving(true);
+    const { data, error } = await supabase
+      .from('custom_scenarios')
+      .insert({
+        user_id: user.id,
+        name: `${scenario.name} (Copy)`,
+        type: scenario.type,
+        description: scenario.description || null,
+        horizon: scenario.horizon,
+        shocks: scenario.shocks as unknown as object
+      } as never)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error duplicating scenario:', error);
+      toast({ title: 'Error duplicating scenario', variant: 'destructive' });
+      setIsSaving(false);
+      return;
+    }
+
+    const row = data as unknown as DbScenario;
     const duplicate: ScenarioDefinition = {
-      ...scenario,
-      id: `custom-${Date.now()}`,
-      name: `${scenario.name} (Copy)`,
+      id: row.id,
+      name: row.name,
+      type: row.type as ScenarioType,
+      description: row.description || undefined,
+      horizon: row.horizon as ScenarioHorizon,
+      shocks: row.shocks as ScenarioShock[],
       isSystemPreset: false
     };
-    setCustomScenarios(prev => [...prev, duplicate]);
+
+    setCustomScenarios(prev => [duplicate, ...prev]);
     setSelectedScenario(duplicate);
+    setIsSaving(false);
+    toast({ title: 'Scenario duplicated' });
   };
 
-  // Delete custom scenario
-  const handleDelete = (scenarioId: string) => {
+  // Delete custom scenario from database
+  const handleDelete = async (scenarioId: string) => {
+    const { error } = await supabase
+      .from('custom_scenarios')
+      .delete()
+      .eq('id', scenarioId);
+
+    if (error) {
+      console.error('Error deleting scenario:', error);
+      toast({ title: 'Error deleting scenario', variant: 'destructive' });
+      return;
+    }
+
     setCustomScenarios(prev => prev.filter(s => s.id !== scenarioId));
     if (selectedScenario?.id === scenarioId) {
       setSelectedScenario(null);
       setResult(null);
     }
+    toast({ title: 'Scenario deleted' });
   };
 
   // Chart data for P&L by asset type
@@ -338,9 +463,9 @@ export default function ScenarioLab() {
                       </div>
 
                       <div className="flex justify-end gap-2 pt-4">
-                        <Button variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
-                        <Button onClick={handleSaveScenario} disabled={!newScenario.name || !newScenario.shocks?.length}>
-                          Create Scenario
+                        <Button variant="outline" onClick={() => setIsCreating(false)} disabled={isSaving}>Cancel</Button>
+                        <Button onClick={handleSaveScenario} disabled={!newScenario.name || !newScenario.shocks?.length || isSaving}>
+                          {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : 'Create Scenario'}
                         </Button>
                       </div>
                     </div>
@@ -367,7 +492,11 @@ export default function ScenarioLab() {
 
             <ScrollArea className="h-[calc(100%-120px)]">
               <div className="p-2 space-y-1">
-                {filteredScenarios.map(scenario => (
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : filteredScenarios.map(scenario => (
                   <div
                     key={scenario.id}
                     onClick={() => setSelectedScenario(scenario)}
@@ -384,8 +513,12 @@ export default function ScenarioLab() {
                           <span className={cn("text-[10px] font-mono uppercase", getScenarioTypeColor(scenario.type))}>
                             {scenarioTypeLabels[scenario.type]}
                           </span>
-                          {scenario.isSystemPreset && (
+                          {scenario.isSystemPreset ? (
                             <Badge variant="outline" className="text-[8px] h-4 px-1">PRESET</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[8px] h-4 px-1 border-primary/40 text-primary">
+                              <Cloud className="h-2.5 w-2.5 mr-0.5" />SAVED
+                            </Badge>
                           )}
                         </div>
                         <p className="text-xs font-medium truncate mt-0.5">{scenario.name}</p>
