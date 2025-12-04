@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_scenarios: {
+        Row: {
+          created_at: string
+          description: string | null
+          horizon: string
+          id: string
+          name: string
+          shocks: Json
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          horizon?: string
+          id?: string
+          name: string
+          shocks?: Json
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          horizon?: string
+          id?: string
+          name?: string
+          shocks?: Json
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolio_settings: {
         Row: {
           base_currency: string | null
