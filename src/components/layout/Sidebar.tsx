@@ -8,7 +8,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Scan
+  Scan,
+  Settings2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -19,6 +20,7 @@ const navItems = [
   { path: '/performance', icon: TrendingUp, label: 'PERFORMANCE' },
   { path: '/risk', icon: Shield, label: 'RISK' },
   { path: '/xray', icon: Scan, label: 'X-RAY' },
+  { path: '/management', icon: Settings2, label: 'MANAGEMENT' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'TRANSACTIONS' },
   { path: '/valuations', icon: Calendar, label: 'VALUATIONS' },
   { path: '/settings', icon: Settings, label: 'SETTINGS' },
