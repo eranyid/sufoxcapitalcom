@@ -1,11 +1,12 @@
 import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
+import { RiskContributionTable } from '@/components/dashboard/RiskContributionTable';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge } from 'lucide-react';
+import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge, Crosshair } from 'lucide-react';
 
 export default function Risk() {
-  const { performanceMetrics, riskMetrics, settings } = usePortfolio();
+  const { performanceMetrics, riskMetrics, settings, transactions, valuations } = usePortfolio();
 
   const hasData = riskMetrics !== null && performanceMetrics !== null;
 
@@ -17,7 +18,7 @@ export default function Risk() {
       </div>
 
       {/* Risk KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">
         <KPICard
           title="Volatility"
           value={hasData ? `${riskMetrics.volatility.toFixed(2)}%` : '0.00%'}
@@ -62,10 +63,19 @@ export default function Risk() {
           icon={Gauge}
           subtitle="vs Benchmark"
         />
+        <KPICard
+          title="Track Err"
+          value={hasData ? `${riskMetrics.trackingError.toFixed(2)}%` : '0.00%'}
+          icon={Crosshair}
+          subtitle="Annualized"
+        />
       </div>
 
       {hasData ? (
         <>
+          {/* Risk Contribution */}
+          <RiskContributionTable transactions={transactions} valuations={valuations} />
+
           {/* Drawdown Chart */}
           <DrawdownChart data={performanceMetrics.drawdownSeries} />
 

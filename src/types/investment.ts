@@ -68,6 +68,7 @@ export interface RiskMetrics {
   var99: number;
   maxDrawdown: number;
   beta: number;
+  trackingError: number;
   rollingVolatility: { month: string; volatility: number }[];
   rollingSharpe: { month: string; sharpe: number }[];
 }
