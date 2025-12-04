@@ -1,11 +1,12 @@
 import { Transaction, MonthlyValuation, PortfolioSettings, CashBalances, PerformanceMetrics, RiskMetrics } from '@/types/investment';
+import { FactorModelResults, validateFactorModel } from '@/lib/factorModel';
 
 export type DataIssueSeverity = "info" | "warning" | "error";
 
 export type DataIssue = {
   id: string;
   severity: DataIssueSeverity;
-  section: "Holdings" | "Transactions" | "Cash" | "Risk" | "MonteCarlo" | "Settings";
+  section: "Holdings" | "Transactions" | "Cash" | "Risk" | "MonteCarlo" | "Settings" | "FactorModel";
   message: string;
   details?: string;
   route?: string;
@@ -626,6 +627,58 @@ function validateMonteCarlo(monteCarloInput: MonteCarloValidationInput | null): 
   return issues;
 }
 
+function validateFactorModelResults(factorModelResults: FactorModelResults | null): DataIssue[] {
+  const issues: DataIssue[] = [];
+
+  if (!factorModelResults) {
+    return issues;
+  }
+
+  const validation = validateFactorModel(factorModelResults);
+  
+  if (!validation.isValid) {
+    validation.issues.forEach(issue => {
+      issues.push({
+        id: generateId(),
+        severity: issue.includes('NaN') || issue.includes('negative') ? 'error' : 'warning',
+        section: 'FactorModel',
+        message: issue,
+        route: '/risk'
+      });
+    });
+  }
+
+  // Additional validations
+  // Check for extreme betas
+  factorModelResults.exposures.forEach(exp => {
+    if (Math.abs(exp.beta) > 5) {
+      issues.push({
+        id: generateId(),
+        severity: 'warning',
+        section: 'FactorModel',
+        message: `${exp.factorLabel} has extreme beta (${exp.beta.toFixed(2)})`,
+        details: 'Beta values above 5 or below -5 may indicate data issues.',
+        route: '/risk'
+      });
+    }
+  });
+
+  // Check for very low R² across all factors
+  const avgR2 = factorModelResults.exposures.reduce((sum, e) => sum + e.r2, 0) / factorModelResults.exposures.length;
+  if (avgR2 < 0.05) {
+    issues.push({
+      id: generateId(),
+      severity: 'info',
+      section: 'FactorModel',
+      message: `Low average factor R² (${(avgR2 * 100).toFixed(1)}%)`,
+      details: 'Portfolio returns have low correlation with standard factors.',
+      route: '/risk'
+    });
+  }
+
+  return issues;
+}
+
 export interface ValidationInput {
   transactions: Transaction[];
   valuations: MonthlyValuation[];
@@ -634,6 +687,7 @@ export interface ValidationInput {
   performanceMetrics: PerformanceMetrics | null;
   riskMetrics: RiskMetrics | null;
   monteCarloInput?: MonteCarloValidationInput | null;
+  factorModelResults?: FactorModelResults | null;
 }
 
 export function validatePortfolioData(input: ValidationInput): DataValidationResult {
@@ -646,6 +700,7 @@ export function validatePortfolioData(input: ValidationInput): DataValidationRes
   issues.push(...validateRiskMetrics(input.riskMetrics, input.performanceMetrics));
   issues.push(...validateSettings(input.settings));
   issues.push(...validateMonteCarlo(input.monteCarloInput || null));
+  issues.push(...validateFactorModelResults(input.factorModelResults || null));
 
   // Sort by severity: error > warning > info
   const severityOrder: Record<DataIssueSeverity, number> = { error: 0, warning: 1, info: 2 };

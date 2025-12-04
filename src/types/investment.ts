@@ -94,3 +94,6 @@ export interface ContributionToReturn {
   contribution: number;
   weight: number;
 }
+
+// Factor Model Types (re-exported from factorModel.ts for convenience)
+export type { FactorExposure, FactorRiskBreakdown, FactorModelResults } from '@/lib/factorModel';
