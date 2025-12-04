@@ -22,13 +22,13 @@ export default function Settings() {
     settings.benchmarkReturns.join(', ')
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const returns = benchmarkReturns
       .split(',')
       .map(s => parseFloat(s.trim()))
       .filter(n => !isNaN(n));
 
-    updateSettings({
+    await updateSettings({
       riskFreeRate: parseFloat(riskFreeRate) || 4.5,
       baseCurrency,
       benchmarkReturns: returns
@@ -37,9 +37,9 @@ export default function Settings() {
     toast.success('Settings saved');
   };
 
-  const handleClearData = () => {
+  const handleClearData = async () => {
     if (confirm('Are you sure you want to clear all your data? This cannot be undone.')) {
-      clearAllData();
+      await clearAllData();
       toast.success('All data cleared');
     }
   };

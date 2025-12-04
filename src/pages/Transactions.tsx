@@ -50,9 +50,9 @@ export default function Transactions() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addTransaction({
+    await addTransaction({
       assetName: form.assetName,
       ticker: form.ticker.toUpperCase(),
       assetType: form.assetType,
@@ -82,10 +82,10 @@ export default function Transactions() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         const csv = event.target?.result as string;
         const imported = importTransactionsFromCSV(csv);
-        importTransactions(imported);
+        await importTransactions(imported);
         toast.success(`Imported ${imported.length} transactions`);
       };
       reader.readAsText(file);
@@ -327,8 +327,8 @@ export default function Transactions() {
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => {
-                                  deleteTransaction(tx.id);
+                                onClick={async () => {
+                                  await deleteTransaction(tx.id);
                                   toast.success('Transaction deleted');
                                 }}
                               >
