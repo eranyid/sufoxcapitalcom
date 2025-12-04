@@ -29,7 +29,9 @@ import {
   PieChart,
   FileDown,
   Loader2,
-  Cloud
+  Cloud,
+  Pencil,
+  X
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, PieChart as RechartsPie, Pie, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { 
@@ -80,6 +82,8 @@ export default function ScenarioLab() {
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingScenario, setEditingScenario] = useState<ScenarioDefinition | null>(null);
 
   // Form state for new scenario
   const [newScenario, setNewScenario] = useState<Partial<ScenarioDefinition>>({
@@ -90,6 +94,11 @@ export default function ScenarioLab() {
     shocks: []
   });
   const [newShock, setNewShock] = useState<Partial<ScenarioShock>>({
+    target: 'global_equity',
+    value: -10,
+    unit: 'percent'
+  });
+  const [editShock, setEditShock] = useState<Partial<ScenarioShock>>({
     target: 'global_equity',
     value: -10,
     unit: 'percent'
@@ -278,6 +287,77 @@ export default function ScenarioLab() {
       setResult(null);
     }
     toast({ title: 'Scenario deleted' });
+  };
+
+  // Start editing a scenario
+  const handleStartEdit = (scenario: ScenarioDefinition) => {
+    setEditingScenario({ ...scenario, shocks: [...scenario.shocks] });
+    setIsEditing(true);
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setEditingScenario(null);
+    setIsEditing(false);
+  };
+
+  // Add shock to editing scenario
+  const handleAddEditShock = () => {
+    if (!editShock.target || editShock.value === undefined || !editingScenario) return;
+    const shock: ScenarioShock = {
+      id: `shock-${Date.now()}`,
+      target: editShock.target as ScenarioShockTarget,
+      label: shockTargetMeta[editShock.target as ScenarioShockTarget]?.label || editShock.target,
+      value: editShock.value,
+      unit: editShock.unit || 'percent'
+    };
+    setEditingScenario(prev => prev ? {
+      ...prev,
+      shocks: [...prev.shocks, shock]
+    } : null);
+    setEditShock({ target: 'global_equity', value: -10, unit: 'percent' });
+  };
+
+  // Remove shock from editing scenario
+  const handleRemoveEditShock = (shockId: string) => {
+    setEditingScenario(prev => prev ? {
+      ...prev,
+      shocks: prev.shocks.filter(s => s.id !== shockId)
+    } : null);
+  };
+
+  // Update existing scenario in database
+  const handleUpdateScenario = async () => {
+    if (!editingScenario || !editingScenario.name || !editingScenario.shocks?.length || !user) return;
+    
+    setIsSaving(true);
+    const { error } = await supabase
+      .from('custom_scenarios')
+      .update({
+        name: editingScenario.name,
+        type: editingScenario.type,
+        description: editingScenario.description || null,
+        horizon: editingScenario.horizon,
+        shocks: editingScenario.shocks as unknown as object
+      } as never)
+      .eq('id', editingScenario.id);
+
+    if (error) {
+      console.error('Error updating scenario:', error);
+      toast({ title: 'Error updating scenario', variant: 'destructive' });
+      setIsSaving(false);
+      return;
+    }
+
+    // Update local state
+    setCustomScenarios(prev => prev.map(s => 
+      s.id === editingScenario.id ? editingScenario : s
+    ));
+    setSelectedScenario(editingScenario);
+    setIsEditing(false);
+    setEditingScenario(null);
+    setIsSaving(false);
+    toast({ title: 'Scenario updated' });
   };
 
   // Chart data for P&L by asset type
@@ -546,7 +626,130 @@ export default function ScenarioLab() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              {selectedScenario ? (
+              {isEditing && editingScenario ? (
+                // Edit Mode
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Scenario Name</Label>
+                      <Input
+                        value={editingScenario.name}
+                        onChange={(e) => setEditingScenario(prev => prev ? { ...prev, name: e.target.value } : null)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Horizon</Label>
+                      <Select
+                        value={editingScenario.horizon}
+                        onValueChange={(v) => setEditingScenario(prev => prev ? { ...prev, horizon: v as ScenarioHorizon } : null)}
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1d">1 Day</SelectItem>
+                          <SelectItem value="1w">1 Week</SelectItem>
+                          <SelectItem value="1m">1 Month</SelectItem>
+                          <SelectItem value="6m">6 Months</SelectItem>
+                          <SelectItem value="1y">1 Year</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Description</Label>
+                    <Input
+                      value={editingScenario.description || ''}
+                      onChange={(e) => setEditingScenario(prev => prev ? { ...prev, description: e.target.value } : null)}
+                      placeholder="Describe the scenario..."
+                      className="h-8 text-sm"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  {/* Edit Shocks */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold">SHOCKS</Label>
+                    
+                    {/* Current Shocks */}
+                    {editingScenario.shocks.length > 0 && (
+                      <div className="space-y-2">
+                        {editingScenario.shocks.map(shock => (
+                          <div key={shock.id} className="flex items-center justify-between bg-muted/50 px-3 py-2 rounded text-xs">
+                            <span>{shock.label}: <span className={shock.value < 0 ? 'text-destructive' : 'text-positive'}>
+                              {shock.value > 0 ? '+' : ''}{shock.value}{shock.unit === 'bps' ? ' bps' : '%'}
+                            </span></span>
+                            <Button size="sm" variant="ghost" onClick={() => handleRemoveEditShock(shock.id)} className="h-6 w-6 p-0">
+                              <X className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add New Shock */}
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Target</Label>
+                        <Select
+                          value={editShock.target}
+                          onValueChange={(v) => setEditShock(prev => ({ ...prev, target: v as ScenarioShockTarget }))}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(shockTargetMeta).map(([key, meta]) => (
+                              <SelectItem key={key} value={key} className="text-xs">
+                                {meta.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="w-20 space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Value</Label>
+                        <Input
+                          type="number"
+                          value={editShock.value || ''}
+                          onChange={(e) => setEditShock(prev => ({ ...prev, value: parseFloat(e.target.value) }))}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="w-16 space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Unit</Label>
+                        <Select
+                          value={editShock.unit}
+                          onValueChange={(v) => setEditShock(prev => ({ ...prev, unit: v as 'percent' | 'bps' }))}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percent">%</SelectItem>
+                            <SelectItem value="bps">bps</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button size="sm" variant="secondary" onClick={handleAddEditShock} className="h-8">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Edit Action Buttons */}
+                  <div className="flex gap-2 pt-4">
+                    <Button variant="outline" onClick={handleCancelEdit} disabled={isSaving} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUpdateScenario} disabled={!editingScenario.name || !editingScenario.shocks?.length || isSaving} className="flex-1">
+                      {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : 'Save Changes'}
+                    </Button>
+                  </div>
+                </div>
+              ) : selectedScenario ? (
                 <div className="space-y-4">
                   {/* Scenario Info */}
                   <div className="grid grid-cols-3 gap-3">
@@ -606,6 +809,16 @@ export default function ScenarioLab() {
                       <Play className="h-4 w-4 mr-2" />
                       Run Scenario
                     </Button>
+                    {!selectedScenario.isSystemPreset && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" onClick={() => handleStartEdit(selectedScenario)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+                    )}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button variant="outline" size="icon" onClick={() => handleDuplicate(selectedScenario)}>
