@@ -2,6 +2,7 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { RiskContributionTable } from '@/components/dashboard/RiskContributionTable';
+import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge, Crosshair } from 'lucide-react';
 
@@ -75,6 +76,12 @@ export default function Risk() {
         <>
           {/* Risk Contribution */}
           <RiskContributionTable transactions={transactions} valuations={valuations} />
+
+          {/* Monte Carlo Simulation */}
+          <MonteCarloSimulation 
+            monthlyReturns={performanceMetrics.monthlyReturns.map(m => m.return)} 
+            currentValue={performanceMetrics.totalValue}
+          />
 
           {/* Drawdown Chart */}
           <DrawdownChart data={performanceMetrics.drawdownSeries} />
