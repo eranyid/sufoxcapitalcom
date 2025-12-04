@@ -4,6 +4,7 @@ import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { AllocationChart } from '@/components/dashboard/AllocationChart';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
+import { CashManagement } from '@/components/dashboard/CashManagement';
 import { calculateAllocations } from '@/lib/calculations';
 import { generatePDFReport } from '@/lib/pdfReport';
 import { Button } from '@/components/ui/button';
@@ -124,6 +125,9 @@ export default function Overview() {
           subtitle="Ratio"
         />
       </div>
+
+      {/* Cash Management */}
+      <CashManagement />
 
       {/* Current Holdings */}
       {transactions.length > 0 && valuations.length > 0 && (
