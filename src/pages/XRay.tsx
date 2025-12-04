@@ -2,6 +2,7 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { calculateAllocations, calculatePositions, getLatestValuations } from '@/lib/calculations';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Scan, BarChart3 } from 'lucide-react';
+import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 
 const COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD'];
 
@@ -226,6 +227,9 @@ export default function XRay() {
             title="Currency Exposure" 
             data={currencyAllocation} 
           />
+
+          {/* Correlation Matrix */}
+          <CorrelationMatrix transactions={transactions} valuations={valuations} />
 
           {/* Top Holdings */}
           <TopHoldingsSection transactions={transactions} valuations={valuations} />
