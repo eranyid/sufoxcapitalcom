@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
-import { validatePortfolioData, DataValidationResult } from '@/lib/dataValidation';
+import { validatePortfolioData, DataValidationResult, runLightweightMonteCarlo } from '@/lib/dataValidation';
 import { useToast } from '@/hooks/use-toast';
 
 type WatchdogState = {
@@ -10,6 +10,8 @@ type WatchdogState = {
 
 const MORNING_HOUR = 7;
 const EVENING_HOUR = 19;
+const MC_SIMULATIONS = 1000;
+const MC_HORIZON_YEARS = 5;
 
 export function useDataWatchdog() {
   const { transactions, valuations, settings, cashBalances, performanceMetrics, riskMetrics, loading } = usePortfolio();
@@ -20,6 +22,33 @@ export function useDataWatchdog() {
   const watchdogState = useRef<WatchdogState>({});
   const hasRunInitial = useRef(false);
 
+  // Calculate current portfolio value for MC simulation
+  const currentPortfolioValue = useMemo(() => {
+    const positions: Record<string, number> = {};
+    transactions.forEach(tx => {
+      if (!positions[tx.ticker]) positions[tx.ticker] = 0;
+      positions[tx.ticker] += tx.transactionType === 'buy' ? tx.quantity : -tx.quantity;
+    });
+
+    const latestPrices: Record<string, number> = {};
+    valuations.forEach(v => {
+      if (!latestPrices[v.ticker]) latestPrices[v.ticker] = v.pricePerUnit;
+    });
+
+    let total = 0;
+    Object.entries(positions).forEach(([ticker, qty]) => {
+      if (qty > 0 && latestPrices[ticker]) {
+        total += qty * latestPrices[ticker];
+      }
+    });
+    return total;
+  }, [transactions, valuations]);
+
+  // Extract monthly returns from performance metrics
+  const monthlyReturns = useMemo(() => {
+    return performanceMetrics?.monthlyReturns.map(r => r.return) || [];
+  }, [performanceMetrics]);
+
   const runValidation = useCallback((isScheduled = false) => {
     if (loading) return;
     
@@ -27,13 +56,22 @@ export function useDataWatchdog() {
     
     // Small delay to show loading state
     setTimeout(() => {
+      // Run lightweight Monte Carlo if we have enough data
+      const monteCarloInput = runLightweightMonteCarlo(
+        monthlyReturns,
+        currentPortfolioValue,
+        MC_SIMULATIONS,
+        MC_HORIZON_YEARS
+      );
+
       const result = validatePortfolioData({
         transactions,
         valuations,
         settings,
         cashBalances,
         performanceMetrics,
-        riskMetrics
+        riskMetrics,
+        monteCarloInput
       });
       
       setValidationResult(result);
@@ -58,7 +96,7 @@ export function useDataWatchdog() {
         }
       }
     }, 100);
-  }, [transactions, valuations, settings, cashBalances, performanceMetrics, riskMetrics, loading, toast]);
+  }, [transactions, valuations, settings, cashBalances, performanceMetrics, riskMetrics, loading, toast, monthlyReturns, currentPortfolioValue]);
 
   // Run validation on initial load
   useEffect(() => {
