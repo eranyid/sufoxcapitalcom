@@ -19,15 +19,15 @@ import { useAuth } from '@/hooks/useAuth';
 import sufoxLogo from '@/assets/sufox-logo.png';
 
 const navItems = [
-  { path: '/', code: 'OVRV', icon: LayoutDashboard, label: 'Overview' },
-  { path: '/performance', code: 'PERF', icon: TrendingUp, label: 'Performance' },
-  { path: '/risk', code: 'RISK', icon: Shield, label: 'Risk Analytics' },
-  { path: '/scenarios', code: 'SCN', icon: FlaskConical, label: 'Scenario Builder' },
-  { path: '/xray', code: 'XRAY', icon: Scan, label: 'Portfolio X-Ray' },
-  { path: '/transactions', code: 'TXN', icon: ArrowRightLeft, label: 'Transactions' },
-  { path: '/valuations', code: 'VAL', icon: Calendar, label: 'Valuations' },
-  { path: '/management', code: 'MGMT', icon: Briefcase, label: 'Management' },
-  { path: '/settings', code: 'SET', icon: Settings, label: 'Settings' },
+  { path: '/', code: 'OVRV', icon: LayoutDashboard },
+  { path: '/performance', code: 'PERF', icon: TrendingUp },
+  { path: '/risk', code: 'RISK', icon: Shield },
+  { path: '/scenarios', code: 'SCN', icon: FlaskConical },
+  { path: '/xray', code: 'XRAY', icon: Scan },
+  { path: '/transactions', code: 'TXN', icon: ArrowRightLeft },
+  { path: '/valuations', code: 'VAL', icon: Calendar },
+  { path: '/management', code: 'MGMT', icon: Briefcase },
+  { path: '/settings', code: 'SET', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -72,7 +72,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-1">
-        {navItems.map(({ path, code, icon: Icon, label }) => (
+        {navItems.map(({ path, code, icon: Icon }) => (
           <NavLink
             key={path}
             to={path}
@@ -83,10 +83,7 @@ export function Sidebar() {
           >
             <Icon size={12} />
             {!collapsed && (
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-primary font-semibold">{code}</span>
-                <span className="text-muted-foreground text-xxs truncate">{label}</span>
-              </div>
+              <span className="font-semibold">{code}</span>
             )}
           </NavLink>
         ))}
