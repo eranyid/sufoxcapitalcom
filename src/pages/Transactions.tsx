@@ -14,7 +14,7 @@ import { getKnownInceptionYear } from '@/lib/crashScenarios';
 import { Plus, Upload, Download, Trash2, Edit2, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
-const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund'];
+const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund', 'private_equity', 'private_debt', 'hedge_fund'];
 const TRANSACTION_TYPES: TransactionType[] = ['buy', 'sell'];
 const GEOGRAPHIES: Geography[] = ['north_america', 'europe', 'asia_pacific', 'emerging_markets', 'global', 'other'];
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'ILS', 'OTHER'];

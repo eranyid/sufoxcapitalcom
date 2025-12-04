@@ -53,6 +53,9 @@ const assetTypeToShockMapping: Record<AssetType, ScenarioShockTarget[]> = {
   real_estate: ['rates_long_end'],
   cash: [],
   alternative: ['global_equity', 'volatility'],
+  private_equity: ['global_equity', 'us_equity', 'credit_spreads'],
+  private_debt: ['rates_parallel', 'credit_spreads'],
+  hedge_fund: ['global_equity', 'volatility'],
 };
 
 // Geography to shock mapping
@@ -76,6 +79,9 @@ const assetSensitivity: Record<AssetType, Record<string, number>> = {
   real_estate: { equity: 0.6, rates: -3.0, credit: -0.2, fx: 0.1, volatility: -0.1 },
   cash: { equity: 0.0, rates: 0.0, credit: 0.0, fx: 0.0, volatility: 0.0 },
   alternative: { equity: 0.5, rates: -0.1, credit: -0.1, fx: 0.1, volatility: 0.1 },
+  private_equity: { equity: 1.2, rates: -0.15, credit: -0.3, fx: 0.2, volatility: -0.15 },
+  private_debt: { equity: 0.1, rates: -3.0, credit: -0.5, fx: 0.1, volatility: -0.05 },
+  hedge_fund: { equity: 0.5, rates: -0.05, credit: -0.1, fx: 0.15, volatility: 0.05 },
 };
 
 // Calculate shock impact on a single holding

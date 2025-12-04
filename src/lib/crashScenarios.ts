@@ -29,7 +29,10 @@ export const CRASH_SCENARIOS: Record<CrashScenarioKey, CrashScenario> = {
       commodity: 10,
       real_estate: -5,
       cash: 0,
-      alternative: -20
+      alternative: -20,
+      private_equity: -55,
+      private_debt: -15,
+      hedge_fund: -25
     }
   },
   GFC_2008: {
@@ -48,7 +51,10 @@ export const CRASH_SCENARIOS: Record<CrashScenarioKey, CrashScenario> = {
       commodity: -35,
       real_estate: -40,
       cash: 0,
-      alternative: -30
+      alternative: -30,
+      private_equity: -60,
+      private_debt: -25,
+      hedge_fund: -35
     }
   },
   COVID_2020: {
@@ -67,7 +73,10 @@ export const CRASH_SCENARIOS: Record<CrashScenarioKey, CrashScenario> = {
       commodity: -30,
       real_estate: -25,
       cash: 0,
-      alternative: -20
+      alternative: -20,
+      private_equity: -40,
+      private_debt: -10,
+      hedge_fund: -18
     }
   },
   TECH_2022: {
@@ -86,7 +95,10 @@ export const CRASH_SCENARIOS: Record<CrashScenarioKey, CrashScenario> = {
       commodity: 15,
       real_estate: -20,
       cash: 0,
-      alternative: -15
+      alternative: -15,
+      private_equity: -30,
+      private_debt: -12,
+      hedge_fund: -15
     }
   }
 };
