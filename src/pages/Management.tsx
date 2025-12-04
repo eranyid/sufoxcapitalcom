@@ -16,8 +16,8 @@ interface ScenarioHolding {
   scenarioDelta: number;
 }
 
-// Historical crash drawdowns by asset type (approximate)
-const HISTORICAL_CRASHES: Record<string, { name: string; year: string; drawdowns: Record<AssetType, number> }> = {
+// Historical crash drawdowns by asset type (null = didn't exist)
+const HISTORICAL_CRASHES: Record<string, { name: string; year: string; drawdowns: Record<AssetType, number | null> }> = {
   'dotcom_2000': {
     name: 'Dot-Com Crash',
     year: '2000-2002',
@@ -25,7 +25,7 @@ const HISTORICAL_CRASHES: Record<string, { name: string; year: string; drawdowns
       equity: -49,
       etf: -45,
       mutual_fund: -40,
-      crypto: 0, // didn't exist
+      crypto: null, // didn't exist
       bond: 5,
       commodity: 10,
       real_estate: -5,
@@ -40,7 +40,7 @@ const HISTORICAL_CRASHES: Record<string, { name: string; year: string; drawdowns
       equity: -57,
       etf: -55,
       mutual_fund: -50,
-      crypto: 0, // didn't exist
+      crypto: null, // didn't exist
       bond: -5,
       commodity: -35,
       real_estate: -40,
@@ -110,26 +110,46 @@ export default function Management() {
   // Calculate crash impact for portfolio
   const calculateCrashImpact = (crashId: string) => {
     const crash = HISTORICAL_CRASHES[crashId];
-    if (!crash) return { totalLoss: 0, newValue: totalValue, holdings: [] };
+    if (!crash) return { totalLoss: 0, newValue: totalValue, holdings: [], existingValue: totalValue };
 
     let totalLoss = 0;
+    let existingValue = 0; // Value of assets that existed during the crash
+    
     const impactedHoldings = holdings.map(h => {
-      const drawdown = crash.drawdowns[h.assetType] || -30;
+      const drawdown = crash.drawdowns[h.assetType];
+      
+      // If asset didn't exist (null), don't include in calculations
+      if (drawdown === null) {
+        return {
+          ticker: h.ticker,
+          name: h.name,
+          currentValue: h.value,
+          drawdown: null as number | null,
+          loss: 0,
+          newValue: null as number | null,
+          existed: false
+        };
+      }
+      
       const loss = h.value * (drawdown / 100);
       totalLoss += loss;
+      existingValue += h.value;
+      
       return {
         ticker: h.ticker,
         name: h.name,
         currentValue: h.value,
         drawdown,
         loss,
-        newValue: h.value + loss
+        newValue: h.value + loss,
+        existed: true
       };
     });
 
     return {
       totalLoss,
-      newValue: totalValue + totalLoss,
+      newValue: existingValue + totalLoss,
+      existingValue,
       holdings: impactedHoldings
     };
   };
@@ -326,12 +346,23 @@ export default function Management() {
                             ${h.value.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                           </td>
                           {Object.entries(HISTORICAL_CRASHES).map(([id, crash]) => {
-                            const drawdown = crash.drawdowns[h.assetType] || -30;
+                            const drawdown = crash.drawdowns[h.assetType];
+                            
+                            // Show X if asset didn't exist during this crash
+                            if (drawdown === null) {
+                              return (
+                                <td key={id} className="font-mono text-right tabular-nums text-muted-foreground">
+                                  <span className="text-warning">X</span>
+                                  <span className="text-[9px] ml-1 text-muted-foreground/50">(N/A)</span>
+                                </td>
+                              );
+                            }
+                            
                             const newVal = h.value * (1 + drawdown / 100);
                             return (
-                              <td key={id} className="font-mono text-right tabular-nums text-destructive">
+                              <td key={id} className={`font-mono text-right tabular-nums ${drawdown < 0 ? 'text-destructive' : 'text-success'}`}>
                                 ${newVal.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                                <span className="text-[9px] ml-1">({drawdown}%)</span>
+                                <span className="text-[9px] ml-1">({drawdown > 0 ? '+' : ''}{drawdown}%)</span>
                               </td>
                             );
                           })}
