@@ -27,19 +27,19 @@ export function CashManagement() {
   const [editMode, setEditMode] = useState<CashCurrency | null>(null);
   const [editValue, setEditValue] = useState<string>('');
 
-  const handleAddCash = () => {
+  const handleAddCash = async () => {
     const amount = parseFloat(addAmount);
     if (!isNaN(amount) && amount !== 0) {
-      addCash(addCurrency, amount);
+      await addCash(addCurrency, amount);
       setAddAmount('');
       setIsAddOpen(false);
     }
   };
 
-  const handleSetBalance = (currency: CashCurrency) => {
+  const handleSetBalance = async (currency: CashCurrency) => {
     const amount = parseFloat(editValue);
     if (!isNaN(amount)) {
-      updateCashBalance(currency, amount);
+      await updateCashBalance(currency, amount);
       setEditMode(null);
       setEditValue('');
     }

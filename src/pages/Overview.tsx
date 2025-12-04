@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileDown } from 'lucide-react';
 
 export default function Overview() {
-  const { transactions, valuations, performanceMetrics, riskMetrics } = usePortfolio();
+  const { transactions, valuations, performanceMetrics, riskMetrics, loading } = usePortfolio();
 
   const handleExportPDF = () => {
     generatePDFReport({
@@ -39,6 +39,17 @@ export default function Overview() {
   const geographyAllocation = calculateAllocations(transactions, valuations, 'geography');
 
   const hasData = performanceMetrics !== null;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm font-mono">Loading portfolio data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 animate-fade-in">

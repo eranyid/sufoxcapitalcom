@@ -37,10 +37,10 @@ export default function Valuations() {
     fxRate: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const asset = uniqueAssets.find(a => a.ticker === form.ticker);
-    addValuation({
+    await addValuation({
       assetId: form.ticker,
       ticker: form.ticker,
       assetName: asset?.name || form.ticker,
@@ -62,10 +62,10 @@ export default function Valuations() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         const csv = event.target?.result as string;
         const imported = importValuationsFromCSV(csv);
-        importValuations(imported);
+        await importValuations(imported);
         toast.success(`Imported ${imported.length} valuations`);
       };
       reader.readAsText(file);
@@ -251,8 +251,8 @@ export default function Valuations() {
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      onClick={() => {
-                                        deleteValuation(v.id);
+                                      onClick={async () => {
+                                        await deleteValuation(v.id);
                                         toast.success('Valuation deleted');
                                       }}
                                     >
@@ -283,15 +283,15 @@ function QuickAddForm({
   onAdd 
 }: { 
   assets: { ticker: string; name: string }[]; 
-  onAdd: (val: Omit<MonthlyValuation, 'id'>) => void;
+  onAdd: (val: Omit<MonthlyValuation, 'id'>) => Promise<void>;
 }) {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const [values, setValues] = useState<Record<string, { price: string; fx: string }>>({});
 
-  const handleQuickAdd = (ticker: string, name: string) => {
+  const handleQuickAdd = async (ticker: string, name: string) => {
     const val = values[ticker];
     if (val?.price) {
-      onAdd({
+      await onAdd({
         assetId: ticker,
         ticker,
         assetName: name,

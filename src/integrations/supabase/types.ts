@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      cash_balances: {
+        Row: {
+          created_at: string
+          eur: number | null
+          id: string
+          ils: number | null
+          updated_at: string
+          usd: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          eur?: number | null
+          id?: string
+          ils?: number | null
+          updated_at?: string
+          usd?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          eur?: number | null
+          id?: string
+          ils?: number | null
+          updated_at?: string
+          usd?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      portfolio_settings: {
+        Row: {
+          base_currency: string | null
+          benchmark_returns: Json | null
+          created_at: string
+          id: string
+          risk_free_rate: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_currency?: string | null
+          benchmark_returns?: Json | null
+          created_at?: string
+          id?: string
+          risk_free_rate?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_currency?: string | null
+          benchmark_returns?: Json | null
+          created_at?: string
+          id?: string
+          risk_free_rate?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -35,6 +95,99 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          asset_name: string
+          asset_type: string
+          created_at: string
+          currency: string
+          date: string
+          fees: number | null
+          geography: string
+          id: string
+          inception_year: number | null
+          price_per_unit: number
+          quantity: number
+          ticker: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_name: string
+          asset_type?: string
+          created_at?: string
+          currency?: string
+          date: string
+          fees?: number | null
+          geography?: string
+          id?: string
+          inception_year?: number | null
+          price_per_unit: number
+          quantity: number
+          ticker: string
+          transaction_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_name?: string
+          asset_type?: string
+          created_at?: string
+          currency?: string
+          date?: string
+          fees?: number | null
+          geography?: string
+          id?: string
+          inception_year?: number | null
+          price_per_unit?: number
+          quantity?: number
+          ticker?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      valuations: {
+        Row: {
+          asset_id: string | null
+          asset_name: string
+          created_at: string
+          fx_rate: number | null
+          id: string
+          month: string
+          price_per_unit: number
+          ticker: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_id?: string | null
+          asset_name: string
+          created_at?: string
+          fx_rate?: number | null
+          id?: string
+          month: string
+          price_per_unit: number
+          ticker: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_id?: string | null
+          asset_name?: string
+          created_at?: string
+          fx_rate?: number | null
+          id?: string
+          month?: string
+          price_per_unit?: number
+          ticker?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
