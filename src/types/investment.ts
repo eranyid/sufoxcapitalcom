@@ -23,6 +23,7 @@ export interface Transaction {
   fees: number;
   currency: Currency;
   geography: Geography;
+  inceptionYear?: number; // Year the asset was first listed/launched
 }
 
 export interface MonthlyValuation {
