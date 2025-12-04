@@ -3,7 +3,29 @@ import autoTable from 'jspdf-autotable';
 import { Transaction, MonthlyValuation, PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { ScenarioResult } from '@/lib/scenarioEngine';
 import { shockTargetMeta, getHorizonLabel } from '@/data/scenarios';
+import { FactorModelResults } from '@/lib/factorModel';
 import { format } from 'date-fns';
+
+// Monte Carlo Results interface for PDF
+export interface MonteCarloResultsForPDF {
+  horizonResults: {
+    horizon: number;
+    p5: number;
+    p25: number;
+    p50: number;
+    p75: number;
+    p95: number;
+    probGain: number;
+    probLoss: number;
+    var95: number;
+    cvar95: number;
+    expectedValue: number;
+  }[];
+  currentValue: number;
+  annualizedReturn: number;
+  annualizedVol: number;
+  numSimulations: number;
+}
 
 // Bloomberg Terminal Theme Colors
 const THEME = {
@@ -23,6 +45,8 @@ interface ReportData {
   valuations: MonthlyValuation[];
   performanceMetrics: PerformanceMetrics | null;
   riskMetrics: RiskMetrics | null;
+  factorModel?: FactorModelResults | null;
+  monteCarlo?: MonteCarloResultsForPDF | null;
 }
 
 function addTerminalHeader(doc: jsPDF, title: string, subtitle?: string) {
@@ -345,6 +369,231 @@ export function generatePDFReport(data: ReportData) {
       },
       columnStyles: {
         3: { cellWidth: 1 },
+      },
+    });
+  }
+
+  // Monte Carlo Simulation Section
+  if (data.monteCarlo && data.monteCarlo.horizonResults.length > 0) {
+    doc.addPage();
+    doc.setFillColor(THEME.bgSecondary.r, THEME.bgSecondary.g, THEME.bgSecondary.b);
+    doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+    addTerminalHeader(doc, 'MONTE CARLO', 'Risk Simulation');
+    yPos = 60;
+
+    yPos = addSectionHeader(doc, 'Monte Carlo Simulation', yPos, 'MC<GO>');
+
+    // Monte Carlo Configuration
+    const mcConfig = [
+      ['Current Portfolio Value', formatCurrency(data.monteCarlo.currentValue)],
+      ['Expected Annual Return', formatPercent(data.monteCarlo.annualizedReturn)],
+      ['Annual Volatility', `${data.monteCarlo.annualizedVol.toFixed(1)}%`],
+      ['Simulations Run', data.monteCarlo.numSimulations.toLocaleString()],
+      ['Model', 'Geometric Brownian Motion (GBM)'],
+    ];
+
+    autoTable(doc, {
+      ...terminalTableStyles,
+      startY: yPos,
+      head: [['PARAMETER', 'VALUE']],
+      body: mcConfig,
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 12;
+
+    // Horizon Results Table
+    yPos = addSectionHeader(doc, 'Portfolio Projections by Horizon', yPos, 'PROJ<GO>');
+
+    const horizonData = data.monteCarlo.horizonResults.map(h => [
+      `${h.horizon} Years`,
+      formatCurrency(h.p5),
+      formatCurrency(h.p25),
+      formatCurrency(h.p50),
+      formatCurrency(h.p75),
+      formatCurrency(h.p95),
+    ]);
+
+    autoTable(doc, {
+      ...terminalTableStyles,
+      startY: yPos,
+      head: [['HORIZON', '5th %ile', '25th %ile', 'MEDIAN', '75th %ile', '95th %ile']],
+      body: horizonData,
+      didParseCell: function(hookData) {
+        if (hookData.section === 'head') {
+          if (hookData.column.index >= 1 && hookData.column.index <= 2) {
+            hookData.cell.styles.textColor = [THEME.negative.r, THEME.negative.g, THEME.negative.b];
+          } else if (hookData.column.index >= 4) {
+            hookData.cell.styles.textColor = [THEME.positive.r, THEME.positive.g, THEME.positive.b];
+          }
+        }
+      },
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 12;
+
+    // Risk Metrics from Monte Carlo
+    yPos = addSectionHeader(doc, 'Probability & Risk Metrics', yPos, 'RISK<GO>');
+
+    const mcRiskData = data.monteCarlo.horizonResults.map(h => [
+      `${h.horizon} Years`,
+      `${h.probGain.toFixed(1)}%`,
+      `${h.probLoss.toFixed(1)}%`,
+      formatPercent(h.var95),
+      formatPercent(h.cvar95),
+      formatCurrency(h.expectedValue),
+    ]);
+
+    autoTable(doc, {
+      ...terminalTableStyles,
+      startY: yPos,
+      head: [['HORIZON', 'P(GAIN)', 'P(LOSS)', 'VaR 95%', 'CVaR 95%', 'EXP. VALUE']],
+      body: mcRiskData,
+      didParseCell: function(hookData) {
+        if (hookData.section === 'body') {
+          if (hookData.column.index === 1) {
+            hookData.cell.styles.textColor = [THEME.positive.r, THEME.positive.g, THEME.positive.b];
+          } else if (hookData.column.index === 2 || hookData.column.index === 3 || hookData.column.index === 4) {
+            hookData.cell.styles.textColor = [THEME.negative.r, THEME.negative.g, THEME.negative.b];
+          }
+        }
+      },
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 12;
+  }
+
+  // Factor Model Section
+  if (data.factorModel) {
+    doc.addPage();
+    doc.setFillColor(THEME.bgSecondary.r, THEME.bgSecondary.g, THEME.bgSecondary.b);
+    doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+    addTerminalHeader(doc, 'FACTOR MODEL', 'Risk Attribution');
+    yPos = 60;
+
+    // Systematic vs Specific Risk Summary
+    yPos = addSectionHeader(doc, 'Risk Decomposition', yPos, 'FMOD<GO>');
+
+    // Risk decomposition boxes
+    const halfWidth = (pageWidth - 38) / 2;
+    
+    // Systematic risk box
+    doc.setFillColor(THEME.bg.r, THEME.bg.g, THEME.bg.b);
+    doc.rect(14, yPos, halfWidth, 35, 'F');
+    doc.setFillColor(THEME.accent.r, THEME.accent.g, THEME.accent.b);
+    doc.rect(14, yPos, halfWidth, 2, 'F');
+    
+    doc.setTextColor(THEME.textMuted.r, THEME.textMuted.g, THEME.textMuted.b);
+    doc.setFontSize(7);
+    doc.text('SYSTEMATIC RISK (FACTOR-DRIVEN)', 18, yPos + 10);
+    doc.setTextColor(THEME.accent.r, THEME.accent.g, THEME.accent.b);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${data.factorModel.systematicPct.toFixed(1)}%`, 18, yPos + 26);
+
+    // Specific risk box
+    doc.setFillColor(THEME.bg.r, THEME.bg.g, THEME.bg.b);
+    doc.rect(24 + halfWidth, yPos, halfWidth, 35, 'F');
+    doc.setFillColor(THEME.accentYellow.r, THEME.accentYellow.g, THEME.accentYellow.b);
+    doc.rect(24 + halfWidth, yPos, halfWidth, 2, 'F');
+    
+    doc.setTextColor(THEME.textMuted.r, THEME.textMuted.g, THEME.textMuted.b);
+    doc.setFontSize(7);
+    doc.text('SPECIFIC RISK (IDIOSYNCRATIC)', 28 + halfWidth, yPos + 10);
+    doc.setTextColor(THEME.accentYellow.r, THEME.accentYellow.g, THEME.accentYellow.b);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${data.factorModel.specificPct.toFixed(1)}%`, 28 + halfWidth, yPos + 26);
+
+    yPos += 45;
+
+    // Additional factor model stats
+    const fmStats = [
+      ['Total Variance', `${(data.factorModel.totalVariance * 100).toFixed(4)}%`],
+      ['Systematic Variance', `${(data.factorModel.systematicVariance * 100).toFixed(4)}%`],
+      ['Specific Variance', `${(data.factorModel.specificVariance * 100).toFixed(4)}%`],
+      ['Residual Volatility (Ann.)', `${data.factorModel.residualVolatility.toFixed(2)}%`],
+    ];
+
+    autoTable(doc, {
+      ...terminalTableStyles,
+      startY: yPos,
+      head: [['VARIANCE DECOMPOSITION', 'VALUE']],
+      body: fmStats,
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 12;
+
+    // Factor Exposures
+    yPos = addSectionHeader(doc, 'Factor Exposures (Betas)', yPos, 'BETA<GO>');
+
+    const exposureData = data.factorModel.exposures.slice(0, 12).map(exp => [
+      exp.factorLabel,
+      exp.factorType.toUpperCase(),
+      exp.beta.toFixed(3),
+      exp.tStat.toFixed(2),
+      `${(exp.r2 * 100).toFixed(1)}%`,
+      exp.pValue < 0.01 ? '***' : exp.pValue < 0.05 ? '**' : exp.pValue < 0.10 ? '*' : '',
+    ]);
+
+    autoTable(doc, {
+      ...terminalTableStyles,
+      startY: yPos,
+      head: [['FACTOR', 'TYPE', 'BETA', 't-STAT', 'R²', 'SIG']],
+      body: exposureData,
+      didParseCell: function(hookData) {
+        if (hookData.section === 'body' && hookData.column.index === 2) {
+          const beta = parseFloat(hookData.cell.raw?.toString() || '0');
+          if (beta > 0) {
+            hookData.cell.styles.textColor = [THEME.positive.r, THEME.positive.g, THEME.positive.b];
+          } else if (beta < 0) {
+            hookData.cell.styles.textColor = [THEME.negative.r, THEME.negative.g, THEME.negative.b];
+          }
+        }
+        if (hookData.section === 'body' && hookData.column.index === 5) {
+          hookData.cell.styles.textColor = [THEME.accentYellow.r, THEME.accentYellow.g, THEME.accentYellow.b];
+        }
+      },
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 12;
+
+    // Factor Risk Contribution
+    if (yPos > 200) {
+      doc.addPage();
+      doc.setFillColor(THEME.bgSecondary.r, THEME.bgSecondary.g, THEME.bgSecondary.b);
+      doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+      addTerminalHeader(doc, 'FACTOR MODEL', 'Risk Contribution');
+      yPos = 60;
+    }
+
+    yPos = addSectionHeader(doc, 'Factor Risk Contribution', yPos, 'FRSK<GO>');
+
+    const riskContribData = data.factorModel.risk
+      .filter(r => Math.abs(r.contributionPct) > 0.5)
+      .slice(0, 10)
+      .map(r => [
+        r.factorLabel,
+        `${r.contributionPct.toFixed(1)}%`,
+        r.contributionPct >= 0 ? 'pos' : 'neg'
+      ]);
+
+    autoTable(doc, {
+      ...terminalTableStyles,
+      startY: yPos,
+      head: [['FACTOR', 'CONTRIBUTION TO RISK', '']],
+      body: riskContribData.map(([factor, contrib]) => [factor, contrib, '']),
+      didParseCell: function(hookData) {
+        if (hookData.section === 'body' && hookData.column.index === 1) {
+          const rowData = riskContribData[hookData.row.index];
+          if (rowData[2] === 'pos') {
+            hookData.cell.styles.textColor = [THEME.negative.r, THEME.negative.g, THEME.negative.b];
+          } else {
+            hookData.cell.styles.textColor = [THEME.positive.r, THEME.positive.g, THEME.positive.b];
+          }
+        }
+      },
+      columnStyles: {
+        2: { cellWidth: 1 },
       },
     });
   }
