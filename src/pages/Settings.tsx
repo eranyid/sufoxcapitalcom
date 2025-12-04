@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -20,8 +23,10 @@ const emailSchema = z.string().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { settings, updateSettings, transactions, valuations, refreshMetrics, clearAllData, sampleDataMode, setSampleDataMode } = usePortfolio();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [riskFreeRate, setRiskFreeRate] = useState(settings.riskFreeRate.toString());
   const [baseCurrency, setBaseCurrency] = useState<Currency>(settings.baseCurrency);
@@ -31,6 +36,7 @@ export default function Settings() {
 
   // Account preferences state
   const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [newEmail, setNewEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -38,6 +44,9 @@ export default function Settings() {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Load profile data
   useEffect(() => {
@@ -45,11 +54,14 @@ export default function Settings() {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('display_name')
+        .select('display_name, avatar_url')
         .eq('id', user.id)
         .single();
       if (data?.display_name) {
         setDisplayName(data.display_name);
+      }
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
       }
     };
     loadProfile();
@@ -70,6 +82,86 @@ export default function Settings() {
       toast.error(error.message || 'Failed to update profile');
     } finally {
       setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const newAvatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: newAvatarUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(newAvatarUrl);
+      toast.success('Avatar updated');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      toast.error('Please type DELETE to confirm');
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      // Clear all user data first
+      await clearAllData();
+      
+      // Delete profile
+      if (user) {
+        await supabase.from('profiles').delete().eq('id', user.id);
+      }
+
+      // Sign out
+      await signOut();
+      
+      toast.success('Account deleted. Goodbye!');
+      navigate('/auth');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete account');
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -162,12 +254,44 @@ export default function Settings() {
             Account Preferences
           </CardTitle>
           <CardDescription>
-            Manage your profile, email, and password
+            Manage your profile, avatar, email, and password
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Avatar */}
+          <div className="flex items-center gap-4">
+            <Avatar className="h-20 w-20 border-2 border-primary">
+              <AvatarImage src={avatarUrl || undefined} alt="Profile" />
+              <AvatarFallback className="bg-muted text-primary text-xl">
+                {displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                Upload Avatar
+              </Button>
+              <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG</p>
+            </div>
+          </div>
+
           {/* Display Name */}
-          <div className="space-y-2">
+          <div className="space-y-2 pt-4 border-t border-border">
             <Label>Display Name</Label>
             <div className="flex gap-2">
               <Input 
@@ -226,6 +350,60 @@ export default function Settings() {
               {isUpdatingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Update Password
             </Button>
+          </div>
+
+          {/* Delete Account */}
+          <div className="space-y-3 pt-4 border-t border-destructive/30">
+            <Label className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-4 w-4" /> Delete Account
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              This will permanently delete your account and all associated data. This action cannot be undone.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete My Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-5 w-5" />
+                    Delete Account Permanently?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-3">
+                    <p>This action cannot be undone. All your data will be permanently deleted:</p>
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      <li>All transactions and valuations</li>
+                      <li>Portfolio settings and cash balances</li>
+                      <li>Custom scenarios</li>
+                      <li>Profile information</li>
+                    </ul>
+                    <div className="pt-2">
+                      <Label className="text-sm font-medium">Type DELETE to confirm:</Label>
+                      <Input 
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="DELETE"
+                        className="mt-2"
+                      />
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setDeleteConfirmText('')}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAccount}
+                    disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {isDeletingAccount ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Delete Forever
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
