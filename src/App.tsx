@@ -10,6 +10,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Overview from "./pages/Overview";
 import Performance from "./pages/Performance";
 import Risk from "./pages/Risk";
+import ScenarioLab from "./pages/ScenarioLab";
 import XRay from "./pages/XRay";
 import Management from "./pages/Management";
 import Transactions from "./pages/Transactions";
@@ -35,9 +36,10 @@ const App = () => (
                   <DashboardLayout />
                 </ProtectedRoute>
               }>
-                <Route path="/" element={<Overview />} />
+              <Route path="/" element={<Overview />} />
                 <Route path="/performance" element={<Performance />} />
                 <Route path="/risk" element={<Risk />} />
+                <Route path="/scenarios" element={<ScenarioLab />} />
                 <Route path="/xray" element={<XRay />} />
                 <Route path="/management" element={<Management />} />
                 <Route path="/transactions" element={<Transactions />} />
