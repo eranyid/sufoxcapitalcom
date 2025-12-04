@@ -23,7 +23,8 @@ import {
   Clock,
   Zap,
   BarChart3,
-  PieChart
+  PieChart,
+  FileDown
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, PieChart as RechartsPie, Pie, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { 
@@ -38,6 +39,7 @@ import {
   getHorizonLabel 
 } from '@/data/scenarios';
 import { runScenario, ScenarioResult, formatCurrency, formatPctWithSign } from '@/lib/scenarioEngine';
+import { generateScenarioPDFReport } from '@/lib/pdfReport';
 import { cn } from '@/lib/utils';
 
 const scenarioTypeLabels: Record<ScenarioType, string> = {
@@ -506,7 +508,20 @@ export default function ScenarioLab() {
         <div className="col-span-4">
           <Card className="h-[calc(100vh-180px)]">
             <CardHeader className="py-3 px-4 border-b border-border">
-              <CardTitle className="text-sm font-semibold">SCENARIO RESULTS</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold">SCENARIO RESULTS</CardTitle>
+                {result && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="h-7 text-xs"
+                    onClick={() => generateScenarioPDFReport(result)}
+                  >
+                    <FileDown className="h-3 w-3 mr-1" />
+                    EXPORT PDF
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <ScrollArea className="h-[calc(100%-52px)]">
               <CardContent className="p-4">
