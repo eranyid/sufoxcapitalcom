@@ -6,65 +6,71 @@
 
 @layer base {
   :root {
-    /* Bloomberg/Aladdin Terminal Theme - Turquoise & Yellow Accents */
-    --background: 210 15% 5%;
-    --foreground: 0 0% 85%;
+    /* Bloomberg Terminal Theme - Exact Colors */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
 
-    --card: 210 12% 8%;
-    --card-foreground: 0 0% 85%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 210 12% 10%;
-    --popover-foreground: 0 0% 85%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Primary: Turquoise/Cyan */
-    --primary: 174 100% 45%;
-    --primary-foreground: 210 15% 5%;
+    /* Primary: Cyan/Highlight */
+    --primary: 180 100% 50%;
+    --primary-foreground: 0 0% 0%;
 
     /* Secondary: Dark Gray Panel */
-    --secondary: 210 12% 11%;
-    --secondary-foreground: 0 0% 85%;
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 0 0% 82%;
 
-    --muted: 210 10% 18%;
-    --muted-foreground: 0 0% 50%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 82%;
 
-    /* Accent: Yellow for highlights */
-    --accent: 68 100% 52%;
-    --accent-foreground: 210 15% 5%;
+    /* Accent: Yellow for hover */
+    --accent: 47 96% 60%;
+    --accent-foreground: 0 0% 0%;
 
-    --destructive: 0 75% 50%;
+    /* Destructive: Red for negative */
+    --destructive: 0 100% 65%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 145 65% 42%;
-    --success-foreground: 0 0% 100%;
+    /* Success: Green for positive */
+    --success: 120 100% 50%;
+    --success-foreground: 0 0% 0%;
 
-    --warning: 45 100% 50%;
+    --warning: 47 96% 60%;
     --warning-foreground: 0 0% 0%;
 
-    --info: 210 100% 55%;
-    --info-foreground: 0 0% 100%;
+    --info: 180 100% 50%;
+    --info-foreground: 0 0% 0%;
 
-    --border: 210 10% 16%;
-    --input: 210 12% 12%;
-    --ring: 174 100% 45%;
+    --border: 0 0% 12%;
+    --input: 0 0% 7%;
+    --ring: 180 100% 50%;
 
     --radius: 0rem;
 
-    --chart-positive: 145 65% 42%;
-    --chart-negative: 0 75% 50%;
+    /* Chart colors */
+    --chart-positive: 120 100% 50%;
+    --chart-negative: 0 100% 65%;
     --chart-neutral: 0 0% 45%;
-    --chart-turquoise: 174 100% 45%;
-    --chart-yellow: 68 100% 52%;
-    --chart-blue: 210 100% 55%;
+    --chart-turquoise: 180 100% 50%;
+    --chart-yellow: 47 96% 60%;
+    --chart-blue: 180 100% 50%;
     --chart-orange: 30 100% 50%;
+    --chart-gridline: 0 0% 12%;
 
-    --sidebar-background: 210 15% 6%;
-    --sidebar-foreground: 0 0% 85%;
-    --sidebar-primary: 174 100% 45%;
-    --sidebar-primary-foreground: 210 15% 5%;
-    --sidebar-accent: 210 12% 12%;
-    --sidebar-accent-foreground: 174 100% 45%;
-    --sidebar-border: 210 10% 14%;
-    --sidebar-ring: 174 100% 45%;
+    /* Sidebar */
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 82%;
+    --sidebar-primary: 180 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 7%;
+    --sidebar-accent-foreground: 180 100% 50%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 180 100% 50%;
+    --sidebar-hover: 47 96% 60%;
   }
 
   .light {
@@ -74,27 +80,27 @@
     --card-foreground: 0 0% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
-    --primary: 174 100% 35%;
+    --primary: 180 100% 35%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 92%;
     --secondary-foreground: 0 0% 10%;
     --muted: 0 0% 92%;
     --muted-foreground: 0 0% 45%;
-    --accent: 68 100% 45%;
+    --accent: 47 96% 50%;
     --accent-foreground: 0 0% 10%;
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 85%;
     --input: 0 0% 85%;
-    --ring: 174 100% 35%;
+    --ring: 180 100% 35%;
     --sidebar-background: 0 0% 94%;
     --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 174 100% 35%;
+    --sidebar-primary: 180 100% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 90%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 0 0% 85%;
-    --sidebar-ring: 174 100% 35%;
+    --sidebar-ring: 180 100% 35%;
   }
 }
 
@@ -146,7 +152,7 @@
   }
 
   .bloomberg-header-title {
-    @apply text-primary font-semibold text-[10px] uppercase tracking-widest;
+    @apply text-primary font-semibold text-[10px] uppercase tracking-widest font-mono;
   }
 
   /* Terminal Tab style */
@@ -183,29 +189,38 @@
   }
 
   .data-table tr:hover {
-    @apply bg-muted/10;
+    @apply bg-muted/30;
   }
 
   .data-table tr.selected {
     @apply bg-primary/10;
   }
 
-  /* Value colors */
+  /* Value colors - Bloomberg exact */
   .positive {
-    @apply text-success font-medium;
+    color: #00FF00;
+    font-weight: 500;
   }
 
   .negative {
-    @apply text-destructive font-medium;
+    color: #FF4D4D;
+    font-weight: 500;
   }
 
   /* Navigation Bloomberg style */
   .nav-link {
-    @apply flex items-center gap-2 px-2 py-1 text-[10px] text-muted-foreground transition-all duration-75 hover:bg-sidebar-accent hover:text-primary border-l-2 border-transparent font-mono uppercase tracking-wider;
+    @apply flex items-center gap-2 px-2 py-1.5 text-[11px] transition-all duration-75 border-l-2 border-transparent font-mono uppercase tracking-wider;
+    color: #D0D0D0;
+  }
+
+  .nav-link:hover {
+    @apply bg-sidebar-accent;
+    color: #F4D03F;
   }
 
   .nav-link.active {
-    @apply bg-sidebar-accent text-primary font-semibold border-l-primary;
+    @apply bg-sidebar-accent font-semibold border-l-primary;
+    color: #00FFFF;
   }
 
   /* Bloomberg-style text classes */
@@ -227,13 +242,13 @@
 
   /* Info color */
   .info {
-    @apply text-[hsl(var(--info))];
+    color: #00FFFF;
   }
 
-  /* Bloomberg gradient top bar - Turquoise */
+  /* Bloomberg gradient top bar - Cyan */
   .bloomberg-gradient-bar {
     height: 2px;
-    background: linear-gradient(90deg, hsl(174 100% 45%), hsl(68 100% 52%), hsl(174 100% 45%));
+    background: linear-gradient(90deg, #00FFFF, #F4D03F, #00FFFF);
   }
 
   /* Glass effect for overlays */
@@ -256,34 +271,42 @@
   }
 
   .status-badge-ok {
-    @apply text-success border-success/50 bg-success/10;
+    color: #00FF00;
+    border-color: rgba(0, 255, 0, 0.5);
+    background: rgba(0, 255, 0, 0.1);
   }
 
   .status-badge-warning {
-    @apply text-warning border-warning/50 bg-warning/10;
+    color: #F4D03F;
+    border-color: rgba(244, 208, 63, 0.5);
+    background: rgba(244, 208, 63, 0.1);
   }
 
   .status-badge-error {
-    @apply text-destructive border-destructive/50 bg-destructive/10;
+    color: #FF4D4D;
+    border-color: rgba(255, 77, 77, 0.5);
+    background: rgba(255, 77, 77, 0.1);
   }
 
   /* Heatmap cell backgrounds */
-  .heatmap-positive-1 { @apply bg-success/10; }
-  .heatmap-positive-2 { @apply bg-success/20; }
-  .heatmap-positive-3 { @apply bg-success/30; }
-  .heatmap-positive-4 { @apply bg-success/40; }
-  .heatmap-negative-1 { @apply bg-destructive/10; }
-  .heatmap-negative-2 { @apply bg-destructive/20; }
-  .heatmap-negative-3 { @apply bg-destructive/30; }
-  .heatmap-negative-4 { @apply bg-destructive/40; }
+  .heatmap-positive-1 { background: rgba(0, 255, 0, 0.1); }
+  .heatmap-positive-2 { background: rgba(0, 255, 0, 0.2); }
+  .heatmap-positive-3 { background: rgba(0, 255, 0, 0.3); }
+  .heatmap-positive-4 { background: rgba(0, 255, 0, 0.4); }
+  .heatmap-negative-1 { background: rgba(255, 77, 77, 0.1); }
+  .heatmap-negative-2 { background: rgba(255, 77, 77, 0.2); }
+  .heatmap-negative-3 { background: rgba(255, 77, 77, 0.3); }
+  .heatmap-negative-4 { background: rgba(255, 77, 77, 0.4); }
 
   /* Weight bar */
   .weight-bar {
-    @apply h-1 bg-primary/30 relative overflow-hidden;
+    @apply h-1 relative overflow-hidden;
+    background: rgba(0, 255, 255, 0.2);
   }
 
   .weight-bar-fill {
-    @apply absolute left-0 top-0 h-full bg-primary;
+    @apply absolute left-0 top-0 h-full;
+    background: #00FFFF;
   }
 }
 
