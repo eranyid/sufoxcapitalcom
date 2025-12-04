@@ -27,17 +27,23 @@ export interface MonteCarloResultsForPDF {
   numSimulations: number;
 }
 
-// Bloomberg Terminal Theme Colors
+// Correlation Matrix interface for PDF
+export interface CorrelationMatrixForPDF {
+  tickers: string[];
+  matrix: number[][];
+}
+
+// Bloomberg Terminal Theme Colors - Classic Orange/Black
 const THEME = {
-  bg: { r: 11, g: 14, b: 17 },           // #0B0E11
-  bgSecondary: { r: 22, g: 26, b: 31 },  // #161A1F
-  accent: { r: 0, g: 230, b: 210 },      // #00E6D2 turquoise
-  accentYellow: { r: 230, g: 255, b: 0 }, // #E6FF00
-  positive: { r: 34, g: 197, b: 94 },    // green
-  negative: { r: 239, g: 68, b: 68 },    // red
-  text: { r: 255, g: 255, b: 255 },      // white
-  textMuted: { r: 156, g: 163, b: 175 }, // gray
-  border: { r: 55, g: 65, b: 81 },       // border gray
+  bg: { r: 0, g: 0, b: 0 },               // Pure black
+  bgSecondary: { r: 17, g: 17, b: 17 },   // #111111 very dark
+  accent: { r: 255, g: 140, b: 0 },       // #FF8C00 Bloomberg orange
+  accentYellow: { r: 255, g: 176, b: 0 }, // #FFB000 amber/gold
+  positive: { r: 0, g: 200, b: 83 },      // Green
+  negative: { r: 255, g: 59, b: 48 },     // Red
+  text: { r: 255, g: 255, b: 255 },       // White
+  textMuted: { r: 136, g: 136, b: 136 },  // Gray
+  border: { r: 51, g: 51, b: 51 },        // Dark border
 };
 
 interface ReportData {
@@ -47,6 +53,7 @@ interface ReportData {
   riskMetrics: RiskMetrics | null;
   factorModel?: FactorModelResults | null;
   monteCarlo?: MonteCarloResultsForPDF | null;
+  correlationMatrix?: CorrelationMatrixForPDF | null;
 }
 
 function addTerminalHeader(doc: jsPDF, title: string, subtitle?: string) {
@@ -596,6 +603,165 @@ export function generatePDFReport(data: ReportData) {
         2: { cellWidth: 1 },
       },
     });
+  }
+
+  // Correlation Matrix Section
+  if (data.correlationMatrix && data.correlationMatrix.tickers.length >= 2) {
+    doc.addPage();
+    doc.setFillColor(THEME.bgSecondary.r, THEME.bgSecondary.g, THEME.bgSecondary.b);
+    doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+    addTerminalHeader(doc, 'CORRELATION MATRIX', 'Inter-Asset Correlations');
+    yPos = 60;
+
+    yPos = addSectionHeader(doc, 'Asset Correlation Analysis', yPos, 'CORR<GO>');
+
+    const { tickers, matrix } = data.correlationMatrix;
+    const maxDisplayTickers = Math.min(tickers.length, 10); // Limit for readability
+    const displayTickers = tickers.slice(0, maxDisplayTickers);
+    const displayMatrix = matrix.slice(0, maxDisplayTickers).map(row => row.slice(0, maxDisplayTickers));
+
+    // Create correlation table
+    const corrHeaders = ['', ...displayTickers.map(t => t.slice(0, 5))];
+    const corrData = displayTickers.map((ticker, i) => {
+      const row = [ticker.slice(0, 5)];
+      displayMatrix[i].forEach((corr) => {
+        row.push(corr.toFixed(2));
+      });
+      return row;
+    });
+
+    autoTable(doc, {
+      ...terminalTableStyles,
+      startY: yPos,
+      head: [corrHeaders],
+      body: corrData,
+      styles: {
+        ...terminalTableStyles.styles,
+        fontSize: 7,
+        cellPadding: 2,
+      },
+      didParseCell: function(hookData) {
+        if (hookData.section === 'body' && hookData.column.index > 0) {
+          const corr = parseFloat(hookData.cell.raw?.toString() || '0');
+          if (corr === 1) {
+            hookData.cell.styles.textColor = [THEME.accent.r, THEME.accent.g, THEME.accent.b];
+            hookData.cell.styles.fillColor = [THEME.bg.r, THEME.bg.g, THEME.bg.b];
+          } else if (corr >= 0.7) {
+            hookData.cell.styles.textColor = [THEME.positive.r, THEME.positive.g, THEME.positive.b];
+            hookData.cell.styles.fillColor = [0, 80, 33];
+          } else if (corr >= 0.3) {
+            hookData.cell.styles.textColor = [THEME.positive.r, THEME.positive.g, THEME.positive.b];
+            hookData.cell.styles.fillColor = [0, 50, 20];
+          } else if (corr <= -0.7) {
+            hookData.cell.styles.textColor = [THEME.negative.r, THEME.negative.g, THEME.negative.b];
+            hookData.cell.styles.fillColor = [80, 20, 15];
+          } else if (corr <= -0.3) {
+            hookData.cell.styles.textColor = [THEME.negative.r, THEME.negative.g, THEME.negative.b];
+            hookData.cell.styles.fillColor = [50, 15, 12];
+          }
+        }
+        // First column (ticker names) in accent color
+        if (hookData.section === 'body' && hookData.column.index === 0) {
+          hookData.cell.styles.textColor = [THEME.accent.r, THEME.accent.g, THEME.accent.b];
+          hookData.cell.styles.fontStyle = 'bold';
+        }
+      },
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 15;
+
+    // Correlation Summary Statistics
+    yPos = addSectionHeader(doc, 'Correlation Summary', yPos, 'STAT<GO>');
+
+    // Calculate summary stats
+    const correlations: number[] = [];
+    for (let i = 0; i < matrix.length; i++) {
+      for (let j = i + 1; j < matrix.length; j++) {
+        correlations.push(matrix[i][j]);
+      }
+    }
+    
+    const avgCorr = correlations.length > 0 ? correlations.reduce((a, b) => a + b, 0) / correlations.length : 0;
+    const maxCorr = correlations.length > 0 ? Math.max(...correlations) : 0;
+    const minCorr = correlations.length > 0 ? Math.min(...correlations) : 0;
+    const highCorrPairs = correlations.filter(c => c >= 0.7).length;
+    const negCorrPairs = correlations.filter(c => c < -0.3).length;
+
+    const summaryStats = [
+      ['Number of Assets', tickers.length.toString()],
+      ['Correlation Pairs', correlations.length.toString()],
+      ['Average Correlation', avgCorr.toFixed(3)],
+      ['Maximum Correlation', maxCorr.toFixed(3)],
+      ['Minimum Correlation', minCorr.toFixed(3)],
+      ['High Correlation Pairs (≥0.7)', highCorrPairs.toString()],
+      ['Negative Correlation Pairs (<-0.3)', negCorrPairs.toString()],
+    ];
+
+    autoTable(doc, {
+      ...terminalTableStyles,
+      startY: yPos,
+      head: [['METRIC', 'VALUE']],
+      body: summaryStats,
+      didParseCell: function(hookData) {
+        if (hookData.section === 'body' && hookData.column.index === 1) {
+          const val = parseFloat(hookData.cell.raw?.toString() || '0');
+          if (hookData.row.index === 2) { // Average correlation
+            if (val >= 0.5) hookData.cell.styles.textColor = [THEME.positive.r, THEME.positive.g, THEME.positive.b];
+            else if (val <= 0) hookData.cell.styles.textColor = [THEME.negative.r, THEME.negative.g, THEME.negative.b];
+          }
+          if (hookData.row.index === 3) { // Max correlation
+            hookData.cell.styles.textColor = [THEME.positive.r, THEME.positive.g, THEME.positive.b];
+          }
+          if (hookData.row.index === 4) { // Min correlation
+            hookData.cell.styles.textColor = [THEME.negative.r, THEME.negative.g, THEME.negative.b];
+          }
+        }
+      },
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 15;
+
+    // Legend
+    doc.setFillColor(THEME.bg.r, THEME.bg.g, THEME.bg.b);
+    doc.rect(14, yPos, pageWidth - 28, 25, 'F');
+    
+    doc.setTextColor(THEME.textMuted.r, THEME.textMuted.g, THEME.textMuted.b);
+    doc.setFontSize(7);
+    doc.text('CORRELATION SCALE:', 20, yPos + 8);
+    
+    // Legend items
+    let legendX = 20;
+    const legendY = yPos + 17;
+    
+    // High positive
+    doc.setFillColor(0, 80, 33);
+    doc.rect(legendX, legendY - 4, 10, 6, 'F');
+    doc.setTextColor(THEME.text.r, THEME.text.g, THEME.text.b);
+    doc.text('High +', legendX + 12, legendY);
+    legendX += 35;
+    
+    // Low positive
+    doc.setFillColor(0, 50, 20);
+    doc.rect(legendX, legendY - 4, 10, 6, 'F');
+    doc.text('Low +', legendX + 12, legendY);
+    legendX += 35;
+    
+    // Neutral
+    doc.setFillColor(THEME.bgSecondary.r, THEME.bgSecondary.g, THEME.bgSecondary.b);
+    doc.rect(legendX, legendY - 4, 10, 6, 'F');
+    doc.text('Neutral', legendX + 12, legendY);
+    legendX += 38;
+    
+    // Low negative
+    doc.setFillColor(50, 15, 12);
+    doc.rect(legendX, legendY - 4, 10, 6, 'F');
+    doc.text('Low -', legendX + 12, legendY);
+    legendX += 35;
+    
+    // High negative
+    doc.setFillColor(80, 20, 15);
+    doc.rect(legendX, legendY - 4, 10, 6, 'F');
+    doc.text('High -', legendX + 12, legendY);
   }
 
   // Add footers to all pages
