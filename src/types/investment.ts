@@ -1,7 +1,15 @@
 export type AssetType = 'equity' | 'bond' | 'commodity' | 'crypto' | 'real_estate' | 'cash' | 'alternative' | 'etf' | 'mutual_fund';
 export type TransactionType = 'buy' | 'sell';
 export type Geography = 'north_america' | 'europe' | 'asia_pacific' | 'emerging_markets' | 'global' | 'other';
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CHF' | 'CAD' | 'AUD' | 'ZAR' | 'OTHER';
+export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CHF' | 'CAD' | 'AUD' | 'ZAR' | 'ILS' | 'OTHER';
+
+export type CashCurrency = 'USD' | 'EUR' | 'ILS';
+
+export interface CashBalances {
+  USD: number;
+  EUR: number;
+  ILS: number;
+}
 
 export interface Transaction {
   id: string;

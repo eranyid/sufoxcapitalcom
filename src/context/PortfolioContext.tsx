@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Transaction, MonthlyValuation, PortfolioSettings, PerformanceMetrics, RiskMetrics } from '@/types/investment';
-import { loadTransactions, saveTransactions, loadValuations, saveValuations, loadSettings, saveSettings } from '@/lib/storage';
+import { Transaction, MonthlyValuation, PortfolioSettings, PerformanceMetrics, RiskMetrics, CashBalances, CashCurrency } from '@/types/investment';
+import { loadTransactions, saveTransactions, loadValuations, saveValuations, loadSettings, saveSettings, loadCashBalances, saveCashBalances } from '@/lib/storage';
 import { calculatePerformanceMetrics, calculateRiskMetrics } from '@/lib/calculations';
 import { sampleTransactions, sampleValuations } from '@/lib/sampleData';
 
@@ -10,6 +10,7 @@ interface PortfolioContextType {
   settings: PortfolioSettings;
   performanceMetrics: PerformanceMetrics | null;
   riskMetrics: RiskMetrics | null;
+  cashBalances: CashBalances;
   sampleDataMode: boolean;
   setSampleDataMode: (enabled: boolean) => void;
   addTransaction: (tx: Omit<Transaction, 'id'>) => void;
@@ -19,6 +20,8 @@ interface PortfolioContextType {
   updateValuation: (id: string, val: Partial<MonthlyValuation>) => void;
   deleteValuation: (id: string) => void;
   updateSettings: (settings: Partial<PortfolioSettings>) => void;
+  updateCashBalance: (currency: CashCurrency, amount: number) => void;
+  addCash: (currency: CashCurrency, amount: number) => void;
   importTransactions: (txs: Transaction[]) => void;
   importValuations: (vals: MonthlyValuation[]) => void;
   clearAllData: () => void;
@@ -39,6 +42,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     benchmarkReturns: [],
     baseCurrency: 'USD'
   });
+  const [cashBalances, setCashBalances] = useState<CashBalances>({ USD: 0, EUR: 0, ILS: 0 });
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null);
 
@@ -63,6 +67,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     setUserTransactions(loadTransactions());
     setUserValuations(loadValuations());
     setSettings(loadSettings());
+    setCashBalances(loadCashBalances());
   }, []);
 
   // Recalculate metrics when data changes
@@ -83,12 +88,28 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     refreshMetrics();
   }, [refreshMetrics]);
 
-  // Transaction operations (always affect user data)
+  // Transaction operations (always affect user data and cash)
   const addTransaction = (tx: Omit<Transaction, 'id'>) => {
     const newTx = { ...tx, id: crypto.randomUUID() };
     const updated = [...userTransactions, newTx];
     setUserTransactions(updated);
     saveTransactions(updated);
+    
+    // Update cash balance based on transaction currency
+    const txCurrency = tx.currency as CashCurrency;
+    if (txCurrency === 'USD' || txCurrency === 'EUR' || txCurrency === 'ILS') {
+      const totalCost = tx.quantity * tx.pricePerUnit + tx.fees;
+      setCashBalances(prev => {
+        const newBalances = { ...prev };
+        if (tx.transactionType === 'buy') {
+          newBalances[txCurrency] = prev[txCurrency] - totalCost;
+        } else {
+          newBalances[txCurrency] = prev[txCurrency] + (tx.quantity * tx.pricePerUnit - tx.fees);
+        }
+        saveCashBalances(newBalances);
+        return newBalances;
+      });
+    }
   };
 
   const updateTransaction = (id: string, tx: Partial<Transaction>) => {
@@ -146,8 +167,27 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const clearAllData = () => {
     setUserTransactions([]);
     setUserValuations([]);
+    setCashBalances({ USD: 0, EUR: 0, ILS: 0 });
     saveTransactions([]);
     saveValuations([]);
+    saveCashBalances({ USD: 0, EUR: 0, ILS: 0 });
+  };
+
+  // Cash balance operations
+  const updateCashBalance = (currency: CashCurrency, amount: number) => {
+    setCashBalances(prev => {
+      const newBalances = { ...prev, [currency]: amount };
+      saveCashBalances(newBalances);
+      return newBalances;
+    });
+  };
+
+  const addCash = (currency: CashCurrency, amount: number) => {
+    setCashBalances(prev => {
+      const newBalances = { ...prev, [currency]: prev[currency] + amount };
+      saveCashBalances(newBalances);
+      return newBalances;
+    });
   };
 
   return (
@@ -157,6 +197,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       settings,
       performanceMetrics,
       riskMetrics,
+      cashBalances,
       sampleDataMode,
       setSampleDataMode,
       addTransaction,
@@ -166,6 +207,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       updateValuation,
       deleteValuation,
       updateSettings,
+      updateCashBalance,
+      addCash,
       importTransactions,
       importValuations,
       clearAllData,
