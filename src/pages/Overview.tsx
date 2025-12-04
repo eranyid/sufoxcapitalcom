@@ -6,8 +6,8 @@ import { AllocationChart } from '@/components/dashboard/AllocationChart';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
 import { CashManagement } from '@/components/dashboard/CashManagement';
-import { calculateAllocations } from '@/lib/calculations';
-import { generatePDFReport, MonteCarloResultsForPDF } from '@/lib/pdfReport';
+import { calculateAllocations, calculateCorrelationMatrix } from '@/lib/calculations';
+import { generatePDFReport, MonteCarloResultsForPDF, CorrelationMatrixForPDF } from '@/lib/pdfReport';
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileDown } from 'lucide-react';
@@ -109,6 +109,14 @@ export default function Overview() {
     };
   }, [performanceMetrics]);
 
+  // Compute correlation matrix for PDF
+  const correlationMatrix = useMemo((): CorrelationMatrixForPDF | null => {
+    if (transactions.length === 0 || valuations.length === 0) return null;
+    const result = calculateCorrelationMatrix(transactions, valuations);
+    if (result.tickers.length < 2) return null;
+    return result;
+  }, [transactions, valuations]);
+
   const handleExportPDF = () => {
     generatePDFReport({
       transactions,
@@ -117,6 +125,7 @@ export default function Overview() {
       riskMetrics,
       factorModel,
       monteCarlo: monteCarloResults,
+      correlationMatrix,
     });
   };
 
