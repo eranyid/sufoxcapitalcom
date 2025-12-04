@@ -7,12 +7,12 @@ interface AllocationChartProps {
 }
 
 const COLORS = [
-  'hsl(var(--chart-gold))',
+  'hsl(var(--chart-turquoise))',
+  'hsl(var(--chart-yellow))',
   'hsl(var(--chart-blue))',
   'hsl(var(--success))',
+  'hsl(var(--chart-orange))',
   'hsl(var(--destructive))',
-  'hsl(var(--chart-white))',
-  'hsl(var(--warning))',
   'hsl(var(--muted-foreground))',
 ];
 

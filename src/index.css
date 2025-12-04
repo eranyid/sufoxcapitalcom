@@ -2,36 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
-    /* Bloomberg Terminal Theme - Authentic Dark with Orange */
-    --background: 0 0% 7%;
+    /* Bloomberg/Aladdin Terminal Theme - Turquoise & Yellow Accents */
+    --background: 210 15% 5%;
     --foreground: 0 0% 85%;
 
-    --card: 0 0% 11%;
+    --card: 210 12% 8%;
     --card-foreground: 0 0% 85%;
 
-    --popover: 0 0% 13%;
+    --popover: 210 12% 10%;
     --popover-foreground: 0 0% 85%;
 
-    --primary: 30 100% 50%;
-    --primary-foreground: 0 0% 0%;
+    /* Primary: Turquoise/Cyan */
+    --primary: 174 100% 45%;
+    --primary-foreground: 210 15% 5%;
 
-    --secondary: 0 0% 16%;
+    /* Secondary: Dark Gray Panel */
+    --secondary: 210 12% 11%;
     --secondary-foreground: 0 0% 85%;
 
-    --muted: 0 0% 20%;
+    --muted: 210 10% 18%;
     --muted-foreground: 0 0% 50%;
 
-    --accent: 0 0% 18%;
-    --accent-foreground: 30 100% 50%;
+    /* Accent: Yellow for highlights */
+    --accent: 68 100% 52%;
+    --accent-foreground: 210 15% 5%;
 
     --destructive: 0 75% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 120 60% 40%;
+    --success: 145 65% 42%;
     --success-foreground: 0 0% 100%;
 
     --warning: 45 100% 50%;
@@ -40,27 +43,28 @@
     --info: 210 100% 55%;
     --info-foreground: 0 0% 100%;
 
-    --border: 0 0% 22%;
-    --input: 0 0% 16%;
-    --ring: 30 100% 50%;
+    --border: 210 10% 16%;
+    --input: 210 12% 12%;
+    --ring: 174 100% 45%;
 
-    --radius: 0.125rem;
+    --radius: 0rem;
 
-    --chart-positive: 120 60% 40%;
+    --chart-positive: 145 65% 42%;
     --chart-negative: 0 75% 50%;
     --chart-neutral: 0 0% 45%;
-    --chart-gold: 30 100% 50%;
+    --chart-turquoise: 174 100% 45%;
+    --chart-yellow: 68 100% 52%;
     --chart-blue: 210 100% 55%;
-    --chart-white: 0 0% 90%;
+    --chart-orange: 30 100% 50%;
 
-    --sidebar-background: 0 0% 9%;
+    --sidebar-background: 210 15% 6%;
     --sidebar-foreground: 0 0% 85%;
-    --sidebar-primary: 30 100% 50%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 30 100% 50%;
-    --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 30 100% 50%;
+    --sidebar-primary: 174 100% 45%;
+    --sidebar-primary-foreground: 210 15% 5%;
+    --sidebar-accent: 210 12% 12%;
+    --sidebar-accent-foreground: 174 100% 45%;
+    --sidebar-border: 210 10% 14%;
+    --sidebar-ring: 174 100% 45%;
   }
 
   .light {
@@ -70,27 +74,27 @@
     --card-foreground: 0 0% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
-    --primary: 30 100% 45%;
+    --primary: 174 100% 35%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 92%;
     --secondary-foreground: 0 0% 10%;
     --muted: 0 0% 92%;
     --muted-foreground: 0 0% 45%;
-    --accent: 0 0% 92%;
+    --accent: 68 100% 45%;
     --accent-foreground: 0 0% 10%;
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 85%;
     --input: 0 0% 85%;
-    --ring: 30 100% 45%;
+    --ring: 174 100% 35%;
     --sidebar-background: 0 0% 94%;
     --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 30 100% 45%;
+    --sidebar-primary: 174 100% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 90%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 0 0% 85%;
-    --sidebar-ring: 30 100% 45%;
+    --sidebar-ring: 174 100% 35%;
   }
 }
 
@@ -102,19 +106,19 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
-    font-size: 13px;
-  }
-
-  /* Bloomberg-style monospace for numbers */
-  .font-mono, .tabular-nums, code {
-    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
     font-size: 12px;
   }
 
-  /* Custom scrollbar - Bloomberg style thin */
+  /* Terminal-style monospace for all numbers */
+  .font-mono, .tabular-nums, code, input[type="number"] {
+    font-family: 'IBM Plex Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+  }
+
+  /* Custom scrollbar - Bloomberg style ultra thin */
   ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
   }
 
   ::-webkit-scrollbar-track {
@@ -132,55 +136,54 @@
 }
 
 @layer components {
-  /* Bloomberg Panel Style */
+  /* Bloomberg Panel Style - Square corners */
   .bloomberg-panel {
     @apply bg-card border border-border;
-    box-shadow: inset 0 1px 0 hsl(var(--muted) / 0.3);
   }
 
   .bloomberg-header {
-    @apply bg-secondary px-3 py-1.5 border-b border-border flex items-center gap-2;
+    @apply bg-secondary px-2 py-1 border-b border-border flex items-center gap-2;
   }
 
   .bloomberg-header-title {
-    @apply text-primary font-semibold text-xs uppercase tracking-wide;
+    @apply text-primary font-semibold text-[10px] uppercase tracking-widest;
   }
 
-  /* Tab style like Bloomberg */
-  .bloomberg-tab {
-    @apply px-3 py-1 text-xs font-medium bg-secondary text-muted-foreground border border-border cursor-pointer transition-colors;
+  /* Terminal Tab style */
+  .terminal-tab {
+    @apply px-3 py-1 text-[10px] font-mono font-medium bg-secondary text-muted-foreground border border-border cursor-pointer transition-colors uppercase tracking-wider;
   }
 
-  .bloomberg-tab.active, .bloomberg-tab:hover {
-    @apply bg-primary text-primary-foreground;
+  .terminal-tab.active, .terminal-tab:hover {
+    @apply bg-primary text-primary-foreground border-primary;
   }
 
-  /* KPI Card Bloomberg style */
+  /* KPI Card Bloomberg style - Tight padding */
   .kpi-card {
-    @apply bg-card border border-border p-3 transition-all duration-150;
+    @apply bg-card border border-border p-2 transition-all duration-100;
   }
 
   .kpi-card:hover {
-    @apply border-primary/40;
+    @apply border-primary/50;
   }
 
-  /* Data Table Bloomberg style */
+  /* Data Table Bloomberg style - Dense */
   .data-table {
-    @apply w-full text-xs;
+    @apply w-full text-[10px];
   }
 
   .data-table th {
-    @apply text-left text-primary font-semibold py-1.5 px-2 border-b border-border uppercase tracking-wider bg-secondary/50;
-    font-size: 10px;
+    @apply text-left text-primary font-semibold py-1 px-2 border-b border-border uppercase tracking-widest bg-secondary/50;
+    font-size: 9px;
   }
 
   .data-table td {
-    @apply py-1.5 px-2 border-b border-border/40 font-mono tabular-nums;
-    font-size: 11px;
+    @apply py-1 px-2 border-b border-border/30 font-mono tabular-nums;
+    font-size: 10px;
   }
 
   .data-table tr:hover {
-    @apply bg-muted/20;
+    @apply bg-muted/10;
   }
 
   .data-table tr.selected {
@@ -198,16 +201,16 @@
 
   /* Navigation Bloomberg style */
   .nav-link {
-    @apply flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground transition-all duration-100 hover:bg-sidebar-accent hover:text-primary border-l-2 border-transparent;
+    @apply flex items-center gap-2 px-2 py-1 text-[10px] text-muted-foreground transition-all duration-75 hover:bg-sidebar-accent hover:text-primary border-l-2 border-transparent font-mono uppercase tracking-wider;
   }
 
   .nav-link.active {
-    @apply bg-sidebar-accent text-primary font-medium border-l-primary;
+    @apply bg-sidebar-accent text-primary font-semibold border-l-primary;
   }
 
   /* Bloomberg-style text classes */
   .terminal-label {
-    @apply text-primary text-[10px] uppercase tracking-widest font-semibold;
+    @apply text-primary text-[9px] uppercase tracking-widest font-semibold font-mono;
   }
 
   .terminal-value {
@@ -215,7 +218,11 @@
   }
 
   .terminal-value-lg {
-    @apply font-mono text-xl tabular-nums tracking-tight;
+    @apply font-mono text-lg tabular-nums tracking-tight;
+  }
+
+  .terminal-value-xl {
+    @apply font-mono text-2xl tabular-nums tracking-tight;
   }
 
   /* Info color */
@@ -223,15 +230,60 @@
     @apply text-[hsl(var(--info))];
   }
 
-  /* Bloomberg gradient top bar */
+  /* Bloomberg gradient top bar - Turquoise */
   .bloomberg-gradient-bar {
-    height: 3px;
-    background: linear-gradient(90deg, hsl(30 100% 50%), hsl(35 100% 55%), hsl(30 100% 50%));
+    height: 2px;
+    background: linear-gradient(90deg, hsl(174 100% 45%), hsl(68 100% 52%), hsl(174 100% 45%));
   }
 
   /* Glass effect for overlays */
   .glass-card {
     @apply bg-card/95 backdrop-blur-sm border border-border;
+  }
+
+  /* Command bar styling */
+  .command-bar {
+    @apply bg-secondary border border-border px-3 py-1.5 font-mono text-sm flex items-center gap-2;
+  }
+
+  .command-bar-input {
+    @apply bg-transparent border-none outline-none text-foreground font-mono text-xs flex-1 placeholder:text-muted-foreground;
+  }
+
+  /* Status badge */
+  .status-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider border;
+  }
+
+  .status-badge-ok {
+    @apply text-success border-success/50 bg-success/10;
+  }
+
+  .status-badge-warning {
+    @apply text-warning border-warning/50 bg-warning/10;
+  }
+
+  .status-badge-error {
+    @apply text-destructive border-destructive/50 bg-destructive/10;
+  }
+
+  /* Heatmap cell backgrounds */
+  .heatmap-positive-1 { @apply bg-success/10; }
+  .heatmap-positive-2 { @apply bg-success/20; }
+  .heatmap-positive-3 { @apply bg-success/30; }
+  .heatmap-positive-4 { @apply bg-success/40; }
+  .heatmap-negative-1 { @apply bg-destructive/10; }
+  .heatmap-negative-2 { @apply bg-destructive/20; }
+  .heatmap-negative-3 { @apply bg-destructive/30; }
+  .heatmap-negative-4 { @apply bg-destructive/40; }
+
+  /* Weight bar */
+  .weight-bar {
+    @apply h-1 bg-primary/30 relative overflow-hidden;
+  }
+
+  .weight-bar-fill {
+    @apply absolute left-0 top-0 h-full bg-primary;
   }
 }
 
@@ -247,6 +299,16 @@
 
   /* Dense grid for Bloomberg-style layouts */
   .grid-dense {
-    @apply gap-1;
+    @apply gap-px;
+  }
+
+  /* Blinking cursor animation */
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  .cursor-blink {
+    animation: blink 1s step-end infinite;
   }
 }
