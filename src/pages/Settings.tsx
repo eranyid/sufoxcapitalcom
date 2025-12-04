@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Currency } from '@/types/investment';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,19 +10,115 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
+const emailSchema = z.string().email({ message: "Invalid email address" });
+const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
+
 export default function Settings() {
   const { settings, updateSettings, transactions, valuations, refreshMetrics, clearAllData, sampleDataMode, setSampleDataMode } = usePortfolio();
+  const { user } = useAuth();
   
   const [riskFreeRate, setRiskFreeRate] = useState(settings.riskFreeRate.toString());
   const [baseCurrency, setBaseCurrency] = useState<Currency>(settings.baseCurrency);
   const [benchmarkReturns, setBenchmarkReturns] = useState(
     settings.benchmarkReturns.join(', ')
   );
+
+  // Account preferences state
+  const [displayName, setDisplayName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Load profile data
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .single();
+      if (data?.display_name) {
+        setDisplayName(data.display_name);
+      }
+    };
+    loadProfile();
+  }, [user]);
+
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+    setIsUpdatingProfile(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ display_name: displayName.trim() })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      toast.success('Profile updated');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    const validation = emailSchema.safeParse(newEmail);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+    
+    setIsUpdatingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) throw error;
+      toast.success('Confirmation email sent to your new address. Please check your inbox.');
+      setNewEmail('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update email');
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    const validation = passwordSchema.safeParse(newPassword);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success('Password updated successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update password');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   const handleSave = async () => {
     const returns = benchmarkReturns
@@ -53,8 +151,84 @@ export default function Settings() {
     <div className="space-y-6 animate-fade-in max-w-3xl">
       <div className="border-b border-border pb-4">
         <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Settings</h1>
-        <p className="text-muted-foreground text-sm mt-1 font-mono">Configure portfolio parameters</p>
+        <p className="text-muted-foreground text-sm mt-1 font-mono">Configure portfolio and account preferences</p>
       </div>
+
+      {/* Account Preferences */}
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-lg font-medium flex items-center gap-2">
+            <User className="h-5 w-5 text-primary" />
+            Account Preferences
+          </CardTitle>
+          <CardDescription>
+            Manage your profile, email, and password
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Display Name */}
+          <div className="space-y-2">
+            <Label>Display Name</Label>
+            <div className="flex gap-2">
+              <Input 
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your display name"
+              />
+              <Button onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
+                {isUpdatingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="space-y-2 pt-4 border-t border-border">
+            <Label className="flex items-center gap-2">
+              <Mail className="h-4 w-4" /> Change Email
+            </Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Current: {user?.email}
+            </p>
+            <div className="flex gap-2">
+              <Input 
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="New email address"
+              />
+              <Button onClick={handleUpdateEmail} disabled={isUpdatingEmail || !newEmail}>
+                {isUpdatingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              A confirmation email will be sent to your new address
+            </p>
+          </div>
+
+          {/* Password */}
+          <div className="space-y-3 pt-4 border-t border-border">
+            <Label className="flex items-center gap-2">
+              <Lock className="h-4 w-4" /> Change Password
+            </Label>
+            <Input 
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="New password"
+            />
+            <Input 
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+            />
+            <Button onClick={handleUpdatePassword} disabled={isUpdatingPassword || !newPassword || !confirmPassword}>
+              {isUpdatingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Update Password
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Risk Parameters */}
       <Card className="glass-card">
