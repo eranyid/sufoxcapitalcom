@@ -102,7 +102,8 @@ export function importTransactionsFromCSV(csvText: string): Transaction[] {
     pricePerUnit: parseFloat(row.pricePerUnit || row.price_per_unit || row.price) || 0,
     fees: parseFloat(row.fees) || 0,
     currency: (row.currency || 'USD') as Transaction['currency'],
-    geography: (row.geography || 'north_america') as Transaction['geography']
+    geography: (row.geography || 'north_america') as Transaction['geography'],
+    inceptionYear: row.inceptionYear || row.inception_year ? parseInt(row.inceptionYear || row.inception_year) : undefined
   }));
 }
 

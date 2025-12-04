@@ -10,13 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { exportToCSV, importTransactionsFromCSV } from '@/lib/storage';
+import { getKnownInceptionYear } from '@/lib/crashScenarios';
 import { Plus, Upload, Download, Trash2, Edit2, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund'];
 const TRANSACTION_TYPES: TransactionType[] = ['buy', 'sell'];
 const GEOGRAPHIES: Geography[] = ['north_america', 'europe', 'asia_pacific', 'emerging_markets', 'global', 'other'];
-const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
+const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'ILS', 'OTHER'];
 
 export default function Transactions() {
   const { transactions, addTransaction, deleteTransaction, importTransactions } = usePortfolio();
@@ -33,8 +34,21 @@ export default function Transactions() {
     pricePerUnit: '',
     fees: '',
     currency: 'USD' as Currency,
-    geography: 'north_america' as Geography
+    geography: 'north_america' as Geography,
+    inceptionYear: ''
   });
+
+  // Auto-fill inception year when ticker changes
+  const handleTickerChange = (ticker: string) => {
+    setForm(prev => {
+      const knownYear = getKnownInceptionYear(ticker.toUpperCase());
+      return { 
+        ...prev, 
+        ticker, 
+        inceptionYear: knownYear ? knownYear.toString() : prev.inceptionYear 
+      };
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,12 +62,13 @@ export default function Transactions() {
       pricePerUnit: parseFloat(form.pricePerUnit),
       fees: parseFloat(form.fees) || 0,
       currency: form.currency,
-      geography: form.geography
+      geography: form.geography,
+      inceptionYear: form.inceptionYear ? parseInt(form.inceptionYear) : undefined
     });
     setIsOpen(false);
     setForm({
       assetName: '', ticker: '', assetType: 'equity', transactionType: 'buy',
-      date: '', quantity: '', pricePerUnit: '', fees: '', currency: 'USD', geography: 'north_america'
+      date: '', quantity: '', pricePerUnit: '', fees: '', currency: 'USD', geography: 'north_america', inceptionYear: ''
     });
     toast.success('Transaction added successfully');
   };
@@ -127,7 +142,7 @@ export default function Transactions() {
                     <Label>Ticker</Label>
                     <Input 
                       value={form.ticker}
-                      onChange={(e) => setForm({ ...form, ticker: e.target.value })}
+                      onChange={(e) => handleTickerChange(e.target.value)}
                       placeholder="AAPL"
                       required
                     />
@@ -210,16 +225,29 @@ export default function Transactions() {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Geography</Label>
-                  <Select value={form.geography} onValueChange={(v: Geography) => setForm({ ...form, geography: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {GEOGRAPHIES.map(g => (
-                        <SelectItem key={g} value={g}>{g.replace(/_/g, ' ').toUpperCase()}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Geography</Label>
+                    <Select value={form.geography} onValueChange={(v: Geography) => setForm({ ...form, geography: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {GEOGRAPHIES.map(g => (
+                          <SelectItem key={g} value={g}>{g.replace(/_/g, ' ').toUpperCase()}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Inception Year (IPO/Launch)</Label>
+                    <Input 
+                      type="number"
+                      value={form.inceptionYear}
+                      onChange={(e) => setForm({ ...form, inceptionYear: e.target.value })}
+                      placeholder="e.g. 2009 for BTC"
+                      min="1900"
+                      max="2025"
+                    />
+                  </div>
                 </div>
                 <Button type="submit" className="w-full gradient-gold text-primary-foreground">
                   Add Transaction
