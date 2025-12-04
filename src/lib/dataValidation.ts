@@ -39,6 +39,85 @@ export interface MonteCarloValidationInput {
   distribution?: { count: number; percentage: number; midpoint: number }[];
 }
 
+// Lightweight Monte Carlo simulation for watchdog validation
+function generateNormalRandom(): number {
+  const u1 = Math.random();
+  const u2 = Math.random();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+
+function getPercentile(sortedValues: number[], percentile: number): number {
+  const index = Math.floor((percentile / 100) * sortedValues.length);
+  return sortedValues[Math.min(index, sortedValues.length - 1)];
+}
+
+export function runLightweightMonteCarlo(
+  monthlyReturns: number[],
+  currentValue: number,
+  numSimulations: number = 1000,
+  horizonYears: number = 5
+): MonteCarloValidationInput | null {
+  if (monthlyReturns.length < 3 || currentValue <= 0) {
+    return null;
+  }
+
+  // Convert to log returns
+  const logReturns = monthlyReturns.map(r => Math.log(1 + r / 100));
+  
+  // Calculate stats
+  const n = logReturns.length;
+  const mean = logReturns.reduce((a, b) => a + b, 0) / n;
+  const variance = logReturns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (n - 1);
+  const std = Math.sqrt(variance);
+
+  const totalSteps = horizonYears * 12;
+  const finalValues: number[] = [];
+
+  // Run simulations
+  for (let sim = 0; sim < numSimulations; sim++) {
+    let value = currentValue;
+    
+    for (let step = 0; step < totalSteps; step++) {
+      const z = generateNormalRandom();
+      const logReturn = mean - 0.5 * std * std + std * z;
+      value = value * Math.exp(logReturn);
+    }
+    
+    finalValues.push(value);
+  }
+
+  finalValues.sort((a, b) => a - b);
+
+  // Calculate metrics
+  const p5 = getPercentile(finalValues, 5);
+  const p25 = getPercentile(finalValues, 25);
+  const p50 = getPercentile(finalValues, 50);
+  const p75 = getPercentile(finalValues, 75);
+  const p95 = getPercentile(finalValues, 95);
+  
+  const probGain = (finalValues.filter(v => v > currentValue).length / finalValues.length) * 100;
+  const probLoss = 100 - probGain;
+  
+  const cutoffIndex = Math.floor(0.05 * numSimulations);
+  const var95 = ((p5 - currentValue) / currentValue) * 100;
+  const tailValues = finalValues.slice(0, cutoffIndex + 1);
+  const avgTailValue = tailValues.reduce((a, b) => a + b, 0) / tailValues.length;
+  const cvar95 = ((avgTailValue - currentValue) / currentValue) * 100;
+  const expectedValue = finalValues.reduce((a, b) => a + b, 0) / finalValues.length;
+
+  return {
+    numSimulations,
+    horizonYears,
+    horizonResults: [{
+      horizon: horizonYears,
+      p5, p25, p50, p75, p95,
+      probGain, probLoss,
+      var95, cvar95,
+      expectedValue
+    }]
+  };
+}
+
 const ALLOWED_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'ILS', 'OTHER'];
 
 function generateId(): string {
