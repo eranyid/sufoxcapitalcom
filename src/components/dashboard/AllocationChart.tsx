@@ -7,13 +7,13 @@ interface AllocationChartProps {
 }
 
 const COLORS = [
-  '#00FFFF',
-  '#F4D03F',
-  '#00FF00',
-  '#FF4D4D',
-  '#D0D0D0',
-  '#6B7280',
-  '#9CA3AF',
+  'hsl(var(--chart-gold))',
+  'hsl(var(--chart-blue))',
+  'hsl(var(--success))',
+  'hsl(var(--destructive))',
+  'hsl(var(--chart-white))',
+  'hsl(var(--warning))',
+  'hsl(var(--muted-foreground))',
 ];
 
 export function AllocationChart({ data, title }: AllocationChartProps) {
@@ -50,8 +50,6 @@ export function AllocationChart({ data, title }: AllocationChartProps) {
                 paddingAngle={1}
                 dataKey="percentage"
                 nameKey="name"
-                stroke="#000000"
-                strokeWidth={1}
               >
                 {data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -59,13 +57,12 @@ export function AllocationChart({ data, title }: AllocationChartProps) {
               </Pie>
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#121212', 
-                  border: '1px solid #1E1E1E',
+                  backgroundColor: 'hsl(var(--popover))', 
+                  border: '1px solid hsl(var(--border))',
                   borderRadius: '0',
                   fontSize: '11px',
-                  fontFamily: 'IBM Plex Mono'
+                  fontFamily: 'JetBrains Mono'
                 }}
-                labelStyle={{ color: '#00FFFF' }}
                 formatter={(value: number) => [`${value.toFixed(1)}%`]}
               />
             </PieChart>

@@ -14,35 +14,35 @@ export function DrawdownChart({ data }: DrawdownChartProps) {
         <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="1 3" stroke="#1F1F1F" />
+              <CartesianGrid strokeDasharray="1 3" stroke="hsl(var(--border))" opacity={0.5} />
               <XAxis 
                 dataKey="month" 
-                tick={{ fill: '#D0D0D0', fontSize: 9 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                 tickFormatter={(v) => v.slice(5)}
-                axisLine={{ stroke: '#1E1E1E' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <YAxis 
-                tick={{ fill: '#D0D0D0', fontSize: 9 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                 tickFormatter={(v) => `${v.toFixed(0)}%`}
-                axisLine={{ stroke: '#1E1E1E' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
                 width={35}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#121212', 
-                  border: '1px solid #1E1E1E',
+                  backgroundColor: 'hsl(var(--popover))', 
+                  border: '1px solid hsl(var(--border))',
                   borderRadius: '0',
                   fontSize: '11px',
-                  fontFamily: 'IBM Plex Mono'
+                  fontFamily: 'JetBrains Mono'
                 }}
-                labelStyle={{ color: '#00FFFF' }}
+                labelStyle={{ color: 'hsl(var(--primary))' }}
                 formatter={(value: number) => [`${value.toFixed(2)}%`, 'Drawdown']}
               />
               <Area 
                 type="monotone" 
                 dataKey="drawdown" 
-                stroke="#FF4D4D"
-                fill="rgba(255, 77, 77, 0.2)"
+                stroke="hsl(var(--destructive))"
+                fill="hsl(var(--destructive) / 0.2)"
                 strokeWidth={1.5}
               />
             </AreaChart>

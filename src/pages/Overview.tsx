@@ -8,10 +8,7 @@ import { CashManagement } from '@/components/dashboard/CashManagement';
 import { calculateAllocations } from '@/lib/calculations';
 import { generatePDFReport } from '@/lib/pdfReport';
 import { Button } from '@/components/ui/button';
-import { 
-  DollarSign, TrendingUp, TrendingDown, Activity, 
-  BarChart3, FileDown, FileSpreadsheet, Calendar
-} from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileDown } from 'lucide-react';
 
 export default function Overview() {
   const { transactions, valuations, performanceMetrics, riskMetrics, loading } = usePortfolio();
@@ -43,77 +40,45 @@ export default function Overview() {
 
   const hasData = performanceMetrics !== null;
 
-  // Calculate best/worst month
-  const bestMonth = hasData && performanceMetrics.monthlyReturns.length > 0
-    ? Math.max(...performanceMetrics.monthlyReturns.map(m => m.return))
-    : 0;
-  const worstMonth = hasData && performanceMetrics.monthlyReturns.length > 0
-    ? Math.min(...performanceMetrics.monthlyReturns.map(m => m.return))
-    : 0;
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent mx-auto mb-3" />
-          <p className="text-muted-foreground text-xs font-mono">LOADING PORTFOLIO DATA...</p>
+          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm font-mono">Loading portfolio data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3 animate-fade-in">
-      {/* Header Block */}
-      <div className="bloomberg-panel">
-        <div className="bloomberg-header justify-between">
-          <div className="flex items-center gap-4">
-            <span className="bloomberg-header-title">OVRV</span>
-            <span className="text-muted-foreground text-xxs font-mono">Portfolio Overview</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleExportPDF} variant="outline" size="sm" className="h-6 px-2 text-xxs font-mono uppercase gap-1">
-              <FileDown className="h-3 w-3" />
-              PDF
-            </Button>
-            <Button variant="outline" size="sm" className="h-6 px-2 text-xxs font-mono uppercase gap-1">
-              <FileSpreadsheet className="h-3 w-3" />
-              EXCEL
-            </Button>
-          </div>
+    <div className="space-y-4 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="terminal-label text-base">Portfolio Overview</h1>
+          <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Real-time performance snapshot</p>
         </div>
-        <div className="p-2 flex items-center justify-between text-xxs font-mono">
-          <div className="flex items-center gap-4">
-            <div>
-              <span className="text-muted-foreground">PORTFOLIO: </span>
-              <span className="text-foreground">SUFOX Capital Master Fund</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">INCEPTION: </span>
-              <span className="text-foreground">Jan 2024</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">BENCHMARK: </span>
-              <span className="text-foreground">SPX / 60-40</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            <span>Last Update: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+        <div className="flex items-center gap-3">
+          <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2">
+            <FileDown className="h-3 w-3" />
+            Export
+          </Button>
+          <div className="text-right">
+            <p className="terminal-label">Last Updated</p>
+            <p className="text-sm font-mono tabular-nums text-foreground">{new Date().toLocaleDateString()}</p>
           </div>
         </div>
       </div>
 
-      {/* KPI Grid - Row 1: Value & Returns */}
-      <div className="grid grid-cols-4 gap-px bg-border">
+      {/* Primary KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <KPICard
           title="Total Portfolio Value"
           value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
           icon={DollarSign}
           trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
-          trendValue={hasData ? `${performanceMetrics.totalPL >= 0 ? '+' : ''}${formatCurrency(performanceMetrics.totalPL)} P/L` : undefined}
-          tooltip="Current market value of all holdings"
-          size="lg"
+          trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
         />
         <KPICard
           title="Total Return"
@@ -121,84 +86,54 @@ export default function Overview() {
           icon={TrendingUp}
           trend={hasData && performanceMetrics.totalReturn >= 0 ? 'up' : 'down'}
           subtitle="Since inception"
-          tooltip="Time-weighted return since portfolio inception"
-          size="lg"
-        />
-        <KPICard
-          title="IRR"
-          value={hasData ? `${performanceMetrics.irr.toFixed(2)}%` : '0.00%'}
-          trend={hasData && performanceMetrics.irr >= 0 ? 'up' : 'down'}
-          subtitle="Internal Rate of Return"
-          tooltip="Money-weighted return accounting for cash flows"
-          size="lg"
-        />
-        <KPICard
-          title="TWR"
-          value={hasData ? formatPercent(performanceMetrics.twr) : '0.00%'}
-          trend={hasData && performanceMetrics.twr >= 0 ? 'up' : 'down'}
-          subtitle="Time-Weighted Return"
-          tooltip="Return excluding impact of cash flows"
-          size="lg"
-        />
-      </div>
-
-      {/* KPI Grid - Row 2: Risk */}
-      <div className="grid grid-cols-4 gap-px bg-border">
-        <KPICard
-          title="Volatility"
-          value={hasData ? `${performanceMetrics.volatility.toFixed(2)}%` : '0.00%'}
-          icon={Activity}
-          subtitle="Annualized"
-          tooltip="Standard deviation of monthly returns, annualized"
         />
         <KPICard
           title="Sharpe Ratio"
           value={hasData ? performanceMetrics.sharpeRatio.toFixed(2) : '0.00'}
+          icon={Activity}
           trend={hasData && performanceMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
-          subtitle="Risk-Adj Return"
-          tooltip="Excess return per unit of risk (higher is better)"
+          subtitle="Risk-adjusted return"
         />
         <KPICard
           title="Max Drawdown"
           value={hasData ? `-${performanceMetrics.maxDrawdown.toFixed(2)}%` : '0.00%'}
           icon={TrendingDown}
           trend="down"
-          subtitle="Peak to Trough"
-          tooltip="Largest decline from peak to trough"
-        />
-        <KPICard
-          title="Win/Loss Ratio"
-          value={hasData ? performanceMetrics.winLossRatio.toFixed(2) : '0.00'}
-          subtitle="Positive/Negative Months"
-          tooltip="Ratio of winning months to losing months"
+          subtitle="Peak to trough"
         />
       </div>
 
-      {/* KPI Grid - Row 3: P&L */}
-      <div className="grid grid-cols-4 gap-px bg-border">
-        <KPICard
-          title="Unrealized P/L"
-          value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
-          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
-          tooltip="Profit/Loss on open positions"
-        />
+      {/* Secondary KPIs */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
           trend={hasData && performanceMetrics.realizedPL >= 0 ? 'up' : 'down'}
-          tooltip="Profit/Loss on closed positions"
         />
         <KPICard
-          title="Best Month"
-          value={hasData ? formatPercent(bestMonth) : '0.00%'}
-          trend="up"
-          tooltip="Best performing month"
+          title="Unrealized P/L"
+          value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
+          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
         />
         <KPICard
-          title="Worst Month"
-          value={hasData ? formatPercent(worstMonth) : '0.00%'}
-          trend="down"
-          tooltip="Worst performing month"
+          title="Volatility"
+          value={hasData ? `${performanceMetrics.volatility.toFixed(2)}%` : '0.00%'}
+          subtitle="Annualized"
+        />
+        <KPICard
+          title="IRR"
+          value={hasData ? `${performanceMetrics.irr.toFixed(2)}%` : '0.00%'}
+          trend={hasData && performanceMetrics.irr >= 0 ? 'up' : 'down'}
+        />
+        <KPICard
+          title="TWR"
+          value={hasData ? formatPercent(performanceMetrics.twr) : '0.00%'}
+          trend={hasData && performanceMetrics.twr >= 0 ? 'up' : 'down'}
+        />
+        <KPICard
+          title="Win/Loss"
+          value={hasData ? performanceMetrics.winLossRatio.toFixed(2) : '0.00'}
+          subtitle="Ratio"
         />
       </div>
 
@@ -213,7 +148,7 @@ export default function Overview() {
       {/* Charts Row 1 */}
       {hasData ? (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-border">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             <PerformanceChart 
               data={performanceMetrics.monthlyReturns}
               title="Monthly & Cumulative Returns"
@@ -224,16 +159,16 @@ export default function Overview() {
           </div>
 
           {/* Allocation Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <AllocationChart data={assetTypeAllocation} title="Asset Class Allocation" />
             <AllocationChart data={geographyAllocation} title="Geographic Allocation" />
           </div>
         </>
       ) : (
-        <div className="bloomberg-panel p-6 text-center">
-          <BarChart3 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-          <h3 className="text-sm font-mono font-medium mb-1 text-primary">NO DATA AVAILABLE</h3>
-          <p className="text-muted-foreground text-xxs font-mono max-w-md mx-auto">
+        <div className="bloomberg-panel p-8 text-center">
+          <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <h3 className="text-sm font-medium mb-1 text-primary">No Data Available</h3>
+          <p className="text-muted-foreground text-xs max-w-md mx-auto">
             Add transactions and monthly valuations to see portfolio analytics.
           </p>
         </div>

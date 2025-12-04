@@ -9,9 +9,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Scan,
-  Briefcase,
-  FlaskConical,
-  LogOut
+  Settings2,
+  LogOut,
+  FlaskConical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -19,15 +19,15 @@ import { useAuth } from '@/hooks/useAuth';
 import sufoxLogo from '@/assets/sufox-logo.png';
 
 const navItems = [
-  { path: '/', code: 'OVRV', icon: LayoutDashboard },
-  { path: '/performance', code: 'PERF', icon: TrendingUp },
-  { path: '/risk', code: 'RISK', icon: Shield },
-  { path: '/scenarios', code: 'SCN', icon: FlaskConical },
-  { path: '/xray', code: 'XRAY', icon: Scan },
-  { path: '/transactions', code: 'TXN', icon: ArrowRightLeft },
-  { path: '/valuations', code: 'VAL', icon: Calendar },
-  { path: '/management', code: 'MGMT', icon: Briefcase },
-  { path: '/settings', code: 'SET', icon: Settings },
+  { path: '/', icon: LayoutDashboard, label: 'OVERVIEW' },
+  { path: '/performance', icon: TrendingUp, label: 'PERFORMANCE' },
+  { path: '/risk', icon: Shield, label: 'RISK' },
+  { path: '/scenarios', icon: FlaskConical, label: 'SCENARIOS' },
+  { path: '/xray', icon: Scan, label: 'X-RAY' },
+  { path: '/management', icon: Settings2, label: 'MANAGEMENT' },
+  { path: '/transactions', icon: ArrowRightLeft, label: 'TRANSACTIONS' },
+  { path: '/valuations', icon: Calendar, label: 'VALUATIONS' },
+  { path: '/settings', icon: Settings, label: 'SETTINGS' },
 ];
 
 export function Sidebar() {
@@ -35,107 +35,86 @@ export function Sidebar() {
   const { user, signOut } = useAuth();
 
   return (
-    <aside 
-      className={cn(
-        "h-screen flex flex-col transition-all duration-150",
-        collapsed ? "w-14" : "w-40"
-      )}
-      style={{ backgroundColor: '#000000', borderRight: '1px solid #1E1E1E' }}
-    >
+    <aside className={cn(
+      "h-screen bg-sidebar flex flex-col transition-all duration-200",
+      collapsed ? "w-12" : "w-56"
+    )}>
       {/* Bloomberg gradient bar */}
       <div className="bloomberg-gradient-bar" />
       
       {/* Logo */}
-      <div 
-        className={cn(
-          "px-2 py-2 flex items-center",
-          collapsed ? "justify-center" : "justify-between"
-        )}
-        style={{ borderBottom: '1px solid #1E1E1E' }}
-      >
+      <div className={cn(
+        "px-2 py-3 border-b border-sidebar-border flex items-center",
+        collapsed ? "justify-center" : "justify-between"
+      )}>
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <img src={sufoxLogo} alt="SUFOX Capital" className="h-6 w-6 object-contain" />
+            <img src={sufoxLogo} alt="SUFOX Capital" className="h-7 w-7 object-contain" />
             <div>
-              <h1 className="text-xs font-semibold tracking-widest font-mono" style={{ color: '#00FFFF' }}>SUFOX</h1>
-              <p className="text-xxs font-mono tracking-widest" style={{ color: '#D0D0D0' }}>CAPITAL</p>
+              <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
+              <p className="text-[9px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
             </div>
           </div>
         )}
         {collapsed && (
-          <img src={sufoxLogo} alt="SUFOX" className="h-5 w-5 object-contain" />
+          <img src={sufoxLogo} alt="SUFOX" className="h-6 w-6 object-contain" />
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            "p-1 transition-colors",
-            collapsed && "absolute left-14 top-3 z-10"
+            "p-1 hover:bg-sidebar-accent text-muted-foreground hover:text-primary transition-colors",
+            collapsed && "absolute left-12 top-4 bg-sidebar border border-sidebar-border z-10"
           )}
-          style={{ 
-            color: '#D0D0D0',
-            backgroundColor: collapsed ? '#000000' : 'transparent',
-            border: collapsed ? '1px solid #1E1E1E' : 'none'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.color = '#F4D03F'}
-          onMouseLeave={(e) => e.currentTarget.style.color = '#D0D0D0'}
         >
-          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-1">
-        {navItems.map(({ path, code, icon: Icon }) => (
+      <nav className="flex-1 py-2 space-y-0.5">
+        {navItems.map(({ path, icon: Icon, label }) => (
           <NavLink
             key={path}
             to={path}
             className={({ isActive }) => cn(
-              "nav-link mx-1 my-px",
+              "nav-link mx-1",
               isActive && "active"
             )}
           >
-            <Icon size={12} />
-            {!collapsed && (
-              <span className="font-semibold">{code}</span>
-            )}
+            <Icon size={14} />
+            {!collapsed && <span className="text-[11px] tracking-wide">{label}</span>}
           </NavLink>
         ))}
       </nav>
 
       {/* User & Sign Out */}
-      <div className="p-2 space-y-1" style={{ borderTop: '1px solid #1E1E1E' }}>
+      <div className="border-t border-sidebar-border p-2 space-y-2">
         {!collapsed && user && (
           <div className="px-2 py-1">
-            <p className="text-xxs uppercase tracking-widest font-mono" style={{ color: '#D0D0D0' }}>USER</p>
-            <p className="text-xs truncate font-mono" style={{ color: '#FFFFFF' }}>{user.email?.split('@')[0]}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Signed in as</p>
+            <p className="text-xs text-foreground truncate font-mono">{user.email}</p>
           </div>
         )}
         <button
           onClick={signOut}
           className={cn(
-            "w-full flex items-center gap-2 px-2 py-1 text-xs font-mono uppercase tracking-wider transition-colors",
+            "w-full flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded",
             collapsed && "justify-center"
           )}
-          style={{ color: '#D0D0D0' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#FF4D4D';
-            e.currentTarget.style.backgroundColor = 'rgba(255, 77, 77, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#D0D0D0';
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
         >
-          <LogOut size={12} />
-          {!collapsed && <span className="text-xxs">LOGOUT</span>}
+          <LogOut size={14} />
+          {!collapsed && <span className="text-[11px] tracking-wide">SIGN OUT</span>}
         </button>
       </div>
 
       {/* Footer */}
       {!collapsed && (
-        <div className="px-2 py-1" style={{ borderTop: '1px solid #1E1E1E' }}>
-          <p className="text-xxs font-mono text-center tracking-widest" style={{ color: '#00FFFF' }}>
-            TERMINAL v2.0
+        <div className="px-2 py-2 border-t border-sidebar-border">
+          <p className="text-[9px] text-primary font-mono text-center tracking-widest">
+            TERMINAL v1.0
+          </p>
+          <p className="text-[8px] text-muted-foreground font-mono text-center mt-0.5">
+            {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
           </p>
         </div>
       )}

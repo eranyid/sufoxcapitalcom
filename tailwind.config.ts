@@ -7,15 +7,15 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "1rem",
+      padding: "2rem",
       screens: {
-        "2xl": "1600px",
+        "2xl": "1400px",
       },
     },
     extend: {
       fontFamily: {
         sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
-        mono: ['IBM Plex Mono', 'Consolas', 'Monaco', 'monospace'],
+        mono: ['JetBrains Mono', 'Consolas', 'Monaco', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -60,14 +60,11 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         chart: {
-          positive: "#00FF00",
-          negative: "#FF4D4D",
-          neutral: "#D0D0D0",
-          turquoise: "#00FFFF",
-          yellow: "#F4D03F",
-          blue: "#00FFFF",
-          orange: "#F4D03F",
-          gridline: "#1F1F1F",
+          positive: "hsl(var(--chart-positive))",
+          negative: "hsl(var(--chart-negative))",
+          neutral: "hsl(var(--chart-neutral))",
+          gold: "hsl(var(--chart-gold))",
+          navy: "hsl(var(--chart-navy))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -82,18 +79,8 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "var(--radius)",
-        sm: "var(--radius)",
-      },
-      fontSize: {
-        'xxs': '9px',
-        'xs': '10px',
-        'sm': '11px',
-        'base': '12px',
-        'lg': '14px',
-        'xl': '16px',
-        '2xl': '20px',
-        '3xl': '24px',
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
         "accordion-down": {
@@ -105,7 +92,7 @@ export default {
           to: { height: "0" },
         },
         "fade-in": {
-          from: { opacity: "0", transform: "translateY(4px)" },
+          from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
         "slide-in": {
@@ -114,10 +101,10 @@ export default {
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.15s ease-out",
-        "accordion-up": "accordion-up 0.15s ease-out",
-        "fade-in": "fade-in 0.2s ease-out",
-        "slide-in": "slide-in 0.2s ease-out",
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "slide-in": "slide-in 0.3s ease-out",
       },
     },
   },

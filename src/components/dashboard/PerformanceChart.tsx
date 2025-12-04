@@ -13,6 +13,7 @@ export function PerformanceChart({
   data, 
   title = "Performance", 
   dataKey = "return",
+  color = "hsl(var(--chart-blue))",
   showCumulative = false,
   cumulativeData
 }: PerformanceChartProps) {
@@ -32,38 +33,38 @@ export function PerformanceChart({
         <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="1 3" stroke="#1F1F1F" />
+              <CartesianGrid strokeDasharray="1 3" stroke="hsl(var(--border))" opacity={0.5} />
               <XAxis 
                 dataKey="month" 
-                tick={{ fill: '#D0D0D0', fontSize: 9 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                 tickFormatter={(v) => v.slice(5)}
-                axisLine={{ stroke: '#1E1E1E' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <YAxis 
-                tick={{ fill: '#D0D0D0', fontSize: 9 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                 tickFormatter={(v) => `${v.toFixed(0)}%`}
-                axisLine={{ stroke: '#1E1E1E' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
                 width={35}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#121212', 
-                  border: '1px solid #1E1E1E',
+                  backgroundColor: 'hsl(var(--popover))', 
+                  border: '1px solid hsl(var(--border))',
                   borderRadius: '0',
                   fontSize: '11px',
-                  fontFamily: 'IBM Plex Mono'
+                  fontFamily: 'JetBrains Mono'
                 }}
-                labelStyle={{ color: '#00FFFF' }}
+                labelStyle={{ color: 'hsl(var(--primary))' }}
                 formatter={(value: number) => [`${value.toFixed(2)}%`]}
               />
               <Legend 
                 wrapperStyle={{ fontSize: '10px' }}
-                formatter={(value) => <span style={{ color: '#D0D0D0' }}>{value}</span>}
+                formatter={(value) => <span className="text-muted-foreground">{value}</span>}
               />
               <Line 
                 type="monotone" 
                 dataKey={dataKey} 
-                stroke="#00FF00"
+                stroke="hsl(var(--chart-blue))"
                 strokeWidth={1.5}
                 dot={false}
                 name="Monthly"
@@ -72,7 +73,7 @@ export function PerformanceChart({
                 <Line 
                   type="monotone" 
                   dataKey="cumulative" 
-                  stroke="#00FFFF"
+                  stroke="hsl(var(--chart-gold))"
                   strokeWidth={1.5}
                   dot={false}
                   name="Cumulative"

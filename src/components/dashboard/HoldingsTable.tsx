@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface HoldingsTableProps {
@@ -91,8 +92,8 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
   const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
     if (sortKey !== columnKey) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50" />;
     return sortDirection === 'asc' 
-      ? <ArrowUp className="h-3 w-3 ml-1" style={{ color: '#00FFFF' }} />
-      : <ArrowDown className="h-3 w-3 ml-1" style={{ color: '#00FFFF' }} />;
+      ? <ArrowUp className="h-3 w-3 ml-1 text-primary" />
+      : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
   };
 
   const formatCurrency = (value: number) => {
@@ -119,78 +120,73 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
   return (
     <div className="bloomberg-panel">
       <div className="bloomberg-header">
-        <span style={{ color: '#00FFFF' }}>■</span> 
-        <span style={{ color: '#00FFFF', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'IBM Plex Mono' }}>Current Holdings</span>
+        <span className="text-primary">■</span> Current Holdings
       </div>
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow style={{ borderColor: '#1E1E1E' }} className="hover:bg-transparent">
+            <TableRow className="border-border/30 hover:bg-transparent">
               <TableHead 
-                className="cursor-pointer transition-colors"
+                className="terminal-label cursor-pointer hover:text-primary transition-colors"
                 onClick={() => handleSort('ticker')}
-                style={{ color: '#00FFFF', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(18, 18, 18, 0.5)' }}
               >
                 <span className="flex items-center">Ticker<SortIcon columnKey="ticker" /></span>
               </TableHead>
-              <TableHead style={{ color: '#00FFFF', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(18, 18, 18, 0.5)' }}>Name</TableHead>
+              <TableHead className="terminal-label">Name</TableHead>
               <TableHead 
-                className="text-right cursor-pointer transition-colors"
+                className="terminal-label text-right cursor-pointer hover:text-primary transition-colors"
                 onClick={() => handleSort('quantity')}
-                style={{ color: '#00FFFF', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(18, 18, 18, 0.5)' }}
               >
                 <span className="flex items-center justify-end">Qty<SortIcon columnKey="quantity" /></span>
               </TableHead>
-              <TableHead className="text-right" style={{ color: '#00FFFF', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(18, 18, 18, 0.5)' }}>Avg Cost</TableHead>
-              <TableHead className="text-right" style={{ color: '#00FFFF', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(18, 18, 18, 0.5)' }}>Price</TableHead>
+              <TableHead className="terminal-label text-right">Avg Cost</TableHead>
+              <TableHead className="terminal-label text-right">Price</TableHead>
               <TableHead 
-                className="text-right cursor-pointer transition-colors"
+                className="terminal-label text-right cursor-pointer hover:text-primary transition-colors"
                 onClick={() => handleSort('currentValue')}
-                style={{ color: '#00FFFF', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(18, 18, 18, 0.5)' }}
               >
                 <span className="flex items-center justify-end">Value<SortIcon columnKey="currentValue" /></span>
               </TableHead>
               <TableHead 
-                className="text-right cursor-pointer transition-colors"
+                className="terminal-label text-right cursor-pointer hover:text-primary transition-colors"
                 onClick={() => handleSort('plPercent')}
-                style={{ color: '#00FFFF', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(18, 18, 18, 0.5)' }}
               >
                 <span className="flex items-center justify-end">P/L %<SortIcon columnKey="plPercent" /></span>
               </TableHead>
-              <TableHead className="text-right" style={{ color: '#00FFFF', fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(18, 18, 18, 0.5)' }}>P/L $</TableHead>
+              <TableHead className="terminal-label text-right">P/L $</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {holdings.map((holding) => (
-              <TableRow key={holding.ticker} style={{ borderColor: 'rgba(30, 30, 30, 0.3)' }} className="hover:bg-[#1E1E1E]/50">
-                <TableCell className="font-mono text-xs font-medium" style={{ color: '#00FFFF' }}>
+              <TableRow key={holding.ticker} className="border-border/20 hover:bg-primary/5">
+                <TableCell className="font-mono text-xs text-primary font-medium">
                   {holding.ticker}
                 </TableCell>
-                <TableCell className="font-mono text-xs" style={{ color: '#D0D0D0' }}>
+                <TableCell className="font-mono text-xs text-muted-foreground">
                   {holding.name}
                 </TableCell>
-                <TableCell className="font-mono text-xs text-right tabular-nums" style={{ color: '#FFFFFF' }}>
+                <TableCell className="font-mono text-xs text-right tabular-nums">
                   {formatQuantity(holding.quantity)}
                 </TableCell>
-                <TableCell className="font-mono text-xs text-right tabular-nums" style={{ color: '#D0D0D0' }}>
+                <TableCell className="font-mono text-xs text-right tabular-nums text-muted-foreground">
                   {formatCurrency(holding.avgCost)}
                 </TableCell>
-                <TableCell className="font-mono text-xs text-right tabular-nums" style={{ color: '#FFFFFF' }}>
+                <TableCell className="font-mono text-xs text-right tabular-nums">
                   {formatCurrency(holding.currentPrice)}
                 </TableCell>
-                <TableCell className="font-mono text-xs text-right tabular-nums font-medium" style={{ color: '#FFFFFF' }}>
+                <TableCell className="font-mono text-xs text-right tabular-nums font-medium">
                   {formatCurrency(holding.currentValue)}
                 </TableCell>
-                <TableCell 
-                  className="font-mono text-xs text-right tabular-nums font-medium"
-                  style={{ color: holding.plPercent >= 0 ? '#00FF00' : '#FF4D4D' }}
-                >
+                <TableCell className={cn(
+                  "font-mono text-xs text-right tabular-nums font-medium",
+                  holding.plPercent >= 0 ? "text-success" : "text-destructive"
+                )}>
                   {formatPercent(holding.plPercent)}
                 </TableCell>
-                <TableCell 
-                  className="font-mono text-xs text-right tabular-nums font-medium"
-                  style={{ color: holding.plAmount >= 0 ? '#00FF00' : '#FF4D4D' }}
-                >
+                <TableCell className={cn(
+                  "font-mono text-xs text-right tabular-nums font-medium",
+                  holding.plAmount >= 0 ? "text-success" : "text-destructive"
+                )}>
                   {formatCurrency(holding.plAmount)}
                 </TableCell>
               </TableRow>
