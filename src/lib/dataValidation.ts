@@ -17,6 +17,28 @@ export type DataValidationResult = {
   timestamp: Date;
 };
 
+// Monte Carlo result types for validation
+export interface MonteCarloHorizonResult {
+  horizon: number;
+  p5: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p95: number;
+  probGain: number;
+  probLoss: number;
+  var95: number;
+  cvar95: number;
+  expectedValue: number;
+}
+
+export interface MonteCarloValidationInput {
+  numSimulations: number;
+  horizonYears: number;
+  horizonResults: MonteCarloHorizonResult[];
+  distribution?: { count: number; percentage: number; midpoint: number }[];
+}
+
 const ALLOWED_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'ILS', 'OTHER'];
 
 function generateId(): string {
@@ -392,6 +414,139 @@ function validateSettings(settings: PortfolioSettings): DataIssue[] {
   return issues;
 }
 
+function validateMonteCarlo(monteCarloInput: MonteCarloValidationInput | null): DataIssue[] {
+  const issues: DataIssue[] = [];
+
+  if (!monteCarloInput) {
+    return issues;
+  }
+
+  const { numSimulations, horizonYears, horizonResults, distribution } = monteCarloInput;
+
+  // Validate configuration
+  if (numSimulations <= 0) {
+    issues.push({
+      id: generateId(),
+      severity: 'error',
+      section: 'MonteCarlo',
+      message: `Number of simulations must be positive (got ${numSimulations})`,
+      route: '/risk'
+    });
+  }
+
+  if (horizonYears <= 0) {
+    issues.push({
+      id: generateId(),
+      severity: 'error',
+      section: 'MonteCarlo',
+      message: `Simulation horizon must be positive (got ${horizonYears} years)`,
+      route: '/risk'
+    });
+  }
+
+  // Validate horizon results
+  horizonResults.forEach((result, idx) => {
+    const invalidFields: string[] = [];
+
+    // Check all numeric fields for NaN/Infinity
+    const fieldsToCheck = [
+      { name: 'p5', value: result.p5 },
+      { name: 'p25', value: result.p25 },
+      { name: 'p50', value: result.p50 },
+      { name: 'p75', value: result.p75 },
+      { name: 'p95', value: result.p95 },
+      { name: 'probGain', value: result.probGain },
+      { name: 'probLoss', value: result.probLoss },
+      { name: 'VaR95', value: result.var95 },
+      { name: 'CVaR95', value: result.cvar95 },
+      { name: 'expectedValue', value: result.expectedValue },
+    ];
+
+    fieldsToCheck.forEach(({ name, value }) => {
+      if (isNaN(value)) {
+        invalidFields.push(`${name}=NaN`);
+      } else if (!isFinite(value)) {
+        invalidFields.push(`${name}=Infinity`);
+      }
+    });
+
+    if (invalidFields.length > 0) {
+      issues.push({
+        id: generateId(),
+        severity: 'error',
+        section: 'MonteCarlo',
+        message: `Simulation result for ${result.horizon}Y horizon contains invalid values`,
+        details: `Invalid fields: ${invalidFields.join(', ')}`,
+        route: '/risk'
+      });
+    }
+
+    // Check for negative values where they shouldn't be
+    if (result.p5 < 0 || result.p25 < 0 || result.p50 < 0 || result.p75 < 0 || result.p95 < 0) {
+      issues.push({
+        id: generateId(),
+        severity: 'warning',
+        section: 'MonteCarlo',
+        message: `${result.horizon}Y horizon shows negative portfolio values`,
+        details: `This indicates potential total loss scenarios in the simulation.`,
+        route: '/risk'
+      });
+    }
+
+    // Check probability sanity
+    if (result.probGain < 0 || result.probGain > 100 || result.probLoss < 0 || result.probLoss > 100) {
+      issues.push({
+        id: generateId(),
+        severity: 'error',
+        section: 'MonteCarlo',
+        message: `${result.horizon}Y horizon has invalid probability values`,
+        details: `Probabilities should be between 0% and 100%.`,
+        route: '/risk'
+      });
+    }
+  });
+
+  // Validate distribution if provided
+  if (distribution && distribution.length > 0) {
+    let hasInvalidDistribution = false;
+    let invalidCount = 0;
+
+    distribution.forEach(bin => {
+      if (isNaN(bin.count) || !isFinite(bin.count) ||
+          isNaN(bin.percentage) || !isFinite(bin.percentage) ||
+          isNaN(bin.midpoint) || !isFinite(bin.midpoint)) {
+        hasInvalidDistribution = true;
+        invalidCount++;
+      }
+    });
+
+    if (hasInvalidDistribution) {
+      issues.push({
+        id: generateId(),
+        severity: 'error',
+        section: 'MonteCarlo',
+        message: `Distribution histogram contains ${invalidCount} invalid bin(s)`,
+        details: `NaN or Infinity values detected in distribution data.`,
+        route: '/risk'
+      });
+    }
+
+    // Check if percentages sum to ~100%
+    const totalPercentage = distribution.reduce((sum, bin) => sum + bin.percentage, 0);
+    if (Math.abs(totalPercentage - 100) > 1) {
+      issues.push({
+        id: generateId(),
+        severity: 'warning',
+        section: 'MonteCarlo',
+        message: `Distribution percentages sum to ${totalPercentage.toFixed(1)}% (expected ~100%)`,
+        route: '/risk'
+      });
+    }
+  }
+
+  return issues;
+}
+
 export interface ValidationInput {
   transactions: Transaction[];
   valuations: MonthlyValuation[];
@@ -399,6 +554,7 @@ export interface ValidationInput {
   cashBalances: CashBalances;
   performanceMetrics: PerformanceMetrics | null;
   riskMetrics: RiskMetrics | null;
+  monteCarloInput?: MonteCarloValidationInput | null;
 }
 
 export function validatePortfolioData(input: ValidationInput): DataValidationResult {
@@ -410,6 +566,7 @@ export function validatePortfolioData(input: ValidationInput): DataValidationRes
   issues.push(...validateCashBalances(input.cashBalances));
   issues.push(...validateRiskMetrics(input.riskMetrics, input.performanceMetrics));
   issues.push(...validateSettings(input.settings));
+  issues.push(...validateMonteCarlo(input.monteCarloInput || null));
 
   // Sort by severity: error > warning > info
   const severityOrder: Record<DataIssueSeverity, number> = { error: 0, warning: 1, info: 2 };
