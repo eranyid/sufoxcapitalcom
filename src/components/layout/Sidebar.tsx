@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Scan,
   Settings2,
-  LogOut
+  LogOut,
+  FlaskConical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -21,6 +22,7 @@ const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'OVERVIEW' },
   { path: '/performance', icon: TrendingUp, label: 'PERFORMANCE' },
   { path: '/risk', icon: Shield, label: 'RISK' },
+  { path: '/scenarios', icon: FlaskConical, label: 'SCENARIOS' },
   { path: '/xray', icon: Scan, label: 'X-RAY' },
   { path: '/management', icon: Settings2, label: 'MANAGEMENT' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'TRANSACTIONS' },
