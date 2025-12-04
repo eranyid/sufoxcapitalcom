@@ -40,15 +40,15 @@ export function DashboardLayout() {
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full" style={{ backgroundColor: '#000000' }}>
       <Sidebar />
       <main className="flex-1 overflow-auto flex flex-col">
         {/* Top status bar - Bloomberg style */}
-        <div className="bg-secondary border-b border-border px-3 py-1 flex items-center justify-between text-xxs shrink-0">
+        <div className="px-3 py-1 flex items-center justify-between text-xxs shrink-0" style={{ backgroundColor: '#121212', borderBottom: '1px solid #1E1E1E' }}>
           <div className="flex items-center gap-4">
-            <span className="text-primary font-mono font-semibold tracking-widest">SUFOX CAPITAL</span>
-            <span className="text-muted-foreground font-mono">│</span>
-            <span className="text-muted-foreground font-mono">Portfolio & Risk Analytics Terminal</span>
+            <span className="font-mono font-semibold tracking-widest" style={{ color: '#00FFFF' }}>SUFOX CAPITAL</span>
+            <span className="font-mono" style={{ color: '#D0D0D0' }}>│</span>
+            <span className="font-mono" style={{ color: '#D0D0D0' }}>Portfolio & Risk Analytics Terminal</span>
             {sampleDataMode && (
               <span className="status-badge status-badge-warning">
                 <Database className="h-2.5 w-2.5" />
@@ -60,23 +60,23 @@ export function DashboardLayout() {
           {/* Command Bar */}
           <CommandBar />
           
-          <div className="flex items-center gap-3 font-mono text-muted-foreground">
+          <div className="flex items-center gap-3 font-mono" style={{ color: '#D0D0D0' }}>
             <DataWatchdogStatus
               status={status}
               errorCount={errorCount}
               warningCount={warningCount}
               onClick={() => setWatchdogPanelOpen(true)}
             />
-            <span className="text-muted-foreground">│</span>
+            <span style={{ color: '#D0D0D0' }}>│</span>
             <span>USD</span>
-            <span className="text-primary">{formatDateTime(currentTime)}</span>
+            <span style={{ color: '#00FFFF' }}>{formatDateTime(currentTime)}</span>
           </div>
         </div>
 
         {/* Manual data badge */}
-        <div className="bg-card border-b border-border px-3 py-0.5 flex items-center justify-between text-xxs shrink-0">
+        <div className="px-3 py-0.5 flex items-center justify-between text-xxs shrink-0" style={{ backgroundColor: '#121212', borderBottom: '1px solid #1E1E1E' }}>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground font-mono">STATUS:</span>
+            <span className="font-mono" style={{ color: '#D0D0D0' }}>STATUS:</span>
             <span className={cn(
               "status-badge",
               status === 'ok' && "status-badge-ok",
@@ -88,18 +88,18 @@ export function DashboardLayout() {
               {status === 'error' && <AlertCircle className="h-2.5 w-2.5" />}
               {status.toUpperCase()}
             </span>
-            <span className="text-muted-foreground font-mono">│</span>
-            <span className="text-muted-foreground font-mono">MANUAL MONTHLY UPDATES</span>
+            <span className="font-mono" style={{ color: '#D0D0D0' }}>│</span>
+            <span className="font-mono" style={{ color: '#D0D0D0' }}>MANUAL MONTHLY UPDATES</span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground font-mono">
+          <div className="flex items-center gap-2 font-mono" style={{ color: '#D0D0D0' }}>
             <span>Press</span>
-            <kbd className="px-1 py-0.5 bg-muted text-foreground text-xxs">/</kbd>
+            <kbd className="px-1 py-0.5 text-xxs" style={{ backgroundColor: '#1E1E1E', color: '#FFFFFF' }}>/</kbd>
             <span>for command bar</span>
           </div>
         </div>
 
         {/* Main content */}
-        <div className="flex-1 p-3 overflow-auto">
+        <div className="flex-1 p-3 overflow-auto" style={{ backgroundColor: '#000000' }}>
           <Outlet />
         </div>
       </main>
