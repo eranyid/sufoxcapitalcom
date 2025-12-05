@@ -195,6 +195,7 @@ export type Database = {
           created_at: string
           id: string
           risk_free_rate: number | null
+          rss_feed_url: string | null
           updated_at: string
           user_id: string
         }
@@ -204,6 +205,7 @@ export type Database = {
           created_at?: string
           id?: string
           risk_free_rate?: number | null
+          rss_feed_url?: string | null
           updated_at?: string
           user_id: string
         }
@@ -213,6 +215,7 @@ export type Database = {
           created_at?: string
           id?: string
           risk_free_rate?: number | null
+          rss_feed_url?: string | null
           updated_at?: string
           user_id?: string
         }

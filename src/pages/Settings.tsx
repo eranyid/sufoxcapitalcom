@@ -34,6 +34,10 @@ export default function Settings() {
     settings.benchmarkReturns.join(', ')
   );
 
+  // RSS Feed state
+  const [rssFeedUrl, setRssFeedUrl] = useState('');
+  const [isSavingRss, setIsSavingRss] = useState(false);
+
   // Account preferences state
   const [displayName, setDisplayName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -66,6 +70,53 @@ export default function Settings() {
     };
     loadProfile();
   }, [user]);
+
+  // Load RSS feed URL
+  useEffect(() => {
+    const loadRssFeed = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('portfolio_settings')
+        .select('rss_feed_url')
+        .eq('user_id', user.id)
+        .single();
+      if (data?.rss_feed_url) {
+        setRssFeedUrl(data.rss_feed_url);
+      }
+    };
+    loadRssFeed();
+  }, [user]);
+
+  const handleSaveRssFeed = async () => {
+    if (!user) return;
+    setIsSavingRss(true);
+    try {
+      // Check if settings exist
+      const { data: existing } = await supabase
+        .from('portfolio_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (existing) {
+        const { error } = await supabase
+          .from('portfolio_settings')
+          .update({ rss_feed_url: rssFeedUrl || null })
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('portfolio_settings')
+          .insert({ user_id: user.id, rss_feed_url: rssFeedUrl || null });
+        if (error) throw error;
+      }
+      toast.success('RSS feed URL saved');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save RSS feed URL');
+    } finally {
+      setIsSavingRss(false);
+    }
+  };
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -423,6 +474,38 @@ export default function Settings() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* News Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SettingsIcon className="h-5 w-5 text-primary" />
+            News Ticker Settings
+          </CardTitle>
+          <CardDescription>
+            Configure the RSS feed for the live news ticker on the Overview page
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>RSS Feed URL</Label>
+            <div className="flex gap-2">
+              <Input 
+                type="url"
+                value={rssFeedUrl}
+                onChange={(e) => setRssFeedUrl(e.target.value)}
+                placeholder="https://feeds.reuters.com/reuters/businessNews"
+              />
+              <Button onClick={handleSaveRssFeed} disabled={isSavingRss}>
+                {isSavingRss ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Enter an RSS feed URL for financial news. Leave empty to disable the ticker.
+            </p>
           </div>
         </CardContent>
       </Card>

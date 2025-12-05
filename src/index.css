@@ -496,6 +496,24 @@
     grid-column: 1 / -1;
   }
 
+  /* News Ticker Animation */
+  .ticker-scroll {
+    animation: ticker-scroll linear infinite;
+  }
+
+  .ticker-scroll.paused {
+    animation-play-state: paused;
+  }
+
+  @keyframes ticker-scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
   /* Span 2 columns */
   .card-span-2 {
     grid-column: span 1;
