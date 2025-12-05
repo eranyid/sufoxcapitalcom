@@ -11,7 +11,8 @@ import {
   Scan,
   Settings2,
   LogOut,
-  FlaskConical
+  FlaskConical,
+  FileCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -27,6 +28,7 @@ const navItems = [
   { path: '/management', icon: Settings2, label: 'MANAGEMENT' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'TRANSACTIONS' },
   { path: '/valuations', icon: Calendar, label: 'VALUATIONS' },
+  { path: '/policy', icon: FileCheck, label: 'POLICY' },
   { path: '/settings', icon: Settings, label: 'SETTINGS' },
 ];
 
