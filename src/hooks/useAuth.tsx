@@ -64,8 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     toast({
-      title: "Account created",
-      description: "You're now signed in!"
+      title: "Check your email",
+      description: "We sent you a confirmation link. Please verify your email to sign in."
     });
     return { error: null };
   };
