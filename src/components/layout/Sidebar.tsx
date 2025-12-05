@@ -1,140 +1,121 @@
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  TrendingUp, 
-  Shield, 
-  ArrowRightLeft, 
-  Calendar,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Scan,
-  Settings2,
-  LogOut,
-  FlaskConical,
-  FileCheck,
-  Users
-} from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, ChevronLeft, ChevronRight, Scan, Settings2, LogOut, FlaskConical, FileCheck, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import sufoxLogo from '@/assets/sufox-logo.png';
-
-const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'OVERVIEW' },
-  { path: '/performance', icon: TrendingUp, label: 'PERFORMANCE' },
-  { path: '/risk', icon: Shield, label: 'RISK' },
-  { path: '/scenarios', icon: FlaskConical, label: 'SCENARIOS' },
-  { path: '/xray', icon: Scan, label: 'X-RAY' },
-  { path: '/management', icon: Settings2, label: 'MANAGEMENT' },
-  { path: '/transactions', icon: ArrowRightLeft, label: 'TRANSACTIONS' },
-  { path: '/valuations', icon: Calendar, label: 'VALUATIONS' },
-  { path: '/policy', icon: FileCheck, label: 'POLICY' },
-  { path: '/settings', icon: Settings, label: 'SETTINGS' },
-];
-
+const navItems = [{
+  path: '/',
+  icon: LayoutDashboard,
+  label: 'OVERVIEW'
+}, {
+  path: '/performance',
+  icon: TrendingUp,
+  label: 'PERFORMANCE'
+}, {
+  path: '/risk',
+  icon: Shield,
+  label: 'RISK'
+}, {
+  path: '/scenarios',
+  icon: FlaskConical,
+  label: 'SCENARIOS'
+}, {
+  path: '/xray',
+  icon: Scan,
+  label: 'X-RAY'
+}, {
+  path: '/management',
+  icon: Settings2,
+  label: 'MANAGEMENT'
+}, {
+  path: '/transactions',
+  icon: ArrowRightLeft,
+  label: 'TRANSACTIONS'
+}, {
+  path: '/valuations',
+  icon: Calendar,
+  label: 'VALUATIONS'
+}, {
+  path: '/policy',
+  icon: FileCheck,
+  label: 'POLICY'
+}, {
+  path: '/settings',
+  icon: Settings,
+  label: 'SETTINGS'
+}];
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, signOut, isAdmin } = useAuth();
-
-  return (
-    <aside className={cn(
-      "h-screen bg-sidebar flex flex-col transition-all duration-200 hidden md:flex",
-      collapsed ? "w-12" : "w-56"
-    )}>
+  const {
+    user,
+    signOut,
+    isAdmin
+  } = useAuth();
+  return <aside className={cn("h-screen bg-sidebar flex flex-col transition-all duration-200 hidden md:flex", collapsed ? "w-12" : "w-56")}>
       {/* Bloomberg gradient bar */}
       <div className="bloomberg-gradient-bar" />
       
       {/* Logo */}
-      <div className={cn(
-        "px-2 py-3 border-b border-sidebar-border flex items-center",
-        collapsed ? "justify-center" : "justify-between"
-      )}>
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <img src={sufoxLogo} alt="SUFOX Capital" className="h-7 w-7 object-contain" />
+      <div className={cn("px-2 py-3 border-b border-sidebar-border flex items-center", collapsed ? "justify-center" : "justify-between")}>
+        {!collapsed && <div className="flex items-center gap-2">
+            <img alt="SUFOX Capital" className="h-7 w-7 object-contain" src="/lovable-uploads/cb285824-432c-4dbb-b1e2-873eedd1a9ef.png" />
             <div>
               <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
               <p className="text-[9px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
             </div>
-          </div>
-        )}
-        {collapsed && (
-          <img src={sufoxLogo} alt="SUFOX" className="h-6 w-6 object-contain" />
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className={cn(
-            "p-1 hover:bg-sidebar-accent text-muted-foreground hover:text-primary transition-colors",
-            collapsed && "absolute left-12 top-4 bg-sidebar border border-sidebar-border z-10"
-          )}
-        >
+          </div>}
+        {collapsed && <img src={sufoxLogo} alt="SUFOX" className="h-6 w-6 object-contain" />}
+        <button onClick={() => setCollapsed(!collapsed)} className={cn("p-1 hover:bg-sidebar-accent text-muted-foreground hover:text-primary transition-colors", collapsed && "absolute left-12 top-4 bg-sidebar border border-sidebar-border z-10")}>
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 py-2 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ path, icon: Icon, label }) => (
-          <NavLink
-            key={path}
-            to={path}
-            className={({ isActive }) => cn(
-              "nav-link mx-1",
-              isActive && "active"
-            )}
-          >
+        {navItems.map(({
+        path,
+        icon: Icon,
+        label
+      }) => <NavLink key={path} to={path} className={({
+        isActive
+      }) => cn("nav-link mx-1", isActive && "active")}>
             <Icon size={14} />
             {!collapsed && <span className="text-[11px] tracking-wide">{label}</span>}
-          </NavLink>
-        ))}
+          </NavLink>)}
         
         {/* Admin Link - only visible to admin */}
-        {isAdmin && (
-          <NavLink
-            to="/admin/users"
-            className={({ isActive }) => cn(
-              "nav-link mx-1 mt-2 border-t border-sidebar-border pt-2",
-              isActive && "active"
-            )}
-          >
+        {isAdmin && <NavLink to="/admin/users" className={({
+        isActive
+      }) => cn("nav-link mx-1 mt-2 border-t border-sidebar-border pt-2", isActive && "active")}>
             <Users size={14} />
             {!collapsed && <span className="text-[11px] tracking-wide text-primary">ADMIN</span>}
-          </NavLink>
-        )}
+          </NavLink>}
       </nav>
 
       {/* User & Sign Out */}
       <div className="border-t border-sidebar-border p-2 space-y-2">
-        {!collapsed && user && (
-          <div className="px-2 py-1">
+        {!collapsed && user && <div className="px-2 py-1">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Signed in as</p>
             <p className="text-xs text-foreground truncate font-mono">{user.email}</p>
-          </div>
-        )}
-        <button
-          onClick={signOut}
-          className={cn(
-            "w-full flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded",
-            collapsed && "justify-center"
-          )}
-        >
+          </div>}
+        <button onClick={signOut} className={cn("w-full flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded", collapsed && "justify-center")}>
           <LogOut size={14} />
           {!collapsed && <span className="text-[11px] tracking-wide">SIGN OUT</span>}
         </button>
       </div>
 
       {/* Footer */}
-      {!collapsed && (
-        <div className="px-2 py-2 border-t border-sidebar-border">
+      {!collapsed && <div className="px-2 py-2 border-t border-sidebar-border">
           <p className="text-[9px] text-primary font-mono text-center tracking-widest">
             TERMINAL v1.0
           </p>
           <p className="text-[8px] text-muted-foreground font-mono text-center mt-0.5">
-            {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        })}
           </p>
-        </div>
-      )}
-    </aside>
-  );
+        </div>}
+    </aside>;
 }
