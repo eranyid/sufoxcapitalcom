@@ -624,7 +624,10 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="flex gap-4 mt-6">
+          <div className="flex flex-wrap gap-4 mt-6">
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Reload App
+            </Button>
             <Button variant="outline" onClick={refreshMetrics}>
               <RefreshCw className="h-4 w-4 mr-2" /> Recalculate Metrics
             </Button>
