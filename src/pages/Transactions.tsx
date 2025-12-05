@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { exportToCSV, importTransactionsFromCSV } from '@/lib/storage';
 import { getKnownInceptionYear } from '@/lib/crashScenarios';
 import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle, Pencil, Search, X } from 'lucide-react';
+import { PreTradeCheck } from '@/components/dashboard/PreTradeCheck';
 import { toast } from 'sonner';
 
 const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund', 'private_equity', 'private_debt', 'hedge_fund'];
@@ -352,6 +353,7 @@ export default function Transactions() {
           <p className="text-muted-foreground text-sm mt-1 font-mono">Record buy and sell transactions</p>
         </div>
         <div className="flex gap-2">
+          <PreTradeCheck />
           <input
             type="file"
             ref={fileInputRef}

@@ -42,15 +42,27 @@ interface PortfolioSummary {
   numberOfHoldings: number;
 }
 
+interface ProposedTrade {
+  ticker: string;
+  assetName: string;
+  assetType: string;
+  geography: string;
+  transactionType: 'buy' | 'sell';
+  quantity: number;
+  pricePerUnit: number;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { policy, portfolio } = await req.json() as { 
+    const { policy, portfolio, proposedTrade, mode = 'full' } = await req.json() as { 
       policy: PolicyData; 
-      portfolio: PortfolioSummary 
+      portfolio: PortfolioSummary;
+      proposedTrade?: ProposedTrade;
+      mode?: 'full' | 'pre-trade';
     };
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -58,8 +70,35 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Build the analysis prompt
-    const systemPrompt = `You are an expert investment compliance officer and portfolio analyst. Your role is to evaluate whether a portfolio aligns with an investor's stated investment policy and strategy.
+    // Build the analysis prompt based on mode
+    const systemPrompt = mode === 'pre-trade' 
+      ? `You are an expert investment compliance officer. Your role is to evaluate whether a PROPOSED TRADE would keep a portfolio aligned with the investor's investment policy.
+
+You will receive:
+1. The investor's written strategy and philosophy
+2. Their structured policy constraints (allocation limits, risk tolerance, etc.)
+3. A summary of their CURRENT portfolio
+4. Details of the PROPOSED TRADE
+
+Your task is to:
+1. Simulate what the portfolio would look like AFTER the trade executes
+2. Check if the post-trade portfolio would violate any policy constraints
+3. Provide a clear APPROVE or REJECT recommendation
+
+**Classification** (EXACTLY one of these):
+- "APPROVED - Trade Compliant" - The trade keeps the portfolio within policy limits
+- "APPROVED WITH CAUTION" - Trade is acceptable but approaches policy limits
+- "REJECTED - Policy Violation" - The trade would cause a policy violation
+
+**Key Impact Points** (2-3 bullet points):
+- How the trade affects allocation percentages
+- Any limits that would be approached or breached
+- Impact on concentration or diversification
+
+**Recommendation**:
+- If approved: any monitoring suggestions
+- If rejected: what would need to change to make the trade compliant`
+      : `You are an expert investment compliance officer and portfolio analyst. Your role is to evaluate whether a portfolio aligns with an investor's stated investment policy and strategy.
 
 You will receive:
 1. The investor's written strategy and philosophy
@@ -80,9 +119,11 @@ Your task is to provide a professional evaluation with:
 
 Be precise, professional, and actionable. Reference specific numbers and percentages from the policy and portfolio.`;
 
-    const userPrompt = buildAnalysisPrompt(policy, portfolio);
+    const userPrompt = mode === 'pre-trade' && proposedTrade
+      ? buildPreTradePrompt(policy, portfolio, proposedTrade)
+      : buildAnalysisPrompt(policy, portfolio);
 
-    console.log("Calling Lovable AI with openai/gpt-5 model...");
+    console.log(`Calling Lovable AI with openai/gpt-5 model... Mode: ${mode}`);
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -216,6 +257,98 @@ function buildAnalysisPrompt(policy: PolicyData, portfolio: PortfolioSummary): s
   return parts.join("\n");
 }
 
+function buildPreTradePrompt(policy: PolicyData, portfolio: PortfolioSummary, trade: ProposedTrade): string {
+  const parts: string[] = [];
+
+  // Strategy section
+  parts.push("## INVESTMENT STRATEGY & PHILOSOPHY");
+  if (policy.strategy_philosophy) {
+    parts.push(policy.strategy_philosophy);
+  } else {
+    parts.push("(No written strategy provided)");
+  }
+
+  // Policy constraints section
+  parts.push("\n## POLICY CONSTRAINTS");
+  parts.push(`- Equity allocation: ${policy.equity_min_pct}% - ${policy.equity_max_pct}%`);
+  parts.push(`- Fixed income allocation: ${policy.fixed_income_min_pct}% - ${policy.fixed_income_max_pct}%`);
+  parts.push(`- Alternatives allocation: ${policy.alternatives_min_pct}% - ${policy.alternatives_max_pct}%`);
+  parts.push(`- Minimum cash: ${policy.cash_min_pct}%`);
+  parts.push(`- Max single position: ${policy.max_single_position_pct}%`);
+  parts.push(`- Max sector allocation: ${policy.max_sector_allocation_pct}%`);
+  parts.push(`- Risk tolerance: ${policy.risk_tolerance}`);
+  parts.push(`- Investment horizon: ${policy.investment_horizon_years} years`);
+  parts.push(`- Leverage allowed: ${policy.leverage_allowed ? `Yes (max ${policy.max_leverage_ratio}x)` : 'No'}`);
+  parts.push(`- Minimum liquid assets: ${policy.min_liquid_assets_pct}%`);
+
+  if (Object.keys(policy.geographic_limits).length > 0) {
+    parts.push("\nGeographic limits:");
+    for (const [region, limits] of Object.entries(policy.geographic_limits)) {
+      parts.push(`  - ${region}: ${limits.min}% - ${limits.max}%`);
+    }
+  }
+
+  if (policy.special_constraints) {
+    parts.push(`\nSpecial constraints: ${policy.special_constraints}`);
+  }
+
+  // Current portfolio section
+  parts.push("\n## CURRENT PORTFOLIO (BEFORE TRADE)");
+  parts.push(`- Total value: $${portfolio.totalValue.toLocaleString()}`);
+  parts.push(`- Number of holdings: ${portfolio.numberOfHoldings}`);
+  parts.push(`- Cash position: ${portfolio.cashPct.toFixed(1)}%`);
+
+  parts.push("\nAllocation by asset type:");
+  for (const [type, pct] of Object.entries(portfolio.allocationByAssetType)) {
+    parts.push(`  - ${type}: ${pct.toFixed(1)}%`);
+  }
+
+  parts.push("\nAllocation by geography:");
+  for (const [geo, pct] of Object.entries(portfolio.allocationByGeography)) {
+    parts.push(`  - ${geo}: ${pct.toFixed(1)}%`);
+  }
+
+  parts.push("\nTop 5 positions:");
+  portfolio.topPositions.slice(0, 5).forEach((pos, i) => {
+    parts.push(`  ${i + 1}. ${pos.ticker}: ${pos.weight.toFixed(1)}%`);
+  });
+
+  // Proposed trade section
+  const tradeValue = trade.quantity * trade.pricePerUnit;
+  parts.push("\n## PROPOSED TRADE");
+  parts.push(`- Action: ${trade.transactionType.toUpperCase()}`);
+  parts.push(`- Ticker: ${trade.ticker}`);
+  parts.push(`- Asset Name: ${trade.assetName}`);
+  parts.push(`- Asset Type: ${trade.assetType}`);
+  parts.push(`- Geography: ${trade.geography}`);
+  parts.push(`- Quantity: ${trade.quantity.toLocaleString()}`);
+  parts.push(`- Price per Unit: $${trade.pricePerUnit.toFixed(2)}`);
+  parts.push(`- Trade Value: $${tradeValue.toLocaleString()}`);
+
+  // Calculate post-trade impact
+  const isBuy = trade.transactionType === 'buy';
+  const newTotalValue = isBuy 
+    ? portfolio.totalValue + tradeValue 
+    : portfolio.totalValue;
+  const newPositionWeight = (tradeValue / newTotalValue) * 100;
+  
+  // Check existing position
+  const existingPosition = portfolio.topPositions.find(p => p.ticker === trade.ticker);
+  const existingWeight = existingPosition?.weight || 0;
+  const postTradeWeight = isBuy 
+    ? existingWeight + newPositionWeight 
+    : Math.max(0, existingWeight - newPositionWeight);
+
+  parts.push("\n## ESTIMATED POST-TRADE IMPACT");
+  parts.push(`- New portfolio total: ~$${newTotalValue.toLocaleString()}`);
+  parts.push(`- ${trade.ticker} weight: ${existingWeight.toFixed(1)}% → ~${postTradeWeight.toFixed(1)}%`);
+  parts.push(`- Trade as % of portfolio: ${((tradeValue / portfolio.totalValue) * 100).toFixed(1)}%`);
+
+  parts.push("\n---\nPlease evaluate whether this proposed trade keeps the portfolio within policy constraints. Provide your APPROVE/REJECT decision with explanation.");
+
+  return parts.join("\n");
+}
+
 function parseAIResponse(response: string): {
   classification: string;
   findings: string[];
@@ -227,8 +360,11 @@ function parseAIResponse(response: string): {
   const findings: string[] = [];
   const recommendations: string[] = [];
 
-  // Try to extract classification
+  // Try to extract classification (includes both full and pre-trade patterns)
   const classificationPatterns = [
+    "APPROVED - Trade Compliant",
+    "APPROVED WITH CAUTION",
+    "REJECTED - Policy Violation",
     "Feasible & Suitable",
     "Feasible but Not Fully Suitable",
     "Not Feasible in its current form",
