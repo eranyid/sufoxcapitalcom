@@ -95,5 +95,33 @@ export interface ContributionToReturn {
   weight: number;
 }
 
-// Factor Model Types (re-exported from factorModel.ts for convenience)
-export type { FactorExposure, FactorRiskBreakdown, FactorModelResults } from '@/lib/factorModel';
+// Factor Model Types - defined here to avoid circular dependency
+export interface FactorExposure {
+  factor: string;
+  factorLabel: string;
+  factorType: 'style' | 'macro';
+  beta: number;
+  tStat: number;
+  r2: number;
+  pValue: number;
+}
+
+export interface FactorRiskBreakdown {
+  factor: string;
+  factorLabel: string;
+  contributionPct: number;
+  contributionAbs: number;
+}
+
+export interface FactorModelResults {
+  exposures: FactorExposure[];
+  risk: FactorRiskBreakdown[];
+  systematicPct: number;
+  specificPct: number;
+  factorCovariance: number[][];
+  factorCorrelation: number[][];
+  totalVariance: number;
+  systematicVariance: number;
+  specificVariance: number;
+  residualVolatility: number;
+}
