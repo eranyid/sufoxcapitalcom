@@ -62,7 +62,7 @@ export function Sidebar() {
             <img alt="SUFOX Capital" className="h-20 w-20 object-contain" src="/lovable-uploads/02339762-cdfe-438f-8e95-2f033c67710b.png" />
             
           </div>}
-        {collapsed && <img src={sufoxLogo} alt="SUFOX" className="h-6 w-6 object-contain" />}
+        {collapsed && <img alt="SUFOX" className="h-6 w-6 object-contain" src="/lovable-uploads/1e09c6ce-0760-4af9-bce3-47cfd7593a82.png" />}
         <button onClick={() => setCollapsed(!collapsed)} className={cn("p-1 hover:bg-sidebar-accent text-muted-foreground hover:text-primary transition-colors", collapsed && "absolute left-12 top-4 bg-sidebar border border-sidebar-border z-10")}>
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
