@@ -6,10 +6,12 @@ import {
   ArrowRightLeft, 
   Settings,
   FlaskConical,
-  MoreHorizontal
+  MoreHorizontal,
+  Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Sheet,
   SheetContent,
@@ -36,6 +38,7 @@ const moreNavItems = [
 
 export function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false);
+  const { isAdmin } = useAuth();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
@@ -91,6 +94,21 @@ export function MobileNav() {
                     {label}
                   </NavLink>
                 ))}
+                {isAdmin && (
+                  <NavLink
+                    to="/admin/users"
+                    onClick={() => setMoreOpen(false)}
+                    className={({ isActive }) => cn(
+                      "flex items-center justify-center gap-2 py-4 px-3 rounded-xl text-sm font-medium transition-colors min-h-[56px]",
+                      isActive 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-primary/20 text-primary hover:bg-primary/30"
+                    )}
+                  >
+                    <Users size={16} />
+                    Admin
+                  </NavLink>
+                )}
               </div>
             </SheetContent>
           </Sheet>
