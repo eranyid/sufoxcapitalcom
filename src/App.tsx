@@ -7,6 +7,7 @@ import { PortfolioProvider } from "./context/PortfolioContext";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Overview from "./pages/Overview";
 import Performance from "./pages/Performance";
 import Risk from "./pages/Risk";
@@ -30,14 +31,15 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
+            <ErrorBoundary>
+              <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route element={
                 <ProtectedRoute>
                   <DashboardLayout />
                 </ProtectedRoute>
               }>
-                <Route path="/" element={<Overview />} />
+              <Route path="/" element={<Overview />} />
                 <Route path="/performance" element={<Performance />} />
                 <Route path="/risk" element={<Risk />} />
                 <Route path="/scenarios" element={<ScenarioLab />} />
@@ -49,7 +51,8 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
-            </Routes>
+              </Routes>
+            </ErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </PortfolioProvider>
