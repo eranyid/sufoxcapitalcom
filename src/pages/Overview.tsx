@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-// Force rebuild - development cache fix
 import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
