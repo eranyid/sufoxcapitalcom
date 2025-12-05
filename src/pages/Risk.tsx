@@ -24,14 +24,14 @@ export default function Risk() {
   }, [transactions, valuations, hasData]);
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       <div>
         <h1 className="terminal-label text-base">Risk Dashboard</h1>
         <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Risk metrics and volatility analysis</p>
       </div>
 
       {/* Risk KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">
+      <div className="kpi-grid">
         <KPICard
           title="Volatility"
           value={hasData ? `${riskMetrics.volatility.toFixed(2)}%` : '0.00%'}

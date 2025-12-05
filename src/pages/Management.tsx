@@ -150,7 +150,7 @@ export default function Management() {
   const hasData = holdings.length > 0;
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -165,9 +165,9 @@ export default function Management() {
       </div>
 
       {hasData ? (
-        <div className="space-y-4">
+        <div className="section-spacing">
           {/* Backtest Projection */}
-          <div className="bloomberg-panel">
+          <div className="bloomberg-panel card-md">
             <div className="bloomberg-header flex items-center justify-between">
               <div>
                 <span className="text-primary">■</span> Portfolio Projection

@@ -159,7 +159,7 @@ export default function Overview() {
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -179,7 +179,7 @@ export default function Overview() {
       </div>
 
       {/* Primary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <div className="kpi-grid">
         <KPICard
           title="Total Portfolio Value"
           value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
@@ -211,7 +211,7 @@ export default function Overview() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+      <div className="kpi-grid">
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
@@ -255,7 +255,7 @@ export default function Overview() {
       {/* Charts Row 1 */}
       {hasData ? (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          <div className="chart-grid">
             <PerformanceChart 
               data={performanceMetrics.monthlyReturns}
               title="Monthly & Cumulative Returns"
@@ -266,13 +266,13 @@ export default function Overview() {
           </div>
 
           {/* Allocation Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="chart-grid">
             <AllocationChart data={assetTypeAllocation} title="Asset Class Allocation" />
             <AllocationChart data={geographyAllocation} title="Geographic Allocation" />
           </div>
         </>
       ) : (
-        <div className="bloomberg-panel p-8 text-center">
+        <div className="bloomberg-panel p-8 text-center card-md">
           <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <h3 className="text-sm font-medium mb-1 text-primary">No Data Available</h3>
           <p className="text-muted-foreground text-xs max-w-md mx-auto">

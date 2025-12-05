@@ -190,7 +190,7 @@ export default function XRay() {
   const hasData = transactions.length > 0 && valuations.length > 0;
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -209,20 +209,20 @@ export default function XRay() {
       </div>
 
       {hasData ? (
-        <div className="space-y-4">
-          {/* Asset Class Distribution */}
-          <DistributionSection 
-            title="Asset Class Distribution" 
-            data={assetTypeAllocation} 
-          />
+        <div className="section-spacing">
+          {/* Distribution Sections - 2 column grid on large screens */}
+          <div className="chart-grid">
+            <DistributionSection 
+              title="Asset Class Distribution" 
+              data={assetTypeAllocation} 
+            />
+            <DistributionSection 
+              title="Geographic Distribution" 
+              data={geographyAllocation} 
+            />
+          </div>
 
-          {/* Geographic Distribution */}
-          <DistributionSection 
-            title="Geographic Distribution" 
-            data={geographyAllocation} 
-          />
-
-          {/* Currency Distribution */}
+          {/* Currency Distribution - Full width */}
           <DistributionSection 
             title="Currency Exposure" 
             data={currencyAllocation} 
@@ -235,7 +235,7 @@ export default function XRay() {
           <TopHoldingsSection transactions={transactions} valuations={valuations} />
         </div>
       ) : (
-        <div className="bloomberg-panel p-8 text-center">
+        <div className="bloomberg-panel p-8 text-center card-md">
           <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <h3 className="text-sm font-medium mb-1 text-primary">No Data Available</h3>
           <p className="text-muted-foreground text-xs max-w-md mx-auto">
