@@ -38,7 +38,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "h-screen bg-sidebar flex flex-col transition-all duration-200",
+      "h-screen bg-sidebar flex flex-col transition-all duration-200 hidden md:flex",
       collapsed ? "w-12" : "w-56"
     )}>
       {/* Bloomberg gradient bar */}
@@ -73,7 +73,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-2 space-y-0.5">
+      <nav className="flex-1 py-2 space-y-0.5 overflow-y-auto">
         {navItems.map(({ path, icon: Icon, label }) => (
           <NavLink
             key={path}

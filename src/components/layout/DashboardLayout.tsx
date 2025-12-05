@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { MobileNav } from './MobileNav';
+import { MobileHeader } from './MobileHeader';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { Database } from 'lucide-react';
@@ -21,11 +23,24 @@ export function DashboardLayout() {
   } = useDataWatchdog();
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex flex-col md:flex-row min-h-screen min-h-dvh w-full bg-background overflow-x-hidden">
+      {/* Desktop Sidebar - hidden on mobile */}
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        {/* Top status bar like Bloomberg */}
-        <div className="bg-secondary border-b border-border px-4 py-1 flex items-center justify-between text-[10px]">
+
+      {/* Main Content Wrapper */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Header - visible only on mobile */}
+        <div className="md:hidden">
+          <MobileHeader 
+            status={status}
+            errorCount={errorCount}
+            warningCount={warningCount}
+            onWatchdogClick={() => setWatchdogPanelOpen(true)}
+          />
+        </div>
+
+        {/* Desktop Top status bar - hidden on mobile */}
+        <div className="hidden md:flex bg-secondary border-b border-border px-4 py-1 items-center justify-between text-[10px]">
           <div className="flex items-center gap-4">
             <span className="text-primary font-semibold tracking-wider">SUFOX CAPITAL</span>
             <span className="text-muted-foreground">Portfolio & Risk Analytics</span>
@@ -48,10 +63,15 @@ export function DashboardLayout() {
             <span className="text-primary">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
           </div>
         </div>
-        <div className="p-4">
+
+        {/* Main Content */}
+        <main className="flex-1 p-3 md:p-4 pb-20 md:pb-4 overflow-x-hidden overflow-y-auto">
           <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
       
       <DataWatchdogPanel
         open={watchdogPanelOpen}

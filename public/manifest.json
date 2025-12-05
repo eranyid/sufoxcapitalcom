@@ -1,0 +1,23 @@
+{
+  "name": "SUFOX Capital",
+  "short_name": "SUFOX",
+  "description": "Professional hedge fund investment dashboard for tracking portfolio performance, risk metrics, and asset allocation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["finance", "business", "productivity"]
+}

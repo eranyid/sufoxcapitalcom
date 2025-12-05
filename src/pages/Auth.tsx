@@ -74,15 +74,15 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen min-h-dvh bg-background flex items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left panel - branding */}
+    <div className="min-h-screen min-h-dvh bg-background flex flex-col lg:flex-row">
+      {/* Left panel - branding (hidden on mobile, visible on desktop) */}
       <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12">
         <div>
           <div className="bloomberg-gradient-bar w-24 mb-6" />
@@ -132,28 +132,42 @@ export default function Auth() {
       </div>
       
       {/* Right panel - auth forms */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 safe-area-inset">
+        {/* Mobile branding header */}
+        <div className="lg:hidden w-full max-w-md mb-8">
+          <div className="bloomberg-gradient-bar w-16 mb-4" />
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            Hedge Fund Studio
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Professional Portfolio Analytics
+          </p>
+        </div>
+
         <Card className="w-full max-w-md bg-card border-border">
-          <CardHeader className="space-y-1">
-            <div className="lg:hidden">
-              <div className="bloomberg-gradient-bar w-16 mb-4" />
-            </div>
+          <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl text-foreground">Welcome</CardTitle>
-            <CardDescription>Sign in to your account or create a new one</CardDescription>
+            <CardDescription className="text-sm">Sign in to your account or create a new one</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-secondary">
-                <TabsTrigger value="signin" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsList className="grid w-full grid-cols-2 bg-secondary h-12">
+                <TabsTrigger 
+                  value="signin" 
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 text-sm"
+                >
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger 
+                  value="signup" 
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 text-sm"
+                >
                   Sign Up
                 </TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin" className="mt-6">
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Email
@@ -164,7 +178,8 @@ export default function Auth() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="bg-input border-border"
+                      className="bg-input border-border h-12 text-base"
+                      autoComplete="email"
                       required
                     />
                     {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
@@ -179,17 +194,18 @@ export default function Auth() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="bg-input border-border"
+                      className="bg-input border-border h-12 text-base"
+                      autoComplete="current-password"
                       required
                     />
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium"
                     disabled={isLoading}
                   >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                     Sign In
                   </Button>
                 </form>
@@ -199,8 +215,8 @@ export default function Auth() {
                 {showEmailConfirmation ? (
                   <div className="space-y-4 text-center py-4">
                     <div className="flex justify-center">
-                      <div className="p-3 bg-primary/10 rounded-full">
-                        <Mail className="h-8 w-8 text-primary" />
+                      <div className="p-4 bg-primary/10 rounded-full">
+                        <Mail className="h-10 w-10 text-primary" />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -222,7 +238,7 @@ export default function Auth() {
                     </Alert>
                     <Button 
                       variant="outline" 
-                      className="mt-4"
+                      className="mt-4 h-11"
                       onClick={() => {
                         setShowEmailConfirmation(false);
                         setEmail('');
@@ -234,7 +250,7 @@ export default function Auth() {
                     </Button>
                   </div>
                 ) : (
-                <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Display Name
@@ -245,7 +261,8 @@ export default function Auth() {
                       placeholder="Your name"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="bg-input border-border"
+                      className="bg-input border-border h-12 text-base"
+                      autoComplete="name"
                     />
                   </div>
                   <div className="space-y-2">
@@ -258,7 +275,8 @@ export default function Auth() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="bg-input border-border"
+                      className="bg-input border-border h-12 text-base"
+                      autoComplete="email"
                       required
                     />
                     {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
@@ -273,17 +291,18 @@ export default function Auth() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="bg-input border-border"
+                      className="bg-input border-border h-12 text-base"
+                      autoComplete="new-password"
                       required
                     />
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium"
                     disabled={isLoading}
                   >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                     Create Account
                   </Button>
                 </form>
@@ -292,6 +311,11 @@ export default function Auth() {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* Mobile footer */}
+        <p className="lg:hidden text-xs text-muted-foreground mt-8 text-center">
+          © 2024 Hedge Fund Studio. All rights reserved.
+        </p>
       </div>
     </div>
   );

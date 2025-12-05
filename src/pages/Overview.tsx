@@ -161,26 +161,32 @@ export default function Overview() {
 
   return (
     <div className="section-spacing animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="terminal-label text-base">Portfolio Overview</h1>
-          <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Real-time performance snapshot</p>
+          <h1 className="terminal-label text-sm sm:text-base">Portfolio Overview</h1>
+          <p className="text-muted-foreground text-[10px] sm:text-[10px] font-mono mt-0.5">Real-time performance snapshot</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2">
-            <FileDown className="h-3 w-3" />
-            Export
+          <Button 
+            onClick={handleExportPDF} 
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-9 sm:h-7 px-3 sm:px-2 touch-target"
+          >
+            <FileDown className="h-4 w-4 sm:h-3 sm:w-3" />
+            <span className="hidden sm:inline">Export</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
-          <div className="text-right">
+          <div className="text-right hidden sm:block">
             <p className="terminal-label">Last Updated</p>
             <p className="text-sm font-mono tabular-nums text-foreground">{new Date().toLocaleDateString()}</p>
           </div>
         </div>
       </div>
 
-      {/* Primary KPIs */}
-      <div className="kpi-grid">
+      {/* Primary KPIs - Mobile Optimized 2-col grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-2">
         <KPICard
           title="Total Portfolio Value"
           value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
@@ -200,7 +206,7 @@ export default function Overview() {
           value={hasData ? performanceMetrics.sharpeRatio.toFixed(2) : '0.00'}
           icon={Activity}
           trend={hasData && performanceMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
-          subtitle="Risk-adjusted return"
+          subtitle="Risk-adjusted"
         />
         <KPICard
           title="Max Drawdown"
@@ -211,8 +217,8 @@ export default function Overview() {
         />
       </div>
 
-      {/* Secondary KPIs */}
-      <div className="kpi-grid">
+      {/* Secondary KPIs - Mobile Optimized */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
@@ -245,8 +251,8 @@ export default function Overview() {
         />
       </div>
 
-      {/* Cash Management & Policy Check */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-card">
+      {/* Cash Management & Policy Check - Stack on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         <div className="lg:col-span-2">
           <CashManagement />
         </div>
@@ -258,10 +264,10 @@ export default function Overview() {
         <HoldingsTable transactions={transactions} valuations={valuations} />
       )}
 
-      {/* Charts Row 1 */}
+      {/* Charts - Stack on mobile */}
       {hasData ? (
         <>
-          <div className="chart-grid">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             <PerformanceChart 
               data={performanceMetrics.monthlyReturns}
               title="Monthly & Cumulative Returns"
@@ -271,15 +277,15 @@ export default function Overview() {
             <DrawdownChart data={performanceMetrics.drawdownSeries} />
           </div>
 
-          {/* Allocation Charts */}
-          <div className="chart-grid">
+          {/* Allocation Charts - Stack on mobile */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             <AllocationChart data={assetTypeAllocation} title="Asset Class Allocation" />
             <AllocationChart data={geographyAllocation} title="Geographic Allocation" />
           </div>
         </>
       ) : (
-        <div className="bloomberg-panel p-8 text-center card-md">
-          <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+        <div className="bloomberg-panel p-6 sm:p-8 text-center">
+          <BarChart3 className="h-8 w-8 sm:h-10 sm:w-10 mx-auto text-muted-foreground mb-3" />
           <h3 className="text-sm font-medium mb-1 text-primary">No Data Available</h3>
           <p className="text-muted-foreground text-xs max-w-md mx-auto">
             Add transactions and monthly valuations to see portfolio analytics.

@@ -13,12 +13,12 @@ interface KPICardProps {
 
 export function KPICard({ title, value, subtitle, icon: Icon, trend, trendValue, className }: KPICardProps) {
   return (
-    <div className={cn("kpi-card", className)}>
+    <div className={cn("kpi-card min-h-[80px] sm:min-h-0", className)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="terminal-label truncate">{title}</p>
+          <p className="terminal-label truncate text-[9px] sm:text-[10px]">{title}</p>
           <p className={cn(
-            "terminal-value-lg mt-0.5",
+            "font-mono tabular-nums tracking-tight mt-0.5 text-base sm:text-xl",
             trend === 'up' && "text-success",
             trend === 'down' && "text-destructive",
             trend === 'neutral' && "text-foreground"
@@ -26,12 +26,12 @@ export function KPICard({ title, value, subtitle, icon: Icon, trend, trendValue,
             {value}
           </p>
           {subtitle && (
-            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{subtitle}</p>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground font-mono mt-0.5">{subtitle}</p>
           )}
         </div>
         {Icon && (
-          <div className="p-1 bg-primary/10 border border-primary/30">
-            <Icon size={12} className="text-primary" />
+          <div className="p-1.5 sm:p-1 bg-primary/10 border border-primary/30">
+            <Icon size={14} className="text-primary sm:w-3 sm:h-3" />
           </div>
         )}
       </div>

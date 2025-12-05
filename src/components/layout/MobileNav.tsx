@@ -1,0 +1,101 @@
+import { NavLink } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  TrendingUp, 
+  Shield, 
+  ArrowRightLeft, 
+  Settings,
+  FlaskConical,
+  MoreHorizontal
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+
+const primaryNavItems = [
+  { path: '/', icon: LayoutDashboard, label: 'Overview' },
+  { path: '/performance', icon: TrendingUp, label: 'Perform' },
+  { path: '/risk', icon: Shield, label: 'Risk' },
+  { path: '/scenarios', icon: FlaskConical, label: 'Scenarios' },
+  { path: '/transactions', icon: ArrowRightLeft, label: 'Trades' },
+];
+
+const moreNavItems = [
+  { path: '/xray', label: 'X-RAY' },
+  { path: '/management', label: 'Management' },
+  { path: '/valuations', label: 'Valuations' },
+  { path: '/policy', label: 'Policy' },
+  { path: '/settings', label: 'Settings' },
+];
+
+export function MobileNav() {
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
+      {/* Safe area padding for iOS */}
+      <div className="pb-safe">
+        <div className="flex items-center justify-around h-16 px-2">
+          {primaryNavItems.map(({ path, icon: Icon, label }) => (
+            <NavLink
+              key={path}
+              to={path}
+              className={({ isActive }) => cn(
+                "flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[56px] min-h-[44px] rounded-lg transition-colors",
+                isActive 
+                  ? "text-primary bg-sidebar-accent" 
+                  : "text-muted-foreground hover:text-primary hover:bg-sidebar-accent/50"
+              )}
+            >
+              <Icon size={20} strokeWidth={1.5} />
+              <span className="text-[10px] font-medium tracking-tight">{label}</span>
+            </NavLink>
+          ))}
+          
+          {/* More Menu */}
+          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+            <SheetTrigger asChild>
+              <button className={cn(
+                "flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[56px] min-h-[44px] rounded-lg transition-colors",
+                moreOpen 
+                  ? "text-primary bg-sidebar-accent" 
+                  : "text-muted-foreground hover:text-primary hover:bg-sidebar-accent/50"
+              )}>
+                <MoreHorizontal size={20} strokeWidth={1.5} />
+                <span className="text-[10px] font-medium tracking-tight">More</span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl">
+              <SheetHeader>
+                <SheetTitle className="text-primary text-sm tracking-wider">More Options</SheetTitle>
+              </SheetHeader>
+              <div className="grid grid-cols-3 gap-3 py-6">
+                {moreNavItems.map(({ path, label }) => (
+                  <NavLink
+                    key={path}
+                    to={path}
+                    onClick={() => setMoreOpen(false)}
+                    className={({ isActive }) => cn(
+                      "flex items-center justify-center py-4 px-3 rounded-xl text-sm font-medium transition-colors min-h-[56px]",
+                      isActive 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-secondary text-foreground hover:bg-sidebar-accent"
+                    )}
+                  >
+                    {label}
+                  </NavLink>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </nav>
+  );
+}

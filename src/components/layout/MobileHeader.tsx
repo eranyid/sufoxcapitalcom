@@ -1,0 +1,52 @@
+import { Database, Bell } from 'lucide-react';
+import { usePortfolio } from '@/context/PortfolioContext';
+import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
+import sufoxLogo from '@/assets/sufox-logo.png';
+
+interface MobileHeaderProps {
+  status: 'ok' | 'warning' | 'error';
+  errorCount: number;
+  warningCount: number;
+  onWatchdogClick: () => void;
+}
+
+export function MobileHeader({ status, errorCount, warningCount, onWatchdogClick }: MobileHeaderProps) {
+  const { sampleDataMode } = usePortfolio();
+
+  return (
+    <header className="sticky top-0 z-40 bg-sidebar border-b border-sidebar-border md:hidden">
+      {/* Bloomberg gradient bar */}
+      <div className="bloomberg-gradient-bar" />
+      
+      {/* Safe area padding for iOS notch */}
+      <div className="pt-safe">
+        <div className="flex items-center justify-between px-4 h-14">
+          {/* Logo & Brand */}
+          <div className="flex items-center gap-2">
+            <img src={sufoxLogo} alt="SUFOX" className="h-7 w-7 object-contain" />
+            <div>
+              <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
+              <p className="text-[8px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
+            </div>
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-3">
+            {sampleDataMode && (
+              <span className="flex items-center gap-1 px-2 py-1 bg-primary/20 border border-primary/50 text-primary text-[9px] font-semibold rounded animate-pulse">
+                <Database className="h-3 w-3" />
+                SAMPLE
+              </span>
+            )}
+            <DataWatchdogStatus
+              status={status}
+              errorCount={errorCount}
+              warningCount={warningCount}
+              onClick={onWatchdogClick}
+            />
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
