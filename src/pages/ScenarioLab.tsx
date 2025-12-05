@@ -384,7 +384,7 @@ export default function ScenarioLab() {
   const pieColors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
   return (
-    <div className="space-y-4">
+    <div className="section-spacing">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -398,7 +398,7 @@ export default function ScenarioLab() {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 gap-card">
         {/* Left Panel - Scenario Library */}
         <div className="col-span-3">
           <Card className="h-[calc(100vh-180px)]">

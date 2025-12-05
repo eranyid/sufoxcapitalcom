@@ -240,16 +240,16 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-3xl">
+    <div className="section-spacing animate-fade-in max-w-3xl">
       <div className="border-b border-border pb-4">
         <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Settings</h1>
         <p className="text-muted-foreground text-sm mt-1 font-mono">Configure portfolio and account preferences</p>
       </div>
 
       {/* Account Preferences */}
-      <Card className="glass-card">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
             Account Preferences
           </CardTitle>
@@ -409,9 +409,9 @@ export default function Settings() {
       </Card>
 
       {/* Risk Parameters */}
-      <Card className="glass-card">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2">
             <SettingsIcon className="h-5 w-5 text-primary" />
             Risk Parameters
           </CardTitle>
@@ -470,9 +470,9 @@ export default function Settings() {
       </Card>
 
       {/* Sample Data Toggle */}
-      <Card className="glass-card">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5 text-primary" />
             Sample Data Mode
           </CardTitle>
@@ -500,9 +500,9 @@ export default function Settings() {
       </Card>
 
       {/* Data Summary */}
-      <Card className="glass-card">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-medium">Data Summary {sampleDataMode && <span className="text-xs text-primary ml-2">(Sample)</span>}</CardTitle>
+          <CardTitle>Data Summary {sampleDataMode && <span className="text-xs text-primary ml-2">(Sample)</span>}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-6">
@@ -534,9 +534,9 @@ export default function Settings() {
       </Card>
 
       {/* Help */}
-      <Card className="glass-card">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-medium">Getting Started</CardTitle>
+          <CardTitle>Getting Started</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
           <div>

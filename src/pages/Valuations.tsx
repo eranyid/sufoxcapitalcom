@@ -124,7 +124,7 @@ export default function Valuations() {
   }).format(value);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       <div className="flex items-center justify-between border-b border-border pb-4">
         <div>
           <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Monthly Valuations</h1>
@@ -210,9 +210,9 @@ export default function Valuations() {
 
       {/* Quick Add Panel */}
       {uniqueAssets.length > 0 && (
-        <Card className="glass-card">
+        <Card size="sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Quick Add for Current Month</CardTitle>
+            <CardTitle>Quick Add for Current Month</CardTitle>
           </CardHeader>
           <CardContent>
             <QuickAddForm assets={uniqueAssets} onAdd={addValuation} />
@@ -221,9 +221,9 @@ export default function Valuations() {
       )}
 
       {/* Valuations by Month */}
-      <Card className="glass-card">
+      <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-medium">Valuation History</CardTitle>
+          <CardTitle>Valuation History</CardTitle>
         </CardHeader>
         <CardContent>
           {valuations.length === 0 ? (
