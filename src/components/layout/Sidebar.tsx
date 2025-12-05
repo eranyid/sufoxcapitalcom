@@ -21,17 +21,17 @@ const navItems = [{
   icon: FlaskConical,
   label: 'SCENARIOS'
 }, {
-  path: '/xray',
-  icon: Scan,
-  label: 'X-RAY'
+  path: '/transactions',
+  icon: ArrowRightLeft,
+  label: 'TRANSACTIONS'
 }, {
   path: '/management',
   icon: Settings2,
   label: 'MANAGEMENT'
 }, {
-  path: '/transactions',
-  icon: ArrowRightLeft,
-  label: 'TRANSACTIONS'
+  path: '/xray',
+  icon: Scan,
+  label: 'X-RAY'
 }, {
   path: '/valuations',
   icon: Calendar,
