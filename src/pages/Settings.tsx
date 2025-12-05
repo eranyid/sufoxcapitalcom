@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -349,6 +349,25 @@ export default function Settings() {
             <Button onClick={handleUpdatePassword} disabled={isUpdatingPassword || !newPassword || !confirmPassword}>
               {isUpdatingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Update Password
+            </Button>
+          </div>
+
+          {/* Sign Out */}
+          <div className="space-y-3 pt-4 border-t border-border">
+            <Label className="flex items-center gap-2">
+              <LogOut className="h-4 w-4" /> Sign Out
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Sign out of your account on this device.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                await signOut();
+                navigate('/auth');
+              }}
+            >
+              <LogOut className="h-4 w-4 mr-2" /> Sign Out
             </Button>
           </div>
 
