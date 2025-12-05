@@ -25,11 +25,11 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
       contentWidthRef.current = tickerRef.current.scrollWidth / 2;
     }
 
-    // Move ticker (right to left direction)
-    positionRef.current += 0.5; // Speed: pixels per frame
+    // Move ticker
+    positionRef.current -= 0.5; // Speed: pixels per frame
 
     // Reset position when first set of items is fully scrolled
-    if (positionRef.current >= contentWidthRef.current) {
+    if (Math.abs(positionRef.current) >= contentWidthRef.current) {
       positionRef.current = 0;
     }
 
