@@ -7,34 +7,23 @@ import {
   Calendar,
   Settings,
   ChevronLeft,
-  ChevronRight,
-  Scan,
-  Settings2,
-  LogOut,
-  FlaskConical,
-  FileCheck
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import sufoxLogo from '@/assets/sufox-logo.png';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'OVERVIEW' },
   { path: '/performance', icon: TrendingUp, label: 'PERFORMANCE' },
   { path: '/risk', icon: Shield, label: 'RISK' },
-  { path: '/scenarios', icon: FlaskConical, label: 'SCENARIOS' },
-  { path: '/xray', icon: Scan, label: 'X-RAY' },
-  { path: '/management', icon: Settings2, label: 'MANAGEMENT' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'TRANSACTIONS' },
   { path: '/valuations', icon: Calendar, label: 'VALUATIONS' },
-  { path: '/policy', icon: FileCheck, label: 'POLICY' },
   { path: '/settings', icon: Settings, label: 'SETTINGS' },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, signOut } = useAuth();
 
   return (
     <aside className={cn(
@@ -88,26 +77,6 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-
-      {/* User & Sign Out */}
-      <div className="border-t border-sidebar-border p-2 space-y-2">
-        {!collapsed && user && (
-          <div className="px-2 py-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Signed in as</p>
-            <p className="text-xs text-foreground truncate font-mono">{user.email}</p>
-          </div>
-        )}
-        <button
-          onClick={signOut}
-          className={cn(
-            "w-full flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded",
-            collapsed && "justify-center"
-          )}
-        >
-          <LogOut size={14} />
-          {!collapsed && <span className="text-[11px] tracking-wide">SIGN OUT</span>}
-        </button>
-      </div>
 
       {/* Footer */}
       {!collapsed && (

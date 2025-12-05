@@ -1,24 +1,10 @@
-import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { usePortfolio } from '@/context/PortfolioContext';
-import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { Database } from 'lucide-react';
-import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
-import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
 
 export function DashboardLayout() {
   const { sampleDataMode } = usePortfolio();
-  const [watchdogPanelOpen, setWatchdogPanelOpen] = useState(false);
-  const { 
-    validationResult, 
-    isValidating, 
-    runValidation, 
-    status, 
-    errorCount, 
-    warningCount, 
-    infoCount 
-  } = useDataWatchdog();
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -35,12 +21,6 @@ export function DashboardLayout() {
                 SAMPLE DATA
               </span>
             )}
-            <DataWatchdogStatus
-              status={status}
-              errorCount={errorCount}
-              warningCount={warningCount}
-              onClick={() => setWatchdogPanelOpen(true)}
-            />
           </div>
           <div className="flex items-center gap-4 font-mono text-muted-foreground">
             <span>USD</span>
@@ -52,17 +32,6 @@ export function DashboardLayout() {
           <Outlet />
         </div>
       </main>
-      
-      <DataWatchdogPanel
-        open={watchdogPanelOpen}
-        onOpenChange={setWatchdogPanelOpen}
-        validationResult={validationResult}
-        isValidating={isValidating}
-        onRunValidation={runValidation}
-        errorCount={errorCount}
-        warningCount={warningCount}
-        infoCount={infoCount}
-      />
     </div>
   );
 }

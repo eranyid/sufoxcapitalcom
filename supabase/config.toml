@@ -1,4 +1,0 @@
-project_id = "tibawkrjihvibckxutvj"
-
-[functions.analyze-policy]
-verify_jwt = false
