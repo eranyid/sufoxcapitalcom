@@ -10,12 +10,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { exportToCSV, importValuationsFromCSV } from '@/lib/storage';
-import { Plus, Upload, Download, Trash2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Upload, Download, Trash2, Calendar, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface EditFormState {
+  ticker: string;
+  month: string;
+  pricePerUnit: string;
+  fxRate: string;
+}
+
+const emptyEditForm: EditFormState = { ticker: '', month: '', pricePerUnit: '', fxRate: '' };
+
 export default function Valuations() {
-  const { transactions, valuations, addValuation, deleteValuation, importValuations } = usePortfolio();
+  const { transactions, valuations, addValuation, updateValuation, deleteValuation, importValuations } = usePortfolio();
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingValuation, setEditingValuation] = useState<MonthlyValuation | null>(null);
+  const [editForm, setEditForm] = useState<EditFormState>(emptyEditForm);
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +63,31 @@ export default function Valuations() {
     setIsOpen(false);
     setForm({ ticker: '', month: '', pricePerUnit: '', fxRate: '' });
     toast.success('Valuation added successfully');
+  };
+
+  const handleEditOpen = (val: MonthlyValuation) => {
+    setEditingValuation(val);
+    setEditForm({
+      ticker: val.ticker,
+      month: val.month,
+      pricePerUnit: val.pricePerUnit.toString(),
+      fxRate: val.fxRate?.toString() || ''
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingValuation) return;
+    
+    await updateValuation(editingValuation.id, {
+      pricePerUnit: parseFloat(editForm.pricePerUnit),
+      fxRate: editForm.fxRate ? parseFloat(editForm.fxRate) : undefined
+    });
+    setIsEditOpen(false);
+    setEditingValuation(null);
+    setEditForm(emptyEditForm);
+    toast.success('Valuation updated successfully');
   };
 
   const handleExport = () => {
@@ -234,33 +271,38 @@ export default function Valuations() {
                               {v.fxRate?.toFixed(4) || '1.0000'}
                             </TableCell>
                             <TableCell>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Valuation</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete the {v.month} valuation for {v.ticker}? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      onClick={async () => {
-                                        await deleteValuation(v.id);
-                                        toast.success('Valuation deleted');
-                                      }}
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="sm" onClick={() => handleEditOpen(v)}>
+                                  <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Valuation</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete the {v.month} valuation for {v.ticker}? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={async () => {
+                                          await deleteValuation(v.id);
+                                          toast.success('Valuation deleted');
+                                        }}
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -273,6 +315,63 @@ export default function Valuations() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Valuation Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={(open) => {
+        setIsEditOpen(open);
+        if (!open) {
+          setEditingValuation(null);
+          setEditForm(emptyEditForm);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Valuation</DialogTitle>
+          </DialogHeader>
+          {editingValuation && (
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-primary">{editingValuation.ticker}</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span>{editingValuation.assetName}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">Month: {editingValuation.month}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Price per Unit / NAV</Label>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    value={editForm.pricePerUnit}
+                    onChange={(e) => setEditForm({ ...editForm, pricePerUnit: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>FX Rate (optional)</Label>
+                  <Input 
+                    type="number"
+                    step="0.0001"
+                    value={editForm.fxRate}
+                    onChange={(e) => setEditForm({ ...editForm, fxRate: e.target.value })}
+                    placeholder="1.0000"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 gradient-gold text-primary-foreground">
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { exportToCSV, importTransactionsFromCSV } from '@/lib/storage';
 import { getKnownInceptionYear } from '@/lib/crashScenarios';
 import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle, Pencil } from 'lucide-react';
@@ -64,10 +65,44 @@ export default function Transactions() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [quantityError, setQuantityError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editForm, setEditForm] = useState<FormState>(emptyForm);
+
+  const sortedTransactions = useMemo(() => 
+    [...transactions].sort((a, b) => b.date.localeCompare(a.date)),
+    [transactions]
+  );
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === transactions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map(tx => tx.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await deleteTransaction(id);
+    }
+    setSelectedIds(new Set());
+    setIsBulkDeleteOpen(false);
+    toast.success(`Deleted ${ids.length} transactions`);
+  };
 
   // Compute current holdings from transactions
   const holdings = useMemo(() => {
@@ -562,8 +597,35 @@ export default function Transactions() {
 
       {/* Transactions Table */}
       <Card className="glass-card">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-medium">Transaction History</CardTitle>
+          {selectedIds.size > 0 && (
+            <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete {selectedIds.size} selected
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Multiple Transactions</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {selectedIds.size} transactions? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleBulkDelete}
+                  >
+                    Delete All
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </CardHeader>
         <CardContent>
           {transactions.length === 0 ? (
@@ -577,6 +639,12 @@ export default function Transactions() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox 
+                        checked={selectedIds.size === transactions.length && transactions.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Ticker</TableHead>
@@ -590,8 +658,14 @@ export default function Transactions() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {[...transactions].sort((a, b) => b.date.localeCompare(a.date)).map((tx) => (
-                    <TableRow key={tx.id}>
+                  {sortedTransactions.map((tx) => (
+                    <TableRow key={tx.id} className={selectedIds.has(tx.id) ? 'bg-muted/30' : ''}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedIds.has(tx.id)}
+                          onCheckedChange={() => toggleSelect(tx.id)}
+                        />
+                      </TableCell>
                       <TableCell>{tx.date}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
