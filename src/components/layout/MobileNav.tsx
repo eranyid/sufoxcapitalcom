@@ -3,7 +3,7 @@ import {
   LayoutDashboard, 
   TrendingUp, 
   Shield, 
-  ArrowRightLeft, 
+  Scan, 
   Settings,
   FlaskConical,
   MoreHorizontal,
@@ -25,11 +25,11 @@ const primaryNavItems = [
   { path: '/performance', icon: TrendingUp, label: 'Perform' },
   { path: '/risk', icon: Shield, label: 'Risk' },
   { path: '/scenarios', icon: FlaskConical, label: 'Scenarios' },
-  { path: '/transactions', icon: ArrowRightLeft, label: 'Trades' },
+  { path: '/xray', icon: Scan, label: 'X-Ray' },
 ];
 
 const moreNavItems = [
-  { path: '/xray', label: 'X-RAY' },
+  { path: '/transactions', label: 'Transactions' },
   { path: '/management', label: 'Management' },
   { path: '/valuations', label: 'Valuations' },
   { path: '/policy', label: 'Policy' },
