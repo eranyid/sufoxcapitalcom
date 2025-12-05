@@ -1,23 +1,133 @@
+import { useMemo } from 'react';
+// Force rebuild - development cache fix
 import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { AllocationChart } from '@/components/dashboard/AllocationChart';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
-import { calculateAllocations } from '@/lib/calculations';
-import { generatePDFReport } from '@/lib/pdfReport';
+import { CashManagement } from '@/components/dashboard/CashManagement';
+import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
+import { calculateAllocations, calculateCorrelationMatrix } from '@/lib/calculations';
+import { generatePDFReport, MonteCarloResultsForPDF, CorrelationMatrixForPDF } from '@/lib/pdfReport';
+import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileDown } from 'lucide-react';
 
+// Monte Carlo helper functions
+function toLogReturns(simpleReturns: number[]): number[] {
+  return simpleReturns.map(r => Math.log(1 + r / 100));
+}
+
+function calculateStats(logReturns: number[]): { mean: number; std: number } {
+  const n = logReturns.length;
+  if (n === 0) return { mean: 0, std: 0 };
+  const mean = logReturns.reduce((a, b) => a + b, 0) / n;
+  const variance = logReturns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (n - 1);
+  return { mean, std: Math.sqrt(variance) };
+}
+
+function generateNormalRandom(): number {
+  const u1 = Math.random();
+  const u2 = Math.random();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+
+function runMonteCarloForPDF(logReturns: number[], initialValue: number, years: number, numSims: number) {
+  const stats = calculateStats(logReturns);
+  const monthlyMean = stats.mean;
+  const monthlyStd = stats.std;
+  const totalSteps = years * 12;
+  
+  const finalValues: number[] = [];
+  for (let sim = 0; sim < numSims; sim++) {
+    let value = initialValue;
+    for (let step = 0; step < totalSteps; step++) {
+      const z = generateNormalRandom();
+      const logReturn = monthlyMean - 0.5 * monthlyStd * monthlyStd + monthlyStd * z;
+      value = value * Math.exp(logReturn);
+    }
+    finalValues.push(value);
+  }
+  return finalValues.sort((a, b) => a - b);
+}
+
+function getPercentile(sortedValues: number[], percentile: number): number {
+  const index = Math.floor((percentile / 100) * sortedValues.length);
+  return sortedValues[Math.min(index, sortedValues.length - 1)];
+}
+
 export default function Overview() {
-  const { transactions, valuations, performanceMetrics, riskMetrics } = usePortfolio();
+  const { transactions, valuations, performanceMetrics, riskMetrics, loading } = usePortfolio();
+
+  // Compute factor model
+  const factorModel = useMemo(() => {
+    if (transactions.length === 0 || valuations.length === 0) return null;
+    return computeFactorModel(transactions, valuations);
+  }, [transactions, valuations]);
+
+  // Compute Monte Carlo results for PDF
+  const monteCarloResults = useMemo((): MonteCarloResultsForPDF | null => {
+    if (!performanceMetrics || performanceMetrics.monthlyReturns.length < 3) return null;
+    
+    const monthlyReturns = performanceMetrics.monthlyReturns.map(r => r.return);
+    const logReturns = toLogReturns(monthlyReturns);
+    const stats = calculateStats(logReturns);
+    const currentValue = performanceMetrics.totalValue;
+    const numSims = 5000;
+    
+    const horizons = [20, 50, 65];
+    const horizonResults = horizons.map(horizon => {
+      const finalValues = runMonteCarloForPDF(logReturns, currentValue, horizon, numSims);
+      const probGain = (finalValues.filter(v => v > currentValue).length / finalValues.length) * 100;
+      const cutoffIndex = Math.floor(0.05 * finalValues.length);
+      const p5Value = finalValues[cutoffIndex];
+      const var95 = ((p5Value - currentValue) / currentValue) * 100;
+      const tailValues = finalValues.slice(0, cutoffIndex + 1);
+      const avgTail = tailValues.reduce((a, b) => a + b, 0) / tailValues.length;
+      const cvar95 = ((avgTail - currentValue) / currentValue) * 100;
+      
+      return {
+        horizon,
+        p5: getPercentile(finalValues, 5),
+        p25: getPercentile(finalValues, 25),
+        p50: getPercentile(finalValues, 50),
+        p75: getPercentile(finalValues, 75),
+        p95: getPercentile(finalValues, 95),
+        probGain,
+        probLoss: 100 - probGain,
+        var95,
+        cvar95,
+        expectedValue: finalValues.reduce((a, b) => a + b, 0) / finalValues.length,
+      };
+    });
+
+    return {
+      horizonResults,
+      currentValue,
+      annualizedReturn: (Math.exp(stats.mean * 12) - 1) * 100,
+      annualizedVol: stats.std * Math.sqrt(12) * 100,
+      numSimulations: numSims,
+    };
+  }, [performanceMetrics]);
+
+  // Compute correlation matrix for PDF
+  const correlationMatrix = useMemo((): CorrelationMatrixForPDF | null => {
+    if (transactions.length === 0 || valuations.length === 0) return null;
+    const result = calculateCorrelationMatrix(transactions, valuations);
+    if (result.tickers.length < 2) return null;
+    return result;
+  }, [transactions, valuations]);
 
   const handleExportPDF = () => {
     generatePDFReport({
       transactions,
       valuations,
       performanceMetrics,
-      riskMetrics
+      riskMetrics,
+      factorModel,
+      monteCarlo: monteCarloResults,
+      correlationMatrix,
     });
   };
 
@@ -39,8 +149,19 @@ export default function Overview() {
 
   const hasData = performanceMetrics !== null;
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm font-mono">Loading portfolio data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -60,7 +181,7 @@ export default function Overview() {
       </div>
 
       {/* Primary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <div className="kpi-grid">
         <KPICard
           title="Total Portfolio Value"
           value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
@@ -92,7 +213,7 @@ export default function Overview() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+      <div className="kpi-grid">
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
@@ -125,6 +246,14 @@ export default function Overview() {
         />
       </div>
 
+      {/* Cash Management & Policy Check */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-card">
+        <div className="lg:col-span-2">
+          <CashManagement />
+        </div>
+        <PolicyFitCheck />
+      </div>
+
       {/* Current Holdings */}
       {transactions.length > 0 && valuations.length > 0 && (
         <HoldingsTable transactions={transactions} valuations={valuations} />
@@ -133,7 +262,7 @@ export default function Overview() {
       {/* Charts Row 1 */}
       {hasData ? (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          <div className="chart-grid">
             <PerformanceChart 
               data={performanceMetrics.monthlyReturns}
               title="Monthly & Cumulative Returns"
@@ -144,13 +273,13 @@ export default function Overview() {
           </div>
 
           {/* Allocation Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="chart-grid">
             <AllocationChart data={assetTypeAllocation} title="Asset Class Allocation" />
             <AllocationChart data={geographyAllocation} title="Geographic Allocation" />
           </div>
         </>
       ) : (
-        <div className="bloomberg-panel p-8 text-center">
+        <div className="bloomberg-panel p-8 text-center card-md">
           <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <h3 className="text-sm font-medium mb-1 text-primary">No Data Available</h3>
           <p className="text-muted-foreground text-xs max-w-md mx-auto">

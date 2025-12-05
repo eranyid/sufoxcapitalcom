@@ -10,12 +10,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { exportToCSV, importValuationsFromCSV } from '@/lib/storage';
-import { Plus, Upload, Download, Trash2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Upload, Download, Trash2, Calendar, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface EditFormState {
+  ticker: string;
+  month: string;
+  pricePerUnit: string;
+  fxRate: string;
+}
+
+const emptyEditForm: EditFormState = { ticker: '', month: '', pricePerUnit: '', fxRate: '' };
+
 export default function Valuations() {
-  const { transactions, valuations, addValuation, deleteValuation, importValuations } = usePortfolio();
+  const { transactions, valuations, addValuation, updateValuation, deleteValuation, importValuations } = usePortfolio();
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingValuation, setEditingValuation] = useState<MonthlyValuation | null>(null);
+  const [editForm, setEditForm] = useState<EditFormState>(emptyEditForm);
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,10 +49,10 @@ export default function Valuations() {
     fxRate: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const asset = uniqueAssets.find(a => a.ticker === form.ticker);
-    addValuation({
+    await addValuation({
       assetId: form.ticker,
       ticker: form.ticker,
       assetName: asset?.name || form.ticker,
@@ -53,6 +65,31 @@ export default function Valuations() {
     toast.success('Valuation added successfully');
   };
 
+  const handleEditOpen = (val: MonthlyValuation) => {
+    setEditingValuation(val);
+    setEditForm({
+      ticker: val.ticker,
+      month: val.month,
+      pricePerUnit: val.pricePerUnit.toString(),
+      fxRate: val.fxRate?.toString() || ''
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingValuation) return;
+    
+    await updateValuation(editingValuation.id, {
+      pricePerUnit: parseFloat(editForm.pricePerUnit),
+      fxRate: editForm.fxRate ? parseFloat(editForm.fxRate) : undefined
+    });
+    setIsEditOpen(false);
+    setEditingValuation(null);
+    setEditForm(emptyEditForm);
+    toast.success('Valuation updated successfully');
+  };
+
   const handleExport = () => {
     exportToCSV(valuations, `sufox_valuations_${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success('Valuations exported');
@@ -62,10 +99,10 @@ export default function Valuations() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         const csv = event.target?.result as string;
         const imported = importValuationsFromCSV(csv);
-        importValuations(imported);
+        await importValuations(imported);
         toast.success(`Imported ${imported.length} valuations`);
       };
       reader.readAsText(file);
@@ -87,7 +124,7 @@ export default function Valuations() {
   }).format(value);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       <div className="flex items-center justify-between border-b border-border pb-4">
         <div>
           <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Monthly Valuations</h1>
@@ -173,9 +210,9 @@ export default function Valuations() {
 
       {/* Quick Add Panel */}
       {uniqueAssets.length > 0 && (
-        <Card className="glass-card">
+        <Card size="sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Quick Add for Current Month</CardTitle>
+            <CardTitle>Quick Add for Current Month</CardTitle>
           </CardHeader>
           <CardContent>
             <QuickAddForm assets={uniqueAssets} onAdd={addValuation} />
@@ -184,9 +221,9 @@ export default function Valuations() {
       )}
 
       {/* Valuations by Month */}
-      <Card className="glass-card">
+      <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-medium">Valuation History</CardTitle>
+          <CardTitle>Valuation History</CardTitle>
         </CardHeader>
         <CardContent>
           {valuations.length === 0 ? (
@@ -234,33 +271,38 @@ export default function Valuations() {
                               {v.fxRate?.toFixed(4) || '1.0000'}
                             </TableCell>
                             <TableCell>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Valuation</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete the {v.month} valuation for {v.ticker}? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      onClick={() => {
-                                        deleteValuation(v.id);
-                                        toast.success('Valuation deleted');
-                                      }}
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="sm" onClick={() => handleEditOpen(v)}>
+                                  <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Valuation</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete the {v.month} valuation for {v.ticker}? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={async () => {
+                                          await deleteValuation(v.id);
+                                          toast.success('Valuation deleted');
+                                        }}
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -273,6 +315,63 @@ export default function Valuations() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Valuation Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={(open) => {
+        setIsEditOpen(open);
+        if (!open) {
+          setEditingValuation(null);
+          setEditForm(emptyEditForm);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Valuation</DialogTitle>
+          </DialogHeader>
+          {editingValuation && (
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-primary">{editingValuation.ticker}</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span>{editingValuation.assetName}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">Month: {editingValuation.month}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Price per Unit / NAV</Label>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    value={editForm.pricePerUnit}
+                    onChange={(e) => setEditForm({ ...editForm, pricePerUnit: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>FX Rate (optional)</Label>
+                  <Input 
+                    type="number"
+                    step="0.0001"
+                    value={editForm.fxRate}
+                    onChange={(e) => setEditForm({ ...editForm, fxRate: e.target.value })}
+                    placeholder="1.0000"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 gradient-gold text-primary-foreground">
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -283,15 +382,15 @@ function QuickAddForm({
   onAdd 
 }: { 
   assets: { ticker: string; name: string }[]; 
-  onAdd: (val: Omit<MonthlyValuation, 'id'>) => void;
+  onAdd: (val: Omit<MonthlyValuation, 'id'>) => Promise<void>;
 }) {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const [values, setValues] = useState<Record<string, { price: string; fx: string }>>({});
 
-  const handleQuickAdd = (ticker: string, name: string) => {
+  const handleQuickAdd = async (ticker: string, name: string) => {
     const val = values[ticker];
     if (val?.price) {
-      onAdd({
+      await onAdd({
         assetId: ticker,
         ticker,
         assetName: name,

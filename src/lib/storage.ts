@@ -1,9 +1,10 @@
-import { Transaction, MonthlyValuation, PortfolioSettings } from '@/types/investment';
+import { Transaction, MonthlyValuation, PortfolioSettings, CashBalances } from '@/types/investment';
 
 const STORAGE_KEYS = {
   TRANSACTIONS: 'sufox_transactions',
   VALUATIONS: 'sufox_valuations',
-  SETTINGS: 'sufox_settings'
+  SETTINGS: 'sufox_settings',
+  CASH_BALANCES: 'sufox_cash_balances'
 };
 
 export function saveTransactions(transactions: Transaction[]) {
@@ -35,6 +36,15 @@ export function loadSettings(): PortfolioSettings {
     benchmarkReturns: [],
     baseCurrency: 'USD'
   };
+}
+
+export function saveCashBalances(balances: CashBalances) {
+  localStorage.setItem(STORAGE_KEYS.CASH_BALANCES, JSON.stringify(balances));
+}
+
+export function loadCashBalances(): CashBalances {
+  const data = localStorage.getItem(STORAGE_KEYS.CASH_BALANCES);
+  return data ? JSON.parse(data) : { USD: 0, EUR: 0, ILS: 0 };
 }
 
 // CSV Export
@@ -92,7 +102,8 @@ export function importTransactionsFromCSV(csvText: string): Transaction[] {
     pricePerUnit: parseFloat(row.pricePerUnit || row.price_per_unit || row.price) || 0,
     fees: parseFloat(row.fees) || 0,
     currency: (row.currency || 'USD') as Transaction['currency'],
-    geography: (row.geography || 'north_america') as Transaction['geography']
+    geography: (row.geography || 'north_america') as Transaction['geography'],
+    inceptionYear: row.inceptionYear || row.inception_year ? parseInt(row.inceptionYear || row.inception_year) : undefined
   }));
 }
 

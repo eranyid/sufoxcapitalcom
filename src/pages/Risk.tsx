@@ -1,23 +1,37 @@
 import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
+import { RiskContributionTable } from '@/components/dashboard/RiskContributionTable';
+import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
+import { FactorExposureTable } from '@/components/dashboard/FactorExposureTable';
+import { FactorRiskChart } from '@/components/dashboard/FactorRiskChart';
+import { SystematicRiskPie } from '@/components/dashboard/SystematicRiskPie';
+import { FactorCorrelationHeatmap } from '@/components/dashboard/FactorCorrelationHeatmap';
+import { computeFactorModel } from '@/lib/factorModel';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge } from 'lucide-react';
+import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge, Crosshair, Layers } from 'lucide-react';
+import { useMemo } from 'react';
 
 export default function Risk() {
-  const { performanceMetrics, riskMetrics, settings } = usePortfolio();
+  const { performanceMetrics, riskMetrics, settings, transactions, valuations } = usePortfolio();
 
   const hasData = riskMetrics !== null && performanceMetrics !== null;
 
+  // Compute factor model results
+  const factorModelResults = useMemo(() => {
+    if (!hasData) return null;
+    return computeFactorModel(transactions, valuations);
+  }, [transactions, valuations, hasData]);
+
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       <div>
         <h1 className="terminal-label text-base">Risk Dashboard</h1>
         <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Risk metrics and volatility analysis</p>
       </div>
 
       {/* Risk KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2">
+      <div className="kpi-grid">
         <KPICard
           title="Volatility"
           value={hasData ? `${riskMetrics.volatility.toFixed(2)}%` : '0.00%'}
@@ -62,10 +76,25 @@ export default function Risk() {
           icon={Gauge}
           subtitle="vs Benchmark"
         />
+        <KPICard
+          title="Track Err"
+          value={hasData ? `${riskMetrics.trackingError.toFixed(2)}%` : '0.00%'}
+          icon={Crosshair}
+          subtitle="Annualized"
+        />
       </div>
 
       {hasData ? (
         <>
+          {/* Risk Contribution */}
+          <RiskContributionTable transactions={transactions} valuations={valuations} />
+
+          {/* Monte Carlo Simulation */}
+          <MonteCarloSimulation 
+            monthlyReturns={performanceMetrics.monthlyReturns.map(m => m.return)} 
+            currentValue={performanceMetrics.totalValue}
+          />
+
           {/* Drawdown Chart */}
           <DrawdownChart data={performanceMetrics.drawdownSeries} />
 
@@ -163,6 +192,45 @@ export default function Risk() {
             </div>
           </div>
 
+          {/* Factor Model Section */}
+          {factorModelResults && (
+            <>
+              {/* Factor Model Header */}
+              <div className="bloomberg-panel bg-secondary/30">
+                <div className="px-3 py-2 flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  <span className="text-primary font-semibold text-xs uppercase tracking-wide">
+                    Factor Model Analysis
+                  </span>
+                  <span className="text-muted-foreground text-[9px] ml-auto">
+                    Bloomberg PORT / MSCI Barra Style
+                  </span>
+                </div>
+              </div>
+
+              {/* Factor Exposures and Risk Decomposition */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                <FactorExposureTable exposures={factorModelResults.exposures} />
+                <SystematicRiskPie 
+                  systematicPct={factorModelResults.systematicPct}
+                  specificPct={factorModelResults.specificPct}
+                  residualVolatility={factorModelResults.residualVolatility}
+                />
+              </div>
+
+              {/* Factor Risk Contribution */}
+              <FactorRiskChart 
+                riskBreakdown={factorModelResults.risk}
+                specificPct={factorModelResults.specificPct}
+              />
+
+              {/* Factor Correlation Matrix */}
+              <FactorCorrelationHeatmap 
+                correlationMatrix={factorModelResults.factorCorrelation}
+              />
+            </>
+          )}
+
           {/* Risk Explanation */}
           <div className="bloomberg-panel">
             <div className="bloomberg-header">
@@ -195,8 +263,12 @@ export default function Risk() {
                   <p className="text-muted-foreground">Sensitivity to benchmark</p>
                 </div>
                 <div>
-                  <h4 className="text-primary font-semibold mb-0.5">Risk-Free Rate</h4>
-                  <p className="text-muted-foreground">Set to {settings.riskFreeRate}%</p>
+                  <h4 className="text-primary font-semibold mb-0.5">Systematic Risk</h4>
+                  <p className="text-muted-foreground">Factor-driven variance</p>
+                </div>
+                <div>
+                  <h4 className="text-primary font-semibold mb-0.5">Specific Risk</h4>
+                  <p className="text-muted-foreground">Idiosyncratic variance</p>
                 </div>
               </div>
             </div>

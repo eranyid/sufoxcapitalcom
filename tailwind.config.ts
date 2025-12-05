@@ -17,6 +17,15 @@ export default {
         sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Consolas', 'Monaco', 'monospace'],
       },
+      spacing: {
+        'card': 'var(--spacing-card)',
+      },
+      minHeight: {
+        'card-sm': 'var(--card-sm)',
+        'card-md': 'var(--card-md)',
+        'card-lg': 'var(--card-lg)',
+        'card-xl': 'var(--card-xl)',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -64,6 +73,8 @@ export default {
           negative: "hsl(var(--chart-negative))",
           neutral: "hsl(var(--chart-neutral))",
           gold: "hsl(var(--chart-gold))",
+          blue: "hsl(var(--chart-blue))",
+          white: "hsl(var(--chart-white))",
           navy: "hsl(var(--chart-navy))",
         },
         sidebar: {
@@ -81,6 +92,9 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      gap: {
+        'card': 'var(--spacing-card)',
       },
       keyframes: {
         "accordion-down": {

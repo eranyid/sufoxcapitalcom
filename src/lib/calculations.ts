@@ -442,6 +442,185 @@ export function calculatePerformanceMetrics(
   };
 }
 
+// Calculate asset-level monthly returns for correlation
+export function calculateAssetMonthlyReturns(
+  transactions: Transaction[],
+  valuations: MonthlyValuation[]
+): Record<string, { month: string; return: number }[]> {
+  const tickers = [...new Set(transactions.map(t => t.ticker))];
+  const assetReturns: Record<string, { month: string; return: number }[]> = {};
+  
+  for (const ticker of tickers) {
+    const tickerValuations = valuations.filter(v => v.ticker === ticker).sort((a, b) => a.month.localeCompare(b.month));
+    const returns: { month: string; return: number }[] = [];
+    
+    for (let i = 1; i < tickerValuations.length; i++) {
+      const prevPrice = tickerValuations[i - 1].pricePerUnit;
+      const currPrice = tickerValuations[i].pricePerUnit;
+      if (prevPrice > 0) {
+        returns.push({
+          month: tickerValuations[i].month,
+          return: ((currPrice - prevPrice) / prevPrice) * 100
+        });
+      }
+    }
+    
+    if (returns.length > 0) {
+      assetReturns[ticker] = returns;
+    }
+  }
+  
+  return assetReturns;
+}
+
+// Calculate correlation matrix between assets
+export function calculateCorrelationMatrix(
+  transactions: Transaction[],
+  valuations: MonthlyValuation[]
+): { tickers: string[]; matrix: number[][] } {
+  const assetReturns = calculateAssetMonthlyReturns(transactions, valuations);
+  const tickers = Object.keys(assetReturns).filter(t => assetReturns[t].length >= 3);
+  
+  if (tickers.length < 2) return { tickers: [], matrix: [] };
+  
+  // Align returns to common months
+  const allMonths = new Set<string>();
+  tickers.forEach(t => assetReturns[t].forEach(r => allMonths.add(r.month)));
+  const commonMonths = [...allMonths].filter(month => 
+    tickers.every(t => assetReturns[t].some(r => r.month === month))
+  ).sort();
+  
+  if (commonMonths.length < 3) return { tickers: [], matrix: [] };
+  
+  const alignedReturns: Record<string, number[]> = {};
+  tickers.forEach(t => {
+    alignedReturns[t] = commonMonths.map(month => {
+      const ret = assetReturns[t].find(r => r.month === month);
+      return ret ? ret.return : 0;
+    });
+  });
+  
+  // Calculate correlation matrix
+  const matrix: number[][] = [];
+  
+  for (let i = 0; i < tickers.length; i++) {
+    matrix[i] = [];
+    for (let j = 0; j < tickers.length; j++) {
+      if (i === j) {
+        matrix[i][j] = 1;
+      } else {
+        matrix[i][j] = calculateCorrelation(alignedReturns[tickers[i]], alignedReturns[tickers[j]]);
+      }
+    }
+  }
+  
+  return { tickers, matrix };
+}
+
+function calculateCorrelation(x: number[], y: number[]): number {
+  const n = x.length;
+  if (n < 2) return 0;
+  
+  const meanX = x.reduce((a, b) => a + b, 0) / n;
+  const meanY = y.reduce((a, b) => a + b, 0) / n;
+  
+  let sumXY = 0, sumX2 = 0, sumY2 = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = x[i] - meanX;
+    const dy = y[i] - meanY;
+    sumXY += dx * dy;
+    sumX2 += dx * dx;
+    sumY2 += dy * dy;
+  }
+  
+  const denom = Math.sqrt(sumX2 * sumY2);
+  return denom === 0 ? 0 : sumXY / denom;
+}
+
+// Calculate risk contribution per asset
+export function calculateRiskContribution(
+  transactions: Transaction[],
+  valuations: MonthlyValuation[]
+): { ticker: string; name: string; weight: number; marginalRisk: number; riskContribution: number; riskPct: number }[] {
+  const positions = calculatePositions(transactions);
+  const latestVals = getLatestValuations(valuations);
+  const assetReturns = calculateAssetMonthlyReturns(transactions, valuations);
+  
+  // Calculate weights
+  let totalValue = 0;
+  const holdings: { ticker: string; name: string; value: number; weight: number }[] = [];
+  
+  for (const [ticker, pos] of Object.entries(positions)) {
+    if (pos.quantity <= 0) continue;
+    const val = latestVals[ticker];
+    const tx = transactions.find(t => t.ticker === ticker);
+    if (!val || !tx) continue;
+    
+    const value = pos.quantity * val.pricePerUnit * (val.fxRate || 1);
+    totalValue += value;
+    holdings.push({ ticker, name: tx.assetName, value, weight: 0 });
+  }
+  
+  holdings.forEach(h => h.weight = h.value / totalValue);
+  
+  // Calculate asset volatilities
+  const assetVols: Record<string, number> = {};
+  for (const ticker of holdings.map(h => h.ticker)) {
+    const returns = assetReturns[ticker]?.map(r => r.return) || [];
+    assetVols[ticker] = calculateVolatility(returns);
+  }
+  
+  // Calculate portfolio volatility
+  const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
+  const portfolioVol = calculateVolatility(monthlyReturns.map(r => r.return));
+  
+  // Risk contribution = weight * asset_vol * correlation_with_portfolio
+  // Simplified: marginal contribution to volatility
+  const results: { ticker: string; name: string; weight: number; marginalRisk: number; riskContribution: number; riskPct: number }[] = [];
+  let totalRisk = 0;
+  
+  for (const h of holdings) {
+    const assetVol = assetVols[h.ticker] || 0;
+    const marginalRisk = assetVol * h.weight;
+    totalRisk += marginalRisk;
+    
+    results.push({
+      ticker: h.ticker,
+      name: h.name,
+      weight: h.weight * 100,
+      marginalRisk: assetVol,
+      riskContribution: marginalRisk,
+      riskPct: 0
+    });
+  }
+  
+  // Calculate percentage contribution
+  results.forEach(r => r.riskPct = totalRisk > 0 ? (r.riskContribution / totalRisk) * 100 : 0);
+  
+  return results.sort((a, b) => b.riskPct - a.riskPct);
+}
+
+// Calculate tracking error
+export function calculateTrackingError(
+  portfolioReturns: number[],
+  benchmarkReturns: number[]
+): number {
+  if (portfolioReturns.length < 2 || benchmarkReturns.length < 2) return 0;
+  
+  const n = Math.min(portfolioReturns.length, benchmarkReturns.length);
+  const portRets = portfolioReturns.slice(-n);
+  const benchRets = benchmarkReturns.slice(-n);
+  
+  // Active returns (difference)
+  const activeReturns = portRets.map((r, i) => r - benchRets[i]);
+  
+  // Tracking error = std dev of active returns, annualized
+  const mean = activeReturns.reduce((a, b) => a + b, 0) / n;
+  const variance = activeReturns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (n - 1);
+  
+  return Math.sqrt(variance) * Math.sqrt(12); // Annualize
+}
+
 // Full risk metrics calculation
 export function calculateRiskMetrics(
   transactions: Transaction[],
@@ -462,6 +641,7 @@ export function calculateRiskMetrics(
   const { maxDrawdown } = calculateDrawdown(cumulativeReturns);
   
   const beta = calculateBeta(returns, benchmarkReturns);
+  const trackingError = calculateTrackingError(returns, benchmarkReturns);
   const { rollingVolatility, rollingSharpe } = calculateRollingMetrics(monthlyReturns, riskFreeRate);
   
   return {
@@ -472,6 +652,7 @@ export function calculateRiskMetrics(
     var99,
     maxDrawdown,
     beta,
+    trackingError,
     rollingVolatility,
     rollingSharpe
   };

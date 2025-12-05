@@ -2,28 +2,28 @@ import { Transaction, MonthlyValuation } from '@/types/investment';
 
 export const sampleTransactions: Transaction[] = [
   // Equities
-  { id: 'tx-1', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'buy', date: '2024-01-15', quantity: 50, pricePerUnit: 185.50, fees: 9.95, currency: 'USD', geography: 'north_america' },
-  { id: 'tx-2', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', date: '2024-01-20', quantity: 30, pricePerUnit: 390.00, fees: 9.95, currency: 'USD', geography: 'north_america' },
-  { id: 'tx-3', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', date: '2024-02-10', quantity: 20, pricePerUnit: 680.00, fees: 9.95, currency: 'USD', geography: 'north_america' },
-  { id: 'tx-4', assetName: 'ASML Holding', ticker: 'ASML', assetType: 'equity', transactionType: 'buy', date: '2024-03-05', quantity: 10, pricePerUnit: 920.00, fees: 14.95, currency: 'EUR', geography: 'europe' },
-  { id: 'tx-5', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', date: '2024-04-12', quantity: 25, pricePerUnit: 165.00, fees: 9.95, currency: 'USD', geography: 'north_america' },
+  { id: 'tx-1', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'buy', date: '2024-01-15', quantity: 50, pricePerUnit: 185.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+  { id: 'tx-2', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', date: '2024-01-20', quantity: 30, pricePerUnit: 390.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
+  { id: 'tx-3', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', date: '2024-02-10', quantity: 20, pricePerUnit: 680.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+  { id: 'tx-4', assetName: 'ASML Holding', ticker: 'ASML', assetType: 'equity', transactionType: 'buy', date: '2024-03-05', quantity: 10, pricePerUnit: 920.00, fees: 14.95, currency: 'EUR', geography: 'europe', inceptionYear: 1995 },
+  { id: 'tx-5', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', date: '2024-04-12', quantity: 25, pricePerUnit: 165.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
   
   // Bonds/ETFs
-  { id: 'tx-6', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'buy', date: '2024-02-01', quantity: 100, pricePerUnit: 98.50, fees: 4.95, currency: 'USD', geography: 'north_america' },
-  { id: 'tx-7', assetName: 'Vanguard Total Bond Market', ticker: 'BND', assetType: 'bond', transactionType: 'buy', date: '2024-03-15', quantity: 80, pricePerUnit: 72.30, fees: 4.95, currency: 'USD', geography: 'north_america' },
+  { id: 'tx-6', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'buy', date: '2024-02-01', quantity: 100, pricePerUnit: 98.50, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
+  { id: 'tx-7', assetName: 'Vanguard Total Bond Market', ticker: 'BND', assetType: 'bond', transactionType: 'buy', date: '2024-03-15', quantity: 80, pricePerUnit: 72.30, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2007 },
   
   // Crypto
-  { id: 'tx-8', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', date: '2024-01-25', quantity: 0.5, pricePerUnit: 42000.00, fees: 25.00, currency: 'USD', geography: 'global' },
-  { id: 'tx-9', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', date: '2024-02-15', quantity: 3, pricePerUnit: 2500.00, fees: 15.00, currency: 'USD', geography: 'global' },
-  { id: 'tx-10', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', date: '2024-05-10', quantity: 0.25, pricePerUnit: 61000.00, fees: 20.00, currency: 'USD', geography: 'global' },
+  { id: 'tx-8', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', date: '2024-01-25', quantity: 0.5, pricePerUnit: 42000.00, fees: 25.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+  { id: 'tx-9', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', date: '2024-02-15', quantity: 3, pricePerUnit: 2500.00, fees: 15.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+  { id: 'tx-10', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', date: '2024-05-10', quantity: 0.25, pricePerUnit: 61000.00, fees: 20.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   
   // Emerging Markets
-  { id: 'tx-11', assetName: 'Taiwan Semiconductor', ticker: 'TSM', assetType: 'equity', transactionType: 'buy', date: '2024-04-20', quantity: 40, pricePerUnit: 140.00, fees: 12.95, currency: 'USD', geography: 'asia_pacific' },
-  { id: 'tx-12', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', date: '2024-05-01', quantity: 150, pricePerUnit: 42.50, fees: 4.95, currency: 'USD', geography: 'emerging_markets' },
+  { id: 'tx-11', assetName: 'Taiwan Semiconductor', ticker: 'TSM', assetType: 'equity', transactionType: 'buy', date: '2024-04-20', quantity: 40, pricePerUnit: 140.00, fees: 12.95, currency: 'USD', geography: 'asia_pacific', inceptionYear: 1997 },
+  { id: 'tx-12', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', date: '2024-05-01', quantity: 150, pricePerUnit: 42.50, fees: 4.95, currency: 'USD', geography: 'emerging_markets', inceptionYear: 2003 },
   
   // Partial sell (realized P/L)
-  { id: 'tx-13', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'sell', date: '2024-08-15', quantity: 15, pricePerUnit: 225.00, fees: 9.95, currency: 'USD', geography: 'north_america' },
-  { id: 'tx-14', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'sell', date: '2024-09-20', quantity: 1, pricePerUnit: 2650.00, fees: 10.00, currency: 'USD', geography: 'global' },
+  { id: 'tx-13', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'sell', date: '2024-08-15', quantity: 15, pricePerUnit: 225.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+  { id: 'tx-14', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'sell', date: '2024-09-20', quantity: 1, pricePerUnit: 2650.00, fees: 10.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
 ];
 
 // Helper to generate monthly valuations
