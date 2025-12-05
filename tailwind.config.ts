@@ -73,6 +73,8 @@ export default {
           negative: "hsl(var(--chart-negative))",
           neutral: "hsl(var(--chart-neutral))",
           gold: "hsl(var(--chart-gold))",
+          blue: "hsl(var(--chart-blue))",
+          white: "hsl(var(--chart-white))",
           navy: "hsl(var(--chart-navy))",
         },
         sidebar: {
