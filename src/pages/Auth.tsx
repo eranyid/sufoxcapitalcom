@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { usePasskey } from '@/hooks/usePasskey';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle } from 'lucide-react';
+import { FaceIdIcon } from '@/components/icons/FaceIdIcon';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -20,7 +22,17 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [showPasskeySetup, setShowPasskeySetup] = useState(false);
+  const [faceIdError, setFaceIdError] = useState<string | null>(null);
   const { signIn, signUp, user, loading } = useAuth();
+  const { 
+    isSupported: isFaceIdSupported, 
+    hasPasskey, 
+    isLoading: isFaceIdLoading,
+    checkHasPasskey,
+    registerPasskey,
+    authenticateWithPasskey 
+  } = usePasskey();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,8 +67,33 @@ export default function Auth() {
     setIsLoading(false);
     
     if (!error) {
+      // After successful login, offer passkey setup if supported and not already set up
+      if (isFaceIdSupported && !hasPasskey) {
+        setShowPasskeySetup(true);
+      } else {
+        navigate('/');
+      }
+    }
+  };
+
+  const handleFaceIdSignIn = async () => {
+    setFaceIdError(null);
+    const success = await authenticateWithPasskey();
+    if (success) {
       navigate('/');
     }
+  };
+
+  const handleSetupPasskey = async () => {
+    const success = await registerPasskey();
+    if (success) {
+      navigate('/');
+    }
+  };
+
+  const handleSkipPasskeySetup = () => {
+    setShowPasskeySetup(false);
+    navigate('/');
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -208,9 +245,85 @@ export default function Auth() {
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                     Sign In
                   </Button>
+
+                  {/* Face ID Sign In Button */}
+                  {isFaceIdSupported && (
+                    <div className="mt-4 space-y-2">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-card px-2 text-muted-foreground">or</span>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-12 text-base font-medium border-border hover:bg-secondary/50 safe-area-bottom"
+                        onClick={handleFaceIdSignIn}
+                        disabled={isFaceIdLoading}
+                      >
+                        {isFaceIdLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                        ) : (
+                          <FaceIdIcon className="h-5 w-5 mr-2" />
+                        )}
+                        Sign in with Face ID
+                      </Button>
+                      
+                      <p className="text-xs text-muted-foreground text-center">
+                        Use Face ID for quick, secure access on this device.
+                      </p>
+                      
+                      {faceIdError && (
+                        <p className="text-xs text-destructive text-center">{faceIdError}</p>
+                      )}
+                    </div>
+                  )}
                 </form>
               </TabsContent>
               
+              {/* Passkey Setup Prompt */}
+              {showPasskeySetup && (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-inset">
+                  <Card className="w-full max-w-md bg-card border-border">
+                    <CardHeader className="text-center space-y-4">
+                      <div className="mx-auto p-4 bg-primary/10 rounded-full w-fit">
+                        <FaceIdIcon className="h-12 w-12 text-primary" />
+                      </div>
+                      <CardTitle className="text-xl">Enable Face ID</CardTitle>
+                      <CardDescription>
+                        Set up Face ID for faster, more secure sign-ins on this device.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Button
+                        onClick={handleSetupPasskey}
+                        className="w-full h-12 text-base font-medium bg-primary text-primary-foreground"
+                        disabled={isFaceIdLoading}
+                      >
+                        {isFaceIdLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                        ) : (
+                          <FaceIdIcon className="h-5 w-5 mr-2" />
+                        )}
+                        Set Up Face ID
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={handleSkipPasskeySetup}
+                        className="w-full h-11 text-sm text-muted-foreground"
+                        disabled={isFaceIdLoading}
+                      >
+                        Not Now
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
               <TabsContent value="signup" className="mt-6">
                 {showEmailConfirmation ? (
                   <div className="space-y-4 text-center py-4">

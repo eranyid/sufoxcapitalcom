@@ -152,6 +152,42 @@ export type Database = {
         }
         Relationships: []
       }
+      passkey_credentials: {
+        Row: {
+          counter: number
+          created_at: string
+          credential_id: string
+          device_type: string | null
+          id: string
+          last_used_at: string | null
+          public_key: string
+          transports: string[] | null
+          user_id: string
+        }
+        Insert: {
+          counter?: number
+          created_at?: string
+          credential_id: string
+          device_type?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key: string
+          transports?: string[] | null
+          user_id: string
+        }
+        Update: {
+          counter?: number
+          created_at?: string
+          credential_id?: string
+          device_type?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key?: string
+          transports?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolio_settings: {
         Row: {
           base_currency: string | null
