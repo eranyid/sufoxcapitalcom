@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from '@/components/ui/checkbox';
 import { exportToCSV, importTransactionsFromCSV } from '@/lib/storage';
 import { getKnownInceptionYear } from '@/lib/crashScenarios';
-import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle, Pencil } from 'lucide-react';
+import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle, Pencil, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund', 'private_equity', 'private_debt', 'hedge_fund'];
@@ -69,13 +69,51 @@ export default function Transactions() {
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | TransactionType>('all');
+  
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editForm, setEditForm] = useState<FormState>(emptyForm);
 
+  // Filter and sort transactions
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(tx => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          tx.ticker.toLowerCase().includes(query) ||
+          tx.assetName.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
+      
+      // Date range filter
+      if (dateFrom && tx.date < dateFrom) return false;
+      if (dateTo && tx.date > dateTo) return false;
+      
+      // Type filter
+      if (typeFilter !== 'all' && tx.transactionType !== typeFilter) return false;
+      
+      return true;
+    });
+  }, [transactions, searchQuery, dateFrom, dateTo, typeFilter]);
+
   const sortedTransactions = useMemo(() => 
-    [...transactions].sort((a, b) => b.date.localeCompare(a.date)),
-    [transactions]
+    [...filteredTransactions].sort((a, b) => b.date.localeCompare(a.date)),
+    [filteredTransactions]
   );
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setDateFrom('');
+    setDateTo('');
+    setTypeFilter('all');
+  };
+
+  const hasActiveFilters = searchQuery || dateFrom || dateTo || typeFilter !== 'all';
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -87,10 +125,16 @@ export default function Transactions() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === transactions.length) {
-      setSelectedIds(new Set());
+    const filteredIds = sortedTransactions.map(tx => tx.id);
+    const allSelected = filteredIds.every(id => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        filteredIds.forEach(id => next.delete(id));
+        return next;
+      });
     } else {
-      setSelectedIds(new Set(transactions.map(tx => tx.id)));
+      setSelectedIds(prev => new Set([...prev, ...filteredIds]));
     }
   };
 
@@ -595,6 +639,72 @@ export default function Transactions() {
         </div>
       </div>
 
+      {/* Filters */}
+      {transactions.length > 0 && (
+        <Card className="glass-card">
+          <CardContent className="pt-4">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <Label className="text-xs text-muted-foreground mb-1 block">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search ticker or asset name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground mb-1 block">From Date</Label>
+                <Input 
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground mb-1 block">To Date</Label>
+                <Input 
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+              <div className="w-[120px]">
+                <Label className="text-xs text-muted-foreground mb-1 block">Type</Label>
+                <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as 'all' | TransactionType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="buy">
+                      <span className="text-success">BUY</span>
+                    </SelectItem>
+                    <SelectItem value="sell">
+                      <span className="text-destructive">SELL</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </div>
+            {hasActiveFilters && (
+              <p className="text-sm text-muted-foreground mt-3">
+                Showing {sortedTransactions.length} of {transactions.length} transactions
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Transactions Table */}
       <Card className="glass-card">
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -634,6 +744,15 @@ export default function Transactions() {
               <h3 className="text-xl font-medium mb-2">No Transactions Yet</h3>
               <p className="text-muted-foreground">Add your first transaction to get started.</p>
             </div>
+          ) : sortedTransactions.length === 0 ? (
+            <div className="py-12 text-center">
+              <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-medium mb-2">No Matching Transactions</h3>
+              <p className="text-muted-foreground">Try adjusting your filters.</p>
+              <Button variant="outline" onClick={clearFilters} className="mt-4">
+                Clear Filters
+              </Button>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -641,7 +760,7 @@ export default function Transactions() {
                   <TableRow>
                     <TableHead className="w-10">
                       <Checkbox 
-                        checked={selectedIds.size === transactions.length && transactions.length > 0}
+                        checked={sortedTransactions.length > 0 && sortedTransactions.every(tx => selectedIds.has(tx.id))}
                         onCheckedChange={toggleSelectAll}
                       />
                     </TableHead>
