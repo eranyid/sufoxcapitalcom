@@ -355,15 +355,20 @@ export default function Auth() {
                     <div className="space-y-2">
                       <h3 className="text-lg font-medium text-foreground flex items-center justify-center gap-2">
                         <CheckCircle className="h-5 w-5 text-green-500" />
-                        Check Your Email
+                        Account Created
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Please click the link in your email to verify your account and sign in.
+                        Please click the link in your email to verify your account.
                       </p>
                     </div>
+                    <Alert className="bg-yellow-500/10 border-yellow-500/30">
+                      <AlertDescription className="text-xs text-yellow-200">
+                        <strong>Important:</strong> After email verification, your account will be pending admin approval. You'll receive access once the administrator approves your registration.
+                      </AlertDescription>
+                    </Alert>
                     <Alert className="bg-secondary/50 border-border">
                       <AlertDescription className="text-xs text-muted-foreground">
                         Didn't receive the email? Check your spam folder or try signing up again.
