@@ -21,14 +21,14 @@ export default function Performance() {
   const hasData = performanceMetrics !== null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="section-spacing animate-fade-in">
       <div className="border-b border-border pb-4">
-        <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Performance Analytics</h1>
-        <p className="text-muted-foreground text-sm mt-1 font-mono">Detailed return analysis and attribution</p>
+        <h1 className="terminal-label text-base">Performance Analytics</h1>
+        <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Detailed return analysis and attribution</p>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="kpi-grid">
         <KPICard
           title="Total Return"
           value={hasData ? formatPercent(performanceMetrics.totalReturn) : '0.00%'}
@@ -56,7 +56,7 @@ export default function Performance() {
       {hasData ? (
         <>
           {/* Performance Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="chart-grid">
             <PerformanceChart 
               data={performanceMetrics.monthlyReturns}
               title="Monthly Returns"
@@ -70,16 +70,16 @@ export default function Performance() {
           </div>
 
           {/* Contribution Analysis */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="chart-grid">
             <ContributionChart data={contributions} />
             
             {/* Monthly Returns Table */}
-            <Card className="glass-card">
+            <Card variant="panel" size="md">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Monthly Returns History</CardTitle>
+                <CardTitle>Monthly Returns History</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="max-h-[300px] overflow-auto">
+                <div className="max-h-[200px] overflow-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -108,9 +108,9 @@ export default function Performance() {
           </div>
 
           {/* Holdings Contribution Table */}
-          <Card className="glass-card">
+          <Card variant="panel">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">Holdings Contribution Detail</CardTitle>
+              <CardTitle>Holdings Contribution Detail</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -139,11 +139,11 @@ export default function Performance() {
           </Card>
         </>
       ) : (
-        <Card className="glass-card">
+        <Card variant="panel" size="md">
           <CardContent className="py-12 text-center">
             <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-medium mb-2">No Performance Data</h3>
-            <p className="text-muted-foreground">Add transactions and valuations to view performance analytics.</p>
+            <h3 className="text-sm font-medium mb-2 text-primary">No Performance Data</h3>
+            <p className="text-muted-foreground text-xs">Add transactions and valuations to view performance analytics.</p>
           </CardContent>
         </Card>
       )}
