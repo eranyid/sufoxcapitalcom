@@ -1,39 +1,11 @@
 // Factor Model Calculations - Bloomberg PORT / MSCI Barra / Axioma style
 
-import { Transaction, MonthlyValuation } from '@/types/investment';
+import { Transaction, MonthlyValuation, FactorExposure, FactorRiskBreakdown, FactorModelResults } from '@/types/investment';
 import { ALL_FACTORS, Factor, STYLE_FACTORS, MACRO_FACTORS } from '@/data/factors';
 import { calculateMonthlyReturns, calculateVolatility } from './calculations';
 
-// Types
-export interface FactorExposure {
-  factor: string;
-  factorLabel: string;
-  factorType: 'style' | 'macro';
-  beta: number;
-  tStat: number;
-  r2: number;
-  pValue: number;
-}
-
-export interface FactorRiskBreakdown {
-  factor: string;
-  factorLabel: string;
-  contributionPct: number;
-  contributionAbs: number;
-}
-
-export interface FactorModelResults {
-  exposures: FactorExposure[];
-  risk: FactorRiskBreakdown[];
-  systematicPct: number;
-  specificPct: number;
-  factorCovariance: number[][];
-  factorCorrelation: number[][];
-  totalVariance: number;
-  systematicVariance: number;
-  specificVariance: number;
-  residualVolatility: number;
-}
+// Re-export types for backward compatibility
+export type { FactorExposure, FactorRiskBreakdown, FactorModelResults };
 
 // Generate simulated factor returns based on historical patterns
 // In production, this would come from actual factor index data
