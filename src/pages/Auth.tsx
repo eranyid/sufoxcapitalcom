@@ -11,61 +11,64 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle } from 'lucide-react';
 import { FaceIdIcon } from '@/components/icons/FaceIdIcon';
 import { z } from 'zod';
-
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
-
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [showPasskeySetup, setShowPasskeySetup] = useState(false);
   const [faceIdError, setFaceIdError] = useState<string | null>(null);
-  const { signIn, signUp, user, loading } = useAuth();
-  const { 
-    isSupported: isFaceIdSupported, 
-    hasPasskey, 
+  const {
+    signIn,
+    signUp,
+    user,
+    loading
+  } = useAuth();
+  const {
+    isSupported: isFaceIdSupported,
+    hasPasskey,
     isLoading: isFaceIdLoading,
     checkHasPasskey,
     registerPasskey,
-    authenticateWithPasskey 
+    authenticateWithPasskey
   } = usePasskey();
   const navigate = useNavigate();
-
   useEffect(() => {
     if (user && !loading) {
       navigate('/');
     }
   }, [user, loading, navigate]);
-
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
-    
+    const newErrors: {
+      email?: string;
+      password?: string;
+    } = {};
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
       newErrors.email = emailResult.error.errors[0].message;
     }
-    
     const passwordResult = passwordSchema.safeParse(password);
     if (!passwordResult.success) {
       newErrors.password = passwordResult.error.errors[0].message;
     }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
     setIsLoading(true);
-    const { error } = await signIn(email, password);
+    const {
+      error
+    } = await signIn(email, password);
     setIsLoading(false);
-    
     if (!error) {
       // After successful login, offer passkey setup if supported and not already set up
       if (isFaceIdSupported && !hasPasskey) {
@@ -75,7 +78,6 @@ export default function Auth() {
       }
     }
   };
-
   const handleFaceIdSignIn = async () => {
     setFaceIdError(null);
     const success = await authenticateWithPasskey();
@@ -83,49 +85,39 @@ export default function Auth() {
       navigate('/');
     }
   };
-
   const handleSetupPasskey = async () => {
     const success = await registerPasskey();
     if (success) {
       navigate('/');
     }
   };
-
   const handleSkipPasskeySetup = () => {
     setShowPasskeySetup(false);
     navigate('/');
   };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
     setIsLoading(true);
-    const { error } = await signUp(email, password, displayName);
+    const {
+      error
+    } = await signUp(email, password, displayName);
     setIsLoading(false);
-    
     if (!error) {
       setShowEmailConfirmation(true);
     }
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen min-h-dvh bg-background flex items-center justify-center p-4">
+    return <div className="min-h-screen min-h-dvh bg-background flex items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen min-h-dvh bg-background flex flex-col lg:flex-row">
+  return <div className="min-h-screen min-h-dvh bg-background flex flex-col lg:flex-row">
       {/* Left panel - branding (hidden on mobile, visible on desktop) */}
       <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12">
         <div>
           <div className="bloomberg-gradient-bar w-24 mb-6" />
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
-            Hedge Fund Studio
-          </h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">SUFOX CAPITAL LP</h1>
           <p className="text-muted-foreground mt-2">
             Professional Portfolio Analytics
           </p>
@@ -163,9 +155,7 @@ export default function Auth() {
           </div>
         </div>
         
-        <p className="text-xs text-muted-foreground">
-          © 2024 Hedge Fund Studio. All rights reserved.
-        </p>
+        <p className="text-xs text-muted-foreground">© 2024 SUFOX CAPITAL LP. All rights reserved.</p>
       </div>
       
       {/* Right panel - auth forms */}
@@ -189,16 +179,10 @@ export default function Auth() {
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-secondary h-12">
-                <TabsTrigger 
-                  value="signin" 
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 text-sm"
-                >
+                <TabsTrigger value="signin" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 text-sm">
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="signup" 
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 text-sm"
-                >
+                <TabsTrigger value="signup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 text-sm">
                   Sign Up
                 </TabsTrigger>
               </TabsList>
@@ -209,46 +193,23 @@ export default function Auth() {
                     <Label htmlFor="signin-email" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Email
                     </Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="bg-input border-border h-12 text-base"
-                      autoComplete="email"
-                      required
-                    />
+                    <Input id="signin-email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="email" required />
                     {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signin-password" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Password
                     </Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="bg-input border-border h-12 text-base"
-                      autoComplete="current-password"
-                      required
-                    />
+                    <Input id="signin-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="current-password" required />
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium"
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium" disabled={isLoading}>
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                     Sign In
                   </Button>
 
                   {/* Face ID Sign In Button */}
-                  {isFaceIdSupported && (
-                    <div className="mt-4 space-y-2">
+                  {isFaceIdSupported && <div className="mt-4 space-y-2">
                       <div className="relative">
                         <div className="absolute inset-0 flex items-center">
                           <span className="w-full border-t border-border" />
@@ -258,18 +219,8 @@ export default function Auth() {
                         </div>
                       </div>
                       
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full h-12 text-base font-medium border-border hover:bg-secondary/50 safe-area-bottom"
-                        onClick={handleFaceIdSignIn}
-                        disabled={isFaceIdLoading}
-                      >
-                        {isFaceIdLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                        ) : (
-                          <FaceIdIcon className="h-5 w-5 mr-2" />
-                        )}
+                      <Button type="button" variant="outline" className="w-full h-12 text-base font-medium border-border hover:bg-secondary/50 safe-area-bottom" onClick={handleFaceIdSignIn} disabled={isFaceIdLoading}>
+                        {isFaceIdLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <FaceIdIcon className="h-5 w-5 mr-2" />}
                         Sign in with Face ID
                       </Button>
                       
@@ -277,17 +228,13 @@ export default function Auth() {
                         Use Face ID for quick, secure access on this device.
                       </p>
                       
-                      {faceIdError && (
-                        <p className="text-xs text-destructive text-center">{faceIdError}</p>
-                      )}
-                    </div>
-                  )}
+                      {faceIdError && <p className="text-xs text-destructive text-center">{faceIdError}</p>}
+                    </div>}
                 </form>
               </TabsContent>
               
               {/* Passkey Setup Prompt */}
-              {showPasskeySetup && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-inset">
+              {showPasskeySetup && <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-inset">
                   <Card className="w-full max-w-md bg-card border-border">
                     <CardHeader className="text-center space-y-4">
                       <div className="mx-auto p-4 bg-primary/10 rounded-full w-fit">
@@ -299,34 +246,19 @@ export default function Auth() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <Button
-                        onClick={handleSetupPasskey}
-                        className="w-full h-12 text-base font-medium bg-primary text-primary-foreground"
-                        disabled={isFaceIdLoading}
-                      >
-                        {isFaceIdLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                        ) : (
-                          <FaceIdIcon className="h-5 w-5 mr-2" />
-                        )}
+                      <Button onClick={handleSetupPasskey} className="w-full h-12 text-base font-medium bg-primary text-primary-foreground" disabled={isFaceIdLoading}>
+                        {isFaceIdLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <FaceIdIcon className="h-5 w-5 mr-2" />}
                         Set Up Face ID
                       </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={handleSkipPasskeySetup}
-                        className="w-full h-11 text-sm text-muted-foreground"
-                        disabled={isFaceIdLoading}
-                      >
+                      <Button variant="ghost" onClick={handleSkipPasskeySetup} className="w-full h-11 text-sm text-muted-foreground" disabled={isFaceIdLoading}>
                         Not Now
                       </Button>
                     </CardContent>
                   </Card>
-                </div>
-              )}
+                </div>}
 
               <TabsContent value="signup" className="mt-6">
-                {showEmailConfirmation ? (
-                  <div className="space-y-4 text-center py-4">
+                {showEmailConfirmation ? <div className="space-y-4 text-center py-4">
                     <div className="flex justify-center">
                       <div className="p-4 bg-primary/10 rounded-full">
                         <Mail className="h-10 w-10 text-primary" />
@@ -349,77 +281,40 @@ export default function Auth() {
                         Didn't receive the email? Check your spam folder or try signing up again.
                       </AlertDescription>
                     </Alert>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4 h-11"
-                      onClick={() => {
-                        setShowEmailConfirmation(false);
-                        setEmail('');
-                        setPassword('');
-                        setDisplayName('');
-                      }}
-                    >
+                    <Button variant="outline" className="mt-4 h-11" onClick={() => {
+                  setShowEmailConfirmation(false);
+                  setEmail('');
+                  setPassword('');
+                  setDisplayName('');
+                }}>
                       Back to Sign Up
                     </Button>
-                  </div>
-                ) : (
-                <form onSubmit={handleSignUp} className="space-y-5">
+                  </div> : <form onSubmit={handleSignUp} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Display Name
                     </Label>
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="Your name"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="bg-input border-border h-12 text-base"
-                      autoComplete="name"
-                    />
+                    <Input id="signup-name" type="text" placeholder="Your name" value={displayName} onChange={e => setDisplayName(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="name" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Email
                     </Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="bg-input border-border h-12 text-base"
-                      autoComplete="email"
-                      required
-                    />
+                    <Input id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="email" required />
                     {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Password
                     </Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="bg-input border-border h-12 text-base"
-                      autoComplete="new-password"
-                      required
-                    />
+                    <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="new-password" required />
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium"
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium" disabled={isLoading}>
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                     Create Account
                   </Button>
-                </form>
-                )}
+                </form>}
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -430,6 +325,5 @@ export default function Auth() {
           © 2024 Hedge Fund Studio. All rights reserved.
         </p>
       </div>
-    </div>
-  );
+    </div>;
 }
