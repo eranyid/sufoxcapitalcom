@@ -59,7 +59,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className={cn("px-2 py-3 border-b border-sidebar-border flex items-center", collapsed ? "justify-center" : "justify-between")}>
         {!collapsed && <div className="flex items-center gap-2">
-            <img alt="SUFOX Capital" className="h-14 w-14 object-contain" src="/lovable-uploads/cb285824-432c-4dbb-b1e2-873eedd1a9ef.png" />
+            <img alt="SUFOX Capital" className="h-20 w-20 object-contain" src="/lovable-uploads/cb285824-432c-4dbb-b1e2-873eedd1a9ef.png" />
             <div>
               <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
               <p className="text-[9px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
