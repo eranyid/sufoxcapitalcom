@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, Shield, Database, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -18,6 +19,7 @@ export default function Auth() {
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -66,7 +68,7 @@ export default function Auth() {
     setIsLoading(false);
     
     if (!error) {
-      navigate('/');
+      setShowEmailConfirmation(true);
     }
   };
 
@@ -194,6 +196,44 @@ export default function Auth() {
               </TabsContent>
               
               <TabsContent value="signup" className="mt-6">
+                {showEmailConfirmation ? (
+                  <div className="space-y-4 text-center py-4">
+                    <div className="flex justify-center">
+                      <div className="p-3 bg-primary/10 rounded-full">
+                        <Mail className="h-8 w-8 text-primary" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-medium text-foreground flex items-center justify-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        Check Your Email
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Please click the link in your email to verify your account and sign in.
+                      </p>
+                    </div>
+                    <Alert className="bg-secondary/50 border-border">
+                      <AlertDescription className="text-xs text-muted-foreground">
+                        Didn't receive the email? Check your spam folder or try signing up again.
+                      </AlertDescription>
+                    </Alert>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => {
+                        setShowEmailConfirmation(false);
+                        setEmail('');
+                        setPassword('');
+                        setDisplayName('');
+                      }}
+                    >
+                      Back to Sign Up
+                    </Button>
+                  </div>
+                ) : (
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name" className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -247,6 +287,7 @@ export default function Auth() {
                     Create Account
                   </Button>
                 </form>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
