@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle } from 'lucide-react';
+import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { FaceIdIcon } from '@/components/icons/FaceIdIcon';
 import { z } from 'zod';
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -27,6 +27,8 @@ export default function Auth() {
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [showPasskeySetup, setShowPasskeySetup] = useState(false);
   const [faceIdError, setFaceIdError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const {
     signIn,
     signUp,
@@ -206,7 +208,12 @@ export default function Auth() {
                     <Label htmlFor="signin-password" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Password
                     </Label>
-                    <Input id="signin-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="current-password" required />
+                    <div className="relative">
+                      <Input id="signin-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base pr-12" autoComplete="current-password" required />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                   </div>
                   <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium" disabled={isLoading}>
@@ -314,14 +321,24 @@ export default function Auth() {
                     <Label htmlFor="signup-password" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Password
                     </Label>
-                    <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="new-password" required />
+                    <div className="relative">
+                      <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base pr-12" autoComplete="new-password" required />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-confirm-password" className="text-xs uppercase tracking-wide text-muted-foreground">
                       Confirm Password
                     </Label>
-                    <Input id="signup-confirm-password" type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="new-password" required />
+                    <div className="relative">
+                      <Input id="signup-confirm-password" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="bg-input border-border h-12 text-base pr-12" autoComplete="new-password" required />
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
                     {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
                   </div>
                   <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium" disabled={isLoading}>
