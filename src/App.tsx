@@ -9,9 +9,9 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { lazy, Suspense } from "react";
+import Overview from "./pages/Overview";
 
 // Lazy load pages
-const Overview = lazy(() => import("./pages/Overview"));
 const Performance = lazy(() => import("./pages/Performance"));
 const Risk = lazy(() => import("./pages/Risk"));
 const ScenarioLab = lazy(() => import("./pages/ScenarioLab"));
