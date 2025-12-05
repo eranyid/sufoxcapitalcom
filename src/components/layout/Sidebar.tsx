@@ -58,12 +58,9 @@ export function Sidebar() {
       
       {/* Logo */}
       <div className={cn("px-2 py-3 border-b border-sidebar-border flex items-center", collapsed ? "justify-center" : "justify-between")}>
-        {!collapsed && <div className="flex items-center gap-2">
+        {!collapsed && <div className="gap-2 flex items-center justify-center">
             <img alt="SUFOX Capital" className="h-20 w-20 object-contain" src="/lovable-uploads/02339762-cdfe-438f-8e95-2f033c67710b.png" />
-            <div>
-              <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
-              <p className="text-[9px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
-            </div>
+            
           </div>}
         {collapsed && <img src={sufoxLogo} alt="SUFOX" className="h-6 w-6 object-contain" />}
         <button onClick={() => setCollapsed(!collapsed)} className={cn("p-1 hover:bg-sidebar-accent text-muted-foreground hover:text-primary transition-colors", collapsed && "absolute left-12 top-4 bg-sidebar border border-sidebar-border z-10")}>
