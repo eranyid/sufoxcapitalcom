@@ -16,6 +16,7 @@ import Management from "./pages/Management";
 import Transactions from "./pages/Transactions";
 import Valuations from "./pages/Valuations";
 import Settings from "./pages/Settings";
+import InvestmentPolicy from "./pages/InvestmentPolicy";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="/management" element={<Management />} />
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/valuations" element={<Valuations />} />
+                <Route path="/policy" element={<InvestmentPolicy />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />

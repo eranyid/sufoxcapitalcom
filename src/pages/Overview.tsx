@@ -6,6 +6,7 @@ import { AllocationChart } from '@/components/dashboard/AllocationChart';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
 import { CashManagement } from '@/components/dashboard/CashManagement';
+import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { calculateAllocations, calculateCorrelationMatrix } from '@/lib/calculations';
 import { generatePDFReport, MonteCarloResultsForPDF, CorrelationMatrixForPDF } from '@/lib/pdfReport';
 import { computeFactorModel } from '@/lib/factorModel';
@@ -244,8 +245,13 @@ export default function Overview() {
         />
       </div>
 
-      {/* Cash Management */}
-      <CashManagement />
+      {/* Cash Management & Policy Check */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-card">
+        <div className="lg:col-span-2">
+          <CashManagement />
+        </div>
+        <PolicyFitCheck />
+      </div>
 
       {/* Current Holdings */}
       {transactions.length > 0 && valuations.length > 0 && (

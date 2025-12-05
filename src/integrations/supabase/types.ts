@@ -80,6 +80,78 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_policies: {
+        Row: {
+          alternatives_max_pct: number | null
+          alternatives_min_pct: number | null
+          cash_min_pct: number | null
+          created_at: string
+          equity_max_pct: number | null
+          equity_min_pct: number | null
+          fixed_income_max_pct: number | null
+          fixed_income_min_pct: number | null
+          geographic_limits: Json | null
+          id: string
+          investment_horizon_years: number | null
+          leverage_allowed: boolean | null
+          max_leverage_ratio: number | null
+          max_sector_allocation_pct: number | null
+          max_single_position_pct: number | null
+          min_liquid_assets_pct: number | null
+          risk_tolerance: string | null
+          special_constraints: string | null
+          strategy_philosophy: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alternatives_max_pct?: number | null
+          alternatives_min_pct?: number | null
+          cash_min_pct?: number | null
+          created_at?: string
+          equity_max_pct?: number | null
+          equity_min_pct?: number | null
+          fixed_income_max_pct?: number | null
+          fixed_income_min_pct?: number | null
+          geographic_limits?: Json | null
+          id?: string
+          investment_horizon_years?: number | null
+          leverage_allowed?: boolean | null
+          max_leverage_ratio?: number | null
+          max_sector_allocation_pct?: number | null
+          max_single_position_pct?: number | null
+          min_liquid_assets_pct?: number | null
+          risk_tolerance?: string | null
+          special_constraints?: string | null
+          strategy_philosophy?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alternatives_max_pct?: number | null
+          alternatives_min_pct?: number | null
+          cash_min_pct?: number | null
+          created_at?: string
+          equity_max_pct?: number | null
+          equity_min_pct?: number | null
+          fixed_income_max_pct?: number | null
+          fixed_income_min_pct?: number | null
+          geographic_limits?: Json | null
+          id?: string
+          investment_horizon_years?: number | null
+          leverage_allowed?: boolean | null
+          max_leverage_ratio?: number | null
+          max_sector_allocation_pct?: number | null
+          max_single_position_pct?: number | null
+          min_liquid_assets_pct?: number | null
+          risk_tolerance?: string | null
+          special_constraints?: string | null
+          strategy_philosophy?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolio_settings: {
         Row: {
           base_currency: string | null
