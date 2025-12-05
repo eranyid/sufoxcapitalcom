@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { exportToCSV, importTransactionsFromCSV } from '@/lib/storage';
 import { getKnownInceptionYear } from '@/lib/crashScenarios';
-import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle } from 'lucide-react';
+import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund', 'private_equity', 'private_debt', 'hedge_fund'];
@@ -29,26 +29,45 @@ interface Holding {
   inceptionYear?: number;
 }
 
+interface FormState {
+  assetName: string;
+  ticker: string;
+  assetType: AssetType;
+  transactionType: TransactionType;
+  date: string;
+  quantity: string;
+  pricePerUnit: string;
+  fees: string;
+  currency: Currency;
+  geography: Geography;
+  inceptionYear: string;
+}
+
+const emptyForm: FormState = {
+  assetName: '',
+  ticker: '',
+  assetType: 'equity',
+  transactionType: 'buy',
+  date: '',
+  quantity: '',
+  pricePerUnit: '',
+  fees: '',
+  currency: 'USD',
+  geography: 'north_america',
+  inceptionYear: ''
+};
+
 export default function Transactions() {
-  const { transactions, addTransaction, deleteTransaction, importTransactions } = usePortfolio();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, importTransactions } = usePortfolio();
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null);
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [form, setForm] = useState({
-    assetName: '',
-    ticker: '',
-    assetType: 'equity' as AssetType,
-    transactionType: 'buy' as TransactionType,
-    date: '',
-    quantity: '',
-    pricePerUnit: '',
-    fees: '',
-    currency: 'USD' as Currency,
-    geography: 'north_america' as Geography,
-    inceptionYear: ''
-  });
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [editForm, setEditForm] = useState<FormState>(emptyForm);
 
   // Compute current holdings from transactions
   const holdings = useMemo(() => {
@@ -174,11 +193,50 @@ export default function Transactions() {
     setIsOpen(false);
     setSelectedHolding(null);
     setQuantityError(null);
-    setForm({
-      assetName: '', ticker: '', assetType: 'equity', transactionType: 'buy',
-      date: '', quantity: '', pricePerUnit: '', fees: '', currency: 'USD', geography: 'north_america', inceptionYear: ''
-    });
+    setForm(emptyForm);
     toast.success('Transaction added successfully');
+  };
+
+  // Edit transaction handlers
+  const handleEditOpen = (tx: Transaction) => {
+    setEditingTransaction(tx);
+    setEditForm({
+      assetName: tx.assetName,
+      ticker: tx.ticker,
+      assetType: tx.assetType,
+      transactionType: tx.transactionType,
+      date: tx.date,
+      quantity: tx.quantity.toString(),
+      pricePerUnit: tx.pricePerUnit.toString(),
+      fees: tx.fees.toString(),
+      currency: tx.currency,
+      geography: tx.geography,
+      inceptionYear: tx.inceptionYear?.toString() || ''
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTransaction) return;
+
+    await updateTransaction(editingTransaction.id, {
+      assetName: editForm.assetName,
+      ticker: editForm.ticker.toUpperCase(),
+      assetType: editForm.assetType,
+      transactionType: editForm.transactionType,
+      date: editForm.date,
+      quantity: parseFloat(editForm.quantity),
+      pricePerUnit: parseFloat(editForm.pricePerUnit),
+      fees: parseFloat(editForm.fees) || 0,
+      currency: editForm.currency,
+      geography: editForm.geography,
+      inceptionYear: editForm.inceptionYear ? parseInt(editForm.inceptionYear) : undefined
+    });
+    setIsEditOpen(false);
+    setEditingTransaction(null);
+    setEditForm(emptyForm);
+    toast.success('Transaction updated successfully');
   };
 
   const handleExport = () => {
@@ -233,10 +291,7 @@ export default function Transactions() {
             if (!open) {
               setSelectedHolding(null);
               setQuantityError(null);
-              setForm({
-                assetName: '', ticker: '', assetType: 'equity', transactionType: 'buy',
-                date: '', quantity: '', pricePerUnit: '', fees: '', currency: 'USD', geography: 'north_america', inceptionYear: ''
-              });
+              setForm(emptyForm);
             }
           }}>
             <DialogTrigger asChild>
@@ -557,33 +612,38 @@ export default function Transactions() {
                         {formatCurrency(tx.quantity * tx.pricePerUnit + tx.fees)}
                       </TableCell>
                       <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this {tx.transactionType.toUpperCase()} transaction for {tx.ticker}? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={async () => {
-                                  await deleteTransaction(tx.id);
-                                  toast.success('Transaction deleted');
-                                }}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditOpen(tx)}>
+                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this {tx.transactionType.toUpperCase()} transaction for {tx.ticker}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={async () => {
+                                    await deleteTransaction(tx.id);
+                                    toast.success('Transaction deleted');
+                                  }}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -593,6 +653,159 @@ export default function Transactions() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Transaction Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={(open) => {
+        setIsEditOpen(open);
+        if (!open) {
+          setEditingTransaction(null);
+          setEditForm(emptyForm);
+        }
+      }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Asset Name</Label>
+                <Input 
+                  value={editForm.assetName}
+                  onChange={(e) => setEditForm({ ...editForm, assetName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Ticker</Label>
+                <Input 
+                  value={editForm.ticker}
+                  onChange={(e) => setEditForm({ ...editForm, ticker: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Transaction Type</Label>
+                <Select value={editForm.transactionType} onValueChange={(v: TransactionType) => setEditForm({ ...editForm, transactionType: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TRANSACTION_TYPES.map(t => (
+                      <SelectItem key={t} value={t}>
+                        <span className={t === 'buy' ? 'text-success' : 'text-destructive'}>
+                          {t.toUpperCase()}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Asset Type</Label>
+                <Select value={editForm.assetType} onValueChange={(v: AssetType) => setEditForm({ ...editForm, assetType: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ASSET_TYPES.map(t => (
+                      <SelectItem key={t} value={t}>{t.replace(/_/g, ' ').toUpperCase()}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input 
+                  type="date"
+                  value={editForm.date}
+                  onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select value={editForm.currency} onValueChange={(v: Currency) => setEditForm({ ...editForm, currency: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Quantity</Label>
+                <Input 
+                  type="number"
+                  step="0.0001"
+                  value={editForm.quantity}
+                  onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Price per Unit</Label>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  value={editForm.pricePerUnit}
+                  onChange={(e) => setEditForm({ ...editForm, pricePerUnit: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fees</Label>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  value={editForm.fees}
+                  onChange={(e) => setEditForm({ ...editForm, fees: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Geography</Label>
+                <Select value={editForm.geography} onValueChange={(v: Geography) => setEditForm({ ...editForm, geography: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {GEOGRAPHIES.map(g => (
+                      <SelectItem key={g} value={g}>{g.replace(/_/g, ' ').toUpperCase()}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Inception Year</Label>
+                <Input 
+                  type="number"
+                  value={editForm.inceptionYear}
+                  onChange={(e) => setEditForm({ ...editForm, inceptionYear: e.target.value })}
+                  placeholder="e.g. 2009"
+                  min="1900"
+                  max="2025"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="flex-1 gradient-gold text-primary-foreground">
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
