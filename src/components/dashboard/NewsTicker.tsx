@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { useRssFeed, NewsItem } from '@/hooks/useRssFeed';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useRssFeed } from '@/hooks/useRssFeed';
 import { cn } from '@/lib/utils';
 
 interface NewsTickerProps {
@@ -10,6 +10,46 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
   const { items, error } = useRssFeed(rssUrl);
   const [isPaused, setIsPaused] = useState(false);
   const tickerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number | null>(null);
+  const positionRef = useRef(0);
+  const contentWidthRef = useRef(0);
+
+  const animate = useCallback(() => {
+    if (!tickerRef.current || isPaused) {
+      animationRef.current = requestAnimationFrame(animate);
+      return;
+    }
+
+    // Get content width on first run or when it changes
+    if (contentWidthRef.current === 0) {
+      contentWidthRef.current = tickerRef.current.scrollWidth / 2;
+    }
+
+    // Move ticker
+    positionRef.current -= 0.5; // Speed: pixels per frame
+
+    // Reset position when first set of items is fully scrolled
+    if (Math.abs(positionRef.current) >= contentWidthRef.current) {
+      positionRef.current = 0;
+    }
+
+    tickerRef.current.style.transform = `translate3d(${positionRef.current}px, 0, 0)`;
+    animationRef.current = requestAnimationFrame(animate);
+  }, [isPaused]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      // Reset content width when items change
+      contentWidthRef.current = 0;
+      animationRef.current = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [items, animate]);
 
   // No RSS URL configured
   if (!rssUrl) {
@@ -84,12 +124,11 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
           <div 
             ref={tickerRef}
             className={cn(
-              "flex items-center whitespace-nowrap ticker-scroll",
-              isPaused && "paused"
+              "inline-flex items-center whitespace-nowrap will-change-transform"
             )}
             style={{
-              // Animation duration based on content length
-              animationDuration: `${Math.max(items.length * 8, 60)}s`
+              backfaceVisibility: 'hidden',
+              perspective: 1000,
             }}
           >
             {/* Duplicate content for seamless loop */}
@@ -97,7 +136,7 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
               <button
                 key={`${item.link}-${index}`}
                 onClick={() => handleItemClick(item.link)}
-                className="inline-flex items-center text-[10px] md:text-[11px] font-mono hover:text-primary transition-colors px-2 group"
+                className="inline-flex items-center text-[10px] md:text-[11px] font-mono hover:text-primary transition-colors px-2 group flex-shrink-0"
               >
                 <span className="text-primary/70 mr-1.5">{item.formattedTime}</span>
                 {item.source && (
