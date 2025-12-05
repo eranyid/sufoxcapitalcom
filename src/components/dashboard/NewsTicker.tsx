@@ -1,0 +1,117 @@
+import { useEffect, useState, useRef } from 'react';
+import { useRssFeed, NewsItem } from '@/hooks/useRssFeed';
+import { cn } from '@/lib/utils';
+
+interface NewsTickerProps {
+  rssUrl: string | null;
+}
+
+export function NewsTicker({ rssUrl }: NewsTickerProps) {
+  const { items, error } = useRssFeed(rssUrl);
+  const [isPaused, setIsPaused] = useState(false);
+  const tickerRef = useRef<HTMLDivElement>(null);
+
+  // No RSS URL configured
+  if (!rssUrl) {
+    return (
+      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
+        <div className="flex items-center h-7 px-3">
+          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
+            LIVE NEWS
+          </span>
+          <span className="text-[10px] font-mono text-muted-foreground">
+            Configure RSS feed in Settings
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && items.length === 0) {
+    return (
+      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
+        <div className="flex items-center h-7 px-3">
+          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
+            LIVE NEWS
+          </span>
+          <span className="text-[10px] font-mono text-muted-foreground">
+            No news available
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // No items
+  if (items.length === 0) {
+    return (
+      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
+        <div className="flex items-center h-7 px-3">
+          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
+            LIVE NEWS
+          </span>
+          <span className="text-[10px] font-mono text-muted-foreground animate-pulse">
+            Loading...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const handleItemClick = (link: string) => {
+    window.open(link, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border overflow-hidden">
+      <div className="flex items-center h-7">
+        {/* Label */}
+        <div className="flex-shrink-0 px-3 border-r border-sidebar-border h-full flex items-center bg-[#0d1012]">
+          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider whitespace-nowrap">
+            LIVE NEWS
+          </span>
+        </div>
+
+        {/* Ticker container */}
+        <div 
+          className="flex-1 overflow-hidden relative"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(false)}
+        >
+          <div 
+            ref={tickerRef}
+            className={cn(
+              "flex items-center whitespace-nowrap ticker-scroll",
+              isPaused && "paused"
+            )}
+            style={{
+              // Animation duration based on content length
+              animationDuration: `${Math.max(items.length * 8, 60)}s`
+            }}
+          >
+            {/* Duplicate content for seamless loop */}
+            {[...items, ...items].map((item, index) => (
+              <button
+                key={`${item.link}-${index}`}
+                onClick={() => handleItemClick(item.link)}
+                className="inline-flex items-center text-[10px] md:text-[11px] font-mono hover:text-primary transition-colors px-2 group"
+              >
+                <span className="text-primary/70 mr-1.5">{item.formattedTime}</span>
+                {item.source && (
+                  <span className="text-muted-foreground mr-1.5">[{item.source}]</span>
+                )}
+                <span className="text-foreground/90 group-hover:text-primary transition-colors">
+                  {item.title}
+                </span>
+                <span className="text-muted-foreground/50 mx-3">•</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
