@@ -220,24 +220,33 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: string
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          email: string | null
           id: string
+          is_approved: boolean
           updated_at: string
         }
         Insert: {
+          approval_status?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           id: string
+          is_approved?: boolean
           updated_at?: string
         }
         Update: {
+          approval_status?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           id?: string
+          is_approved?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -340,7 +349,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_user_approved: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

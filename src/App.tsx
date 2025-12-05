@@ -21,6 +21,7 @@ import Valuations from "./pages/Valuations";
 import Settings from "./pages/Settings";
 import InvestmentPolicy from "./pages/InvestmentPolicy";
 import Auth from "./pages/Auth";
+import AdminUsers from "./pages/AdminUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
                   <Route path="/valuations" element={<Valuations />} />
                   <Route path="/policy" element={<InvestmentPolicy />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

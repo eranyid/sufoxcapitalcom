@@ -12,7 +12,8 @@ import {
   Settings2,
   LogOut,
   FlaskConical,
-  FileCheck
+  FileCheck,
+  Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -34,7 +35,7 @@ const navItems = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
 
   return (
     <aside className={cn(
@@ -87,6 +88,20 @@ export function Sidebar() {
             {!collapsed && <span className="text-[11px] tracking-wide">{label}</span>}
           </NavLink>
         ))}
+        
+        {/* Admin Link - only visible to admin */}
+        {isAdmin && (
+          <NavLink
+            to="/admin/users"
+            className={({ isActive }) => cn(
+              "nav-link mx-1 mt-2 border-t border-sidebar-border pt-2",
+              isActive && "active"
+            )}
+          >
+            <Users size={14} />
+            {!collapsed && <span className="text-[11px] tracking-wide text-primary">ADMIN</span>}
+          </NavLink>
+        )}
       </nav>
 
       {/* User & Sign Out */}

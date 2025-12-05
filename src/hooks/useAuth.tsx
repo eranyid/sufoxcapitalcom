@@ -3,14 +3,20 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+const ADMIN_EMAIL = 'eran.yidgar@sufoxcapital.com';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isApproved: boolean;
+  isAdmin: boolean;
+  approvalLoading: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  refreshApprovalStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,7 +25,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isApproved, setIsApproved] = useState(false);
+  const [approvalLoading, setApprovalLoading] = useState(true);
   const { toast } = useToast();
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
+  const fetchApprovalStatus = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_approved, email')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching approval status:', error);
+        setIsApproved(false);
+      } else if (data) {
+        // Admin is always approved
+        if (data.email === ADMIN_EMAIL) {
+          setIsApproved(true);
+        } else {
+          setIsApproved(data.is_approved || false);
+        }
+      } else {
+        setIsApproved(false);
+      }
+    } catch (error) {
+      console.error('Error fetching approval status:', error);
+      setIsApproved(false);
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  const refreshApprovalStatus = async () => {
+    if (user?.id) {
+      setApprovalLoading(true);
+      await fetchApprovalStatus(user.id);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -28,6 +74,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Fetch approval status when user changes
+        if (session?.user?.id) {
+          // Use setTimeout to avoid Supabase deadlock
+          setTimeout(() => {
+            fetchApprovalStatus(session.user.id);
+          }, 0);
+        } else {
+          setIsApproved(false);
+          setApprovalLoading(false);
+        }
       }
     );
 
@@ -36,6 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (session?.user?.id) {
+        fetchApprovalStatus(session.user.id);
+      } else {
+        setApprovalLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -64,10 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error };
     }
 
-    toast({
-      title: "Check your email",
-      description: "We sent you a confirmation link. Please verify your email to sign in."
-    });
+    // Don't show toast here - we'll show the pending approval message in the Auth page
     return { error: null };
   };
 
@@ -99,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setIsApproved(false);
     toast({
       title: "Signed out",
       description: "You've been signed out."
@@ -129,7 +190,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      isApproved, 
+      isAdmin,
+      approvalLoading,
+      signUp, 
+      signIn, 
+      signOut, 
+      resetPassword,
+      refreshApprovalStatus
+    }}>
       {children}
     </AuthContext.Provider>
   );
