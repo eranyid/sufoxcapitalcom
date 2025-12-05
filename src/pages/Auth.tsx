@@ -16,11 +16,13 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
+    confirmPassword?: string;
   }>({});
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [showPasskeySetup, setShowPasskeySetup] = useState(false);
@@ -45,10 +47,11 @@ export default function Auth() {
       navigate('/');
     }
   }, [user, loading, navigate]);
-  const validateForm = () => {
+  const validateForm = (isSignUp = false) => {
     const newErrors: {
       email?: string;
       password?: string;
+      confirmPassword?: string;
     } = {};
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
@@ -57,6 +60,9 @@ export default function Auth() {
     const passwordResult = passwordSchema.safeParse(password);
     if (!passwordResult.success) {
       newErrors.password = passwordResult.error.errors[0].message;
+    }
+    if (isSignUp && password !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -97,7 +103,7 @@ export default function Auth() {
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm(true)) return;
     setIsLoading(true);
     const {
       error
@@ -285,6 +291,7 @@ export default function Auth() {
                   setShowEmailConfirmation(false);
                   setEmail('');
                   setPassword('');
+                  setConfirmPassword('');
                   setDisplayName('');
                 }}>
                       Back to Sign Up
@@ -309,6 +316,13 @@ export default function Auth() {
                     </Label>
                     <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="new-password" required />
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password" className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Confirm Password
+                    </Label>
+                    <Input id="signup-confirm-password" type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="new-password" required />
+                    {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
                   </div>
                   <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium" disabled={isLoading}>
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
