@@ -57,8 +57,8 @@ export function Sidebar() {
       <div className="bloomberg-gradient-bar" />
       
       {/* Logo */}
-      <div className={cn("px-2 py-3 border-b border-sidebar-border flex items-center", collapsed ? "justify-center" : "justify-between")}>
-        {!collapsed && <div className="gap-2 flex items-center justify-center">
+      <div className={cn("px-2 py-3 border-b border-sidebar-border flex items-center justify-center", collapsed && "justify-center")}>
+        {!collapsed && <div className="flex items-center justify-center w-full">
             <img alt="SUFOX Capital" className="h-20 w-20 object-contain" src="/lovable-uploads/02339762-cdfe-438f-8e95-2f033c67710b.png" />
             
           </div>}
