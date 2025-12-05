@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { FaceIdIcon } from '@/components/icons/FaceIdIcon';
 import { z } from 'zod';
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -29,11 +29,15 @@ export default function Auth() {
   const [faceIdError, setFaceIdError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const {
     signIn,
     signUp,
     user,
-    loading
+    loading,
+    resetPassword
   } = useAuth();
   const {
     isSupported: isFaceIdSupported,
@@ -102,6 +106,20 @@ export default function Auth() {
   const handleSkipPasskeySetup = () => {
     setShowPasskeySetup(false);
     navigate('/');
+  };
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailResult = emailSchema.safeParse(forgotPasswordEmail);
+    if (!emailResult.success) {
+      setErrors({ email: emailResult.error.errors[0].message });
+      return;
+    }
+    setIsLoading(true);
+    const { error } = await resetPassword(forgotPasswordEmail);
+    setIsLoading(false);
+    if (!error) {
+      setForgotPasswordSent(true);
+    }
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,9 +223,14 @@ export default function Auth() {
                     {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Password
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="signin-password" className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Password
+                      </Label>
+                      <button type="button" onClick={() => setShowForgotPassword(true)} className="text-xs text-primary hover:underline">
+                        Forgot password?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Input id="signin-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base pr-12" autoComplete="current-password" required />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
@@ -266,6 +289,58 @@ export default function Auth() {
                       <Button variant="ghost" onClick={handleSkipPasskeySetup} className="w-full h-11 text-sm text-muted-foreground" disabled={isFaceIdLoading}>
                         Not Now
                       </Button>
+                    </CardContent>
+                  </Card>
+                </div>}
+
+              {/* Forgot Password Modal */}
+              {showForgotPassword && <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-inset">
+                  <Card className="w-full max-w-md bg-card border-border">
+                    <CardHeader className="space-y-4">
+                      <button type="button" onClick={() => { setShowForgotPassword(false); setForgotPasswordSent(false); setForgotPasswordEmail(''); setErrors({}); }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to sign in
+                      </button>
+                      <div className="text-center space-y-2">
+                        <div className="mx-auto p-4 bg-primary/10 rounded-full w-fit">
+                          <Mail className="h-10 w-10 text-primary" />
+                        </div>
+                        <CardTitle className="text-xl">Reset Password</CardTitle>
+                        <CardDescription>
+                          {forgotPasswordSent 
+                            ? "Check your email for the reset link"
+                            : "Enter your email and we'll send you a reset link"}
+                        </CardDescription>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {forgotPasswordSent ? (
+                        <div className="space-y-4 text-center">
+                          <div className="flex justify-center">
+                            <CheckCircle className="h-12 w-12 text-green-500" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            We sent a password reset link to <span className="font-medium text-foreground">{forgotPasswordEmail}</span>
+                          </p>
+                          <Button onClick={() => { setShowForgotPassword(false); setForgotPasswordSent(false); setForgotPasswordEmail(''); }} className="w-full h-12 text-base font-medium">
+                            Back to Sign In
+                          </Button>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleForgotPassword} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="forgot-email" className="text-xs uppercase tracking-wide text-muted-foreground">
+                              Email
+                            </Label>
+                            <Input id="forgot-email" type="email" placeholder="you@example.com" value={forgotPasswordEmail} onChange={e => setForgotPasswordEmail(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="email" required />
+                            {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                          </div>
+                          <Button type="submit" className="w-full h-12 text-base font-medium bg-primary text-primary-foreground" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+                            Send Reset Link
+                          </Button>
+                        </form>
+                      )}
                     </CardContent>
                   </Card>
                 </div>}
