@@ -23,16 +23,12 @@ serve(async (req) => {
       const challenge = crypto.getRandomValues(new Uint8Array(32));
       const challengeBase64 = btoa(String.fromCharCode(...challenge));
       
-      // Get all stored credential IDs (for discoverable credentials)
-      const { data: credentials } = await supabase
-        .from("passkey_credentials")
-        .select("credential_id");
-
-      const allowCredentials = credentials?.map(c => c.credential_id) || [];
-
+      // For discoverable credentials (resident keys), we don't need to provide
+      // allowCredentials - the authenticator will handle credential selection.
+      // This prevents credential enumeration attacks.
       return new Response(JSON.stringify({ 
         challenge: challengeBase64,
-        allowCredentials,
+        allowCredentials: [], // Empty - let authenticator handle discovery
         rpId: new URL(req.headers.get("origin") || supabaseUrl).hostname,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -48,8 +44,9 @@ serve(async (req) => {
         .single();
 
       if (findError || !credential) {
-        return new Response(JSON.stringify({ error: "Credential not found" }), {
-          status: 404,
+        // Use generic error message to prevent credential enumeration
+        return new Response(JSON.stringify({ error: "Authentication failed" }), {
+          status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -69,8 +66,8 @@ serve(async (req) => {
       );
 
       if (userError || !user) {
-        return new Response(JSON.stringify({ error: "User not found" }), {
-          status: 404,
+        return new Response(JSON.stringify({ error: "Authentication failed" }), {
+          status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -83,7 +80,7 @@ serve(async (req) => {
 
       if (linkError) {
         console.error("Magic link error:", linkError);
-        return new Response(JSON.stringify({ error: "Failed to create session" }), {
+        return new Response(JSON.stringify({ error: "Authentication failed" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -112,7 +109,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+    return new Response(JSON.stringify({ error: "Authentication failed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
