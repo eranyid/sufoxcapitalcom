@@ -185,12 +185,12 @@ export default function Overview() {
       
       <div className="section-spacing">
       {/* Header - Mobile Optimized */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="terminal-label text-sm sm:text-base">Portfolio Overview</h1>
           <p className="text-muted-foreground text-[10px] sm:text-[10px] font-mono mt-0.5">Real-time performance snapshot</p>
         </div>
-        <div className="flex items-start gap-3 ml-auto">
+        <div className="flex items-center gap-3 ml-auto">
           <Button
             onClick={handleExportPDF} 
             variant="outline" 
