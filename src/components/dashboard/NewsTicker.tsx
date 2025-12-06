@@ -54,7 +54,7 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
   // No RSS URL configured
   if (!rssUrl) {
     return (
-      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
+      <div className="w-full bg-card border border-border rounded-md">
         <div className="flex items-center h-7 px-3">
           <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
             LIVE NEWS
@@ -70,7 +70,7 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
   // Error state
   if (error && items.length === 0) {
     return (
-      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
+      <div className="w-full bg-card border border-border rounded-md">
         <div className="flex items-center h-7 px-3">
           <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
             LIVE NEWS
@@ -86,7 +86,7 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
   // No items
   if (items.length === 0) {
     return (
-      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
+      <div className="w-full bg-card border border-border rounded-md">
         <div className="flex items-center h-7 px-3">
           <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
             LIVE NEWS
@@ -104,10 +104,10 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
   };
 
   return (
-    <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border overflow-hidden">
+    <div className="w-full bg-card border border-border rounded-md overflow-hidden">
       <div className="flex items-center h-7">
         {/* Label */}
-        <div className="flex-shrink-0 px-3 border-r border-sidebar-border h-full flex items-center bg-[#0d1012]">
+        <div className="flex-shrink-0 px-3 border-r border-border h-full flex items-center bg-muted/30">
           <span className="text-[10px] font-mono text-primary font-semibold tracking-wider whitespace-nowrap">
             LIVE NEWS
           </span>
