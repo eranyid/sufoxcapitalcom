@@ -217,15 +217,15 @@ export default function XRay() {
               data={assetTypeAllocation} 
             />
             <DistributionSection 
-              title="Geographic Distribution" 
-              data={geographyAllocation} 
+              title="Currency Exposure" 
+              data={currencyAllocation} 
             />
           </div>
 
-          {/* Currency Distribution - Full width */}
+          {/* Geographic Distribution - Full width */}
           <DistributionSection 
-            title="Currency Exposure" 
-            data={currencyAllocation} 
+            title="Geographic Distribution" 
+            data={geographyAllocation} 
           />
 
           {/* Correlation Matrix */}
