@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import sufoxLogo from '@/assets/sufox-logo.png';
+
 const navItems = [{
   path: '/',
   icon: LayoutDashboard,
@@ -21,17 +22,17 @@ const navItems = [{
   icon: FlaskConical,
   label: 'SCENARIOS'
 }, {
-  path: '/transactions',
-  icon: ArrowRightLeft,
-  label: 'TRANSACTIONS'
+  path: '/xray',
+  icon: Scan,
+  label: 'X-RAY'
 }, {
   path: '/research',
   icon: Search,
   label: 'RESEARCH'
 }, {
-  path: '/xray',
-  icon: Scan,
-  label: 'X-RAY'
+  path: '/transactions',
+  icon: ArrowRightLeft,
+  label: 'TRANSACTIONS'
 }, {
   path: '/valuations',
   icon: Calendar,
@@ -45,6 +46,7 @@ const navItems = [{
   icon: Settings,
   label: 'SETTINGS'
 }];
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const {

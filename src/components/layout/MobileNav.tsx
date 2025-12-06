@@ -24,8 +24,8 @@ const primaryNavItems = [
   { path: '/', icon: LayoutDashboard, label: 'Overview' },
   { path: '/performance', icon: TrendingUp, label: 'Perform' },
   { path: '/risk', icon: Shield, label: 'Risk' },
-  { path: '/scenarios', icon: FlaskConical, label: 'Scenarios' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
+  { path: '/scenarios', icon: FlaskConical, label: 'Scenarios' },
 ];
 
 const moreNavItems = [
