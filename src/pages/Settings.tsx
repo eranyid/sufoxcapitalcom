@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { TickerSymbolsSettings } from '@/components/settings/TickerSymbolsSettings';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
@@ -477,6 +478,9 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Market Ticker Settings */}
+      <TickerSymbolsSettings />
 
       {/* News Settings */}
       <Card>
