@@ -7,8 +7,8 @@ import { Dice6, Settings2, TrendingUp, TrendingDown, Target, AlertTriangle, Zap,
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface MonteCarloSimulationProps {
   monthlyReturns: number[];
@@ -435,18 +435,36 @@ export function MonteCarloSimulation({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Mode:</Label>
-              <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as InputMode)}>
-                <TabsList className="h-6">
-                  <TabsTrigger value="portfolio" className="text-[9px] h-5 px-2 gap-1">
-                    <Database className="h-3 w-3" />
-                    Use Portfolio Data
-                  </TabsTrigger>
-                  <TabsTrigger value="manual" className="text-[9px] h-5 px-2 gap-1">
-                    <Pencil className="h-3 w-3" />
-                    Manual Input
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="flex h-6 bg-muted rounded-sm p-0.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setInputMode('portfolio')}
+                  className={cn(
+                    "text-[9px] h-5 px-2 gap-1 rounded-sm",
+                    inputMode === 'portfolio' 
+                      ? "bg-background text-foreground shadow-sm" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Database className="h-3 w-3" />
+                  Use Portfolio Data
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setInputMode('manual')}
+                  className={cn(
+                    "text-[9px] h-5 px-2 gap-1 rounded-sm",
+                    inputMode === 'manual' 
+                      ? "bg-background text-foreground shadow-sm" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Pencil className="h-3 w-3" />
+                  Manual Input
+                </Button>
+              </div>
             </div>
             {inputMode === 'manual' && (
               <button 
