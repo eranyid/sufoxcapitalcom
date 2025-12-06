@@ -3,24 +3,34 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   ReferenceLine, BarChart, Bar, Cell, ComposedChart, Line
 } from 'recharts';
-import { Dice6, Settings2, TrendingUp, TrendingDown, Target, AlertTriangle, Zap } from 'lucide-react';
+import { Dice6, Settings2, TrendingUp, TrendingDown, Target, AlertTriangle, Zap, Database, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface MonteCarloSimulationProps {
   monthlyReturns: number[];
   currentValue: number;
+  // Portfolio statistics passed from parent
+  portfolioCAGR?: number;     // Annualized expected return
+  portfolioVolatility?: number; // Annualized volatility
+  portfolioSharpe?: number;   // Sharpe ratio
+  riskFreeRate?: number;      // Risk-free rate for calculations
 }
+
+type InputMode = 'portfolio' | 'manual';
 
 interface SimulationConfig {
   numSimulations: number;
   timeStep: 'monthly' | 'daily';
-  useCustomVolatility: boolean;
-  customVolatility: number;
-  useCustomReturn: boolean;
-  customReturn: number;
+}
+
+interface ManualInputs {
+  cagr: number;
+  volatility: number;
+  currentValue: number;
 }
 
 interface PercentilePath {
@@ -55,14 +65,16 @@ interface DistributionBin {
   midpoint: number;
 }
 
+interface ValidationErrors {
+  cagr?: string;
+  volatility?: string;
+  currentValue?: string;
+}
+
 const TIME_HORIZONS = [20, 50, 65];
 const DEFAULT_CONFIG: SimulationConfig = {
   numSimulations: 10000,
   timeStep: 'monthly',
-  useCustomVolatility: false,
-  customVolatility: 15,
-  useCustomReturn: false,
-  customReturn: 8,
 };
 
 // Convert simple returns to log returns
@@ -91,24 +103,19 @@ function generateNormalRandom(): number {
 
 // Run Monte Carlo simulation with proper financial modeling
 function runMonteCarloSimulation(
-  logReturns: number[],
   initialValue: number,
   yearsToSimulate: number,
+  annualReturn: number, // Expected annual return (decimal)
+  annualVol: number,    // Annual volatility (decimal)
   config: SimulationConfig
 ): { paths: number[][]; finalValues: number[] } {
-  const { numSimulations, timeStep, useCustomVolatility, customVolatility, useCustomReturn, customReturn } = config;
-  
-  const stats = calculateStats(logReturns);
-  
-  // Use custom or historical parameters
-  let monthlyMean = useCustomReturn ? (customReturn / 100) / 12 : stats.mean;
-  let monthlyStd = useCustomVolatility ? (customVolatility / 100) / Math.sqrt(12) : stats.std;
+  const { numSimulations, timeStep } = config;
   
   // Adjust for time step
   const stepsPerYear = timeStep === 'monthly' ? 12 : 252;
   const totalSteps = yearsToSimulate * stepsPerYear;
-  const stepMean = timeStep === 'monthly' ? monthlyMean : monthlyMean / 21;
-  const stepStd = timeStep === 'monthly' ? monthlyStd : monthlyStd / Math.sqrt(21);
+  const stepMean = annualReturn / stepsPerYear;
+  const stepStd = annualVol / Math.sqrt(stepsPerYear);
   
   const paths: number[][] = [];
   const finalValues: number[] = [];
@@ -161,9 +168,10 @@ function calculateRiskMetrics(sortedFinalValues: number[], initialValue: number)
 
 // Generate percentile paths for fan chart
 function generatePercentilePaths(
-  logReturns: number[],
   initialValue: number,
   maxYears: number,
+  annualReturn: number,
+  annualVol: number,
   config: SimulationConfig
 ): PercentilePath[] {
   const results: PercentilePath[] = [];
@@ -183,10 +191,13 @@ function generatePercentilePaths(
       continue;
     }
     
-    const { finalValues } = runMonteCarloSimulation(logReturns, initialValue, year, {
-      ...config,
-      numSimulations: Math.min(config.numSimulations, 2000) // Reduce for intermediate points
-    });
+    const { finalValues } = runMonteCarloSimulation(
+      initialValue, 
+      year, 
+      annualReturn, 
+      annualVol, 
+      { ...config, numSimulations: Math.min(config.numSimulations, 2000) }
+    );
     
     results.push({
       period: year,
@@ -240,42 +251,113 @@ function formatPercent(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
 }
 
-export function MonteCarloSimulation({ monthlyReturns, currentValue }: MonteCarloSimulationProps) {
+function validateManualInputs(inputs: ManualInputs): ValidationErrors {
+  const errors: ValidationErrors = {};
+  
+  if (inputs.cagr < -50 || inputs.cagr > 100) {
+    errors.cagr = 'CAGR must be between -50% and +100%';
+  }
+  
+  if (inputs.volatility < 0 || inputs.volatility > 100) {
+    errors.volatility = 'Volatility must be between 0% and 100%';
+  }
+  
+  if (inputs.currentValue <= 0) {
+    errors.currentValue = 'Current value must be greater than 0';
+  }
+  
+  return errors;
+}
+
+export function MonteCarloSimulation({ 
+  monthlyReturns, 
+  currentValue,
+  portfolioCAGR,
+  portfolioVolatility,
+  portfolioSharpe,
+  riskFreeRate = 4.5
+}: MonteCarloSimulationProps) {
   const [config, setConfig] = useState<SimulationConfig>(DEFAULT_CONFIG);
+  const [inputMode, setInputMode] = useState<InputMode>('portfolio');
   const [isRunning, setIsRunning] = useState(false);
   
+  // Calculate stats from monthly returns (fallback if no portfolio stats provided)
   const logReturns = useMemo(() => toLogReturns(monthlyReturns), [monthlyReturns]);
-  const stats = useMemo(() => calculateStats(logReturns), [logReturns]);
+  const historicalStats = useMemo(() => calculateStats(logReturns), [logReturns]);
   
-  // Annualized statistics
-  const annualizedReturn = useMemo(() => {
-    if (config.useCustomReturn) return config.customReturn;
-    return (Math.exp(stats.mean * 12) - 1) * 100;
-  }, [stats.mean, config.useCustomReturn, config.customReturn]);
+  // Derive portfolio statistics from props or calculate from history
+  const derivedCAGR = useMemo(() => {
+    if (portfolioCAGR !== undefined) return portfolioCAGR;
+    return (Math.exp(historicalStats.mean * 12) - 1) * 100;
+  }, [portfolioCAGR, historicalStats.mean]);
   
-  const annualizedVol = useMemo(() => {
-    if (config.useCustomVolatility) return config.customVolatility;
-    return stats.std * Math.sqrt(12) * 100;
-  }, [stats.std, config.useCustomVolatility, config.customVolatility]);
+  const derivedVolatility = useMemo(() => {
+    if (portfolioVolatility !== undefined) return portfolioVolatility;
+    return historicalStats.std * Math.sqrt(12) * 100;
+  }, [portfolioVolatility, historicalStats.std]);
+  
+  const derivedSharpe = useMemo(() => {
+    if (portfolioSharpe !== undefined) return portfolioSharpe;
+    if (derivedVolatility === 0) return 0;
+    return (derivedCAGR - riskFreeRate) / derivedVolatility;
+  }, [portfolioSharpe, derivedCAGR, derivedVolatility, riskFreeRate]);
+  
+  // Manual inputs state - initialized with portfolio values
+  const [manualInputs, setManualInputs] = useState<ManualInputs>({
+    cagr: derivedCAGR,
+    volatility: derivedVolatility,
+    currentValue: currentValue
+  });
+  
+  // Validate manual inputs
+  const validationErrors = useMemo(() => 
+    inputMode === 'manual' ? validateManualInputs(manualInputs) : {},
+    [inputMode, manualInputs]
+  );
+  
+  const hasValidationErrors = Object.keys(validationErrors).length > 0;
+  
+  // Effective values based on mode
+  const effectiveCAGR = inputMode === 'portfolio' ? derivedCAGR : manualInputs.cagr;
+  const effectiveVolatility = inputMode === 'portfolio' ? derivedVolatility : manualInputs.volatility;
+  const effectiveValue = inputMode === 'portfolio' ? currentValue : manualInputs.currentValue;
+  const effectiveSharpe = inputMode === 'portfolio' 
+    ? derivedSharpe 
+    : (manualInputs.volatility > 0 ? (manualInputs.cagr - riskFreeRate) / manualInputs.volatility : 0);
   
   // Generate fan chart data
   const fanChartData = useMemo(() => {
-    if (logReturns.length < 3) return [];
+    if (monthlyReturns.length < 3 && inputMode === 'portfolio') return [];
+    if (hasValidationErrors && inputMode === 'manual') return [];
+    
     setIsRunning(true);
-    const data = generatePercentilePaths(logReturns, currentValue, 65, config);
+    const data = generatePercentilePaths(
+      effectiveValue, 
+      65, 
+      effectiveCAGR / 100, 
+      effectiveVolatility / 100, 
+      config
+    );
     setIsRunning(false);
     return data;
-  }, [logReturns, currentValue, config]);
+  }, [monthlyReturns.length, effectiveValue, effectiveCAGR, effectiveVolatility, config, inputMode, hasValidationErrors]);
   
   // Generate horizon results
   const horizonResults = useMemo((): HorizonResult[] => {
-    if (logReturns.length < 3) return [];
+    if (monthlyReturns.length < 3 && inputMode === 'portfolio') return [];
+    if (hasValidationErrors && inputMode === 'manual') return [];
     
     return TIME_HORIZONS.map(horizon => {
-      const { finalValues } = runMonteCarloSimulation(logReturns, currentValue, horizon, config);
-      const { var95, cvar95 } = calculateRiskMetrics(finalValues, currentValue);
+      const { finalValues } = runMonteCarloSimulation(
+        effectiveValue, 
+        horizon, 
+        effectiveCAGR / 100, 
+        effectiveVolatility / 100, 
+        config
+      );
+      const { var95, cvar95 } = calculateRiskMetrics(finalValues, effectiveValue);
       
-      const probGain = (finalValues.filter(v => v > currentValue).length / finalValues.length) * 100;
+      const probGain = (finalValues.filter(v => v > effectiveValue).length / finalValues.length) * 100;
       const probLoss = 100 - probGain;
       
       return {
@@ -292,27 +374,50 @@ export function MonteCarloSimulation({ monthlyReturns, currentValue }: MonteCarl
         expectedValue: finalValues.reduce((a, b) => a + b, 0) / finalValues.length,
       };
     });
-  }, [logReturns, currentValue, config]);
+  }, [monthlyReturns.length, effectiveValue, effectiveCAGR, effectiveVolatility, config, inputMode, hasValidationErrors]);
   
   // Distribution for 20-year horizon
   const distribution = useMemo(() => {
-    if (logReturns.length < 3) return [];
-    const { finalValues } = runMonteCarloSimulation(logReturns, currentValue, 20, config);
+    if (monthlyReturns.length < 3 && inputMode === 'portfolio') return [];
+    if (hasValidationErrors && inputMode === 'manual') return [];
+    
+    const { finalValues } = runMonteCarloSimulation(
+      effectiveValue, 
+      20, 
+      effectiveCAGR / 100, 
+      effectiveVolatility / 100, 
+      config
+    );
     return generateDistribution(finalValues, 40);
-  }, [logReturns, currentValue, config]);
+  }, [monthlyReturns.length, effectiveValue, effectiveCAGR, effectiveVolatility, config, inputMode, hasValidationErrors]);
   
-  if (monthlyReturns.length < 3) {
+  // Update manual inputs when portfolio values change
+  const syncWithPortfolio = useCallback(() => {
+    setManualInputs({
+      cagr: derivedCAGR,
+      volatility: derivedVolatility,
+      currentValue: currentValue
+    });
+  }, [derivedCAGR, derivedVolatility, currentValue]);
+  
+  if (monthlyReturns.length < 3 && inputMode === 'portfolio') {
     return (
       <div className="bloomberg-panel p-6 text-center">
         <Dice6 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
         <p className="text-muted-foreground text-xs">Minimum 3 months of returns required for Monte Carlo simulation</p>
+        <button 
+          onClick={() => setInputMode('manual')}
+          className="mt-2 text-[10px] text-primary hover:underline"
+        >
+          Or switch to Manual Input mode →
+        </button>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      {/* Header with Stats & Controls */}
+      {/* Header with Mode Toggle & Stats */}
       <div className="bloomberg-panel">
         <div className="bloomberg-header">
           <span className="bloomberg-header-title flex items-center gap-2">
@@ -325,30 +430,129 @@ export function MonteCarloSimulation({ monthlyReturns, currentValue }: MonteCarl
           </span>
         </div>
         
+        {/* Mode Toggle */}
+        <div className="px-3 py-2 border-b border-border bg-muted/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Mode:</Label>
+              <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as InputMode)}>
+                <TabsList className="h-6">
+                  <TabsTrigger value="portfolio" className="text-[9px] h-5 px-2 gap-1">
+                    <Database className="h-3 w-3" />
+                    Use Portfolio Data
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="text-[9px] h-5 px-2 gap-1">
+                    <Pencil className="h-3 w-3" />
+                    Manual Input
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            {inputMode === 'manual' && (
+              <button 
+                onClick={syncWithPortfolio}
+                className="text-[9px] text-primary hover:underline"
+              >
+                Reset to portfolio values
+              </button>
+            )}
+          </div>
+          <p className="text-[8px] text-muted-foreground mt-1">
+            {inputMode === 'portfolio' 
+              ? 'Inputs are derived from your current portfolio statistics.' 
+              : 'You can experiment with your own assumptions.'}
+          </p>
+        </div>
+        
+        {/* Key Stats / Inputs */}
         <div className="p-3 grid grid-cols-2 md:grid-cols-6 gap-3 border-b border-border">
-          {/* Key Stats */}
+          {/* Expected CAGR */}
           <div className="space-y-0.5">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Expected CAGR</div>
-            <div className={`font-mono text-sm font-semibold ${annualizedReturn >= 0 ? 'text-success' : 'text-destructive'}`}>
-              {formatPercent(annualizedReturn)}
-            </div>
+            {inputMode === 'portfolio' ? (
+              <div className={`font-mono text-sm font-semibold ${effectiveCAGR >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatPercent(effectiveCAGR)}
+              </div>
+            ) : (
+              <div>
+                <Input 
+                  type="number"
+                  value={manualInputs.cagr}
+                  onChange={(e) => setManualInputs(prev => ({ ...prev, cagr: parseFloat(e.target.value) || 0 }))}
+                  className="h-7 text-[10px] font-mono w-20"
+                  min={-50}
+                  max={100}
+                  step={0.5}
+                />
+                {validationErrors.cagr && (
+                  <p className="text-[8px] text-destructive mt-0.5">{validationErrors.cagr}</p>
+                )}
+              </div>
+            )}
           </div>
+          
+          {/* Volatility */}
           <div className="space-y-0.5">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Volatility (σ)</div>
-            <div className="font-mono text-sm font-semibold text-warning">{annualizedVol.toFixed(1)}%</div>
+            {inputMode === 'portfolio' ? (
+              <div className="font-mono text-sm font-semibold text-warning">{effectiveVolatility.toFixed(1)}%</div>
+            ) : (
+              <div>
+                <Input 
+                  type="number"
+                  value={manualInputs.volatility}
+                  onChange={(e) => setManualInputs(prev => ({ ...prev, volatility: parseFloat(e.target.value) || 0 }))}
+                  className="h-7 text-[10px] font-mono w-20"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                />
+                {validationErrors.volatility && (
+                  <p className="text-[8px] text-destructive mt-0.5">{validationErrors.volatility}</p>
+                )}
+              </div>
+            )}
           </div>
+          
+          {/* Current Value */}
           <div className="space-y-0.5">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Current Value</div>
-            <div className="font-mono text-sm font-semibold text-primary">{formatCurrency(currentValue)}</div>
+            {inputMode === 'portfolio' ? (
+              <div className="font-mono text-sm font-semibold text-primary">{formatCurrency(effectiveValue)}</div>
+            ) : (
+              <div>
+                <Input 
+                  type="number"
+                  value={manualInputs.currentValue}
+                  onChange={(e) => setManualInputs(prev => ({ ...prev, currentValue: parseFloat(e.target.value) || 0 }))}
+                  className="h-7 text-[10px] font-mono w-24"
+                  min={0}
+                  step={1000}
+                />
+                {validationErrors.currentValue && (
+                  <p className="text-[8px] text-destructive mt-0.5">{validationErrors.currentValue}</p>
+                )}
+              </div>
+            )}
           </div>
+          
+          {/* Data Points */}
           <div className="space-y-0.5">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Data Points</div>
-            <div className="font-mono text-sm">{monthlyReturns.length} months</div>
+            <div className="font-mono text-sm">
+              {inputMode === 'portfolio' ? `${monthlyReturns.length} months` : '—'}
+            </div>
           </div>
+          
+          {/* Sharpe Estimate */}
           <div className="space-y-0.5">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Sharpe Est.</div>
-            <div className="font-mono text-sm">{annualizedVol > 0 ? (annualizedReturn / annualizedVol).toFixed(2) : 'N/A'}</div>
+            <div className="font-mono text-sm">
+              {effectiveSharpe !== 0 ? effectiveSharpe.toFixed(2) : 'N/A'}
+            </div>
           </div>
+          
+          {/* Model */}
           <div className="space-y-0.5">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Model</div>
             <div className="font-mono text-[10px] text-muted-foreground">Log-Normal GBM</div>
@@ -356,7 +560,7 @@ export function MonteCarloSimulation({ monthlyReturns, currentValue }: MonteCarl
         </div>
         
         {/* Configuration Panel */}
-        <div className="p-3 grid grid-cols-2 md:grid-cols-6 gap-3 bg-muted/20">
+        <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-3 bg-muted/20">
           <div className="space-y-1">
             <Label className="text-[9px] uppercase tracking-wider">Simulations</Label>
             <Select 
@@ -391,49 +595,13 @@ export function MonteCarloSimulation({ monthlyReturns, currentValue }: MonteCarl
             </Select>
           </div>
           
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Switch 
-                checked={config.useCustomVolatility}
-                onCheckedChange={(v) => setConfig(c => ({ ...c, useCustomVolatility: v }))}
-                className="scale-75"
-              />
-              <Label className="text-[9px] uppercase tracking-wider">Custom Vol</Label>
-            </div>
-            <Input 
-              type="number"
-              value={config.customVolatility}
-              onChange={(e) => setConfig(c => ({ ...c, customVolatility: parseFloat(e.target.value) || 0 }))}
-              disabled={!config.useCustomVolatility}
-              className="h-7 text-[10px] font-mono"
-              placeholder="%"
-            />
-          </div>
-          
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Switch 
-                checked={config.useCustomReturn}
-                onCheckedChange={(v) => setConfig(c => ({ ...c, useCustomReturn: v }))}
-                className="scale-75"
-              />
-              <Label className="text-[9px] uppercase tracking-wider">Custom Return</Label>
-            </div>
-            <Input 
-              type="number"
-              value={config.customReturn}
-              onChange={(e) => setConfig(c => ({ ...c, customReturn: parseFloat(e.target.value) || 0 }))}
-              disabled={!config.useCustomReturn}
-              className="h-7 text-[10px] font-mono"
-              placeholder="%"
-            />
-          </div>
-          
           <div className="col-span-2 flex items-end">
             <div className="text-[8px] text-muted-foreground leading-tight">
               <Settings2 className="h-3 w-3 inline mr-1" />
-              Using {config.useCustomVolatility ? 'custom' : 'historical'} volatility and {config.useCustomReturn ? 'custom' : 'historical'} expected return.
-              Model: Geometric Brownian Motion with log-normal returns.
+              {inputMode === 'portfolio' 
+                ? 'Using live portfolio statistics for simulation.' 
+                : 'Using manual input values for simulation.'}
+              {' '}Model: Geometric Brownian Motion with log-normal returns.
             </div>
           </div>
         </div>
@@ -508,7 +676,7 @@ export function MonteCarloSimulation({ monthlyReturns, currentValue }: MonteCarl
                 {TIME_HORIZONS.map(year => (
                   <ReferenceLine key={year} x={year} stroke="hsl(var(--warning))" strokeDasharray="3 3" opacity={0.6} />
                 ))}
-                <ReferenceLine y={currentValue} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" opacity={0.5} />
+                <ReferenceLine y={effectiveValue} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" opacity={0.5} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -603,12 +771,12 @@ export function MonteCarloSimulation({ monthlyReturns, currentValue }: MonteCarl
                   {distribution.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={entry.midpoint >= currentValue ? 'hsl(var(--success))' : 'hsl(var(--destructive))'}
+                      fill={entry.midpoint >= effectiveValue ? 'hsl(var(--success))' : 'hsl(var(--destructive))'}
                       fillOpacity={0.7}
                     />
                   ))}
                 </Bar>
-                <ReferenceLine x={formatCurrency(currentValue)} stroke="hsl(var(--primary))" strokeDasharray="3 3" />
+                <ReferenceLine x={formatCurrency(effectiveValue)} stroke="hsl(var(--primary))" strokeDasharray="3 3" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -623,7 +791,8 @@ export function MonteCarloSimulation({ monthlyReturns, currentValue }: MonteCarl
       <div className="px-1 py-2 text-[8px] text-muted-foreground leading-relaxed border-t border-border">
         <AlertTriangle className="h-3 w-3 inline mr-1 text-warning" />
         <strong>Model:</strong> Geometric Brownian Motion (GBM) with log-normal returns. 
-        <strong> Parameters:</strong> μ = {formatPercent(annualizedReturn)} p.a., σ = {annualizedVol.toFixed(1)}% p.a.
+        <strong> Parameters:</strong> μ = {formatPercent(effectiveCAGR)} p.a., σ = {effectiveVolatility.toFixed(1)}% p.a.
+        <strong> Source:</strong> {inputMode === 'portfolio' ? 'Live portfolio data' : 'Manual input'}.
         <strong> Method:</strong> {config.numSimulations.toLocaleString()} independent paths, {config.timeStep} time steps.
         <strong> Disclaimer:</strong> Past performance does not guarantee future results. This simulation assumes stationary parameters and does not account for regime changes, fat tails, or liquidity constraints.
       </div>
