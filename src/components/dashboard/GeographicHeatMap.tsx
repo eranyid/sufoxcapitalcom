@@ -172,108 +172,106 @@ export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
         </div>
       </div>
       <div className="p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* World Heat Map */}
-          <div className="flex flex-col items-center">
-            <p className="terminal-label mb-2">Distribution</p>
-            <div className="w-full max-w-[300px] aspect-[2/1]">
-              <ComposableMap
-                projection="geoMercator"
-                projectionConfig={{
-                  scale: 80,
-                  center: [0, 30]
-                }}
-                style={{ width: '100%', height: '100%' }}
-              >
-                <Geographies geography={geoUrl}>
-                  {({ geographies }) =>
-                    geographies.map((geo) => {
-                      const weight = getCountryWeight(geo);
-                      return (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          fill={getCountryColor(geo)}
-                          stroke="hsl(210, 15%, 25%)"
-                          strokeWidth={0.3}
-                          style={{
-                            default: { outline: 'none' },
-                            hover: { 
-                              fill: weight > 0 ? 'hsl(200, 90%, 60%)' : 'hsl(210, 20%, 30%)',
-                              outline: 'none',
-                              cursor: weight > 0 ? 'pointer' : 'default'
-                            },
-                            pressed: { outline: 'none' }
-                          }}
-                        />
-                      );
-                    })
-                  }
-                </Geographies>
-              </ComposableMap>
-            </div>
-            
-            {/* Color Legend */}
-            <div className="w-full max-w-[200px] mt-4">
-              <div 
-                className="h-2 rounded-sm"
-                style={{
-                  background: 'linear-gradient(to right, hsl(210, 20%, 25%), hsl(200, 80%, 50%))'
-                }}
-              />
-              <div className="flex justify-between mt-1">
-                <span className="text-[9px] font-mono text-muted-foreground">0%</span>
-                <span className="text-[9px] font-mono text-muted-foreground">100%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Data Table */}
-          <div className="lg:col-span-2">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border/30">
-                  <th className="terminal-label text-left py-2">Geographic</th>
-                  <th className="terminal-label text-right py-2">Value</th>
-                  <th className="terminal-label text-right py-2">Weight</th>
-                  <th className="terminal-label text-right py-2 w-32">Bar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((item, index) => (
-                  <tr key={item.name} className="border-b border-border/20 hover:bg-primary/5">
-                    <td className="py-2 flex items-center gap-2">
-                      <span 
-                        className="w-2.5 h-2.5 rounded-full" 
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+        {/* World Heat Map - Full Width */}
+        <div className="w-full mb-4">
+          <p className="terminal-label mb-2">Distribution</p>
+          <div className="w-full h-[220px] md:h-[260px]">
+            <ComposableMap
+              projection="geoMercator"
+              projectionConfig={{
+                scale: 120,
+                center: [0, 30]
+              }}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Geographies geography={geoUrl}>
+                {({ geographies }) =>
+                  geographies.map((geo) => {
+                    const weight = getCountryWeight(geo);
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={getCountryColor(geo)}
+                        stroke="hsl(210, 15%, 25%)"
+                        strokeWidth={0.3}
+                        style={{
+                          default: { outline: 'none' },
+                          hover: { 
+                            fill: weight > 0 ? 'hsl(200, 90%, 60%)' : 'hsl(210, 20%, 30%)',
+                            outline: 'none',
+                            cursor: weight > 0 ? 'pointer' : 'default'
+                          },
+                          pressed: { outline: 'none' }
+                        }}
                       />
-                      <span className="font-mono text-xs">{item.name}</span>
-                    </td>
-                    <td className="font-mono text-xs text-right tabular-nums text-muted-foreground">
-                      ${item.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </td>
-                    <td className="font-mono text-xs text-right tabular-nums font-medium">
-                      {item.percentage.toFixed(2)}%
-                    </td>
-                    <td className="py-2 pl-4">
-                      <div className="h-3 bg-muted/30 rounded-sm overflow-hidden">
-                        <div 
-                          className="h-full rounded-sm transition-all duration-500"
-                          style={{ 
-                            width: `${item.percentage}%`,
-                            backgroundColor: COLORS[index % COLORS.length]
-                          }}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="text-[10px] text-muted-foreground mt-3 font-mono">
-              Total analyzed: ${total.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-            </p>
+                    );
+                  })
+                }
+              </Geographies>
+            </ComposableMap>
           </div>
+          
+          {/* Color Legend - Full Width */}
+          <div className="w-full mt-3">
+            <div 
+              className="h-2 rounded-sm"
+              style={{
+                background: 'linear-gradient(to right, hsl(210, 20%, 25%), hsl(200, 80%, 50%))'
+              }}
+            />
+            <div className="flex justify-between mt-1">
+              <span className="text-[9px] font-mono text-muted-foreground">0%</span>
+              <span className="text-[9px] font-mono text-muted-foreground">100%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Table */}
+        <div className="w-full">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border/30">
+                <th className="terminal-label text-left py-2">Geographic</th>
+                <th className="terminal-label text-right py-2">Value</th>
+                <th className="terminal-label text-right py-2">Weight</th>
+                <th className="terminal-label text-right py-2 w-32">Bar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((item, index) => (
+                <tr key={item.name} className="border-b border-border/20 hover:bg-primary/5">
+                  <td className="py-2 flex items-center gap-2">
+                    <span 
+                      className="w-2.5 h-2.5 rounded-full" 
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    />
+                    <span className="font-mono text-xs">{item.name}</span>
+                  </td>
+                  <td className="font-mono text-xs text-right tabular-nums text-muted-foreground">
+                    ${item.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </td>
+                  <td className="font-mono text-xs text-right tabular-nums font-medium">
+                    {item.percentage.toFixed(2)}%
+                  </td>
+                  <td className="py-2 pl-4">
+                    <div className="h-3 bg-muted/30 rounded-sm overflow-hidden">
+                      <div 
+                        className="h-full rounded-sm transition-all duration-500"
+                        style={{ 
+                          width: `${item.percentage}%`,
+                          backgroundColor: COLORS[index % COLORS.length]
+                        }}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-[10px] text-muted-foreground mt-3 font-mono">
+            Total analyzed: ${total.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          </p>
         </div>
       </div>
     </div>
