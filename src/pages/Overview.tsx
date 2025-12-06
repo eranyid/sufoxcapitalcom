@@ -206,8 +206,8 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Total Portfolio Value - Full width on mobile only */}
-      <div className="block sm:hidden">
+      {/* Group 1: Total Portfolio Value - Always full width */}
+      <div className="w-full">
         <KPICard
           title="Total Portfolio Value"
           value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
@@ -217,18 +217,8 @@ export default function Overview() {
         />
       </div>
 
-      {/* All KPIs in a unified grid - 2 cols mobile, 3 cols tablet, 4 cols desktop */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-        {/* Total Portfolio Value - hidden on mobile (shown full-width above) */}
-        <div className="hidden sm:block">
-          <KPICard
-            title="Total Portfolio Value"
-            value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
-            icon={DollarSign}
-            trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
-            trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
-          />
-        </div>
+      {/* Group 2: Remaining 8 KPIs - 2 cols mobile, 4 cols desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <KPICard
           title="Total Return"
           value={hasData ? formatPercent(performanceMetrics.totalReturn) : '0.00%'}
