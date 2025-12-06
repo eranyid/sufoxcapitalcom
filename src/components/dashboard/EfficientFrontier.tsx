@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { calculateEfficientFrontier, EfficientFrontierResult, FrontierOptions, PortfolioPoint } from '@/lib/efficientFrontier';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell, Line, ComposedChart, LineChart } from 'recharts';
@@ -45,12 +45,16 @@ export function EfficientFrontier() {
     }, 50);
   }, [transactions, valuations, options]);
   
-  // Initial calculation on mount
-  useMemo(() => {
-    if (transactions.length > 0 && valuations.length > 0 && !result) {
+  // Track if initial calculation was done
+  const hasCalculated = useRef(false);
+  
+  // Initial calculation on mount (only once)
+  useEffect(() => {
+    if (transactions.length > 0 && valuations.length > 0 && !hasCalculated.current) {
+      hasCalculated.current = true;
       calculate();
     }
-  }, [transactions.length, valuations.length]);
+  }, [transactions.length, valuations.length, calculate]);
   
   // Prepare frontier curve data (separate from scatter points)
   const frontierCurveData = useMemo(() => {
