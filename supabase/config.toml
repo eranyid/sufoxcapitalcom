@@ -2,3 +2,6 @@ project_id = "tibawkrjihvibckxutvj"
 
 [functions.analyze-policy]
 verify_jwt = true
+
+[functions.passkey-register]
+verify_jwt = true
