@@ -39,7 +39,7 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
         { proName: "FX_IDC:EURILS", title: "EUR/ILS" },
         { proName: "INDEX:DXY", title: "DXY" },
         { proName: "AMEX:USO", title: "USO" },
-        { proName: "CBOE:VIX", title: "VIX" },
+        { proName: "AMEX:VIXY", title: "VIX ETF" },
         { proName: "TVC:GOLD", title: "XAUUSD" }
       ],
       showSymbolLogo: false,
