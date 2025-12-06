@@ -50,23 +50,23 @@ export function PerformanceCalendarHeatmap({ data }: PerformanceCalendarHeatmapP
   const formatPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 
   return (
-    <Card variant="panel" size="md">
-      <CardHeader className="pb-2">
+    <Card variant="panel" className="h-auto">
+      <CardHeader className="pb-3">
         <CardTitle>Monthly Returns Heatmap</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-4">
         <TooltipProvider>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+          <div className="overflow-x-auto -mx-2 px-2">
+            <table className="w-full">
               <thead>
                 <tr>
-                  <th className="text-left font-mono text-muted-foreground p-1 w-12">Year</th>
+                  <th className="text-left font-mono text-muted-foreground text-xs sm:text-sm p-2 min-w-[50px]">Year</th>
                   {MONTHS.map(month => (
-                    <th key={month} className="text-center font-mono text-muted-foreground p-1 w-10">
+                    <th key={month} className="text-center font-mono text-muted-foreground text-[10px] sm:text-xs p-1 sm:p-2 min-w-[45px] sm:min-w-[60px]">
                       {month}
                     </th>
                   ))}
-                  <th className="text-right font-mono text-muted-foreground p-1 w-14">YTD</th>
+                  <th className="text-right font-mono text-muted-foreground text-xs sm:text-sm p-2 min-w-[60px]">YTD</th>
                 </tr>
               </thead>
               <tbody>
@@ -82,21 +82,21 @@ export function PerformanceCalendarHeatmap({ data }: PerformanceCalendarHeatmapP
                     : undefined;
 
                   return (
-                    <tr key={year}>
-                      <td className="font-mono text-primary p-1">{year}</td>
+                    <tr key={year} className="border-b border-border/30 last:border-b-0">
+                      <td className="font-mono text-primary text-xs sm:text-sm p-2 font-medium">{year}</td>
                       {MONTHS.map((monthName, idx) => {
                         const monthKey = `${year}-${String(idx + 1).padStart(2, '0')}`;
                         const ret = dataByYearMonth.get(monthKey);
                         
                         return (
-                          <td key={monthKey} className="p-0.5">
+                          <td key={monthKey} className="p-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div
                                   className={cn(
-                                    'w-full h-6 flex items-center justify-center font-mono text-[10px] cursor-default transition-colors',
+                                    'w-full h-8 sm:h-10 flex items-center justify-center font-mono text-[9px] sm:text-xs cursor-default transition-colors',
                                     getReturnColor(ret),
-                                    ret !== undefined && 'hover:ring-1 hover:ring-primary'
+                                    ret !== undefined && 'hover:ring-1 hover:ring-primary hover:brightness-110'
                                   )}
                                 >
                                   {ret !== undefined ? formatPercent(ret) : '—'}
@@ -111,10 +111,10 @@ export function PerformanceCalendarHeatmap({ data }: PerformanceCalendarHeatmapP
                           </td>
                         );
                       })}
-                      <td className="p-0.5">
+                      <td className="p-1">
                         <div
                           className={cn(
-                            'w-full h-6 flex items-center justify-center font-mono text-[10px] font-medium',
+                            'w-full h-8 sm:h-10 flex items-center justify-center font-mono text-[10px] sm:text-sm font-semibold',
                             ytdReturn !== undefined && (ytdReturn >= 0 ? 'text-success' : 'text-destructive')
                           )}
                         >
@@ -128,27 +128,27 @@ export function PerformanceCalendarHeatmap({ data }: PerformanceCalendarHeatmapP
             </table>
           </div>
           
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-border">
+          {/* Legend - Compact */}
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 mt-3 pt-3 border-t border-border">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-destructive" />
-              <span className="text-[10px] text-muted-foreground font-mono">&lt;-5%</span>
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-destructive" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono">&lt;-5%</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-destructive/60" />
-              <span className="text-[10px] text-muted-foreground font-mono">-2% to -5%</span>
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-destructive/60" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono">-2~-5%</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-muted/30" />
-              <span className="text-[10px] text-muted-foreground font-mono">~0%</span>
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-muted/30" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono">~0%</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-success/60" />
-              <span className="text-[10px] text-muted-foreground font-mono">+2% to +5%</span>
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-success/60" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono">+2~+5%</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-success" />
-              <span className="text-[10px] text-muted-foreground font-mono">&gt;+5%</span>
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-success" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono">&gt;+5%</span>
             </div>
           </div>
         </TooltipProvider>
