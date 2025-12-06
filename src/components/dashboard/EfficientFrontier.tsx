@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { calculateEfficientFrontier, EfficientFrontierResult, FrontierOptions, PortfolioPoint } from '@/lib/efficientFrontier';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell, Legend } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell, Legend, Line, ComposedChart } from 'recharts';
 import { TrendingUp, AlertTriangle, RefreshCw, Target, Crosshair, CircleDot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,6 +93,27 @@ export function EfficientFrontier() {
     
     return data;
   }, [result]);
+  
+  // Calculate CML (Capital Market Line) data points
+  const cmlData = useMemo(() => {
+    if (!result?.maxSharpePortfolio) return [];
+    
+    const maxSharpe = result.maxSharpePortfolio;
+    const rf = options.riskFreeRate;
+    
+    // CML equation: Return = Rf + (Sharpe * Volatility)
+    // Line from (0, Rf) through (maxSharpe.volatility, maxSharpe.return)
+    const slope = maxSharpe.sharpe;
+    
+    // Extend the line beyond max Sharpe point
+    const maxX = Math.max(...chartData.map(d => d.x), maxSharpe.volatility * 1.5);
+    
+    return [
+      { x: 0, y: rf },
+      { x: maxSharpe.volatility, y: maxSharpe.return },
+      { x: maxX, y: rf + slope * maxX }
+    ];
+  }, [result, options.riskFreeRate, chartData]);
   
   const getPointColor = (type: string) => {
     switch (type) {
@@ -251,14 +272,14 @@ export function EfficientFrontier() {
           <>
             <div className="h-[320px] md:h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
+                <ComposedChart margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 22%)" />
                   <XAxis
                     type="number"
                     dataKey="x"
                     name="Volatility"
                     unit="%"
-                    domain={['auto', 'auto']}
+                    domain={[0, 'auto']}
                     tick={{ fill: 'hsl(0, 0%, 50%)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                     axisLine={{ stroke: 'hsl(0, 0%, 22%)' }}
                     label={{ 
@@ -301,6 +322,21 @@ export function EfficientFrontier() {
                     }}
                   />
                   
+                  {/* Capital Market Line (CML) */}
+                  {cmlData.length > 0 && (
+                    <Line
+                      data={cmlData}
+                      type="linear"
+                      dataKey="y"
+                      stroke="hsl(45, 100%, 50%)"
+                      strokeWidth={2}
+                      strokeDasharray="8 4"
+                      dot={false}
+                      name="CML"
+                      legendType="none"
+                    />
+                  )}
+                  
                   <Scatter name="Portfolios" data={chartData} shape="circle">
                     {chartData.map((entry, index) => (
                       <Cell 
@@ -310,7 +346,7 @@ export function EfficientFrontier() {
                       />
                     ))}
                   </Scatter>
-                </ScatterChart>
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
             
@@ -319,6 +355,10 @@ export function EfficientFrontier() {
               <div className="flex items-center gap-1.5">
                 <CircleDot className="h-3 w-3" style={{ color: 'hsl(0, 0%, 50%)' }} />
                 <span className="text-muted-foreground">Frontier</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-0.5" style={{ background: 'hsl(45, 100%, 50%)', borderStyle: 'dashed' }} />
+                <span style={{ color: 'hsl(45, 100%, 50%)' }}>CML</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Target className="h-3 w-3" style={{ color: 'hsl(30, 100%, 50%)' }} />
