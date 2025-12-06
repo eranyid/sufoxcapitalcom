@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { TrendingUp } from 'lucide-react';
 
 interface TradingViewTickerTapeProps {
   label?: string;
@@ -60,19 +61,20 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
 
   return (
     <div className="w-full bg-card border border-border rounded-md overflow-hidden">
-      <div className="flex items-center h-12 md:h-10">
-        {/* Label */}
-        <div className="flex-shrink-0 px-3 border-r border-border h-full flex items-center bg-muted/30">
-          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider whitespace-nowrap">
-            {label}
-          </span>
-        </div>
-        
-        {/* TradingView Widget Container */}
+      {/* Header with label */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+        <TrendingUp className="h-4 w-4 text-primary" />
+        <span className="text-xs font-mono text-primary font-semibold tracking-wider">
+          {label}
+        </span>
+      </div>
+      
+      {/* TradingView Widget Container */}
+      <div className="p-4">
         <div 
           ref={containerRef} 
-          className="flex-1 overflow-hidden h-full flex items-center"
-          style={{ minHeight: '40px' }}
+          className="w-full overflow-hidden"
+          style={{ minHeight: '48px' }}
         />
       </div>
     </div>
