@@ -101,7 +101,10 @@ export default function Valuations() {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const csv = event.target?.result as string;
-        const imported = importValuationsFromCSV(csv);
+        const { valuations: imported, errors } = importValuationsFromCSV(csv);
+        if (errors.length > 0) {
+          toast.error(`${errors.length} rows had validation errors and were skipped`);
+        }
         await importValuations(imported);
         toast.success(`Imported ${imported.length} valuations`);
       };

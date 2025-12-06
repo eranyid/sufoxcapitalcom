@@ -11,8 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Check, X, Users, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 
-const ADMIN_EMAIL = 'eran.yidgar@sufoxcapital.com';
-
 interface UserProfile {
   id: string;
   email: string | null;
@@ -20,18 +18,16 @@ interface UserProfile {
   created_at: string;
   is_approved: boolean;
   approval_status: string;
+  isAdmin?: boolean;
 }
 
 export default function AdminUsers() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  // Check if current user is admin
-  const isAdmin = user?.email === ADMIN_EMAIL;
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -52,13 +48,30 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch profiles
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUsers(data || []);
+      if (profileError) throw profileError;
+      
+      // Fetch admin roles for all users
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+      
+      // Map admin status to users
+      const adminUserIds = new Set(
+        roleData?.filter(r => r.role === 'admin').map(r => r.user_id) || []
+      );
+      
+      const usersWithAdminStatus = (profileData || []).map(u => ({
+        ...u,
+        isAdmin: adminUserIds.has(u.id)
+      }));
+      
+      setUsers(usersWithAdminStatus);
     } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
@@ -310,7 +323,7 @@ export default function AdminUsers() {
                         <TableRow key={u.id} className="border-border">
                           <TableCell className="font-mono text-sm">
                             {u.email || 'N/A'}
-                            {u.email === ADMIN_EMAIL && (
+                            {u.isAdmin && (
                               <Badge className="ml-2 bg-primary/20 text-primary border-primary/30">Admin</Badge>
                             )}
                           </TableCell>
@@ -320,7 +333,7 @@ export default function AdminUsers() {
                           </TableCell>
                           <TableCell>{getStatusBadge(u.approval_status, u.is_approved)}</TableCell>
                           <TableCell className="text-right">
-                            {u.email !== ADMIN_EMAIL && (
+                            {!u.isAdmin && (
                               <div className="flex items-center justify-end gap-2">
                                 {!u.is_approved && (
                                   <Button
