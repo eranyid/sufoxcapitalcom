@@ -583,40 +583,6 @@ export function EfficientFrontier() {
                 </table>
               </div>
               
-              {/* Asset Details */}
-              {result.assets.length > 0 && (
-                <div className="mt-4">
-                  <p className="terminal-label mb-2">Input Asset Statistics</p>
-                  <div className="overflow-x-auto border border-border/30 rounded-sm">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-secondary/30">
-                          <th className="text-[10px] text-muted-foreground font-mono text-left py-2 px-3">Ticker</th>
-                          <th className="text-[10px] text-muted-foreground font-mono text-right py-2 px-3">E[Return]</th>
-                          <th className="text-[10px] text-muted-foreground font-mono text-right py-2 px-3">Volatility</th>
-                          <th className="text-[10px] text-muted-foreground font-mono text-right py-2 px-3">Current Weight</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.assets.sort((a, b) => b.weight - a.weight).map(asset => (
-                          <tr key={asset.ticker} className="border-t border-border/20 hover:bg-secondary/20">
-                            <td className="py-1.5 px-3 font-mono text-xs text-primary">{asset.ticker}</td>
-                            <td className={`font-mono text-xs text-right tabular-nums px-3 ${asset.expectedReturn >= 0 ? 'text-chart-positive' : 'text-chart-negative'}`}>
-                              {asset.expectedReturn.toFixed(2)}%
-                            </td>
-                            <td className="font-mono text-xs text-right tabular-nums text-muted-foreground px-3">
-                              {asset.volatility.toFixed(2)}%
-                            </td>
-                            <td className="font-mono text-xs text-right tabular-nums px-3">
-                              {asset.weight.toFixed(2)}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
             </>
           )}
           
