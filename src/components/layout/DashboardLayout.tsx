@@ -8,7 +8,6 @@ import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { Database } from 'lucide-react';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
-import { MarketTicker } from '@/components/dashboard/MarketTicker';
 
 export function DashboardLayout() {
   const { sampleDataMode } = usePortfolio();
@@ -64,9 +63,6 @@ export function DashboardLayout() {
             <span className="text-primary">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
           </div>
         </div>
-
-        {/* Market Ticker - visible on all screens */}
-        <MarketTicker />
 
         {/* Main Content */}
         <main className="flex-1 p-3 md:p-4 pb-20 md:pb-4 overflow-x-hidden overflow-y-auto">
