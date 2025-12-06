@@ -179,13 +179,9 @@ export default function Overview() {
   }
 
   return (
-    <div className="animate-fade-in">
-      {/* News Ticker */}
-      <NewsTicker rssUrl={rssFeedUrl} />
-      
-      <div className="section-spacing">
+    <div className="animate-fade-in section-spacing">
       {/* Header - Mobile Optimized */}
-      <div className="flex flex-row items-center justify-between gap-2 sm:gap-3 py-1 sm:py-0">
+      <div className="flex flex-row items-center justify-between gap-2 sm:gap-3 py-1 sm:py-0 mb-3 sm:mb-4">
         <div className="flex-1 min-w-0">
           <h1 className="terminal-label text-sm sm:text-base">Portfolio Overview</h1>
           <p className="text-muted-foreground text-[10px] font-mono mt-0.5 truncate">Real-time performance snapshot</p>
@@ -206,6 +202,11 @@ export default function Overview() {
             <p className="text-sm font-mono tabular-nums text-foreground">{new Date().toLocaleDateString()}</p>
           </div>
         </div>
+      </div>
+
+      {/* News Ticker Card - Full width */}
+      <div className="mb-3 sm:mb-4">
+        <NewsTicker rssUrl={rssFeedUrl} />
       </div>
 
       {/* Primary KPIs - Mobile Optimized 2-col grid */}
@@ -315,7 +316,6 @@ export default function Overview() {
           </p>
         </div>
       )}
-      </div>
     </div>
   );
 }
