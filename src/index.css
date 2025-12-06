@@ -34,6 +34,9 @@
     --success: 120 60% 40%;
     --success-foreground: 0 0% 100%;
 
+    --positive: 120 60% 40%;
+    --positive-foreground: 0 0% 100%;
+
     --warning: 45 100% 50%;
     --warning-foreground: 0 0% 0%;
 
