@@ -249,6 +249,24 @@ export default function Overview() {
           trend="down"
           subtitle="Peak to trough"
         />
+        <KPICard
+          title="YTD Return"
+          value={hasData ? (() => {
+            const currentYear = new Date().getFullYear().toString();
+            const ytdReturns = performanceMetrics.monthlyReturns.filter(r => r.month.startsWith(currentYear));
+            if (ytdReturns.length === 0) return '0.00%';
+            const ytdReturn = ytdReturns.reduce((acc, r) => acc * (1 + r.return / 100), 1) - 1;
+            return `${ytdReturn >= 0 ? '+' : ''}${(ytdReturn * 100).toFixed(2)}%`;
+          })() : '0.00%'}
+          trend={hasData ? (() => {
+            const currentYear = new Date().getFullYear().toString();
+            const ytdReturns = performanceMetrics.monthlyReturns.filter(r => r.month.startsWith(currentYear));
+            if (ytdReturns.length === 0) return 'neutral';
+            const ytdReturn = ytdReturns.reduce((acc, r) => acc * (1 + r.return / 100), 1) - 1;
+            return ytdReturn >= 0 ? 'up' : 'down';
+          })() : 'neutral'}
+          subtitle={new Date().getFullYear().toString()}
+        />
       </div>
 
       {/* Secondary KPIs - Mobile Optimized */}
@@ -272,24 +290,6 @@ export default function Overview() {
           title="IRR"
           value={hasData ? `${performanceMetrics.irr.toFixed(2)}%` : '0.00%'}
           trend={hasData && performanceMetrics.irr >= 0 ? 'up' : 'down'}
-        />
-        <KPICard
-          title="YTD Return"
-          value={hasData ? (() => {
-            const currentYear = new Date().getFullYear().toString();
-            const ytdReturns = performanceMetrics.monthlyReturns.filter(r => r.month.startsWith(currentYear));
-            if (ytdReturns.length === 0) return '0.00%';
-            const ytdReturn = ytdReturns.reduce((acc, r) => acc * (1 + r.return / 100), 1) - 1;
-            return `${ytdReturn >= 0 ? '+' : ''}${(ytdReturn * 100).toFixed(2)}%`;
-          })() : '0.00%'}
-          trend={hasData ? (() => {
-            const currentYear = new Date().getFullYear().toString();
-            const ytdReturns = performanceMetrics.monthlyReturns.filter(r => r.month.startsWith(currentYear));
-            if (ytdReturns.length === 0) return 'neutral';
-            const ytdReturn = ytdReturns.reduce((acc, r) => acc * (1 + r.return / 100), 1) - 1;
-            return ytdReturn >= 0 ? 'up' : 'down';
-          })() : 'neutral'}
-          subtitle={new Date().getFullYear().toString()}
         />
       </div>
 
