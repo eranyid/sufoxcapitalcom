@@ -206,8 +206,8 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Primary KPIs - Mobile Optimized 2-col grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-2">
+      {/* Total Portfolio Value - Full width on mobile */}
+      <div className="block sm:hidden">
         <KPICard
           title="Total Portfolio Value"
           value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
@@ -215,6 +215,19 @@ export default function Overview() {
           trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
           trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
         />
+      </div>
+
+      {/* Primary KPIs - Desktop shows all 4, Mobile shows 3 (without Total Portfolio Value) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="hidden sm:block">
+          <KPICard
+            title="Total Portfolio Value"
+            value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
+            icon={DollarSign}
+            trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
+            trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
+          />
+        </div>
         <KPICard
           title="Total Return"
           value={hasData ? formatPercent(performanceMetrics.totalReturn) : '0.00%'}
@@ -239,7 +252,7 @@ export default function Overview() {
       </div>
 
       {/* Secondary KPIs - Mobile Optimized */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
