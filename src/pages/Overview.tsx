@@ -185,17 +185,17 @@ export default function Overview() {
       
       <div className="section-spacing">
       {/* Header - Mobile Optimized */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
+      <div className="flex flex-row items-center justify-between gap-2 sm:gap-3 py-1 sm:py-0">
+        <div className="flex-1 min-w-0">
           <h1 className="terminal-label text-sm sm:text-base">Portfolio Overview</h1>
-          <p className="text-muted-foreground text-[10px] sm:text-[10px] font-mono mt-0.5">Real-time performance snapshot</p>
+          <p className="text-muted-foreground text-[10px] font-mono mt-0.5 truncate">Real-time performance snapshot</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <Button 
             onClick={handleExportPDF} 
             variant="outline" 
             size="sm" 
-            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-9 sm:h-7 px-3 sm:px-2 touch-target"
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 sm:h-7 min-w-[44px] px-3 sm:px-2"
           >
             <FileDown className="h-4 w-4 sm:h-3 sm:w-3" />
             <span className="hidden sm:inline">Export</span>
