@@ -28,7 +28,7 @@ export default function Performance() {
       </div>
 
       {/* Key Metrics */}
-      <div className="kpi-grid">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <KPICard
           title="Total Return"
           value={hasData ? formatPercent(performanceMetrics.totalReturn) : '0.00%'}
