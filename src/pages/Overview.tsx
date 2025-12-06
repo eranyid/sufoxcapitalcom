@@ -239,7 +239,7 @@ export default function Overview() {
       </div>
 
       {/* Secondary KPIs - Mobile Optimized */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
@@ -259,11 +259,6 @@ export default function Overview() {
           title="IRR"
           value={hasData ? `${performanceMetrics.irr.toFixed(2)}%` : '0.00%'}
           trend={hasData && performanceMetrics.irr >= 0 ? 'up' : 'down'}
-        />
-        <KPICard
-          title="TWR"
-          value={hasData ? formatPercent(performanceMetrics.twr) : '0.00%'}
-          trend={hasData && performanceMetrics.twr >= 0 ? 'up' : 'down'}
         />
         <KPICard
           title="YTD Return"
