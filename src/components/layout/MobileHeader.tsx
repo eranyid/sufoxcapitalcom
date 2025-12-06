@@ -1,7 +1,8 @@
-import { Database, Bell } from 'lucide-react';
+import { Database } from 'lucide-react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import sufoxLogo from '@/assets/sufox-logo.png';
+import { useState, useEffect } from 'react';
 
 interface MobileHeaderProps {
   status: 'ok' | 'warning' | 'error';
@@ -12,6 +13,12 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ status, errorCount, warningCount, onWatchdogClick }: MobileHeaderProps) {
   const { sampleDataMode } = usePortfolio();
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 bg-sidebar border-b border-sidebar-border md:hidden">
@@ -28,6 +35,9 @@ export function MobileHeader({ status, errorCount, warningCount, onWatchdogClick
               <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
               <p className="text-[8px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
             </div>
+            <span className="ml-3 text-[10px] font-mono text-primary">
+              {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
           </div>
 
           {/* Right Actions */}
