@@ -4,13 +4,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
-import { AllocationChart } from '@/components/dashboard/AllocationChart';
+
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
 import { CashManagement } from '@/components/dashboard/CashManagement';
 import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { NewsTicker } from '@/components/dashboard/NewsTicker';
-import { calculateAllocations, calculateCorrelationMatrix } from '@/lib/calculations';
+import { calculateCorrelationMatrix } from '@/lib/calculations';
 import { generatePDFReport, MonteCarloResultsForPDF, CorrelationMatrixForPDF } from '@/lib/pdfReport';
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
@@ -162,8 +162,6 @@ export default function Overview() {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   };
 
-  const assetTypeAllocation = calculateAllocations(transactions, valuations, 'assetType');
-  const geographyAllocation = calculateAllocations(transactions, valuations, 'geography');
 
   const hasData = performanceMetrics !== null;
 
@@ -300,11 +298,6 @@ export default function Overview() {
             <DrawdownChart data={performanceMetrics.drawdownSeries} />
           </div>
 
-          {/* Allocation Charts - Stack on mobile */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-            <AllocationChart data={assetTypeAllocation} title="Asset Class Allocation" />
-            <AllocationChart data={geographyAllocation} title="Geographic Allocation" />
-          </div>
         </>
       ) : (
         <div className="bloomberg-panel p-6 sm:p-8 text-center">
