@@ -30,7 +30,7 @@ const primaryNavItems = [
 
 const moreNavItems = [
   { path: '/transactions', label: 'Transactions' },
-  { path: '/management', label: 'Management' },
+  { path: '/research', label: 'Research' },
   { path: '/valuations', label: 'Valuations' },
   { path: '/policy', label: 'Policy' },
   { path: '/settings', label: 'Settings' },

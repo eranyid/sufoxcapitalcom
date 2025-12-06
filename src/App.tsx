@@ -15,7 +15,7 @@ import Performance from "./pages/Performance";
 import Risk from "./pages/Risk";
 import ScenarioLab from "./pages/ScenarioLab";
 import XRay from "./pages/XRay";
-import Management from "./pages/Management";
+import Research from "./pages/Research";
 import Transactions from "./pages/Transactions";
 import Valuations from "./pages/Valuations";
 import Settings from "./pages/Settings";
@@ -47,7 +47,7 @@ const App = () => (
                   <Route path="/risk" element={<Risk />} />
                   <Route path="/scenarios" element={<ScenarioLab />} />
                   <Route path="/xray" element={<XRay />} />
-                  <Route path="/management" element={<Management />} />
+                  <Route path="/research" element={<Research />} />
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/valuations" element={<Valuations />} />
                   <Route path="/policy" element={<InvestmentPolicy />} />
