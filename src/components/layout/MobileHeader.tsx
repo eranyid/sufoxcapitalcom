@@ -32,7 +32,7 @@ export function MobileHeader({
         <div className="flex items-center justify-between px-4 h-14">
           {/* Logo & Brand */}
           <div className="gap-2 flex items-center justify-center">
-            <img src={sufoxLogo} alt="SUFOX" className="h-7 w-7 object-contain" />
+            <img alt="SUFOX" className="h-7 w-7 object-contain" src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" />
             <div>
               <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
               <p className="text-[8px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
