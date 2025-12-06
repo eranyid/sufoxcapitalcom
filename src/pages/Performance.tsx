@@ -45,11 +45,13 @@ export default function Performance() {
           title="Time-Weighted Return"
           value={hasData ? formatPercent(performanceMetrics.twr) : '0.00%'}
           icon={Award}
+          trend={hasData && performanceMetrics.twr >= 0 ? 'up' : 'down'}
         />
         <KPICard
           title="Win/Loss Ratio"
           value={hasData ? performanceMetrics.winLossRatio.toFixed(2) : '0.00'}
           icon={Percent}
+          trend={hasData && performanceMetrics.winLossRatio >= 1 ? 'up' : 'neutral'}
         />
       </div>
 
