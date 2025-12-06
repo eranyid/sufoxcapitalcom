@@ -93,6 +93,10 @@ export default function Risk() {
           <MonteCarloSimulation 
             monthlyReturns={performanceMetrics.monthlyReturns.map(m => m.return)} 
             currentValue={performanceMetrics.totalValue}
+            portfolioCAGR={performanceMetrics.twr > 0 ? performanceMetrics.twr : undefined}
+            portfolioVolatility={riskMetrics.volatility}
+            portfolioSharpe={riskMetrics.sharpeRatio}
+            riskFreeRate={settings.riskFreeRate}
           />
 
           {/* Drawdown Chart */}
