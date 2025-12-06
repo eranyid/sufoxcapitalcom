@@ -206,7 +206,7 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Total Portfolio Value - Full width on mobile */}
+      {/* Total Portfolio Value - Full width on mobile only */}
       <div className="block sm:hidden">
         <KPICard
           title="Total Portfolio Value"
@@ -217,8 +217,9 @@ export default function Overview() {
         />
       </div>
 
-      {/* Primary KPIs - Desktop shows all 4, Mobile shows 3 (without Total Portfolio Value) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {/* All KPIs in a unified grid - 2 cols mobile, 3 cols tablet, 4 cols desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        {/* Total Portfolio Value - hidden on mobile (shown full-width above) */}
         <div className="hidden sm:block">
           <KPICard
             title="Total Portfolio Value"
@@ -267,10 +268,6 @@ export default function Overview() {
           })() : 'neutral'}
           subtitle={new Date().getFullYear().toString()}
         />
-      </div>
-
-      {/* Secondary KPIs - Mobile Optimized */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
