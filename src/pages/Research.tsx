@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react';
+import TradingViewTickerTape from '@/components/dashboard/TradingViewTickerTape';
 
 const Research = () => {
   return (
@@ -8,6 +9,9 @@ const Research = () => {
         <Search className="h-5 w-5 text-primary" />
         <h1 className="text-xl font-mono text-foreground tracking-tight">RESEARCH</h1>
       </div>
+
+      {/* TradingView Ticker Tape */}
+      <TradingViewTickerTape label="RESEARCH MARKETS" />
 
       {/* Placeholder Content */}
       <div className="flex flex-col items-center justify-center min-h-[400px] border border-border rounded-lg bg-card/50">
