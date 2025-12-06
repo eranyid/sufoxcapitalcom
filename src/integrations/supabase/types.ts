@@ -254,42 +254,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ticker_symbols: {
-        Row: {
-          category: string | null
-          created_at: string
-          enabled: boolean
-          id: string
-          label: string
-          order_index: number
-          tv_symbol: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          label: string
-          order_index?: number
-          tv_symbol: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          category?: string | null
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          label?: string
-          order_index?: number
-          tv_symbol?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       transactions: {
         Row: {
           asset_name: string
