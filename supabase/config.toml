@@ -5,3 +5,9 @@ verify_jwt = true
 
 [functions.passkey-register]
 verify_jwt = true
+
+[functions.fetch-rss]
+verify_jwt = true
+
+[functions.passkey-authenticate]
+verify_jwt = false

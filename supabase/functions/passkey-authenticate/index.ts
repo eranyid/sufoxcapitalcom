@@ -36,6 +36,23 @@ serve(async (req) => {
     }
 
     if (action === "verify-credential") {
+      // Validate required parameters
+      if (!credentialId || typeof credentialId !== 'string') {
+        console.error("Missing or invalid credentialId");
+        return new Response(JSON.stringify({ error: "Authentication failed" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (typeof newCounter !== 'number' || newCounter < 0) {
+        console.error("Invalid counter value:", newCounter);
+        return new Response(JSON.stringify({ error: "Authentication failed" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Find the credential and its associated user
       const { data: credential, error: findError } = await supabase
         .from("passkey_credentials")
@@ -45,6 +62,18 @@ serve(async (req) => {
 
       if (findError || !credential) {
         // Use generic error message to prevent credential enumeration
+        console.error("Credential not found or error:", findError);
+        return new Response(JSON.stringify({ error: "Authentication failed" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // SECURITY: Validate counter to prevent replay attacks
+      // The new counter must be greater than the stored counter
+      // If counter goes backwards, it indicates a cloned authenticator
+      if (newCounter <= credential.counter) {
+        console.error(`Counter validation failed: newCounter (${newCounter}) <= storedCounter (${credential.counter}). Possible replay attack or cloned authenticator.`);
         return new Response(JSON.stringify({ error: "Authentication failed" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -52,7 +81,7 @@ serve(async (req) => {
       }
 
       // Update counter and last_used_at
-      await supabase
+      const { error: updateError } = await supabase
         .from("passkey_credentials")
         .update({ 
           counter: newCounter,
@@ -60,12 +89,21 @@ serve(async (req) => {
         })
         .eq("credential_id", credentialId);
 
+      if (updateError) {
+        console.error("Failed to update counter:", updateError);
+        return new Response(JSON.stringify({ error: "Authentication failed" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Get user email for sign-in
       const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(
         credential.user_id
       );
 
       if (userError || !user) {
+        console.error("User not found:", userError);
         return new Response(JSON.stringify({ error: "Authentication failed" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -90,6 +128,8 @@ serve(async (req) => {
       const actionLink = linkData.properties?.action_link;
       const tokenMatch = actionLink?.match(/token=([^&]+)/);
       const token = tokenMatch ? tokenMatch[1] : null;
+
+      console.log("Passkey authentication successful for user:", user.email);
 
       return new Response(JSON.stringify({ 
         success: true,
