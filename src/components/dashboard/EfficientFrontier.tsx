@@ -340,9 +340,9 @@ export function EfficientFrontier() {
           {/* Chart */}
           {result && result.frontier.length > 0 && (
             <>
-              <div className="h-[360px] md:h-[420px]">
+              <div className="h-[360px] md:h-[420px] -mx-3 sm:mx-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart margin={{ top: 20, right: 30, bottom: 30, left: 20 }}>
+                  <ComposedChart margin={{ top: 20, right: 10, bottom: 30, left: 5 }}>
                     <CartesianGrid 
                       strokeDasharray="2 2" 
                       stroke="hsl(0, 0%, 18%)" 
