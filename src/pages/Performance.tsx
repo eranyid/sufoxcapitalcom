@@ -58,9 +58,6 @@ export default function Performance() {
 
       {hasData ? (
         <>
-          {/* Calendar Heatmap - Full Width */}
-          <PerformanceCalendarHeatmap data={performanceMetrics.monthlyReturns} />
-
           {/* Performance Charts */}
           <div className="chart-grid">
             <PerformanceChart 
@@ -112,6 +109,9 @@ export default function Performance() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Calendar Heatmap - After Contribution */}
+          <PerformanceCalendarHeatmap data={performanceMetrics.monthlyReturns} />
 
           {/* Holdings Contribution Table */}
           <Card variant="panel">
