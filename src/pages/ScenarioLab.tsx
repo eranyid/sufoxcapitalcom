@@ -780,7 +780,7 @@ export default function ScenarioLab() {
                     />
                     <Bar dataKey="pnl" radius={[0, 4, 4, 0]}>
                       {assetTypeChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.pnl < 0 ? 'hsl(var(--destructive))' : 'hsl(var(--positive))'} />
+                        <Cell key={`cell-${index}`} fill={entry.pnl < 0 ? 'hsl(var(--destructive))' : 'hsl(var(--success))'} />
                       ))}
                     </Bar>
                   </BarChart>
