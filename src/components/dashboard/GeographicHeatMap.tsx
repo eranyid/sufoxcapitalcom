@@ -134,10 +134,10 @@ export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
   // Get max weight for color scale
   const maxWeight = Math.max(...Object.values(countryWeights), hasGlobal ? globalWeight : 0, 1);
 
-  // Color scale from light to deep blue
+  // Color scale using app theme - from muted to primary (orange)
   const colorScale = scaleLinear<string>()
     .domain([0, maxWeight])
-    .range(['hsl(210, 20%, 25%)', 'hsl(200, 80%, 50%)']);
+    .range(['hsl(0, 0%, 16%)', 'hsl(30, 100%, 50%)']); // secondary to primary
 
   const getCountryColor = (geo: any) => {
     const countryName = geo.properties.name;
@@ -152,7 +152,7 @@ export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
       return colorScale(globalWeight * 0.3);
     }
     
-    return 'hsl(210, 15%, 15%)'; // Default dark gray
+    return 'hsl(0, 0%, 11%)'; // card background
   };
 
   const getCountryWeight = (geo: any): number => {
@@ -175,12 +175,12 @@ export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
         {/* World Heat Map - Full Width */}
         <div className="w-full mb-4">
           <p className="terminal-label mb-2">Distribution</p>
-          <div className="w-full h-[220px] md:h-[260px]">
+          <div className="w-full h-[280px] md:h-[340px]">
             <ComposableMap
               projection="geoMercator"
               projectionConfig={{
-                scale: 120,
-                center: [0, 30]
+                scale: 140,
+                center: [0, 25]
               }}
               style={{ width: '100%', height: '100%' }}
             >
@@ -193,12 +193,12 @@ export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
                         key={geo.rsmKey}
                         geography={geo}
                         fill={getCountryColor(geo)}
-                        stroke="hsl(210, 15%, 25%)"
-                        strokeWidth={0.3}
+                        stroke="hsl(0, 0%, 22%)"
+                        strokeWidth={0.4}
                         style={{
                           default: { outline: 'none' },
                           hover: { 
-                            fill: weight > 0 ? 'hsl(200, 90%, 60%)' : 'hsl(210, 20%, 30%)',
+                            fill: weight > 0 ? 'hsl(30, 100%, 60%)' : 'hsl(0, 0%, 20%)',
                             outline: 'none',
                             cursor: weight > 0 ? 'pointer' : 'default'
                           },
@@ -217,7 +217,7 @@ export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
             <div 
               className="h-2 rounded-sm"
               style={{
-                background: 'linear-gradient(to right, hsl(210, 20%, 25%), hsl(200, 80%, 50%))'
+                background: 'linear-gradient(to right, hsl(0, 0%, 16%), hsl(30, 100%, 50%))'
               }}
             />
             <div className="flex justify-between mt-1">
