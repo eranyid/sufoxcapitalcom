@@ -3,7 +3,7 @@ import { calculateAllocations, calculatePositions, getLatestValuations } from '@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Scan, BarChart3 } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
-
+import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 const COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD'];
 
 interface DistributionSectionProps {
@@ -222,11 +222,8 @@ export default function XRay() {
             />
           </div>
 
-          {/* Geographic Distribution - Full width */}
-          <DistributionSection 
-            title="Geographic Distribution" 
-            data={geographyAllocation} 
-          />
+          {/* Geographic Distribution - Full width with Heat Map */}
+          <GeographicHeatMap data={geographyAllocation} />
 
           {/* Correlation Matrix */}
           <CorrelationMatrix transactions={transactions} valuations={valuations} />
