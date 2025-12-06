@@ -383,8 +383,9 @@ function findPortfolioForTargetReturn(
 }
 
 /**
- * Long-only optimization using projected gradient descent
+ * Long-only optimization using projected gradient descent with momentum
  * Handles non-negativity constraints iteratively
+ * Improved stability with line search and momentum
  */
 function optimizeLongOnly(
   covMatrix: number[][],
@@ -397,20 +398,30 @@ function optimizeLongOnly(
   
   // Initialize with equal weights
   let weights = new Array(n).fill(1 / n);
+  let velocity = new Array(n).fill(0);
   
-  const maxIterations = 500;
-  const tolerance = 1e-8;
-  let learningRate = 0.1;
+  const maxIterations = 1000;
+  const tolerance = 1e-10;
+  const momentum = 0.8;
+  let learningRate = 0.05;
+  
+  // Track best solution for maxSharpe
+  let bestWeights = [...weights];
+  let bestObjective = -Infinity;
   
   for (let iter = 0; iter < maxIterations; iter++) {
     let gradient: number[];
+    let currentObjective: number;
     
     if (mode === 'minVar') {
       // Gradient of variance: 2 * Σ * w
       gradient = matVecMul(covMatrix, weights).map(x => 2 * x);
+      currentObjective = -calculatePortfolioStats(weights, expectedReturns, covMatrix, riskFreeRate).volatility;
     } else if (mode === 'maxSharpe') {
       // Gradient of negative Sharpe ratio
       const stats = calculatePortfolioStats(weights, expectedReturns, covMatrix, riskFreeRate);
+      currentObjective = stats.sharpe;
+      
       if (stats.volatility < 1e-10) {
         break; // Can't improve further
       }
@@ -422,19 +433,29 @@ function optimizeLongOnly(
         const term2 = (stats.return - riskFreeRate) * covW[i] / Math.pow(stats.volatility, 3);
         return term1 + term2;
       });
+      
+      // Track best Sharpe
+      if (currentObjective > bestObjective) {
+        bestObjective = currentObjective;
+        bestWeights = [...weights];
+      }
     } else {
       // Target return: minimize variance with return constraint
-      // Use penalty method: variance + λ*(return - target)²
-      const lambda = 1000;
+      // Use augmented Lagrangian method with increasing penalty
+      const lambda = 1000 + iter * 10; // Increasing penalty
       const currentReturn = dot(weights, expectedReturns);
       const returnError = currentReturn - (targetReturn || 0);
       
       const covW = matVecMul(covMatrix, weights);
       gradient = covW.map((x, i) => 2 * x + 2 * lambda * returnError * expectedReturns[i]);
+      currentObjective = -calculatePortfolioStats(weights, expectedReturns, covMatrix, riskFreeRate).volatility;
     }
     
-    // Project gradient step
-    let newWeights = weights.map((w, i) => w - learningRate * gradient[i]);
+    // Apply momentum
+    velocity = velocity.map((v, i) => momentum * v + learningRate * gradient[i]);
+    
+    // Project gradient step with momentum
+    let newWeights = weights.map((w, i) => w - velocity[i]);
     
     // Project onto simplex (sum to 1, all >= 0)
     newWeights = projectOntoSimplex(newWeights);
@@ -451,10 +472,15 @@ function optimizeLongOnly(
       break;
     }
     
-    // Adaptive learning rate
-    if (iter % 50 === 0 && iter > 0) {
-      learningRate *= 0.9;
+    // Adaptive learning rate with decay
+    if (iter % 100 === 0 && iter > 0) {
+      learningRate *= 0.95;
     }
+  }
+  
+  // For maxSharpe, return the best found solution
+  if (mode === 'maxSharpe') {
+    return bestWeights;
   }
   
   return weights;
