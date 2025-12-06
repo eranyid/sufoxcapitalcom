@@ -393,7 +393,7 @@ export default function ScenarioLab() {
     }));
   }, [result]);
 
-  const pieColors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+  const pieColors = ['hsl(var(--chart-gold))', 'hsl(var(--chart-blue))', 'hsl(var(--chart-positive))', 'hsl(var(--chart-navy))', 'hsl(var(--chart-neutral))'];
 
   // Scenario Library Content - shared between desktop card and mobile collapsible
   const ScenarioLibraryContent = () => (
