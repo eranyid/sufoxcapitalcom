@@ -37,9 +37,9 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
         { proName: "TASE:TA125", title: "TA-125" },
         { proName: "FX_IDC:USDILS", title: "USD/ILS" },
         { proName: "FX_IDC:EURILS", title: "EUR/ILS" },
-        { proName: "TVC:DXY", title: "DXY" },
+        { proName: "INDEX:DXY", title: "DXY" },
         { proName: "AMEX:USO", title: "USO" },
-        { proName: "TVC:VIX", title: "VIX" },
+        { proName: "CBOE:VIX", title: "VIX" },
         { proName: "TVC:GOLD", title: "XAUUSD" }
       ],
       showSymbolLogo: false,
