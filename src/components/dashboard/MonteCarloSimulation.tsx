@@ -269,6 +269,12 @@ function validateManualInputs(inputs: ManualInputs): ValidationErrors {
   return errors;
 }
 
+interface SimulationResults {
+  fanChartData: PercentilePath[];
+  horizonResults: HorizonResult[];
+  distribution: DistributionBin[];
+}
+
 export function MonteCarloSimulation({ 
   monthlyReturns, 
   currentValue,
@@ -280,6 +286,8 @@ export function MonteCarloSimulation({
   const [config, setConfig] = useState<SimulationConfig>(DEFAULT_CONFIG);
   const [inputMode, setInputMode] = useState<InputMode>('portfolio');
   const [isRunning, setIsRunning] = useState(false);
+  const [hasRun, setHasRun] = useState(false);
+  const [results, setResults] = useState<SimulationResults | null>(null);
   
   // Calculate stats from monthly returns (fallback if no portfolio stats provided)
   const logReturns = useMemo(() => toLogReturns(monthlyReturns), [monthlyReturns]);
@@ -325,70 +333,67 @@ export function MonteCarloSimulation({
     ? derivedSharpe 
     : (manualInputs.volatility > 0 ? (manualInputs.cagr - riskFreeRate) / manualInputs.volatility : 0);
   
-  // Generate fan chart data
-  const fanChartData = useMemo(() => {
-    if (monthlyReturns.length < 3 && inputMode === 'portfolio') return [];
-    if (hasValidationErrors && inputMode === 'manual') return [];
+  // Run simulation on demand
+  const runSimulation = useCallback(() => {
+    if (monthlyReturns.length < 3 && inputMode === 'portfolio') return;
+    if (hasValidationErrors && inputMode === 'manual') return;
     
     setIsRunning(true);
-    const data = generatePercentilePaths(
-      effectiveValue, 
-      65, 
-      effectiveCAGR / 100, 
-      effectiveVolatility / 100, 
-      config
-    );
-    setIsRunning(false);
-    return data;
-  }, [monthlyReturns.length, effectiveValue, effectiveCAGR, effectiveVolatility, config, inputMode, hasValidationErrors]);
-  
-  // Generate horizon results
-  const horizonResults = useMemo((): HorizonResult[] => {
-    if (monthlyReturns.length < 3 && inputMode === 'portfolio') return [];
-    if (hasValidationErrors && inputMode === 'manual') return [];
     
-    return TIME_HORIZONS.map(horizon => {
-      const { finalValues } = runMonteCarloSimulation(
+    // Use setTimeout to allow UI to update before heavy computation
+    setTimeout(() => {
+      // Generate fan chart data
+      const fanChartData = generatePercentilePaths(
         effectiveValue, 
-        horizon, 
+        65, 
         effectiveCAGR / 100, 
         effectiveVolatility / 100, 
         config
       );
-      const { var95, cvar95 } = calculateRiskMetrics(finalValues, effectiveValue);
       
-      const probGain = (finalValues.filter(v => v > effectiveValue).length / finalValues.length) * 100;
-      const probLoss = 100 - probGain;
+      // Generate horizon results
+      const horizonResults = TIME_HORIZONS.map(horizon => {
+        const { finalValues } = runMonteCarloSimulation(
+          effectiveValue, 
+          horizon, 
+          effectiveCAGR / 100, 
+          effectiveVolatility / 100, 
+          config
+        );
+        const { var95, cvar95 } = calculateRiskMetrics(finalValues, effectiveValue);
+        
+        const probGain = (finalValues.filter(v => v > effectiveValue).length / finalValues.length) * 100;
+        const probLoss = 100 - probGain;
+        
+        return {
+          horizon,
+          p5: getPercentile(finalValues, 5),
+          p25: getPercentile(finalValues, 25),
+          p50: getPercentile(finalValues, 50),
+          p75: getPercentile(finalValues, 75),
+          p95: getPercentile(finalValues, 95),
+          probGain,
+          probLoss,
+          var95,
+          cvar95,
+          expectedValue: finalValues.reduce((a, b) => a + b, 0) / finalValues.length,
+        };
+      });
       
-      return {
-        horizon,
-        p5: getPercentile(finalValues, 5),
-        p25: getPercentile(finalValues, 25),
-        p50: getPercentile(finalValues, 50),
-        p75: getPercentile(finalValues, 75),
-        p95: getPercentile(finalValues, 95),
-        probGain,
-        probLoss,
-        var95,
-        cvar95,
-        expectedValue: finalValues.reduce((a, b) => a + b, 0) / finalValues.length,
-      };
-    });
-  }, [monthlyReturns.length, effectiveValue, effectiveCAGR, effectiveVolatility, config, inputMode, hasValidationErrors]);
-  
-  // Distribution for 20-year horizon
-  const distribution = useMemo(() => {
-    if (monthlyReturns.length < 3 && inputMode === 'portfolio') return [];
-    if (hasValidationErrors && inputMode === 'manual') return [];
-    
-    const { finalValues } = runMonteCarloSimulation(
-      effectiveValue, 
-      20, 
-      effectiveCAGR / 100, 
-      effectiveVolatility / 100, 
-      config
-    );
-    return generateDistribution(finalValues, 40);
+      // Distribution for 20-year horizon
+      const { finalValues: distValues } = runMonteCarloSimulation(
+        effectiveValue, 
+        20, 
+        effectiveCAGR / 100, 
+        effectiveVolatility / 100, 
+        config
+      );
+      const distribution = generateDistribution(distValues, 40);
+      
+      setResults({ fanChartData, horizonResults, distribution });
+      setHasRun(true);
+      setIsRunning(false);
+    }, 50);
   }, [monthlyReturns.length, effectiveValue, effectiveCAGR, effectiveVolatility, config, inputMode, hasValidationErrors]);
   
   // Update manual inputs when portfolio values change
@@ -399,6 +404,11 @@ export function MonteCarloSimulation({
       currentValue: currentValue
     });
   }, [derivedCAGR, derivedVolatility, currentValue]);
+  
+  // Extract results for rendering
+  const fanChartData = results?.fanChartData ?? [];
+  const horizonResults = results?.horizonResults ?? [];
+  const distribution = results?.distribution ?? [];
   
   if (monthlyReturns.length < 3 && inputMode === 'portfolio') {
     return (
@@ -577,8 +587,8 @@ export function MonteCarloSimulation({
           </div>
         </div>
         
-        {/* Configuration Panel */}
-        <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-3 bg-muted/20">
+        {/* Configuration Panel with Run Button */}
+        <div className="p-3 grid grid-cols-2 md:grid-cols-5 gap-3 bg-muted/20">
           <div className="space-y-1">
             <Label className="text-[9px] uppercase tracking-wider">Simulations</Label>
             <Select 
@@ -613,17 +623,51 @@ export function MonteCarloSimulation({
             </Select>
           </div>
           
+          <div className="space-y-1">
+            <Label className="text-[9px] uppercase tracking-wider">&nbsp;</Label>
+            <Button 
+              onClick={runSimulation}
+              disabled={isRunning || hasValidationErrors || (monthlyReturns.length < 3 && inputMode === 'portfolio')}
+              className="h-7 text-[10px] font-mono w-full gap-1"
+              variant="default"
+            >
+              {isRunning ? (
+                <>
+                  <Zap className="h-3 w-3 animate-pulse" />
+                  Running...
+                </>
+              ) : (
+                <>
+                  <Dice6 className="h-3 w-3" />
+                  Run Simulation
+                </>
+              )}
+            </Button>
+          </div>
+          
           <div className="col-span-2 flex items-end">
             <div className="text-[8px] text-muted-foreground leading-tight">
               <Settings2 className="h-3 w-3 inline mr-1" />
               {inputMode === 'portfolio' 
-                ? 'Using live portfolio statistics for simulation.' 
-                : 'Using manual input values for simulation.'}
-              {' '}Model: Geometric Brownian Motion with log-normal returns.
+                ? 'Using live portfolio statistics.' 
+                : 'Using manual input values.'}
+              {' '}Click "Run Simulation" to generate projections.
             </div>
           </div>
         </div>
       </div>
+
+      {/* Results Section - Show only after simulation has run */}
+      {!hasRun ? (
+        <div className="bloomberg-panel p-8 text-center">
+          <Dice6 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <h3 className="text-sm font-medium mb-1 text-primary">Ready to Simulate</h3>
+          <p className="text-muted-foreground text-xs">
+            Configure your parameters above and click "Run Simulation" to generate Monte Carlo projections.
+          </p>
+        </div>
+      ) : (
+        <>
 
       {/* Fan Chart */}
       <div className="bloomberg-panel">
@@ -814,6 +858,8 @@ export function MonteCarloSimulation({
         <strong> Method:</strong> {config.numSimulations.toLocaleString()} independent paths, {config.timeStep} time steps.
         <strong> Disclaimer:</strong> Past performance does not guarantee future results. This simulation assumes stationary parameters and does not account for regime changes, fat tails, or liquidity constraints.
       </div>
+      </>
+      )}
     </div>
   );
 }
