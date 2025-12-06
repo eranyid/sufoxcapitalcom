@@ -1,4 +1,6 @@
 import { Transaction, MonthlyValuation, PortfolioSettings, CashBalances } from '@/types/investment';
+import { parseCSV } from './csvParser';
+import { validateCSVTransactions, validateCSVValuations } from './validation';
 
 const STORAGE_KEYS = {
   TRANSACTIONS: 'sufox_transactions',
@@ -56,7 +58,7 @@ export function exportToCSV<T extends object>(data: T[], filename: string) {
     headers.join(','),
     ...data.map(row => 
       headers.map(h => {
-        const value = row[h];
+        const value = row[h as keyof T];
         if (typeof value === 'string' && value.includes(',')) {
           return `"${value}"`;
         }
@@ -72,50 +74,52 @@ export function exportToCSV<T extends object>(data: T[], filename: string) {
   link.click();
 }
 
-// CSV Import
-export function parseCSV(csvText: string): Record<string, string>[] {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) return [];
+// Re-export parseCSV for backward compatibility
+export { parseCSV };
+
+// Import transactions from CSV with validation
+export function importTransactionsFromCSV(csvText: string): { 
+  transactions: Transaction[]; 
+  errors: { row: number; errors: string[] }[] 
+} {
+  const rows = parseCSV(csvText);
+  const { valid, errors } = validateCSVTransactions(rows);
   
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  
-  return lines.slice(1).map(line => {
-    const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
-    const obj: Record<string, string> = {};
-    headers.forEach((h, i) => {
-      obj[h] = values[i] || '';
-    });
-    return obj;
-  });
+  const transactions: Transaction[] = valid.map(row => ({
+    id: crypto.randomUUID(),
+    assetName: row.assetName,
+    ticker: row.ticker,
+    assetType: row.assetType,
+    transactionType: row.transactionType,
+    date: row.date,
+    quantity: row.quantity,
+    pricePerUnit: row.pricePerUnit,
+    fees: row.fees,
+    currency: row.currency,
+    geography: row.geography,
+    inceptionYear: row.inceptionYear
+  }));
+
+  return { transactions, errors };
 }
 
-export function importTransactionsFromCSV(csvText: string): Transaction[] {
+// Import valuations from CSV with validation
+export function importValuationsFromCSV(csvText: string): {
+  valuations: MonthlyValuation[];
+  errors: { row: number; errors: string[] }[]
+} {
   const rows = parseCSV(csvText);
-  return rows.map((row, index) => ({
+  const { valid, errors } = validateCSVValuations(rows);
+  
+  const valuations: MonthlyValuation[] = valid.map(row => ({
     id: crypto.randomUUID(),
-    assetName: row.assetName || row.asset_name || '',
-    ticker: row.ticker || '',
-    assetType: (row.assetType || row.asset_type || 'equity') as Transaction['assetType'],
-    transactionType: (row.transactionType || row.transaction_type || 'buy') as Transaction['transactionType'],
-    date: row.date || '',
-    quantity: parseFloat(row.quantity) || 0,
-    pricePerUnit: parseFloat(row.pricePerUnit || row.price_per_unit || row.price) || 0,
-    fees: parseFloat(row.fees) || 0,
-    currency: (row.currency || 'USD') as Transaction['currency'],
-    geography: (row.geography || 'north_america') as Transaction['geography'],
-    inceptionYear: row.inceptionYear || row.inception_year ? parseInt(row.inceptionYear || row.inception_year) : undefined
+    assetId: row.assetId || row.ticker,
+    ticker: row.ticker,
+    assetName: row.assetName,
+    month: row.month,
+    pricePerUnit: row.pricePerUnit,
+    fxRate: row.fxRate
   }));
-}
 
-export function importValuationsFromCSV(csvText: string): MonthlyValuation[] {
-  const rows = parseCSV(csvText);
-  return rows.map(row => ({
-    id: crypto.randomUUID(),
-    assetId: row.assetId || row.asset_id || '',
-    ticker: row.ticker || '',
-    assetName: row.assetName || row.asset_name || '',
-    month: row.month || '',
-    pricePerUnit: parseFloat(row.pricePerUnit || row.price_per_unit || row.price) || 0,
-    fxRate: row.fxRate || row.fx_rate ? parseFloat(row.fxRate || row.fx_rate) : undefined
-  }));
+  return { valuations, errors };
 }

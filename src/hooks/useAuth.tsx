@@ -3,8 +3,6 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const ADMIN_EMAIL = 'eran.yidgar@sufoxcapital.com';
-
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -26,16 +24,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isApproved, setIsApproved] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [approvalLoading, setApprovalLoading] = useState(true);
   const { toast } = useToast();
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  // Fetch admin status from server-side user_roles table
+  const fetchAdminStatus = async (userId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .rpc('has_role', { _user_id: userId, _role: 'admin' });
+
+      if (error) {
+        console.error('Error fetching admin status:', error);
+        return false;
+      }
+      return data === true;
+    } catch (error) {
+      console.error('Error fetching admin status:', error);
+      return false;
+    }
+  };
 
   const fetchApprovalStatus = async (userId: string) => {
     try {
+      // Fetch admin status from server-side
+      const adminStatus = await fetchAdminStatus(userId);
+      setIsAdmin(adminStatus);
+
       const { data, error } = await supabase
         .from('profiles')
-        .select('is_approved, email')
+        .select('is_approved')
         .eq('id', userId)
         .maybeSingle();
 
@@ -44,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsApproved(false);
       } else if (data) {
         // Admin is always approved
-        if (data.email === ADMIN_EMAIL) {
+        if (adminStatus) {
           setIsApproved(true);
         } else {
           setIsApproved(data.is_approved || false);
@@ -83,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setIsApproved(false);
+          setIsAdmin(false);
           setApprovalLoading(false);
         }
       }
@@ -160,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setIsApproved(false);
+    setIsAdmin(false);
     toast({
       title: "Signed out",
       description: "You've been signed out."

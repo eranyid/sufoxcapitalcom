@@ -330,7 +330,10 @@ export default function Transactions() {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const csv = event.target?.result as string;
-        const imported = importTransactionsFromCSV(csv);
+        const { transactions: imported, errors } = importTransactionsFromCSV(csv);
+        if (errors.length > 0) {
+          toast.error(`${errors.length} rows had validation errors and were skipped`);
+        }
         await importTransactions(imported);
         toast.success(`Imported ${imported.length} transactions`);
       };
