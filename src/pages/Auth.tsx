@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FaceIdIcon } from '@/components/icons/FaceIdIcon';
 import { z } from 'zod';
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -32,6 +33,7 @@ export default function Auth() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const {
     signIn,
     signUp,
@@ -238,6 +240,17 @@ export default function Auth() {
                       </button>
                     </div>
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="remember-me" 
+                      checked={rememberMe} 
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                    <Label htmlFor="remember-me" className="text-sm text-muted-foreground cursor-pointer">
+                      Remember me
+                    </Label>
                   </div>
                   <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium" disabled={isLoading}>
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
