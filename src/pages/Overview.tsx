@@ -272,6 +272,16 @@ export default function Overview() {
         />
       </div>
 
+      {/* Performance Chart - Above Cash */}
+      {hasData && (
+        <PerformanceChart 
+          data={performanceMetrics.monthlyReturns}
+          title="Monthly & Cumulative Returns"
+          showCumulative
+          cumulativeData={performanceMetrics.cumulativeReturns}
+        />
+      )}
+
       {/* Cash Management & Policy Check - Stack on mobile */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         <div className="lg:col-span-2">
@@ -285,20 +295,9 @@ export default function Overview() {
         <HoldingsTable transactions={transactions} valuations={valuations} />
       )}
 
-      {/* Charts - Stack on mobile */}
+      {/* Drawdown Chart */}
       {hasData ? (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-            <PerformanceChart 
-              data={performanceMetrics.monthlyReturns}
-              title="Monthly & Cumulative Returns"
-              showCumulative
-              cumulativeData={performanceMetrics.cumulativeReturns}
-            />
-            <DrawdownChart data={performanceMetrics.drawdownSeries} />
-          </div>
-
-        </>
+        <DrawdownChart data={performanceMetrics.drawdownSeries} />
       ) : (
         <div className="bloomberg-panel p-6 sm:p-8 text-center">
           <BarChart3 className="h-8 w-8 sm:h-10 sm:w-10 mx-auto text-muted-foreground mb-3" />
