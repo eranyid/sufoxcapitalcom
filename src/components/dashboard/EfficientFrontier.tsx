@@ -135,7 +135,13 @@ export function EfficientFrontier() {
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const point = payload[0].payload as ChartDataPoint;
+      const point = payload[0].payload;
+      
+      // Skip tooltip for CML line points (they don't have the 'data' property)
+      if (!point || !point.data) {
+        return null;
+      }
+      
       const data = point.data;
       
       const typeLabels: Record<string, string> = {
@@ -148,7 +154,7 @@ export function EfficientFrontier() {
       return (
         <div className="bg-secondary border border-border p-3 rounded-sm shadow-lg">
           <p className="font-mono text-xs font-medium text-primary mb-2">
-            {typeLabels[point.type]}
+            {typeLabels[point.type] || 'Portfolio'}
           </p>
           <div className="space-y-1">
             <p className="font-mono text-[10px] text-foreground">
