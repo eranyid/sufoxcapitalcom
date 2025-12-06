@@ -2,6 +2,7 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { ContributionChart } from '@/components/dashboard/ContributionChart';
+import { PerformanceCalendarHeatmap } from '@/components/dashboard/PerformanceCalendarHeatmap';
 import { calculateContributions, calculateMonthlyReturns } from '@/lib/calculations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -57,6 +58,9 @@ export default function Performance() {
 
       {hasData ? (
         <>
+          {/* Calendar Heatmap - Full Width */}
+          <PerformanceCalendarHeatmap data={performanceMetrics.monthlyReturns} />
+
           {/* Performance Charts */}
           <div className="chart-grid">
             <PerformanceChart 
