@@ -35,7 +35,7 @@ export function MobileHeader({ status, errorCount, warningCount, onWatchdogClick
               <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
               <p className="text-[8px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
             </div>
-            <span className="ml-3 text-[10px] font-mono text-primary">
+            <span className="ml-3 text-sm font-mono text-primary font-semibold">
               {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
