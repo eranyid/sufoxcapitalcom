@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRssFeed } from '@/hooks/useRssFeed';
 import { cn } from '@/lib/utils';
+import { Zap } from 'lucide-react';
 
 interface NewsTickerProps {
   rssUrl: string | null;
@@ -51,105 +52,93 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
     };
   }, [items, animate]);
 
-  // No RSS URL configured
-  if (!rssUrl) {
-    return (
-      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
-        <div className="flex items-center h-7 px-3">
-          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
-            LIVE NEWS
-          </span>
-          <span className="text-[10px] font-mono text-muted-foreground">
-            Configure RSS feed in Settings
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error && items.length === 0) {
-    return (
-      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
-        <div className="flex items-center h-7 px-3">
-          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
-            LIVE NEWS
-          </span>
-          <span className="text-[10px] font-mono text-muted-foreground">
-            No news available
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // No items
-  if (items.length === 0) {
-    return (
-      <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border">
-        <div className="flex items-center h-7 px-3">
-          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider mr-3 whitespace-nowrap">
-            LIVE NEWS
-          </span>
-          <span className="text-[10px] font-mono text-muted-foreground animate-pulse">
-            Loading...
-          </span>
-        </div>
-      </div>
-    );
-  }
-
   const handleItemClick = (link: string) => {
     window.open(link, '_blank', 'noopener,noreferrer');
   };
 
-  return (
-    <div className="w-full bg-[#0a0c0f] border-b border-sidebar-border overflow-hidden">
-      <div className="flex items-center h-7">
-        {/* Label */}
-        <div className="flex-shrink-0 px-3 border-r border-sidebar-border h-full flex items-center bg-[#0d1012]">
-          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider whitespace-nowrap">
-            LIVE NEWS
-          </span>
-        </div>
+  // Render content based on state
+  const renderContent = () => {
+    // No RSS URL configured
+    if (!rssUrl) {
+      return (
+        <span className="text-xs sm:text-sm font-mono text-muted-foreground">
+          Configure RSS feed in Settings
+        </span>
+      );
+    }
 
-        {/* Ticker container */}
+    // Error state
+    if (error && items.length === 0) {
+      return (
+        <span className="text-xs sm:text-sm font-mono text-muted-foreground">
+          No news available
+        </span>
+      );
+    }
+
+    // Loading state
+    if (items.length === 0) {
+      return (
+        <span className="text-xs sm:text-sm font-mono text-muted-foreground animate-pulse">
+          Loading...
+        </span>
+      );
+    }
+
+    // Ticker content
+    return (
+      <div 
+        className="overflow-hidden relative flex-1"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={() => setIsPaused(true)}
+        onTouchEnd={() => setIsPaused(false)}
+      >
         <div 
-          className="flex-1 overflow-hidden relative"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
+          ref={tickerRef}
+          className={cn(
+            "inline-flex items-center whitespace-nowrap will-change-transform"
+          )}
+          style={{
+            backfaceVisibility: 'hidden',
+            perspective: 1000,
+          }}
         >
-          <div 
-            ref={tickerRef}
-            className={cn(
-              "inline-flex items-center whitespace-nowrap will-change-transform"
-            )}
-            style={{
-              backfaceVisibility: 'hidden',
-              perspective: 1000,
-            }}
-          >
-            {/* Duplicate content for seamless loop */}
-            {[...items, ...items].map((item, index) => (
-              <button
-                key={`${item.link}-${index}`}
-                onClick={() => handleItemClick(item.link)}
-                className="inline-flex items-center text-[10px] md:text-[11px] font-mono hover:text-primary transition-colors px-2 group flex-shrink-0"
-              >
-                <span className="text-primary/70 mr-1.5">{item.formattedTime}</span>
-                {item.source && (
-                  <span className="text-muted-foreground mr-1.5">[{item.source}]</span>
-                )}
-                <span className="text-foreground/90 group-hover:text-primary transition-colors">
-                  {item.title}
-                </span>
-                <span className="text-muted-foreground/50 mx-3">•</span>
-              </button>
-            ))}
-          </div>
+          {/* Duplicate content for seamless loop */}
+          {[...items, ...items].map((item, index) => (
+            <button
+              key={`${item.link}-${index}`}
+              onClick={() => handleItemClick(item.link)}
+              className="inline-flex items-center text-xs sm:text-sm font-mono hover:text-primary transition-colors px-2 sm:px-3 group flex-shrink-0"
+            >
+              <span className="text-primary/70 mr-1.5 sm:mr-2">{item.formattedTime}</span>
+              {item.source && (
+                <span className="text-muted-foreground mr-1.5 sm:mr-2">[{item.source}]</span>
+              )}
+              <span className="text-foreground/90 group-hover:text-primary transition-colors">
+                {item.title}
+              </span>
+              <span className="text-muted-foreground/50 mx-3 sm:mx-4">•</span>
+            </button>
+          ))}
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="kpi-card w-full">
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <p className="terminal-label text-[10px] sm:text-xs">LIVE NEWS</p>
+        <div className="p-1.5 bg-primary/10 border border-primary/30">
+          <Zap size={12} className="text-primary sm:w-3.5 sm:h-3.5" />
+        </div>
+      </div>
+      
+      {/* Ticker content area */}
+      <div className="min-h-[32px] sm:min-h-[28px] flex items-center">
+        {renderContent()}
       </div>
     </div>
   );
