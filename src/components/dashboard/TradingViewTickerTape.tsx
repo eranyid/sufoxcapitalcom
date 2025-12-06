@@ -61,22 +61,11 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
 
   return (
     <div className="w-full bg-card border border-border rounded-md overflow-hidden">
-      {/* Header with label */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-        <TrendingUp className="h-4 w-4 text-primary" />
-        <span className="text-xs font-mono text-primary font-semibold tracking-wider">
-          {label}
-        </span>
-      </div>
-      
-      {/* TradingView Widget Container */}
-      <div className="p-4">
-        <div 
-          ref={containerRef} 
-          className="w-full overflow-hidden"
-          style={{ minHeight: '48px' }}
-        />
-      </div>
+      <div 
+        ref={containerRef} 
+        className="w-full overflow-hidden"
+        style={{ minHeight: '48px' }}
+      />
     </div>
   );
 };
