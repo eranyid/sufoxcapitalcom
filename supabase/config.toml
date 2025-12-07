@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.passkey-authenticate]
 verify_jwt = false
+
+[functions.alpaca-test]
+verify_jwt = true

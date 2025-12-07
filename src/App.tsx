@@ -22,6 +22,7 @@ import Settings from "./pages/Settings";
 import InvestmentPolicy from "./pages/InvestmentPolicy";
 import Auth from "./pages/Auth";
 import AdminUsers from "./pages/AdminUsers";
+import AlpacaTest from "./pages/AlpacaTest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ const App = () => (
                   <Route path="/policy" element={<InvestmentPolicy />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/alpaca-test" element={<AlpacaTest />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
