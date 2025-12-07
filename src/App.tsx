@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,22 +9,23 @@ import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { DashboardLoadingSkeleton, AuthLoadingSkeleton } from "./components/LoadingSkeleton";
 
-// Import all pages directly to avoid lazy loading issues in dev
-import Overview from "./pages/Overview";
-import Performance from "./pages/Performance";
-import Risk from "./pages/Risk";
-import ScenarioLab from "./pages/ScenarioLab";
-import XRay from "./pages/XRay";
-import Research from "./pages/Research";
-import Transactions from "./pages/Transactions";
-import Valuations from "./pages/Valuations";
-import Settings from "./pages/Settings";
-import InvestmentPolicy from "./pages/InvestmentPolicy";
-import Auth from "./pages/Auth";
-import AdminUsers from "./pages/AdminUsers";
-import AlpacaTest from "./pages/AlpacaTest";
-import NotFound from "./pages/NotFound";
+// Lazy load pages for code splitting - reduces initial bundle size
+const Overview = lazy(() => import("./pages/Overview"));
+const Performance = lazy(() => import("./pages/Performance"));
+const Risk = lazy(() => import("./pages/Risk"));
+const ScenarioLab = lazy(() => import("./pages/ScenarioLab"));
+const XRay = lazy(() => import("./pages/XRay"));
+const Research = lazy(() => import("./pages/Research"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const Valuations = lazy(() => import("./pages/Valuations"));
+const Settings = lazy(() => import("./pages/Settings"));
+const InvestmentPolicy = lazy(() => import("./pages/InvestmentPolicy"));
+const Auth = lazy(() => import("./pages/Auth"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -37,26 +39,82 @@ const App = () => (
           <BrowserRouter>
             <ErrorBoundary>
               <Routes>
-                <Route path="/auth" element={<Auth />} />
+                <Route path="/auth" element={
+                  <Suspense fallback={<AuthLoadingSkeleton />}>
+                    <Auth />
+                  </Suspense>
+                } />
                 <Route element={
                   <ProtectedRoute>
                     <DashboardLayout />
                   </ProtectedRoute>
                 }>
-                  <Route path="/" element={<Overview />} />
-                  <Route path="/performance" element={<Performance />} />
-                  <Route path="/risk" element={<Risk />} />
-                  <Route path="/scenarios" element={<ScenarioLab />} />
-                  <Route path="/xray" element={<XRay />} />
-                  <Route path="/research" element={<Research />} />
-                  <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/valuations" element={<Valuations />} />
-                  <Route path="/policy" element={<InvestmentPolicy />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/admin/users" element={<AdminUsers />} />
-                  <Route path="/alpaca-test" element={<AlpacaTest />} />
+                  <Route path="/" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Overview />
+                    </Suspense>
+                  } />
+                  <Route path="/performance" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Performance />
+                    </Suspense>
+                  } />
+                  <Route path="/risk" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Risk />
+                    </Suspense>
+                  } />
+                  <Route path="/scenarios" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <ScenarioLab />
+                    </Suspense>
+                  } />
+                  <Route path="/xray" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <XRay />
+                    </Suspense>
+                  } />
+                  <Route path="/research" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Research />
+                    </Suspense>
+                  } />
+                  <Route path="/transactions" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Transactions />
+                    </Suspense>
+                  } />
+                  <Route path="/valuations" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Valuations />
+                    </Suspense>
+                  } />
+                  <Route path="/policy" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <InvestmentPolicy />
+                    </Suspense>
+                  } />
+                  <Route path="/settings" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Settings />
+                    </Suspense>
+                  } />
+                  <Route path="/admin/users" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <AdminUsers />
+                    </Suspense>
+                  } />
+                  <Route path="/alpaca-test" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <AlpacaTest />
+                    </Suspense>
+                  } />
                 </Route>
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={
+                  <Suspense fallback={<AuthLoadingSkeleton />}>
+                    <NotFound />
+                  </Suspense>
+                } />
               </Routes>
             </ErrorBoundary>
           </BrowserRouter>
