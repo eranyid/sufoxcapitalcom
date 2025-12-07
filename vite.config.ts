@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -23,6 +24,12 @@ export default defineConfig(({ mode }) => ({
           charts: ['recharts'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs', '@radix-ui/react-tooltip'],
           supabase: ['@supabase/supabase-js'],
+        },
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.css')) {
+            return 'assets/[name]-[hash][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
         },
       },
     },
