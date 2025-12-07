@@ -17,7 +17,11 @@ export type ScenarioShockTarget =
   | "credit_spreads"
   | "usd_fx"
   | "eur_fx"
+  | "gbp_fx"
+  | "jpy_fx"
+  | "ils_fx"
   | "em_fx"
+  | "fx_volatility"
   | "inflation"
   | "volatility"
   | "alternatives"
@@ -59,9 +63,13 @@ export const shockTargetMeta: Record<ScenarioShockTarget, { label: string; defau
   credit_spreads: { label: "Credit Spreads", defaultUnit: "bps", category: "Credit" },
   credit_ig_spreads: { label: "IG Credit Spreads", defaultUnit: "bps", category: "Credit" },
   credit_hy_spreads: { label: "HY Credit Spreads", defaultUnit: "bps", category: "Credit" },
-  usd_fx: { label: "USD Currency", defaultUnit: "percent", category: "FX" },
-  eur_fx: { label: "EUR Currency", defaultUnit: "percent", category: "FX" },
-  em_fx: { label: "EM Currencies", defaultUnit: "percent", category: "FX" },
+  usd_fx: { label: "USD (DXY)", defaultUnit: "percent", category: "FX" },
+  eur_fx: { label: "EUR/USD", defaultUnit: "percent", category: "FX" },
+  gbp_fx: { label: "GBP/USD", defaultUnit: "percent", category: "FX" },
+  jpy_fx: { label: "USD/JPY", defaultUnit: "percent", category: "FX" },
+  ils_fx: { label: "USD/ILS", defaultUnit: "percent", category: "FX" },
+  em_fx: { label: "EM FX Basket", defaultUnit: "percent", category: "FX" },
+  fx_volatility: { label: "FX Implied Vol", defaultUnit: "percent", category: "FX" },
   inflation: { label: "Inflation", defaultUnit: "percent", category: "Macro" },
   volatility: { label: "Volatility (VIX)", defaultUnit: "percent", category: "Macro" },
   alternatives: { label: "Alternatives", defaultUnit: "percent", category: "Alternatives" },
@@ -216,6 +224,30 @@ export const systemScenarios: ScenarioDefinition[] = [
       { id: "d1", target: "usd_fx", label: "USD", value: 10, unit: "percent" },
       { id: "d2", target: "em_equity", label: "EM Equity", value: -15, unit: "percent" },
       { id: "d3", target: "eur_fx", label: "EUR", value: -8, unit: "percent" }
+    ],
+    isSystemPreset: true
+  },
+  {
+    id: "fx-regime-shift",
+    name: "FX Regime Shift",
+    type: "fxShock",
+    description: "Multi-currency stress event with sharp dislocations due to geopolitical uncertainty, rate divergence, and liquidity pressures. Models rapid USD strengthening, EM currency selloff, and cross-asset spillover.",
+    horizon: "1m",
+    shocks: [
+      // Major Currencies
+      { id: "fx1", target: "usd_fx", label: "USD Index (DXY)", value: 7, unit: "percent" },
+      { id: "fx2", target: "eur_fx", label: "EUR/USD", value: -5, unit: "percent" },
+      { id: "fx3", target: "gbp_fx", label: "GBP/USD", value: -4, unit: "percent" },
+      { id: "fx4", target: "jpy_fx", label: "USD/JPY (Yen Weakening)", value: 6, unit: "percent" },
+      // Emerging Markets
+      { id: "fx5", target: "em_fx", label: "EM FX Basket", value: -10, unit: "percent" },
+      // Israeli Shekel
+      { id: "fx6", target: "ils_fx", label: "USD/ILS", value: 8, unit: "percent" },
+      // FX Volatility
+      { id: "fx7", target: "fx_volatility", label: "FX Implied Volatility", value: 55, unit: "percent" },
+      // Cross-asset spillover
+      { id: "fx8", target: "em_equity", label: "EM Equity (FX Contagion)", value: -12, unit: "percent" },
+      { id: "fx9", target: "global_equity", label: "Global Equity (Spillover)", value: -5, unit: "percent" }
     ],
     isSystemPreset: true
   },

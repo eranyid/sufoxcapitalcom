@@ -165,20 +165,60 @@ function calculateHoldingImpact(
       }
     }
 
-    // FX shocks (including EM)
-    if (['usd_fx', 'eur_fx', 'em_fx'].includes(shock.target)) {
+    // FX shocks (all currency pairs)
+    if (['usd_fx', 'eur_fx', 'gbp_fx', 'jpy_fx', 'ils_fx', 'em_fx'].includes(shock.target)) {
       const relevantGeo = geographyToShockMapping[geography];
-      if (relevantGeo.includes(shock.target)) {
-        // USD strength hurts non-USD assets when base is USD
-        impact = shockValuePct * sensitivities.fx * (shock.target === 'usd_fx' ? -1 : 1);
-        if ((geography === 'emerging_markets' && shock.target === 'usd_fx') || shock.target === 'em_fx') {
-          impact = shockValuePct * -0.5; // EM more sensitive
+      
+      // USD strength impacts all non-USD assets
+      if (shock.target === 'usd_fx') {
+        // Strong USD hurts international holdings (for USD-based portfolios)
+        if (geography !== 'north_america') {
+          impact = shockValuePct * -0.3;
+          appliedShocks.push(`USD: +${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
         }
-        appliedShocks.push(`FX: ${shockValuePct > 0 ? '+' : ''}${shockValuePct.toFixed(1)}%`);
+      }
+      // EUR weakness impacts European assets
+      else if (shock.target === 'eur_fx' && geography === 'europe') {
+        impact = shockValuePct * sensitivities.fx;
+        appliedShocks.push(`EUR: ${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
+      }
+      // GBP for UK assets (treated as Europe)
+      else if (shock.target === 'gbp_fx' && geography === 'europe') {
+        impact = shockValuePct * sensitivities.fx * 0.8;
+        appliedShocks.push(`GBP: ${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
+      }
+      // JPY for Asia Pacific
+      else if (shock.target === 'jpy_fx' && geography === 'asia_pacific') {
+        impact = shockValuePct * sensitivities.fx * 0.7;
+        appliedShocks.push(`JPY: ${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
+      }
+      // ILS for Israeli assets (other category or global with ILS currency)
+      else if (shock.target === 'ils_fx') {
+        // Assume some sensitivity for international portfolios
+        impact = shockValuePct * sensitivities.fx * 0.4;
+        if (Math.abs(impact) > 0.3) {
+          appliedShocks.push(`ILS: ${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
+        }
+      }
+      // EM FX basket
+      else if (shock.target === 'em_fx' && (geography === 'emerging_markets' || relevantGeo.includes('em_fx'))) {
+        impact = shockValuePct * 0.6; // Direct EM exposure
+        appliedShocks.push(`EM FX: ${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
       }
     }
 
-    // Volatility shocks
+    // FX Volatility shock
+    if (shock.target === 'fx_volatility') {
+      // FX vol spike hurts carry trades, EM, and adds uncertainty
+      if (['emerging_markets', 'asia_pacific', 'europe'].includes(geography)) {
+        impact = shockValuePct * -0.08; // Mild negative impact from vol spike
+        if (Math.abs(impact) > 0.3) {
+          appliedShocks.push(`FX Vol: +${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
+        }
+      }
+    }
+
+    // Volatility shocks (VIX)
     if (shock.target === 'volatility') {
       // Higher vol generally bad for risk assets
       impact = shockValuePct * sensitivities.volatility;
