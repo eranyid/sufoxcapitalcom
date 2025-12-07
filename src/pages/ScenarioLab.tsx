@@ -62,6 +62,7 @@ const scenarioTypeLabels: Record<ScenarioType, string> = {
   equityCrash: 'Equity',
   ratesShock: 'Rates',
   fxShock: 'FX',
+  liquidityShock: 'Liquidity',
   custom: 'Custom'
 };
 

@@ -1,20 +1,27 @@
 // Scenario Lab - Data Model and Presets
 
-export type ScenarioType = "historical" | "macroShock" | "equityCrash" | "ratesShock" | "fxShock" | "custom";
+export type ScenarioType = "historical" | "macroShock" | "equityCrash" | "ratesShock" | "fxShock" | "liquidityShock" | "custom";
 
 export type ScenarioShockTarget =
   | "global_equity"
   | "us_equity"
   | "tech_equity"
   | "em_equity"
+  | "financials_equity"
+  | "energy_equity"
   | "rates_parallel"
   | "rates_short_end"
   | "rates_long_end"
+  | "credit_ig_spreads"
+  | "credit_hy_spreads"
   | "credit_spreads"
   | "usd_fx"
   | "eur_fx"
+  | "em_fx"
   | "inflation"
-  | "volatility";
+  | "volatility"
+  | "alternatives"
+  | "illiquid_haircut";
 
 export type ScenarioShockUnit = "percent" | "bps";
 
@@ -44,14 +51,21 @@ export const shockTargetMeta: Record<ScenarioShockTarget, { label: string; defau
   us_equity: { label: "US Equity", defaultUnit: "percent", category: "Equity" },
   tech_equity: { label: "Tech/Growth Equity", defaultUnit: "percent", category: "Equity" },
   em_equity: { label: "Emerging Markets Equity", defaultUnit: "percent", category: "Equity" },
+  financials_equity: { label: "Financials Sector", defaultUnit: "percent", category: "Equity" },
+  energy_equity: { label: "Energy Sector", defaultUnit: "percent", category: "Equity" },
   rates_parallel: { label: "Rates (Parallel)", defaultUnit: "bps", category: "Rates" },
   rates_short_end: { label: "Rates (Short End)", defaultUnit: "bps", category: "Rates" },
   rates_long_end: { label: "Rates (Long End)", defaultUnit: "bps", category: "Rates" },
   credit_spreads: { label: "Credit Spreads", defaultUnit: "bps", category: "Credit" },
+  credit_ig_spreads: { label: "IG Credit Spreads", defaultUnit: "bps", category: "Credit" },
+  credit_hy_spreads: { label: "HY Credit Spreads", defaultUnit: "bps", category: "Credit" },
   usd_fx: { label: "USD Currency", defaultUnit: "percent", category: "FX" },
   eur_fx: { label: "EUR Currency", defaultUnit: "percent", category: "FX" },
+  em_fx: { label: "EM Currencies", defaultUnit: "percent", category: "FX" },
   inflation: { label: "Inflation", defaultUnit: "percent", category: "Macro" },
   volatility: { label: "Volatility (VIX)", defaultUnit: "percent", category: "Macro" },
+  alternatives: { label: "Alternatives", defaultUnit: "percent", category: "Alternatives" },
+  illiquid_haircut: { label: "Illiquid Asset Haircut", defaultUnit: "percent", category: "Liquidity" },
 };
 
 // Built-in scenario presets
@@ -286,6 +300,37 @@ export const systemScenarios: ScenarioDefinition[] = [
       { id: "h22c", target: "rates_parallel", label: "Rates", value: 350, unit: "bps" }
     ],
     isSystemPreset: true
+  },
+
+  // Liquidity Shock Scenarios
+  {
+    id: "global-liquidity-shock",
+    name: "Global Liquidity Shock",
+    type: "liquidityShock",
+    description: "Global funding-pressure event with liquidity dry-up, spread widening, and rapid risk-asset repricing due to deleveraging. Emulates March 2020 or 2008 liquidity freeze conditions.",
+    horizon: "1m",
+    shocks: [
+      // Rates: curve inversion (short up, long down)
+      { id: "liq1", target: "rates_short_end", label: "Short-Term Rates (Funding Spike)", value: 150, unit: "bps" },
+      { id: "liq2", target: "rates_long_end", label: "Long-Term Rates (Flight to Quality)", value: -50, unit: "bps" },
+      // Credit spreads blowout
+      { id: "liq3", target: "credit_ig_spreads", label: "IG Credit Spreads", value: 120, unit: "bps" },
+      { id: "liq4", target: "credit_hy_spreads", label: "HY Credit Spreads", value: 350, unit: "bps" },
+      // Equity sector impacts
+      { id: "liq5", target: "global_equity", label: "Global Equity", value: -18, unit: "percent" },
+      { id: "liq6", target: "tech_equity", label: "Tech Sector", value: -25, unit: "percent" },
+      { id: "liq7", target: "financials_equity", label: "Financials", value: -14, unit: "percent" },
+      { id: "liq8", target: "energy_equity", label: "Energy", value: -10, unit: "percent" },
+      // FX: USD surge, EM collapse
+      { id: "liq9", target: "usd_fx", label: "USD (DXY)", value: 6, unit: "percent" },
+      { id: "liq10", target: "em_fx", label: "EM Currencies", value: -12, unit: "percent" },
+      // Volatility spike
+      { id: "liq11", target: "volatility", label: "VIX", value: 60, unit: "percent" },
+      // Liquidity haircuts
+      { id: "liq12", target: "illiquid_haircut", label: "Illiquid Assets Haircut", value: -8, unit: "percent" },
+      { id: "liq13", target: "alternatives", label: "Alternatives", value: -5, unit: "percent" }
+    ],
+    isSystemPreset: true
   }
 ];
 
@@ -297,6 +342,7 @@ export function getScenarioTypeColor(type: ScenarioType): string {
     case "equityCrash": return "text-red-400";
     case "ratesShock": return "text-yellow-400";
     case "fxShock": return "text-cyan-400";
+    case "liquidityShock": return "text-orange-400";
     case "custom": return "text-primary";
     default: return "text-muted-foreground";
   }

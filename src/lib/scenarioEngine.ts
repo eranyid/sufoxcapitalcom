@@ -44,18 +44,18 @@ export interface ScenarioResult {
 
 // Mapping asset types to shock targets
 const assetTypeToShockMapping: Record<AssetType, ScenarioShockTarget[]> = {
-  equity: ['global_equity', 'us_equity'],
+  equity: ['global_equity', 'us_equity', 'financials_equity', 'energy_equity'],
   etf: ['global_equity', 'us_equity'],
   mutual_fund: ['global_equity'],
-  bond: ['rates_parallel', 'rates_long_end', 'credit_spreads'],
-  commodity: [],
+  bond: ['rates_parallel', 'rates_long_end', 'credit_spreads', 'credit_ig_spreads', 'credit_hy_spreads'],
+  commodity: ['energy_equity'],
   crypto: ['global_equity', 'tech_equity', 'volatility'],
-  real_estate: ['rates_long_end'],
+  real_estate: ['rates_long_end', 'illiquid_haircut'],
   cash: [],
-  alternative: ['global_equity', 'volatility'],
-  private_equity: ['global_equity', 'us_equity', 'credit_spreads'],
-  private_debt: ['rates_parallel', 'credit_spreads'],
-  hedge_fund: ['global_equity', 'volatility'],
+  alternative: ['global_equity', 'volatility', 'alternatives', 'illiquid_haircut'],
+  private_equity: ['global_equity', 'us_equity', 'credit_spreads', 'illiquid_haircut'],
+  private_debt: ['rates_parallel', 'credit_spreads', 'credit_ig_spreads', 'credit_hy_spreads', 'illiquid_haircut'],
+  hedge_fund: ['global_equity', 'volatility', 'alternatives'],
 };
 
 // Geography to shock mapping
@@ -63,25 +63,25 @@ const geographyToShockMapping: Record<Geography, ScenarioShockTarget[]> = {
   north_america: ['us_equity', 'usd_fx'],
   europe: ['global_equity', 'eur_fx'],
   asia_pacific: ['global_equity'],
-  emerging_markets: ['em_equity'],
+  emerging_markets: ['em_equity', 'em_fx'],
   global: ['global_equity'],
   other: ['global_equity'],
 };
 
 // Sensitivity factors for different asset types
 const assetSensitivity: Record<AssetType, Record<string, number>> = {
-  equity: { equity: 1.0, rates: -0.1, credit: -0.2, fx: 0.3, volatility: -0.1 },
-  etf: { equity: 1.0, rates: -0.1, credit: -0.2, fx: 0.3, volatility: -0.1 },
-  mutual_fund: { equity: 0.8, rates: -0.1, credit: -0.15, fx: 0.2, volatility: -0.08 },
-  bond: { equity: 0.0, rates: -5.0, credit: -0.3, fx: 0.1, volatility: 0.0 }, // Duration ~5
-  commodity: { equity: 0.3, rates: 0.0, credit: 0.0, fx: -0.5, volatility: 0.2 },
-  crypto: { equity: 1.5, rates: -0.2, credit: 0.0, fx: 0.0, volatility: -0.3 },
-  real_estate: { equity: 0.6, rates: -3.0, credit: -0.2, fx: 0.1, volatility: -0.1 },
-  cash: { equity: 0.0, rates: 0.0, credit: 0.0, fx: 0.0, volatility: 0.0 },
-  alternative: { equity: 0.5, rates: -0.1, credit: -0.1, fx: 0.1, volatility: 0.1 },
-  private_equity: { equity: 1.2, rates: -0.15, credit: -0.3, fx: 0.2, volatility: -0.15 },
-  private_debt: { equity: 0.1, rates: -3.0, credit: -0.5, fx: 0.1, volatility: -0.05 },
-  hedge_fund: { equity: 0.5, rates: -0.05, credit: -0.1, fx: 0.15, volatility: 0.05 },
+  equity: { equity: 1.0, rates: -0.1, credit: -0.2, fx: 0.3, volatility: -0.1, liquidity: 0.0 },
+  etf: { equity: 1.0, rates: -0.1, credit: -0.2, fx: 0.3, volatility: -0.1, liquidity: 0.0 },
+  mutual_fund: { equity: 0.8, rates: -0.1, credit: -0.15, fx: 0.2, volatility: -0.08, liquidity: 0.0 },
+  bond: { equity: 0.0, rates: -5.0, credit: -0.3, fx: 0.1, volatility: 0.0, liquidity: 0.0 }, // Duration ~5
+  commodity: { equity: 0.3, rates: 0.0, credit: 0.0, fx: -0.5, volatility: 0.2, liquidity: 0.0 },
+  crypto: { equity: 1.5, rates: -0.2, credit: 0.0, fx: 0.0, volatility: -0.3, liquidity: -0.1 },
+  real_estate: { equity: 0.6, rates: -3.0, credit: -0.2, fx: 0.1, volatility: -0.1, liquidity: 1.0 },
+  cash: { equity: 0.0, rates: 0.0, credit: 0.0, fx: 0.0, volatility: 0.0, liquidity: 0.0 },
+  alternative: { equity: 0.5, rates: -0.1, credit: -0.1, fx: 0.1, volatility: 0.1, liquidity: 1.0 },
+  private_equity: { equity: 1.2, rates: -0.15, credit: -0.3, fx: 0.2, volatility: -0.15, liquidity: 1.0 },
+  private_debt: { equity: 0.1, rates: -3.0, credit: -0.5, fx: 0.1, volatility: -0.05, liquidity: 1.0 },
+  hedge_fund: { equity: 0.5, rates: -0.05, credit: -0.1, fx: 0.15, volatility: 0.05, liquidity: 0.5 },
 };
 
 // Calculate shock impact on a single holding
@@ -98,21 +98,27 @@ function calculateHoldingImpact(
     let impact = 0;
     const shockValuePct = shock.unit === 'bps' ? shock.value / 100 : shock.value;
 
-    // Equity shocks
-    if (['global_equity', 'us_equity', 'tech_equity', 'em_equity'].includes(shock.target)) {
+    // Equity shocks (including sector-specific)
+    if (['global_equity', 'us_equity', 'tech_equity', 'em_equity', 'financials_equity', 'energy_equity'].includes(shock.target)) {
       const relevantTargets = [
         ...assetTypeToShockMapping[assetType],
         ...geographyToShockMapping[geography]
       ];
 
       if (relevantTargets.includes(shock.target)) {
-        // Tech equity has higher beta for crypto and certain equities
+        // Different betas for different sectors/types
         let beta = sensitivities.equity;
         if (shock.target === 'tech_equity' && (assetType === 'crypto' || assetType === 'equity')) {
           beta = assetType === 'crypto' ? 1.8 : 1.2;
         }
         if (shock.target === 'em_equity' && geography === 'emerging_markets') {
           beta = 1.0;
+        }
+        if (shock.target === 'financials_equity') {
+          beta = assetType === 'equity' ? 1.0 : 0.3; // Direct impact on equities
+        }
+        if (shock.target === 'energy_equity') {
+          beta = assetType === 'commodity' ? 0.8 : (assetType === 'equity' ? 1.0 : 0.2);
         }
         impact = shockValuePct * beta;
         appliedShocks.push(`${shock.label}: ${shockValuePct > 0 ? '+' : ''}${shockValuePct.toFixed(1)}%`);
@@ -121,9 +127,9 @@ function calculateHoldingImpact(
 
     // Rate shocks (for bonds)
     if (['rates_parallel', 'rates_short_end', 'rates_long_end'].includes(shock.target)) {
-      if (assetType === 'bond' || assetType === 'real_estate') {
+      if (assetType === 'bond' || assetType === 'real_estate' || assetType === 'private_debt') {
         // Duration-based impact: ΔPrice ≈ -Duration × ΔYield
-        let duration = assetType === 'bond' ? 5 : 3;
+        let duration = assetType === 'bond' ? 5 : (assetType === 'private_debt' ? 3 : 3);
         if (shock.target === 'rates_short_end') duration = 2;
         if (shock.target === 'rates_long_end') duration = 8;
         
@@ -132,24 +138,41 @@ function calculateHoldingImpact(
       }
     }
 
-    // Credit spread shocks
+    // Credit spread shocks (generic)
     if (shock.target === 'credit_spreads') {
-      if (assetType === 'bond') {
-        // Credit spread widening hurts bond prices
-        const spreadDuration = 4; // Credit duration
+      if (assetType === 'bond' || assetType === 'private_debt') {
+        const spreadDuration = 4;
         impact = -spreadDuration * shockValuePct;
         appliedShocks.push(`Credit: +${shock.value} bps → ${impact.toFixed(1)}%`);
       }
     }
 
-    // FX shocks
-    if (['usd_fx', 'eur_fx'].includes(shock.target)) {
+    // IG Credit spread shocks
+    if (shock.target === 'credit_ig_spreads') {
+      if (assetType === 'bond' || assetType === 'private_debt') {
+        const spreadDuration = 4;
+        impact = -spreadDuration * shockValuePct * 0.8; // IG less volatile
+        appliedShocks.push(`IG Spreads: +${shock.value} bps → ${impact.toFixed(1)}%`);
+      }
+    }
+
+    // HY Credit spread shocks
+    if (shock.target === 'credit_hy_spreads') {
+      if (assetType === 'bond' || assetType === 'private_debt') {
+        const spreadDuration = 3; // Shorter duration for HY
+        impact = -spreadDuration * shockValuePct;
+        appliedShocks.push(`HY Spreads: +${shock.value} bps → ${impact.toFixed(1)}%`);
+      }
+    }
+
+    // FX shocks (including EM)
+    if (['usd_fx', 'eur_fx', 'em_fx'].includes(shock.target)) {
       const relevantGeo = geographyToShockMapping[geography];
       if (relevantGeo.includes(shock.target)) {
         // USD strength hurts non-USD assets when base is USD
         impact = shockValuePct * sensitivities.fx * (shock.target === 'usd_fx' ? -1 : 1);
-        if (geography === 'emerging_markets' && shock.target === 'usd_fx') {
-          impact = shockValuePct * -0.5; // EM more sensitive to USD
+        if ((geography === 'emerging_markets' && shock.target === 'usd_fx') || shock.target === 'em_fx') {
+          impact = shockValuePct * -0.5; // EM more sensitive
         }
         appliedShocks.push(`FX: ${shockValuePct > 0 ? '+' : ''}${shockValuePct.toFixed(1)}%`);
       }
@@ -161,6 +184,23 @@ function calculateHoldingImpact(
       impact = shockValuePct * sensitivities.volatility;
       if (Math.abs(impact) > 0.5) {
         appliedShocks.push(`Vol: ${impact > 0 ? '+' : ''}${impact.toFixed(1)}%`);
+      }
+    }
+
+    // Alternatives shock (direct)
+    if (shock.target === 'alternatives') {
+      if (['alternative', 'hedge_fund', 'private_equity'].includes(assetType)) {
+        impact = shockValuePct * 1.0; // Direct 1:1 impact
+        appliedShocks.push(`Alts: ${shockValuePct > 0 ? '+' : ''}${shockValuePct.toFixed(1)}%`);
+      }
+    }
+
+    // Illiquid haircut shock
+    if (shock.target === 'illiquid_haircut') {
+      const liquiditySensitivity = sensitivities.liquidity || 0;
+      if (liquiditySensitivity > 0) {
+        impact = shockValuePct * liquiditySensitivity;
+        appliedShocks.push(`Liquidity Haircut: ${shockValuePct.toFixed(1)}%`);
       }
     }
 
