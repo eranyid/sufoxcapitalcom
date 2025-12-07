@@ -54,6 +54,7 @@ import {
 } from '@/data/scenarios';
 import { runScenario, ScenarioResult, formatCurrency, formatPctWithSign } from '@/lib/scenarioEngine';
 import { generateScenarioPDFReport } from '@/lib/pdfReport';
+import { CorrelationSpikeChart } from '@/components/dashboard/CorrelationSpikeChart';
 import { cn } from '@/lib/utils';
 
 const scenarioTypeLabels: Record<ScenarioType, string> = {
@@ -827,6 +828,15 @@ export default function ScenarioLab() {
               </div>
             </div>
           )}
+
+          {/* Correlation Spike Analysis */}
+          <Separator className="my-2" />
+          <CorrelationSpikeChart 
+            transactions={transactions} 
+            valuations={valuations} 
+            scenario={result.definition} 
+          />
+          <Separator className="my-2" />
 
           {/* Holdings Detail - Card style on mobile */}
           <div>
