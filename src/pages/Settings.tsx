@@ -13,8 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Eye } from 'lucide-react';
-import { WatchlistSettings } from '@/components/settings/WatchlistSettings';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -478,9 +477,6 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Research Watchlist */}
-      <WatchlistSettings />
 
       {/* News Settings */}
       <Card>
