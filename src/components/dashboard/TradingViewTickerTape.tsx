@@ -4,34 +4,35 @@ interface TradingViewTickerTapeProps {
   label?: string;
 }
 
-// Macro Cross-Asset Watchlist Configuration
+// Macro Cross-Asset Watchlist Configuration - Using verified TradingView symbols
 const macroCrossAssetTicker = [
   // INDICES / FX & COMMODITIES
   { proName: "FX_IDC:USDILS", title: "USD/ILS" },
-  { proName: "INDEX:DXY", title: "DXY" },
+  { proName: "TVC:DXY", title: "DXY" },
   { proName: "FX_IDC:EURILS", title: "EUR/ILS" },
   { proName: "AMEX:USO", title: "USO" },
   { proName: "AMEX:USL", title: "USL" },
   { proName: "CBOE:VIX", title: "VIX" },
-  { proName: "TVC:GOLD", title: "XAUUSD" },
-  { proName: "TVC:SILVER", title: "XAGUSD" },
+  { proName: "TVC:GOLD", title: "Gold" },
+  { proName: "TVC:SILVER", title: "Silver" },
   
-  // ECONOMIC
-  { proName: "ECONOMICS:USGDG", title: "US Debt/GDP" },
-  { proName: "ECONOMICS:USGDPYY", title: "US GDP YoY" },
-  { proName: "TVC:US02Y", title: "US 2Y Yield" },
-  { proName: "TVC:US10Y", title: "US 10Y Yield" },
-  { proName: "ECONOMICS:USCCPI", title: "US Core CPI" },
-  { proName: "FRED:WALCL", title: "Fed Balance Sheet" },
-  { proName: "ECONOMICS:USM2", title: "US M2" },
-  { proName: "FRED:UNRATENSA", title: "US Unemployment" },
-  { proName: "FRED:MORTGAGE30US", title: "30Y Mortgage" },
+  // RATES & YIELDS
+  { proName: "TVC:US02Y", title: "US 2Y" },
+  { proName: "TVC:US10Y", title: "US 10Y" },
+  { proName: "TVC:US30Y", title: "US 30Y" },
   
   // FUTURES / SECTORS
   { proName: "CME_MINI:ES1!", title: "ES Futures" },
+  { proName: "CME_MINI:NQ1!", title: "NQ Futures" },
   { proName: "AMEX:XLF", title: "XLF Financials" },
   { proName: "AMEX:XLK", title: "XLK Tech" },
   { proName: "AMEX:XLRE", title: "XLRE Real Estate" },
+  { proName: "AMEX:XLE", title: "XLE Energy" },
+  
+  // MAJOR INDICES
+  { proName: "AMEX:SPY", title: "SPY" },
+  { proName: "NASDAQ:QQQ", title: "QQQ" },
+  { proName: "AMEX:IWM", title: "IWM Russell" },
 ];
 
 const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTickerTapeProps) => {
