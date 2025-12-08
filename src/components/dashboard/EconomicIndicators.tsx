@@ -19,7 +19,7 @@ const fallbackData: EconomicIndicator[] = [
   { symbol: 'CPI', name: 'CPI YoY', value: '2.7', change: -0.2, unit: '%', source: 'BLS', period: 'Nov 2024' },
   { symbol: 'UNEMP', name: 'Unemployment', value: '4.2', change: 0.1, unit: '%', source: 'BLS', period: 'Nov 2024' },
   { symbol: 'PCE', name: 'Core PCE', value: '2.8', change: 0.0, unit: '%', source: 'BEA', period: 'Oct 2024' },
-  { symbol: 'NFP', name: 'Nonfarm Payrolls', value: '+227K', change: 61, unit: '', source: 'BLS', period: 'Nov 2024' },
+  { symbol: 'FED', name: 'Fed Total Assets', value: '$6.89T', change: -5, unit: 'B', source: 'FED', period: 'Dec 2024' },
 ];
 
 const EconomicIndicators = () => {
