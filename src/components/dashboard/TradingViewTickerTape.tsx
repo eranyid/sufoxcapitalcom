@@ -1,9 +1,38 @@
 import { useEffect, useRef } from 'react';
-import { TrendingUp } from 'lucide-react';
 
 interface TradingViewTickerTapeProps {
   label?: string;
 }
+
+// Macro Cross-Asset Watchlist Configuration
+const macroCrossAssetTicker = [
+  // INDICES / FX & COMMODITIES
+  { proName: "FX_IDC:USDILS", title: "USD/ILS" },
+  { proName: "INDEX:DXY", title: "DXY" },
+  { proName: "FX_IDC:EURILS", title: "EUR/ILS" },
+  { proName: "AMEX:USO", title: "USO" },
+  { proName: "AMEX:USL", title: "USL" },
+  { proName: "CBOE:VIX", title: "VIX" },
+  { proName: "TVC:GOLD", title: "XAUUSD" },
+  { proName: "TVC:SILVER", title: "XAGUSD" },
+  
+  // ECONOMIC
+  { proName: "ECONOMICS:USGDG", title: "US Debt/GDP" },
+  { proName: "ECONOMICS:USGDPYY", title: "US GDP YoY" },
+  { proName: "TVC:US02Y", title: "US 2Y Yield" },
+  { proName: "TVC:US10Y", title: "US 10Y Yield" },
+  { proName: "ECONOMICS:USCCPI", title: "US Core CPI" },
+  { proName: "FRED:WALCL", title: "Fed Balance Sheet" },
+  { proName: "ECONOMICS:USM2", title: "US M2" },
+  { proName: "FRED:UNRATENSA", title: "US Unemployment" },
+  { proName: "FRED:MORTGAGE30US", title: "30Y Mortgage" },
+  
+  // FUTURES / SECTORS
+  { proName: "CME_MINI:ES1!", title: "ES Futures" },
+  { proName: "AMEX:XLF", title: "XLF Financials" },
+  { proName: "AMEX:XLK", title: "XLK Tech" },
+  { proName: "AMEX:XLRE", title: "XLRE Real Estate" },
+];
 
 const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTickerTapeProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,20 +57,9 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
     script.async = true;
     script.type = 'text/javascript';
     
-    // TradingView Ticker Tape configuration
+    // TradingView Ticker Tape configuration with macro cross-asset watchlist
     script.innerHTML = JSON.stringify({
-      symbols: [
-        { proName: "AMEX:SPY", title: "SPY" },
-        { proName: "NASDAQ:QQQ", title: "QQQ" },
-        { proName: "XETR:DBXD", title: "DX5E" },
-        { proName: "TASE:TA125", title: "TA-125" },
-        { proName: "FX_IDC:USDILS", title: "USD/ILS" },
-        { proName: "FX_IDC:EURILS", title: "EUR/ILS" },
-        { proName: "INDEX:DXY", title: "DXY" },
-        { proName: "AMEX:USO", title: "USO" },
-        { proName: "AMEX:VIXY", title: "VIX ETF" },
-        { proName: "TVC:GOLD", title: "XAUUSD" }
-      ],
+      symbols: macroCrossAssetTicker,
       showSymbolLogo: false,
       isTransparent: true,
       displayMode: "adaptive",
