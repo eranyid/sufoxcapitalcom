@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.alpaca-test]
 verify_jwt = true
+
+[functions.fetch-fred-data]
+verify_jwt = true
