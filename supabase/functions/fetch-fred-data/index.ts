@@ -11,8 +11,7 @@ const FRED_SERIES = {
   CPI: 'CPIAUCSL',             // CPI All Urban Consumers (Monthly)
   UNEMP: 'UNRATE',             // Unemployment Rate (Monthly)
   PCE: 'PCEPILFE',             // Core PCE Price Index (Monthly)
-  NFP: 'PAYEMS',               // Nonfarm Payrolls (Monthly)
-  ISM: 'MANEMP',               // Manufacturing Employment (proxy)
+  FED_ASSETS: 'WALCL',         // Fed Balance Sheet: Total Assets (Weekly)
 };
 
 interface FredObservation {
@@ -98,12 +97,12 @@ serve(async (req) => {
     console.log('Fetching all FRED series...');
 
     // Fetch all series in parallel
-    const [gdpData, cpiData, unempData, pceData, nfpData] = await Promise.all([
+    const [gdpData, cpiData, unempData, pceData, fedAssetsData] = await Promise.all([
       fetchFredSeries(FRED_SERIES.GDP, apiKey),
       fetchFredSeries(FRED_SERIES.CPI, apiKey),
       fetchFredSeries(FRED_SERIES.UNEMP, apiKey),
       fetchFredSeries(FRED_SERIES.PCE, apiKey),
-      fetchFredSeries(FRED_SERIES.NFP, apiKey),
+      fetchFredSeries(FRED_SERIES.FED_ASSETS, apiKey),
     ]);
 
     // Build indicators array
@@ -166,18 +165,19 @@ serve(async (req) => {
       });
     }
 
-    // Nonfarm Payrolls - show monthly change in thousands
-    if (nfpData) {
-      const monthlyChange = Math.round(nfpData.value - nfpData.prevValue);
-      const prevMonthlyChange = 166; // Approximate previous for change calculation
+    // Fed Balance Sheet Total Assets - value in millions, display in trillions
+    if (fedAssetsData) {
+      const valueInTrillions = fedAssetsData.value / 1000000;
+      const prevValueInTrillions = fedAssetsData.prevValue / 1000000;
+      const weeklyChange = valueInTrillions - prevValueInTrillions;
       indicators.push({
-        symbol: 'NFP',
-        name: 'Nonfarm Payrolls',
-        value: `${monthlyChange > 0 ? '+' : ''}${monthlyChange}K`,
-        change: monthlyChange - prevMonthlyChange,
-        unit: '',
-        source: 'BLS',
-        period: formatPeriod(nfpData.date)
+        symbol: 'FED',
+        name: 'Fed Total Assets',
+        value: `$${valueInTrillions.toFixed(2)}T`,
+        change: Number((weeklyChange * 1000).toFixed(0)), // Change in billions
+        unit: 'B',
+        source: 'FED',
+        period: formatPeriod(fedAssetsData.date)
       });
     }
 
