@@ -59,6 +59,10 @@ const EconomicIndicators = () => {
   useEffect(() => {
     if (user) {
       fetchIndicators();
+      
+      // Auto-refresh every 30 minutes
+      const interval = setInterval(fetchIndicators, 30 * 60 * 1000);
+      return () => clearInterval(interval);
     }
   }, [user]);
 
