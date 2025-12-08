@@ -137,20 +137,7 @@ serve(async (req) => {
       });
     }
 
-    // Unemployment Rate
-    if (unempData) {
-      indicators.push({
-        symbol: 'UNEMP',
-        name: 'Unemployment',
-        value: unempData.value.toFixed(1),
-        change: Number((unempData.value - unempData.prevValue).toFixed(1)),
-        unit: '%',
-        source: 'BLS',
-        period: formatPeriod(unempData.date)
-      });
-    }
-
-    // Core PCE - calculate YoY change
+    // Core PCE - calculate YoY change (placed next to CPI)
     if (pceData) {
       const yoyChange = ((pceData.value - pceData.prevValue) / pceData.prevValue * 100 * 12).toFixed(1);
       const prevYoyChange = 2.8;
@@ -162,6 +149,19 @@ serve(async (req) => {
         unit: '%',
         source: 'BEA',
         period: formatPeriod(pceData.date)
+      });
+    }
+
+    // Unemployment Rate
+    if (unempData) {
+      indicators.push({
+        symbol: 'UNEMP',
+        name: 'Unemployment',
+        value: unempData.value.toFixed(1),
+        change: Number((unempData.value - unempData.prevValue).toFixed(1)),
+        unit: '%',
+        source: 'BLS',
+        period: formatPeriod(unempData.date)
       });
     }
 
