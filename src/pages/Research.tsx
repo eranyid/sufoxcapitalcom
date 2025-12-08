@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react';
 import TradingViewTickerTape from '@/components/dashboard/TradingViewTickerTape';
+import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 
 const Research = () => {
@@ -7,6 +8,11 @@ const Research = () => {
     <div className="animate-fade-in">
       {/* TradingView Ticker Tape */}
       <TradingViewTickerTape />
+      
+      {/* Economic Indicators */}
+      <div className="mt-2">
+        <EconomicIndicators />
+      </div>
       
       <div className="section-spacing">
         {/* Page Header */}
