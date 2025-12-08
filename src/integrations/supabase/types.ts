@@ -284,6 +284,36 @@ export type Database = {
         }
         Relationships: []
       }
+      research_watchlist: {
+        Row: {
+          asset_class: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          symbol: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_class?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          symbol: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_class?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          symbol?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ticker_symbols: {
         Row: {
           category: string | null
