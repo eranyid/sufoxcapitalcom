@@ -70,16 +70,16 @@ const ASSET_TYPE_TO_CATEGORY: Record<string, 'equity' | 'fixed_income' | 'altern
 };
 
 const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  '#6366f1',
-  '#8b5cf6',
-  '#ec4899',
-  '#f43f5e',
-  '#f97316',
+  'hsl(30, 100%, 50%)',    // Primary orange
+  'hsl(210, 100%, 55%)',   // Blue
+  'hsl(120, 60%, 40%)',    // Green
+  'hsl(280, 70%, 55%)',    // Purple
+  'hsl(45, 100%, 50%)',    // Gold/Yellow
+  'hsl(350, 75%, 55%)',    // Red/Pink
+  'hsl(180, 70%, 45%)',    // Teal
+  'hsl(0, 0%, 60%)',       // Gray
+  'hsl(320, 70%, 50%)',    // Magenta
+  'hsl(15, 90%, 55%)',     // Coral
 ];
 
 export function RebalanceTool() {
