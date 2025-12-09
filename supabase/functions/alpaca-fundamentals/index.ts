@@ -19,7 +19,9 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { symbol, statementType = "income", period = "quarterly", limit = 8 } = body;
+    const { symbol, statementType = "income", period = "quarterly", limit: requestedLimit = 5 } = body;
+    // FMP Free tier limits to max 5 results
+    const limit = Math.min(requestedLimit, 5);
 
     if (!symbol) {
       return new Response(
