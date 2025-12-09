@@ -5,7 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FMP_BASE_URL = "https://financialmodelingprep.com/api/v3";
+// Using stable.v4 endpoint for free tier access
+const FMP_BASE_URL = "https://financialmodelingprep.com/stable";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -51,26 +52,22 @@ serve(async (req) => {
       );
     }
 
-    // Build FMP endpoint based on statement type
+    // Build FMP endpoint based on statement type using stable API
     let endpoint: string;
+    const periodParam = period === 'annual' ? 'annual' : 'quarter';
+    
     switch (statementType) {
       case 'income':
-        endpoint = period === 'annual' 
-          ? `${FMP_BASE_URL}/income-statement/${upperSymbol}?limit=${limit}&apikey=${fmpApiKey}`
-          : `${FMP_BASE_URL}/income-statement/${upperSymbol}?period=quarter&limit=${limit}&apikey=${fmpApiKey}`;
+        endpoint = `${FMP_BASE_URL}/income-statement?symbol=${upperSymbol}&period=${periodParam}&limit=${limit}&apikey=${fmpApiKey}`;
         break;
       case 'balance':
-        endpoint = period === 'annual'
-          ? `${FMP_BASE_URL}/balance-sheet-statement/${upperSymbol}?limit=${limit}&apikey=${fmpApiKey}`
-          : `${FMP_BASE_URL}/balance-sheet-statement/${upperSymbol}?period=quarter&limit=${limit}&apikey=${fmpApiKey}`;
+        endpoint = `${FMP_BASE_URL}/balance-sheet-statement?symbol=${upperSymbol}&period=${periodParam}&limit=${limit}&apikey=${fmpApiKey}`;
         break;
       case 'cashflow':
-        endpoint = period === 'annual'
-          ? `${FMP_BASE_URL}/cash-flow-statement/${upperSymbol}?limit=${limit}&apikey=${fmpApiKey}`
-          : `${FMP_BASE_URL}/cash-flow-statement/${upperSymbol}?period=quarter&limit=${limit}&apikey=${fmpApiKey}`;
+        endpoint = `${FMP_BASE_URL}/cash-flow-statement?symbol=${upperSymbol}&period=${periodParam}&limit=${limit}&apikey=${fmpApiKey}`;
         break;
       default:
-        endpoint = `${FMP_BASE_URL}/income-statement/${upperSymbol}?period=quarter&limit=${limit}&apikey=${fmpApiKey}`;
+        endpoint = `${FMP_BASE_URL}/income-statement?symbol=${upperSymbol}&period=${periodParam}&limit=${limit}&apikey=${fmpApiKey}`;
     }
 
     console.log(`Fetching from FMP: ${endpoint.replace(fmpApiKey, '***')}`);
