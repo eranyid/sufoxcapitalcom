@@ -25,12 +25,12 @@ const primaryNavItems = [
   { path: '/performance', icon: TrendingUp, label: 'Perform' },
   { path: '/risk', icon: Shield, label: 'Risk' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
-  { path: '/scenarios', icon: FlaskConical, label: 'Scenarios' },
+  { path: '/research', icon: FlaskConical, label: 'Research' },
 ];
 
 const moreNavItems = [
   { path: '/transactions', label: 'Transactions' },
-  { path: '/research', label: 'Research' },
+  { path: '/scenarios', label: 'Scenarios' },
   { path: '/valuations', label: 'Valuations' },
   { path: '/policy', label: 'Policy' },
   { path: '/settings', label: 'Settings' },
