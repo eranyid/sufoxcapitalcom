@@ -3,6 +3,7 @@ import TradingViewTickerTape from '@/components/dashboard/TradingViewTickerTape'
 import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
+import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
 import { usePortfolio } from '@/context/PortfolioContext';
 
 const Research = () => {
@@ -41,6 +42,11 @@ const Research = () => {
 
         {/* Efficient Frontier Module */}
         <EfficientFrontier />
+
+        {/* Rebalance Tool */}
+        <div className="mt-4">
+          <RebalanceTool />
+        </div>
       </div>
     </div>
   );
