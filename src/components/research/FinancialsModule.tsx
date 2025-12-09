@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,21 +22,27 @@ export const FinancialsModule = () => {
   
   const { loading, error, isMockData, fetchIncomeStatement, fetchBalanceSheet, fetchCashFlow } = useAlpacaFundamentals();
 
-  const fetchAllData = useCallback(async (sym: string, per: 'quarterly' | 'annual') => {
-    const [income, balance, cashflow] = await Promise.all([
-      fetchIncomeStatement(sym, per),
-      fetchBalanceSheet(sym, per),
-      fetchCashFlow(sym, per),
-    ]);
-    
-    setIncomeData(income);
-    setBalanceData(balance);
-    setCashFlowData(cashflow);
-  }, [fetchIncomeStatement, fetchBalanceSheet, fetchCashFlow]);
-
+  // Fetch data when symbol or period changes
   useEffect(() => {
-    fetchAllData(symbol, period);
-  }, [symbol, period, fetchAllData]);
+    const fetchAllData = async () => {
+      // Clear previous data before fetching new
+      setIncomeData(null);
+      setBalanceData(null);
+      setCashFlowData(null);
+      
+      const [income, balance, cashflow] = await Promise.all([
+        fetchIncomeStatement(symbol, period),
+        fetchBalanceSheet(symbol, period),
+        fetchCashFlow(symbol, period),
+      ]);
+      
+      setIncomeData(income);
+      setBalanceData(balance);
+      setCashFlowData(cashflow);
+    };
+    
+    fetchAllData();
+  }, [symbol, period, fetchIncomeStatement, fetchBalanceSheet, fetchCashFlow]);
 
   const handleSearch = () => {
     if (inputSymbol.trim()) {
