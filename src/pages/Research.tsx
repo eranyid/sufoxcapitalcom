@@ -4,7 +4,6 @@ import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
-import { FinancialsModule } from '@/components/research/FinancialsModule';
 import { usePortfolio } from '@/context/PortfolioContext';
 
 const Research = () => {
@@ -47,11 +46,6 @@ const Research = () => {
         {/* Rebalance Tool */}
         <div className="mt-4">
           <RebalanceTool />
-        </div>
-
-        {/* Financials Module - Single Security Research */}
-        <div className="mt-4">
-          <FinancialsModule />
         </div>
       </div>
     </div>
