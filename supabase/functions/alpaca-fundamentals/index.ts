@@ -5,24 +5,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ALPACA_BASE_URL = "https://data.alpaca.markets/v1beta1";
+const FMP_BASE_URL = "https://financialmodelingprep.com/api/v3";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log("Alpaca Fundamentals API endpoint called");
+  console.log("Fundamentals API endpoint called");
 
-  const apiKeyId = Deno.env.get('ALPACA_API_KEY_ID');
-  const apiSecretKey = Deno.env.get('ALPACA_API_SECRET_KEY');
+  const fmpApiKey = Deno.env.get('FMP_API_KEY');
 
-  if (!apiKeyId || !apiSecretKey) {
-    console.error("Missing Alpaca API credentials");
+  if (!fmpApiKey) {
+    console.error("Missing FMP API key");
     return new Response(
       JSON.stringify({ 
         status: "error", 
-        message: "Missing Alpaca API credentials.",
+        message: "Missing FMP API credentials.",
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -45,56 +44,69 @@ serve(async (req) => {
     const upperSymbol = symbol.toUpperCase();
     console.log(`Fetching fundamentals for ${upperSymbol}, statement: ${statementType}, period: ${period}`);
 
-    const headers = {
-      'APCA-API-KEY-ID': apiKeyId,
-      'APCA-API-SECRET-KEY': apiSecretKey,
-    };
+    // Build FMP endpoint based on statement type
+    let endpoint: string;
+    switch (statementType) {
+      case 'income':
+        endpoint = period === 'annual' 
+          ? `${FMP_BASE_URL}/income-statement/${upperSymbol}?limit=${limit}&apikey=${fmpApiKey}`
+          : `${FMP_BASE_URL}/income-statement/${upperSymbol}?period=quarter&limit=${limit}&apikey=${fmpApiKey}`;
+        break;
+      case 'balance':
+        endpoint = period === 'annual'
+          ? `${FMP_BASE_URL}/balance-sheet-statement/${upperSymbol}?limit=${limit}&apikey=${fmpApiKey}`
+          : `${FMP_BASE_URL}/balance-sheet-statement/${upperSymbol}?period=quarter&limit=${limit}&apikey=${fmpApiKey}`;
+        break;
+      case 'cashflow':
+        endpoint = period === 'annual'
+          ? `${FMP_BASE_URL}/cash-flow-statement/${upperSymbol}?limit=${limit}&apikey=${fmpApiKey}`
+          : `${FMP_BASE_URL}/cash-flow-statement/${upperSymbol}?period=quarter&limit=${limit}&apikey=${fmpApiKey}`;
+        break;
+      default:
+        endpoint = `${FMP_BASE_URL}/income-statement/${upperSymbol}?period=quarter&limit=${limit}&apikey=${fmpApiKey}`;
+    }
 
-    // Alpaca fundamentals endpoint
-    // Note: Alpaca's fundamentals API structure - we'll fetch from screener/stocks endpoint
-    let alpacaUrl: string;
-    
-    // Build the URL based on statement type
-    // Using the corporate actions and fundamentals endpoint
-    alpacaUrl = `${ALPACA_BASE_URL}/screener/stocks/${upperSymbol}/financials?timeframe=${period === 'annual' ? 'annual' : 'quarterly'}&limit=${limit}`;
-
-    console.log(`Fetching: ${alpacaUrl}`);
+    console.log(`Fetching from FMP: ${endpoint.replace(fmpApiKey, '***')}`);
     
     const startTime = performance.now();
-    const response = await fetch(alpacaUrl, { method: 'GET', headers });
+    const response = await fetch(endpoint, { method: 'GET' });
     const endTime = performance.now();
     const latency_ms = Math.round(endTime - startTime);
 
-    console.log(`Alpaca response status: ${response.status}, latency: ${latency_ms}ms`);
+    console.log(`FMP response status: ${response.status}, latency: ${latency_ms}ms`);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Alpaca API error: ${response.status} - ${errorText}`);
-      
-      // Return mock data for development/testing if API fails
-      // This allows the UI to function while API access is being configured
-      const mockData = generateMockFinancials(upperSymbol, statementType, period, limit);
+      console.error(`FMP API error: ${response.status} - ${errorText}`);
       
       return new Response(
         JSON.stringify({
-          status: "success",
-          symbol: upperSymbol,
-          statementType,
-          period,
-          data: mockData,
-          isMock: true,
-          message: "Using sample data - Alpaca fundamentals API requires upgraded subscription",
+          status: "error",
+          message: `FMP API error: ${response.status}`,
           latency_ms,
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    console.log(`Alpaca fundamentals response received`);
+    console.log(`FMP response received, items: ${Array.isArray(data) ? data.length : 'N/A'}`);
+
+    // Check for FMP error messages
+    if (data["Error Message"]) {
+      console.error("FMP error:", data["Error Message"]);
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: data["Error Message"],
+          latency_ms,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Transform the data into our expected format
-    const transformedData = transformAlpacaData(data, statementType);
+    const transformedData = transformFmpData(data, statementType, period);
 
     return new Response(
       JSON.stringify({
@@ -111,142 +123,90 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-    console.error("Error in alpaca-fundamentals function:", errorMessage);
+    console.error("Error in fundamentals function:", errorMessage);
     
-    // Return mock data on error for development
-    try {
-      const body = await req.clone().json();
-      const { symbol = "AAPL", statementType = "income", period = "quarterly", limit = 8 } = body;
-      const mockData = generateMockFinancials(symbol.toUpperCase(), statementType, period, limit);
-      
-      return new Response(
-        JSON.stringify({
-          status: "success",
-          symbol: symbol.toUpperCase(),
-          statementType,
-          period,
-          data: mockData,
-          isMock: true,
-          message: "Using sample data due to API error",
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } catch {
-      return new Response(
-        JSON.stringify({ 
-          status: "error", 
-          message: errorMessage,
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    return new Response(
+      JSON.stringify({ 
+        status: "error", 
+        message: errorMessage,
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });
 
-// Transform Alpaca data to our expected format
-function transformAlpacaData(data: any, statementType: string): any[] {
-  if (!data || !data.financials) return [];
+// Transform FMP data to our expected format
+function transformFmpData(data: any[], statementType: string, period: string): any[] {
+  if (!Array.isArray(data) || data.length === 0) return [];
   
-  const financials = data.financials;
-  
-  switch (statementType) {
-    case 'income':
-      return financials.map((f: any) => ({
-        period: f.period || f.date,
-        revenue: f.revenue || f.total_revenue || 0,
-        netIncome: f.net_income || f.net_income_loss || 0,
-        grossProfit: f.gross_profit || 0,
-        operatingIncome: f.operating_income || 0,
-        ebitda: f.ebitda || 0,
-      }));
-    case 'balance':
-      return financials.map((f: any) => ({
-        period: f.period || f.date,
-        totalAssets: f.total_assets || 0,
-        totalLiabilities: f.total_liabilities || 0,
-        totalEquity: f.total_equity || f.stockholders_equity || 0,
-        totalDebt: f.total_debt || f.long_term_debt || 0,
-        cash: f.cash_and_equivalents || f.cash || 0,
-      }));
-    case 'cashflow':
-      return financials.map((f: any) => ({
-        period: f.period || f.date,
-        operatingCashFlow: f.operating_cash_flow || f.net_cash_from_operating || 0,
-        investingCashFlow: f.investing_cash_flow || f.net_cash_from_investing || 0,
-        financingCashFlow: f.financing_cash_flow || f.net_cash_from_financing || 0,
-        freeCashFlow: f.free_cash_flow || 0,
-        capex: f.capital_expenditure || f.capex || 0,
-      }));
-    default:
-      return financials;
-  }
-}
-
-// Generate realistic mock financial data for development
-function generateMockFinancials(symbol: string, statementType: string, period: string, limit: number): any[] {
-  const isQuarterly = period === 'quarterly';
-  const periods: string[] = [];
-  const now = new Date();
-  
-  for (let i = 0; i < limit; i++) {
-    if (isQuarterly) {
-      const date = new Date(now);
-      date.setMonth(date.getMonth() - (i * 3));
-      const quarter = Math.ceil((date.getMonth() + 1) / 3);
-      periods.push(`Q${quarter} ${date.getFullYear()}`);
-    } else {
-      periods.push(`${now.getFullYear() - i}`);
-    }
-  }
-  
-  // Base values that vary by symbol (pseudo-random based on symbol)
-  const symbolHash = symbol.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  const baseRevenue = (symbolHash % 100 + 50) * 1000; // 50B - 150B range
-  const growthRate = 1 + (symbolHash % 20) / 100; // 0-20% growth
+  // Reverse to show oldest first
+  const sortedData = [...data].reverse();
   
   switch (statementType) {
     case 'income':
-      return periods.map((p, i) => {
-        const revenue = baseRevenue * Math.pow(growthRate, limit - i - 1) * (0.9 + Math.random() * 0.2);
-        const margin = 0.15 + (symbolHash % 20) / 100; // 15-35% margin
+      return sortedData.map((f: any) => {
+        const date = new Date(f.date);
+        const periodLabel = period === 'annual' 
+          ? date.getFullYear().toString()
+          : `Q${Math.ceil((date.getMonth() + 1) / 3)} ${date.getFullYear()}`;
+        
         return {
-          period: p,
-          revenue: Math.round(revenue),
-          netIncome: Math.round(revenue * margin * (0.8 + Math.random() * 0.4)),
-          grossProfit: Math.round(revenue * (margin + 0.2)),
-          operatingIncome: Math.round(revenue * (margin + 0.05)),
-          ebitda: Math.round(revenue * (margin + 0.1)),
+          period: periodLabel,
+          date: f.date,
+          revenue: f.revenue || 0,
+          netIncome: f.netIncome || 0,
+          grossProfit: f.grossProfit || 0,
+          operatingIncome: f.operatingIncome || 0,
+          ebitda: f.ebitda || 0,
+          eps: f.eps || 0,
+          costOfRevenue: f.costOfRevenue || 0,
+          operatingExpenses: f.operatingExpenses || 0,
         };
-      }).reverse();
+      });
       
     case 'balance':
-      return periods.map((p, i) => {
-        const assets = baseRevenue * 2 * Math.pow(growthRate, limit - i - 1);
-        const debtRatio = 0.3 + (symbolHash % 30) / 100; // 30-60% debt ratio
+      return sortedData.map((f: any) => {
+        const date = new Date(f.date);
+        const periodLabel = period === 'annual' 
+          ? date.getFullYear().toString()
+          : `Q${Math.ceil((date.getMonth() + 1) / 3)} ${date.getFullYear()}`;
+        
         return {
-          period: p,
-          totalAssets: Math.round(assets * (0.9 + Math.random() * 0.2)),
-          totalLiabilities: Math.round(assets * debtRatio * (0.9 + Math.random() * 0.2)),
-          totalEquity: Math.round(assets * (1 - debtRatio) * (0.9 + Math.random() * 0.2)),
-          totalDebt: Math.round(assets * debtRatio * 0.6),
-          cash: Math.round(assets * 0.1 * (0.5 + Math.random())),
+          period: periodLabel,
+          date: f.date,
+          totalAssets: f.totalAssets || 0,
+          totalLiabilities: f.totalLiabilities || 0,
+          totalEquity: f.totalStockholdersEquity || f.totalEquity || 0,
+          totalDebt: f.totalDebt || 0,
+          cash: f.cashAndCashEquivalents || f.cash || 0,
+          shortTermDebt: f.shortTermDebt || 0,
+          longTermDebt: f.longTermDebt || 0,
+          totalCurrentAssets: f.totalCurrentAssets || 0,
+          totalCurrentLiabilities: f.totalCurrentLiabilities || 0,
         };
-      }).reverse();
+      });
       
     case 'cashflow':
-      return periods.map((p, i) => {
-        const opCash = baseRevenue * 0.2 * Math.pow(growthRate, limit - i - 1);
+      return sortedData.map((f: any) => {
+        const date = new Date(f.date);
+        const periodLabel = period === 'annual' 
+          ? date.getFullYear().toString()
+          : `Q${Math.ceil((date.getMonth() + 1) / 3)} ${date.getFullYear()}`;
+        
         return {
-          period: p,
-          operatingCashFlow: Math.round(opCash * (0.8 + Math.random() * 0.4)),
-          investingCashFlow: Math.round(-opCash * 0.4 * (0.8 + Math.random() * 0.4)),
-          financingCashFlow: Math.round(-opCash * 0.3 * (0.5 + Math.random())),
-          freeCashFlow: Math.round(opCash * 0.6 * (0.8 + Math.random() * 0.4)),
-          capex: Math.round(-opCash * 0.3 * (0.8 + Math.random() * 0.4)),
+          period: periodLabel,
+          date: f.date,
+          operatingCashFlow: f.operatingCashFlow || f.netCashProvidedByOperatingActivities || 0,
+          investingCashFlow: f.netCashUsedForInvestingActivites || f.netCashProvidedByInvestingActivities || 0,
+          financingCashFlow: f.netCashUsedProvidedByFinancingActivities || f.financingCashFlow || 0,
+          freeCashFlow: f.freeCashFlow || 0,
+          capex: f.capitalExpenditure || 0,
+          dividendsPaid: f.dividendsPaid || 0,
+          stockRepurchases: f.commonStockRepurchased || 0,
         };
-      }).reverse();
+      });
       
     default:
-      return [];
+      return sortedData;
   }
 }
