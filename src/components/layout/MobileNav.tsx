@@ -25,7 +25,7 @@ const primaryNavItems = [
   { path: '/performance', icon: TrendingUp, label: 'Perform' },
   { path: '/risk', icon: Shield, label: 'Risk' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
-  { path: '/research', icon: Search, label: 'Research' },
+  { path: '/research', icon: FlaskConical, label: 'Research' },
 ];
 
 const moreNavItems = [
