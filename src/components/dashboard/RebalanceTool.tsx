@@ -659,68 +659,94 @@ export function RebalanceTool() {
                   {/* Before */}
                   <div className="p-3 bg-secondary/20 rounded">
                     <h4 className="text-[10px] font-mono text-muted-foreground mb-2 uppercase">Current Allocation</h4>
-                    <div className="h-[150px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={analysis.beforeAllocation}
-                            dataKey="weight"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={55}
-                            innerRadius={30}
-                            label={({ name, weight }) => `${name} ${weight.toFixed(1)}%`}
-                            labelLine={false}
-                          >
-                            {analysis.beforeAllocation.map((_, index) => (
-                              <Cell key={`before-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value: number) => `${value.toFixed(2)}%`}
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--secondary))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '4px'
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
+                    <div className="flex items-start gap-3">
+                      <div className="h-[120px] w-[120px] flex-shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={analysis.beforeAllocation}
+                              dataKey="weight"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={50}
+                              innerRadius={25}
+                            >
+                              {analysis.beforeAllocation.map((_, index) => (
+                                <Cell key={`before-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              formatter={(value: number) => `${value.toFixed(2)}%`}
+                              contentStyle={{ 
+                                backgroundColor: 'hsl(0 0% 13%)',
+                                border: '1px solid hsl(0 0% 22%)',
+                                borderRadius: '4px',
+                                fontSize: '10px'
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] font-mono">
+                        {analysis.beforeAllocation.slice(0, 12).map((item, index) => (
+                          <div key={item.name} className="flex items-center gap-1 truncate">
+                            <span 
+                              className="w-2 h-2 rounded-sm flex-shrink-0" 
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            />
+                            <span className="text-muted-foreground truncate">{item.name}</span>
+                            <span className="text-foreground ml-auto">{item.weight.toFixed(1)}%</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
                   {/* After */}
                   <div className="p-3 bg-secondary/20 rounded">
                     <h4 className="text-[10px] font-mono text-muted-foreground mb-2 uppercase">Target Allocation</h4>
-                    <div className="h-[150px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={analysis.afterAllocation}
-                            dataKey="weight"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={55}
-                            innerRadius={30}
-                            label={({ name, weight }) => `${name} ${weight.toFixed(1)}%`}
-                            labelLine={false}
-                          >
-                            {analysis.afterAllocation.map((_, index) => (
-                              <Cell key={`after-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value: number) => `${value.toFixed(2)}%`}
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--secondary))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '4px'
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
+                    <div className="flex items-start gap-3">
+                      <div className="h-[120px] w-[120px] flex-shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={analysis.afterAllocation}
+                              dataKey="weight"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={50}
+                              innerRadius={25}
+                            >
+                              {analysis.afterAllocation.map((_, index) => (
+                                <Cell key={`after-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              formatter={(value: number) => `${value.toFixed(2)}%`}
+                              contentStyle={{ 
+                                backgroundColor: 'hsl(0 0% 13%)',
+                                border: '1px solid hsl(0 0% 22%)',
+                                borderRadius: '4px',
+                                fontSize: '10px'
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] font-mono">
+                        {analysis.afterAllocation.slice(0, 12).map((item, index) => (
+                          <div key={item.name} className="flex items-center gap-1 truncate">
+                            <span 
+                              className="w-2 h-2 rounded-sm flex-shrink-0" 
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            />
+                            <span className="text-muted-foreground truncate">{item.name}</span>
+                            <span className="text-foreground ml-auto">{item.weight.toFixed(1)}%</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
