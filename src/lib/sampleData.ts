@@ -18,7 +18,7 @@ export const sampleTransactions: Transaction[] = [
   { id: 'tx-10', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', date: '2024-05-10', quantity: 0.25, pricePerUnit: 61000.00, fees: 20.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   
   // Emerging Markets
-  { id: 'tx-11', assetName: 'Taiwan Semiconductor', ticker: 'TSM', assetType: 'equity', transactionType: 'buy', date: '2024-04-20', quantity: 40, pricePerUnit: 140.00, fees: 12.95, currency: 'USD', geography: 'asia_pacific', inceptionYear: 1997 },
+  { id: 'tx-11', assetName: 'Taiwan Semiconductor', ticker: 'TSM', assetType: 'equity', transactionType: 'buy', date: '2024-04-20', quantity: 40, pricePerUnit: 140.00, fees: 12.95, currency: 'USD', geography: 'israel', inceptionYear: 1997 },
   { id: 'tx-12', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', date: '2024-05-01', quantity: 150, pricePerUnit: 42.50, fees: 4.95, currency: 'USD', geography: 'emerging_markets', inceptionYear: 2003 },
   
   // Partial sells in 2024 (realized P/L)

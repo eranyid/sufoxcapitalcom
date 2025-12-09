@@ -32,7 +32,7 @@ interface ProposedTrade {
 }
 
 const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund', 'private_equity', 'private_debt', 'hedge_fund'];
-const GEOGRAPHIES: Geography[] = ['north_america', 'europe', 'asia_pacific', 'emerging_markets', 'global', 'other'];
+const GEOGRAPHIES: Geography[] = ['north_america', 'europe', 'israel', 'emerging_markets', 'global', 'other'];
 
 const emptyTrade: ProposedTrade = {
   ticker: '',
