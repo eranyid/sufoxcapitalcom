@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Scale, TrendingUp, TrendingDown, AlertCircle, Plus, Trash2, RefreshCw, ArrowRight, BarChart3, FileText, Loader2 } from 'lucide-react';
+import { Scale, TrendingUp, TrendingDown, AlertCircle, Plus, Trash2, RefreshCw, ArrowRight, BarChart3, FileText, Loader2, Equal } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,7 +93,9 @@ export function RebalanceTool() {
   const [manualTargets, setManualTargets] = useState<Record<string, number>>({});
   const [newPositions, setNewPositions] = useState<{ ticker: string; targetWeight: number }[]>([]);
   const [loadingPolicy, setLoadingPolicy] = useState(false);
+  const [loadingEqualWeight, setLoadingEqualWeight] = useState(false);
   const [policyApplied, setPolicyApplied] = useState(false);
+  const [equalWeightApplied, setEqualWeightApplied] = useState(false);
 
   // Calculate current holdings from transactions and valuations
   const currentHoldings = useMemo((): Holding[] => {
@@ -196,7 +198,49 @@ export function RebalanceTool() {
     setNewPositions([]);
     setShowAnalysis(false);
     setPolicyApplied(false);
+    setEqualWeightApplied(false);
   };
+
+  // Apply equal weight distribution
+  const handleEqualWeight = useCallback(() => {
+    if (currentHoldings.length === 0) {
+      toast({ title: 'No holdings to rebalance', variant: 'destructive' });
+      return;
+    }
+
+    setLoadingEqualWeight(true);
+
+    // Small timeout for visual feedback
+    setTimeout(() => {
+      const numHoldings = currentHoldings.length;
+      const equalWeight = Math.floor((100 / numHoldings) * 100) / 100; // Round down to 2 decimals
+      
+      const newTargets: Record<string, number> = {};
+      let totalAssigned = 0;
+
+      // Assign equal weight to all holdings except the last one
+      currentHoldings.forEach((h, index) => {
+        if (index === currentHoldings.length - 1) {
+          // Last holding gets the remainder to ensure exactly 100%
+          newTargets[h.ticker] = Math.round((100 - totalAssigned) * 100) / 100;
+        } else {
+          newTargets[h.ticker] = equalWeight;
+          totalAssigned += equalWeight;
+        }
+      });
+
+      setManualTargets(newTargets);
+      setPolicyApplied(false);
+      setEqualWeightApplied(true);
+      setShowAnalysis(false);
+      setLoadingEqualWeight(false);
+
+      toast({
+        title: 'Equal Weights Applied',
+        description: `All ${numHoldings} holdings set to ~${equalWeight.toFixed(2)}% each.`
+      });
+    }, 150);
+  }, [currentHoldings]);
 
   // Fetch and apply policy weights
   const handleUsePolicyWeights = useCallback(async () => {
@@ -434,33 +478,57 @@ export function RebalanceTool() {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="p-3 space-y-4">
-            {/* Subtitle and Policy Button */}
-            <div className="flex items-center justify-between gap-4">
+            {/* Subtitle and Weight Buttons */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <p className="text-[10px] text-muted-foreground">
                 Compare current vs. target allocation and generate suggested trades.
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleUsePolicyWeights}
-                disabled={loadingPolicy}
-                className="h-7 text-[10px] whitespace-nowrap"
-              >
-                {loadingPolicy ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : (
-                  <FileText className="h-3 w-3 mr-1" />
-                )}
-                Use Policy Weights
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEqualWeight}
+                  disabled={loadingEqualWeight || currentHoldings.length === 0}
+                  className="h-7 text-[10px] whitespace-nowrap"
+                >
+                  {loadingEqualWeight ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Equal className="h-3 w-3 mr-1" />
+                  )}
+                  Equal Weight
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleUsePolicyWeights}
+                  disabled={loadingPolicy}
+                  className="h-7 text-[10px] whitespace-nowrap"
+                >
+                  {loadingPolicy ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <FileText className="h-3 w-3 mr-1" />
+                  )}
+                  Use Policy Weights
+                </Button>
+              </div>
             </div>
 
-            {/* Policy Applied Badge */}
+            {/* Applied Weights Badge */}
             {policyApplied && (
               <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/30 rounded text-[10px]">
                 <FileText className="h-3 w-3 text-primary" />
                 <span className="text-primary font-medium">
                   Investment Policy weights applied. Targets set by asset class.
+                </span>
+              </div>
+            )}
+            {equalWeightApplied && (
+              <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/30 rounded text-[10px]">
+                <Equal className="h-3 w-3 text-primary" />
+                <span className="text-primary font-medium">
+                  Equal weights applied. All holdings set to {(100 / currentHoldings.length).toFixed(2)}% target.
                 </span>
               </div>
             )}
