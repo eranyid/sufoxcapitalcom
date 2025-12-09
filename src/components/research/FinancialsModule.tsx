@@ -31,9 +31,9 @@ export const FinancialsModule = () => {
       setCashFlowData(null);
       
       const [income, balance, cashflow] = await Promise.all([
-        fetchIncomeStatement(symbol, period),
-        fetchBalanceSheet(symbol, period),
-        fetchCashFlow(symbol, period),
+        fetchIncomeStatement(symbol, period, 5),
+        fetchBalanceSheet(symbol, period, 5),
+        fetchCashFlow(symbol, period, 5),
       ]);
       
       setIncomeData(income);
