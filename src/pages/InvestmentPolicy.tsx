@@ -27,8 +27,10 @@ interface PolicyFormData {
   alternatives_min_pct: number;
   alternatives_max_pct: number;
   cash_min_pct: number;
+  cash_max_pct: number;
   max_single_position_pct: number;
   max_sector_allocation_pct: number;
+  max_volatility_pct: number | null;
   geographic_limits: Record<string, GeographicLimit>;
   risk_tolerance: 'low' | 'medium' | 'high';
   investment_horizon_years: number;
@@ -47,8 +49,10 @@ const defaultPolicy: PolicyFormData = {
   alternatives_min_pct: 0,
   alternatives_max_pct: 100,
   cash_min_pct: 5,
+  cash_max_pct: 100,
   max_single_position_pct: 25,
   max_sector_allocation_pct: 40,
+  max_volatility_pct: null,
   geographic_limits: {
     north_america: { min: 0, max: 100 },
     europe: { min: 0, max: 100 },
@@ -102,8 +106,10 @@ export default function InvestmentPolicy() {
           alternatives_min_pct: data.alternatives_min_pct || 0,
           alternatives_max_pct: data.alternatives_max_pct || 100,
           cash_min_pct: data.cash_min_pct || 0,
+          cash_max_pct: (data as any).cash_max_pct ?? 100,
           max_single_position_pct: data.max_single_position_pct || 100,
           max_sector_allocation_pct: data.max_sector_allocation_pct || 100,
+          max_volatility_pct: (data as any).max_volatility_pct ?? null,
           geographic_limits: (data.geographic_limits as unknown as Record<string, GeographicLimit>) || defaultPolicy.geographic_limits,
           risk_tolerance: (data.risk_tolerance as 'low' | 'medium' | 'high') || 'medium',
           investment_horizon_years: data.investment_horizon_years || 10,
@@ -136,8 +142,10 @@ export default function InvestmentPolicy() {
         alternatives_min_pct: policy.alternatives_min_pct,
         alternatives_max_pct: policy.alternatives_max_pct,
         cash_min_pct: policy.cash_min_pct,
+        cash_max_pct: policy.cash_max_pct,
         max_single_position_pct: policy.max_single_position_pct,
         max_sector_allocation_pct: policy.max_sector_allocation_pct,
+        max_volatility_pct: policy.max_volatility_pct,
         geographic_limits: JSON.parse(JSON.stringify(policy.geographic_limits)),
         risk_tolerance: policy.risk_tolerance,
         investment_horizon_years: policy.investment_horizon_years,
@@ -324,7 +332,7 @@ export default function InvestmentPolicy() {
 
           <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Minimum Cash %</Label>
               <Input
@@ -333,6 +341,16 @@ export default function InvestmentPolicy() {
                 max={100}
                 value={policy.cash_min_pct}
                 onChange={(e) => setPolicy(prev => ({ ...prev, cash_min_pct: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Maximum Cash %</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={policy.cash_max_pct}
+                onChange={(e) => setPolicy(prev => ({ ...prev, cash_max_pct: Number(e.target.value) }))}
               />
             </div>
             <div className="space-y-2">
@@ -412,7 +430,7 @@ export default function InvestmentPolicy() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Risk Tolerance</Label>
               <Select
@@ -449,6 +467,22 @@ export default function InvestmentPolicy() {
                 max={100}
                 value={policy.min_liquid_assets_pct}
                 onChange={(e) => setPolicy(prev => ({ ...prev, min_liquid_assets_pct: Number(e.target.value) }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Max Volatility % (Std Dev)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step={0.1}
+                placeholder="e.g., 15"
+                value={policy.max_volatility_pct ?? ''}
+                onChange={(e) => setPolicy(prev => ({ 
+                  ...prev, 
+                  max_volatility_pct: e.target.value === '' ? null : Number(e.target.value) 
+                }))}
               />
             </div>
           </div>
