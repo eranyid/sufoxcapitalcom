@@ -84,6 +84,7 @@ export type Database = {
         Row: {
           alternatives_max_pct: number | null
           alternatives_min_pct: number | null
+          cash_max_pct: number | null
           cash_min_pct: number | null
           created_at: string
           equity_max_pct: number | null
@@ -97,6 +98,7 @@ export type Database = {
           max_leverage_ratio: number | null
           max_sector_allocation_pct: number | null
           max_single_position_pct: number | null
+          max_volatility_pct: number | null
           min_liquid_assets_pct: number | null
           risk_tolerance: string | null
           special_constraints: string | null
@@ -107,6 +109,7 @@ export type Database = {
         Insert: {
           alternatives_max_pct?: number | null
           alternatives_min_pct?: number | null
+          cash_max_pct?: number | null
           cash_min_pct?: number | null
           created_at?: string
           equity_max_pct?: number | null
@@ -120,6 +123,7 @@ export type Database = {
           max_leverage_ratio?: number | null
           max_sector_allocation_pct?: number | null
           max_single_position_pct?: number | null
+          max_volatility_pct?: number | null
           min_liquid_assets_pct?: number | null
           risk_tolerance?: string | null
           special_constraints?: string | null
@@ -130,6 +134,7 @@ export type Database = {
         Update: {
           alternatives_max_pct?: number | null
           alternatives_min_pct?: number | null
+          cash_max_pct?: number | null
           cash_min_pct?: number | null
           created_at?: string
           equity_max_pct?: number | null
@@ -143,6 +148,7 @@ export type Database = {
           max_leverage_ratio?: number | null
           max_sector_allocation_pct?: number | null
           max_single_position_pct?: number | null
+          max_volatility_pct?: number | null
           min_liquid_assets_pct?: number | null
           risk_tolerance?: string | null
           special_constraints?: string | null
