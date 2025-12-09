@@ -20,7 +20,7 @@ export const FinancialsModule = () => {
   const [balanceData, setBalanceData] = useState<BalanceSheetData[] | null>(null);
   const [cashFlowData, setCashFlowData] = useState<CashFlowData[] | null>(null);
   
-  const { loading, error, isMockData, fetchIncomeStatement, fetchBalanceSheet, fetchCashFlow } = useAlpacaFundamentals();
+  const { loading, error, isMockData, companyName, fetchIncomeStatement, fetchBalanceSheet, fetchCashFlow } = useAlpacaFundamentals();
 
   // Fetch data when symbol or period changes
   useEffect(() => {
@@ -105,9 +105,14 @@ export const FinancialsModule = () => {
             </div>
           </div>
 
-          {/* Current Symbol Display */}
+          {/* Current Company Display */}
           <div className="flex items-center justify-between">
-            <span className="font-mono text-lg sm:text-2xl text-primary">{symbol}</span>
+            <span className="font-mono text-lg sm:text-2xl text-primary">
+              {companyName || symbol}
+              {companyName && (
+                <span className="text-muted-foreground text-sm ml-2">({symbol})</span>
+              )}
+            </span>
             
             {/* Period Toggle */}
             <div className="flex items-center gap-1">

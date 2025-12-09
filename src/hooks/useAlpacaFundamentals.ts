@@ -31,6 +31,7 @@ export interface CashFlowData {
 interface FundamentalsResponse {
   status: string;
   symbol: string;
+  companyName?: string;
   statementType: string;
   period: string;
   data: any[];
@@ -43,6 +44,7 @@ export const useAlpacaFundamentals = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMockData, setIsMockData] = useState(false);
+  const [companyName, setCompanyName] = useState<string | null>(null);
 
   const fetchFundamentals = useCallback(async <T>(
     symbol: string,
@@ -53,6 +55,7 @@ export const useAlpacaFundamentals = () => {
     setLoading(true);
     setError(null);
     setIsMockData(false);
+    setCompanyName(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke<FundamentalsResponse>(
@@ -75,6 +78,10 @@ export const useAlpacaFundamentals = () => {
 
       if (data?.isMock) {
         setIsMockData(true);
+      }
+      
+      if (data?.companyName) {
+        setCompanyName(data.companyName);
       }
 
       return (data?.data as T[]) || null;
@@ -109,6 +116,7 @@ export const useAlpacaFundamentals = () => {
     loading,
     error,
     isMockData,
+    companyName,
     fetchIncomeStatement,
     fetchBalanceSheet,
     fetchCashFlow,
