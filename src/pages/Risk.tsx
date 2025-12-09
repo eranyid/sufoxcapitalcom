@@ -2,7 +2,6 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { RiskContributionTable } from '@/components/dashboard/RiskContributionTable';
-import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { FactorExposureTable } from '@/components/dashboard/FactorExposureTable';
 import { FactorRiskChart } from '@/components/dashboard/FactorRiskChart';
 import { SystematicRiskPie } from '@/components/dashboard/SystematicRiskPie';
@@ -88,16 +87,6 @@ export default function Risk() {
         <>
           {/* Risk Contribution */}
           <RiskContributionTable transactions={transactions} valuations={valuations} />
-
-          {/* Monte Carlo Simulation */}
-          <MonteCarloSimulation 
-            monthlyReturns={performanceMetrics.monthlyReturns.map(m => m.return)} 
-            currentValue={performanceMetrics.totalValue}
-            portfolioCAGR={performanceMetrics.twr > 0 ? performanceMetrics.twr : undefined}
-            portfolioVolatility={riskMetrics.volatility}
-            portfolioSharpe={riskMetrics.sharpeRatio}
-            riskFreeRate={settings.riskFreeRate}
-          />
 
           {/* Drawdown Chart */}
           <DrawdownChart data={performanceMetrics.drawdownSeries} />
