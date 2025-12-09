@@ -62,7 +62,7 @@ const assetTypeToShockMapping: Record<AssetType, ScenarioShockTarget[]> = {
 const geographyToShockMapping: Record<Geography, ScenarioShockTarget[]> = {
   north_america: ['us_equity', 'usd_fx'],
   europe: ['global_equity', 'eur_fx'],
-  asia_pacific: ['global_equity'],
+  israel: ['global_equity'],
   emerging_markets: ['em_equity', 'em_fx'],
   global: ['global_equity'],
   other: ['global_equity'],
@@ -188,7 +188,7 @@ function calculateHoldingImpact(
         appliedShocks.push(`GBP: ${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
       }
       // JPY for Asia Pacific
-      else if (shock.target === 'jpy_fx' && geography === 'asia_pacific') {
+      else if (shock.target === 'jpy_fx' && geography === 'israel') {
         impact = shockValuePct * sensitivities.fx * 0.7;
         appliedShocks.push(`JPY: ${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);
       }
@@ -210,7 +210,7 @@ function calculateHoldingImpact(
     // FX Volatility shock
     if (shock.target === 'fx_volatility') {
       // FX vol spike hurts carry trades, EM, and adds uncertainty
-      if (['emerging_markets', 'asia_pacific', 'europe'].includes(geography)) {
+      if (['emerging_markets', 'israel', 'europe'].includes(geography)) {
         impact = shockValuePct * -0.08; // Mild negative impact from vol spike
         if (Math.abs(impact) > 0.3) {
           appliedShocks.push(`FX Vol: +${shockValuePct.toFixed(0)}% → ${impact.toFixed(1)}%`);

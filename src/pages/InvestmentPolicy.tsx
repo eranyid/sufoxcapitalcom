@@ -52,7 +52,7 @@ const defaultPolicy: PolicyFormData = {
   geographic_limits: {
     north_america: { min: 0, max: 100 },
     europe: { min: 0, max: 100 },
-    asia_pacific: { min: 0, max: 100 },
+    israel: { min: 0, max: 100 },
     emerging_markets: { min: 0, max: 100 },
   },
   risk_tolerance: 'medium',
@@ -63,7 +63,7 @@ const defaultPolicy: PolicyFormData = {
   special_constraints: '',
 };
 
-const GEOGRAPHIES = ['north_america', 'europe', 'asia_pacific', 'emerging_markets', 'global', 'other'];
+const GEOGRAPHIES = ['north_america', 'europe', 'israel', 'emerging_markets', 'global', 'other'];
 
 export default function InvestmentPolicy() {
   const { user } = useAuth();

@@ -12,7 +12,7 @@ const transactionTypeSchema = z.enum(['buy', 'sell']);
 
 // Geography enum
 const geographySchema = z.enum([
-  'north_america', 'europe', 'asia_pacific', 
+  'north_america', 'europe', 'israel', 
   'emerging_markets', 'global', 'other'
 ]);
 
