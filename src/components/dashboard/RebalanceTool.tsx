@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Scale, TrendingUp, TrendingDown, AlertCircle, Plus, Trash2, RefreshCw, ArrowRight, BarChart3 } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Scale, TrendingUp, TrendingDown, AlertCircle, Plus, Trash2, RefreshCw, ArrowRight, BarChart3, FileText, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 interface Holding {
@@ -34,11 +37,37 @@ interface RebalanceAnalysis {
   totalTurnover: number;
   numberOfTrades: number;
   cashImpact: number;
-  estimatedCost: number; // Assume 0.1% transaction cost
+  estimatedCost: number;
   trackingErrorImpact: number;
   beforeAllocation: { name: string; weight: number }[];
   afterAllocation: { name: string; weight: number }[];
 }
+
+interface InvestmentPolicy {
+  equity_min_pct: number | null;
+  equity_max_pct: number | null;
+  fixed_income_min_pct: number | null;
+  fixed_income_max_pct: number | null;
+  alternatives_min_pct: number | null;
+  alternatives_max_pct: number | null;
+  cash_min_pct: number | null;
+}
+
+// Map asset types to policy categories
+const ASSET_TYPE_TO_CATEGORY: Record<string, 'equity' | 'fixed_income' | 'alternatives' | 'cash'> = {
+  equity: 'equity',
+  etf: 'equity',
+  mutual_fund: 'equity',
+  bond: 'fixed_income',
+  commodity: 'alternatives',
+  crypto: 'alternatives',
+  real_estate: 'alternatives',
+  alternative: 'alternatives',
+  private_equity: 'alternatives',
+  private_debt: 'alternatives',
+  hedge_fund: 'alternatives',
+  cash: 'cash'
+};
 
 const COLORS = [
   'hsl(var(--primary))',
@@ -55,13 +84,16 @@ const COLORS = [
 
 export function RebalanceTool() {
   const { transactions, valuations, performanceMetrics } = usePortfolio();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
-  const [minTradeSize, setMinTradeSize] = useState(0.5); // Default 0.5%
+  const [minTradeSize, setMinTradeSize] = useState(0.5);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [newPositionTicker, setNewPositionTicker] = useState('');
   const [newPositionTarget, setNewPositionTarget] = useState('');
   const [manualTargets, setManualTargets] = useState<Record<string, number>>({});
   const [newPositions, setNewPositions] = useState<{ ticker: string; targetWeight: number }[]>([]);
+  const [loadingPolicy, setLoadingPolicy] = useState(false);
+  const [policyApplied, setPolicyApplied] = useState(false);
 
   // Calculate current holdings from transactions and valuations
   const currentHoldings = useMemo((): Holding[] => {
@@ -163,7 +195,110 @@ export function RebalanceTool() {
     setManualTargets({});
     setNewPositions([]);
     setShowAnalysis(false);
+    setPolicyApplied(false);
   };
+
+  // Fetch and apply policy weights
+  const handleUsePolicyWeights = useCallback(async () => {
+    if (!user) {
+      toast({ title: 'Not authenticated', variant: 'destructive' });
+      return;
+    }
+
+    setLoadingPolicy(true);
+    try {
+      const { data: policy, error } = await supabase
+        .from('investment_policies')
+        .select('equity_min_pct, equity_max_pct, fixed_income_min_pct, fixed_income_max_pct, alternatives_min_pct, alternatives_max_pct, cash_min_pct')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!policy) {
+        toast({
+          title: 'No Investment Policy Found',
+          description: 'Please define your investment policy in Settings first.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Calculate target weights for each asset class using midpoint of min/max
+      const policyTargets: Record<string, number> = {
+        equity: ((policy.equity_min_pct ?? 0) + (policy.equity_max_pct ?? 100)) / 2,
+        fixed_income: ((policy.fixed_income_min_pct ?? 0) + (policy.fixed_income_max_pct ?? 100)) / 2,
+        alternatives: ((policy.alternatives_min_pct ?? 0) + (policy.alternatives_max_pct ?? 100)) / 2,
+        cash: policy.cash_min_pct ?? 0
+      };
+
+      // Normalize to sum to 100%
+      const totalPolicyWeight = Object.values(policyTargets).reduce((a, b) => a + b, 0);
+      if (totalPolicyWeight > 0 && totalPolicyWeight !== 100) {
+        const scale = 100 / totalPolicyWeight;
+        Object.keys(policyTargets).forEach(k => {
+          policyTargets[k] *= scale;
+        });
+      }
+
+      // Group current holdings by asset class
+      const holdingsByClass: Record<string, Holding[]> = {
+        equity: [],
+        fixed_income: [],
+        alternatives: [],
+        cash: []
+      };
+
+      currentHoldings.forEach(h => {
+        const category = ASSET_TYPE_TO_CATEGORY[h.assetType] || 'alternatives';
+        holdingsByClass[category].push(h);
+      });
+
+      // Calculate current weight per class
+      const currentClassWeights: Record<string, number> = {
+        equity: holdingsByClass.equity.reduce((sum, h) => sum + h.currentWeight, 0),
+        fixed_income: holdingsByClass.fixed_income.reduce((sum, h) => sum + h.currentWeight, 0),
+        alternatives: holdingsByClass.alternatives.reduce((sum, h) => sum + h.currentWeight, 0),
+        cash: holdingsByClass.cash.reduce((sum, h) => sum + h.currentWeight, 0)
+      };
+
+      // Distribute policy target weights proportionally within each class
+      const newTargets: Record<string, number> = {};
+
+      Object.entries(holdingsByClass).forEach(([category, holdings]) => {
+        const targetClassWeight = policyTargets[category];
+        const currentClassWeight = currentClassWeights[category];
+
+        if (holdings.length === 0 || currentClassWeight === 0) return;
+
+        // Distribute proportionally based on current weight within class
+        holdings.forEach(h => {
+          const proportionInClass = h.currentWeight / currentClassWeight;
+          newTargets[h.ticker] = targetClassWeight * proportionInClass;
+        });
+      });
+
+      setManualTargets(newTargets);
+      setPolicyApplied(true);
+      setShowAnalysis(false);
+
+      toast({
+        title: 'Policy Weights Applied',
+        description: `Target allocations set: Equity ${policyTargets.equity.toFixed(0)}%, Fixed Income ${policyTargets.fixed_income.toFixed(0)}%, Alternatives ${policyTargets.alternatives.toFixed(0)}%, Cash ${policyTargets.cash.toFixed(0)}%`
+      });
+    } catch (err) {
+      console.error('Error fetching policy:', err);
+      toast({
+        title: 'Error Loading Policy',
+        description: 'Failed to fetch investment policy.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingPolicy(false);
+    }
+  }, [user, currentHoldings]);
 
   // Calculate rebalance analysis
   const analysis = useMemo((): RebalanceAnalysis | null => {
@@ -299,10 +434,36 @@ export function RebalanceTool() {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="p-3 space-y-4">
-            {/* Subtitle */}
-            <p className="text-[10px] text-muted-foreground">
-              Compare current vs. target allocation and generate suggested trades.
-            </p>
+            {/* Subtitle and Policy Button */}
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-[10px] text-muted-foreground">
+                Compare current vs. target allocation and generate suggested trades.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUsePolicyWeights}
+                disabled={loadingPolicy}
+                className="h-7 text-[10px] whitespace-nowrap"
+              >
+                {loadingPolicy ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <FileText className="h-3 w-3 mr-1" />
+                )}
+                Use Policy Weights
+              </Button>
+            </div>
+
+            {/* Policy Applied Badge */}
+            {policyApplied && (
+              <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/30 rounded text-[10px]">
+                <FileText className="h-3 w-3 text-primary" />
+                <span className="text-primary font-medium">
+                  Investment Policy weights applied. Targets set by asset class.
+                </span>
+              </div>
+            )}
 
             {/* Min Trade Size Setting */}
             <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded">
