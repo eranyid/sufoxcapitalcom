@@ -65,90 +65,89 @@ export const FinancialsModule = () => {
 
   return (
     <Card className="border-border bg-card">
-      <CardHeader className="pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Building2 className="h-5 w-5 text-primary" />
-            <CardTitle className="font-mono text-lg">FINANCIALS</CardTitle>
-            {isMockData && (
-              <Badge variant="outline" className="text-xs text-yellow-500 border-yellow-500/50">
-                SAMPLE DATA
-              </Badge>
-            )}
+      <CardHeader className="pb-2 sm:pb-4 px-3 sm:px-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <CardTitle className="font-mono text-sm sm:text-lg">FINANCIALS</CardTitle>
+              {isMockData && (
+                <Badge variant="outline" className="text-[10px] sm:text-xs text-yellow-500 border-yellow-500/50">
+                  SAMPLE
+                </Badge>
+              )}
+            </div>
+            
+            {/* Symbol Search */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Input
+                value={inputSymbol}
+                onChange={(e) => setInputSymbol(e.target.value.toUpperCase())}
+                onKeyDown={handleKeyDown}
+                placeholder="Symbol"
+                className="w-20 sm:w-28 font-mono text-xs sm:text-sm h-7 sm:h-8"
+              />
+              <Button 
+                onClick={handleSearch} 
+                size="sm" 
+                variant="outline"
+                disabled={loading}
+                className="h-7 sm:h-8 w-7 sm:w-8 p-0"
+              >
+                {loading ? <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" /> : <Search className="h-3 w-3 sm:h-4 sm:w-4" />}
+              </Button>
+            </div>
           </div>
-          
-          {/* Symbol Search */}
-          <div className="flex items-center gap-2">
-            <Input
-              value={inputSymbol}
-              onChange={(e) => setInputSymbol(e.target.value.toUpperCase())}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter symbol..."
-              className="w-28 sm:w-32 font-mono text-sm h-8"
-            />
-            <Button 
-              onClick={handleSearch} 
-              size="sm" 
-              variant="outline"
-              disabled={loading}
-              className="h-8"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
 
-        {/* Current Symbol Display */}
-        <div className="flex items-center gap-4 mt-2">
-          <span className="font-mono text-2xl text-primary">{symbol}</span>
-          
-          {/* Period Toggle */}
-          <div className="flex items-center gap-1 ml-auto">
-            <Button
-              variant={period === 'quarterly' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod('quarterly')}
-              className="h-7 text-xs"
-            >
-              Quarterly
-            </Button>
-            <Button
-              variant={period === 'annual' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod('annual')}
-              className="h-7 text-xs"
-            >
-              Annual
-            </Button>
+          {/* Current Symbol Display */}
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-lg sm:text-2xl text-primary">{symbol}</span>
+            
+            {/* Period Toggle */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant={period === 'quarterly' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPeriod('quarterly')}
+                className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3"
+              >
+                Q
+              </Button>
+              <Button
+                variant={period === 'annual' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPeriod('annual')}
+                className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3"
+              >
+                Y
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="px-3 sm:px-6 pt-0">
         {error && (
-          <div className="flex items-center gap-2 text-destructive mb-4 p-3 bg-destructive/10 rounded-md">
-            <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">{error}</span>
+          <div className="flex items-center gap-2 text-destructive mb-3 sm:mb-4 p-2 sm:p-3 bg-destructive/10 rounded-md">
+            <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="text-xs sm:text-sm">{error}</span>
           </div>
         )}
 
         {/* Statement Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start mb-4 bg-muted/50">
-            <TabsTrigger value="income" className="flex items-center gap-2 data-[state=active]:bg-primary/20">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Income Statement</span>
-              <span className="sm:hidden">Income</span>
+          <TabsList className="w-full grid grid-cols-3 mb-3 sm:mb-4 bg-muted/50 h-8 sm:h-10">
+            <TabsTrigger value="income" className="flex items-center justify-center gap-1 sm:gap-2 data-[state=active]:bg-primary/20 text-[10px] sm:text-sm px-1 sm:px-3">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Income</span>
             </TabsTrigger>
-            <TabsTrigger value="balance" className="flex items-center gap-2 data-[state=active]:bg-primary/20">
-              <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Balance Sheet</span>
-              <span className="sm:hidden">Balance</span>
+            <TabsTrigger value="balance" className="flex items-center justify-center gap-1 sm:gap-2 data-[state=active]:bg-primary/20 text-[10px] sm:text-sm px-1 sm:px-3">
+              <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Balance</span>
             </TabsTrigger>
-            <TabsTrigger value="cashflow" className="flex items-center gap-2 data-[state=active]:bg-primary/20">
-              <Wallet className="h-4 w-4" />
-              <span className="hidden sm:inline">Cash Flow</span>
-              <span className="sm:hidden">Cash</span>
+            <TabsTrigger value="cashflow" className="flex items-center justify-center gap-1 sm:gap-2 data-[state=active]:bg-primary/20 text-[10px] sm:text-sm px-1 sm:px-3">
+              <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Cash</span>
             </TabsTrigger>
           </TabsList>
 
