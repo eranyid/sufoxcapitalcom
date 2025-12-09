@@ -127,11 +127,15 @@ serve(async (req) => {
 
     // Transform the data into our expected format
     const transformedData = transformFmpData(data, statementType, period);
+    
+    // Extract company name from FMP response (first item should have it)
+    const companyName = data[0]?.companyName || data[0]?.name || upperSymbol;
 
     return new Response(
       JSON.stringify({
         status: "success",
         symbol: upperSymbol,
+        companyName,
         statementType,
         period,
         data: transformedData,
