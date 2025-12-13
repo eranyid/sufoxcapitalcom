@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CrmCompany, CompanyStatus, Priority } from '@/types/crm';
+import { CrmCompany, CompanyStatus } from '@/types/crm';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -39,11 +39,11 @@ export function useCrmCompanies() {
       .insert({
         user_id: user.id,
         company_name: company.company_name,
+        market_cap: company.market_cap || null,
         sector: company.sector || null,
         geography: company.geography || null,
         investment_thesis: company.investment_thesis || null,
         status: company.status || 'research',
-        priority: company.priority || 'medium',
         notes: company.notes || null,
       })
       .select()
