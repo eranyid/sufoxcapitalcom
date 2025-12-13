@@ -21,11 +21,11 @@ export interface CrmCompany {
   id: string;
   user_id: string;
   company_name: string;
+  market_cap: string | null;
   sector: string | null;
   geography: string | null;
   investment_thesis: string | null;
   status: CompanyStatus;
-  priority: Priority;
   notes: string | null;
   created_at: string;
   updated_at: string;

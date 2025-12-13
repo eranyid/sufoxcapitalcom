@@ -51,8 +51,8 @@ export type Database = {
           geography: string | null
           id: string
           investment_thesis: string | null
+          market_cap: string | null
           notes: string | null
-          priority: string
           sector: string | null
           status: string
           updated_at: string
@@ -64,8 +64,8 @@ export type Database = {
           geography?: string | null
           id?: string
           investment_thesis?: string | null
+          market_cap?: string | null
           notes?: string | null
-          priority?: string
           sector?: string | null
           status?: string
           updated_at?: string
@@ -77,8 +77,8 @@ export type Database = {
           geography?: string | null
           id?: string
           investment_thesis?: string | null
+          market_cap?: string | null
           notes?: string | null
-          priority?: string
           sector?: string | null
           status?: string
           updated_at?: string

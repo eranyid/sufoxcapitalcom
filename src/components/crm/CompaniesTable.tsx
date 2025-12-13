@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Trash2, Check, X, ArrowUpDown, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CrmCompany, CompanyStatus, Priority, COMPANY_STATUS_OPTIONS, PRIORITY_OPTIONS } from '@/types/crm';
+import { CrmCompany, CompanyStatus, COMPANY_STATUS_OPTIONS } from '@/types/crm';
 import { CompanyStatusBadge } from './CompanyStatusBadge';
-import { PriorityBadge } from './PriorityBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,7 +38,7 @@ interface CompaniesTableProps {
   onDelete: (id: string) => Promise<boolean>;
 }
 
-type SortField = 'company_name' | 'sector' | 'status' | 'priority' | 'created_at';
+type SortField = 'company_name' | 'market_cap' | 'sector' | 'status' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
 export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTableProps) {
@@ -49,17 +48,16 @@ export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTable
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
   const [filterStatus, setFilterStatus] = useState<CompanyStatus | 'all'>('all');
-  const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
 
   const startEdit = (company: CrmCompany) => {
     setEditingId(company.id);
     setEditValues({
       company_name: company.company_name,
+      market_cap: company.market_cap,
       sector: company.sector,
       geography: company.geography,
       investment_thesis: company.investment_thesis,
       status: company.status,
-      priority: company.priority,
       notes: company.notes,
     });
   };
@@ -93,9 +91,6 @@ export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTable
     if (filterStatus !== 'all') {
       result = result.filter(c => c.status === filterStatus);
     }
-    if (filterPriority !== 'all') {
-      result = result.filter(c => c.priority === filterPriority);
-    }
 
     result.sort((a, b) => {
       let comparison = 0;
@@ -104,16 +99,15 @@ export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTable
         case 'company_name':
           comparison = a.company_name.localeCompare(b.company_name);
           break;
+        case 'market_cap':
+          comparison = (a.market_cap || '').localeCompare(b.market_cap || '');
+          break;
         case 'sector':
           comparison = (a.sector || '').localeCompare(b.sector || '');
           break;
         case 'status':
           const statusOrder = { research: 0, contacted: 1, monitoring: 2, rejected: 3 };
           comparison = statusOrder[a.status] - statusOrder[b.status];
-          break;
-        case 'priority':
-          const priorityOrder = { low: 0, medium: 1, high: 2, critical: 3 };
-          comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
           break;
         case 'created_at':
           comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
@@ -124,7 +118,7 @@ export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTable
     });
 
     return result;
-  }, [companies, filterStatus, filterPriority, sortField, sortDir]);
+  }, [companies, filterStatus, sortField, sortDir]);
 
   const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <Button
@@ -153,23 +147,12 @@ export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTable
             ))}
           </SelectContent>
         </Select>
-        <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as Priority | 'all')}>
-          <SelectTrigger className="w-[130px] h-8 text-xs bg-background">
-            <SelectValue placeholder="All Priorities" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover border-border z-50">
-            <SelectItem value="all">All Priorities</SelectItem>
-            {PRIORITY_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {(filterStatus !== 'all' || filterPriority !== 'all') && (
+        {filterStatus !== 'all' && (
           <Button
             variant="ghost"
             size="sm"
             className="h-8 text-xs"
-            onClick={() => { setFilterStatus('all'); setFilterPriority('all'); }}
+            onClick={() => setFilterStatus('all')}
           >
             Clear
           </Button>
@@ -184,15 +167,15 @@ export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTable
                 <SortableHeader field="company_name">Company</SortableHeader>
               </TableHead>
               <TableHead className="w-[120px]">
+                <SortableHeader field="market_cap">Market Cap</SortableHeader>
+              </TableHead>
+              <TableHead className="w-[120px]">
                 <SortableHeader field="sector">Sector</SortableHeader>
               </TableHead>
               <TableHead className="w-[100px]">Geography</TableHead>
               <TableHead className="w-[180px]">Investment Thesis</TableHead>
               <TableHead className="w-[110px]">
                 <SortableHeader field="status">Status</SortableHeader>
-              </TableHead>
-              <TableHead className="w-[90px]">
-                <SortableHeader field="priority">Priority</SortableHeader>
               </TableHead>
               <TableHead className="w-[140px]">Notes</TableHead>
               <TableHead className="w-[70px]"></TableHead>
@@ -225,6 +208,21 @@ export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTable
                         onClick={() => startEdit(company)}
                       >
                         {company.company_name}
+                      </span>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    {editingId === company.id ? (
+                      <Input
+                        value={editValues.market_cap || ''}
+                        onChange={(e) => setEditValues(v => ({ ...v, market_cap: e.target.value }))}
+                        className="h-8 text-xs bg-background"
+                        placeholder="e.g. $5B"
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground cursor-pointer" onClick={() => startEdit(company)}>
+                        {company.market_cap || '—'}
                       </span>
                     )}
                   </TableCell>
@@ -290,28 +288,6 @@ export function CompaniesTable({ companies, onUpdate, onDelete }: CompaniesTable
                     ) : (
                       <span className="cursor-pointer" onClick={() => startEdit(company)}>
                         <CompanyStatusBadge status={company.status} />
-                      </span>
-                    )}
-                  </TableCell>
-
-                  <TableCell>
-                    {editingId === company.id ? (
-                      <Select 
-                        value={editValues.priority} 
-                        onValueChange={(v) => setEditValues(prev => ({ ...prev, priority: v as Priority }))}
-                      >
-                        <SelectTrigger className="h-8 text-xs bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border z-50">
-                          {PRIORITY_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="cursor-pointer" onClick={() => startEdit(company)}>
-                        <PriorityBadge priority={company.priority} />
                       </span>
                     )}
                   </TableCell>
