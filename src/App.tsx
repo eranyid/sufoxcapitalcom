@@ -26,6 +26,9 @@ const Auth = lazy(() => import("./pages/Auth"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
 const CRM = lazy(() => import("./pages/CRM"));
+const CRMTasks = lazy(() => import("./pages/CRMTasks"));
+const CRMCompanies = lazy(() => import("./pages/CRMCompanies"));
+const CRMFunds = lazy(() => import("./pages/CRMFunds"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -113,6 +116,21 @@ const App = () => (
                   <Route path="/crm" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <CRM />
+                    </Suspense>
+                  } />
+                  <Route path="/crm/tasks" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <CRMTasks />
+                    </Suspense>
+                  } />
+                  <Route path="/crm/companies" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <CRMCompanies />
+                    </Suspense>
+                  } />
+                  <Route path="/crm/funds" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <CRMFunds />
                     </Suspense>
                   } />
                 </Route>

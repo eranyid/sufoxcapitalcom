@@ -44,6 +44,93 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_companies: {
+        Row: {
+          company_name: string
+          created_at: string
+          geography: string | null
+          id: string
+          investment_thesis: string | null
+          notes: string | null
+          priority: string
+          sector: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          geography?: string | null
+          id?: string
+          investment_thesis?: string | null
+          notes?: string | null
+          priority?: string
+          sector?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          geography?: string | null
+          id?: string
+          investment_thesis?: string | null
+          notes?: string | null
+          priority?: string
+          sector?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_funds: {
+        Row: {
+          asset_class: string | null
+          created_at: string
+          fund_name: string
+          geography: string | null
+          id: string
+          manager: string | null
+          notes: string | null
+          priority: string
+          status: string
+          strategy: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_class?: string | null
+          created_at?: string
+          fund_name: string
+          geography?: string | null
+          id?: string
+          manager?: string | null
+          notes?: string | null
+          priority?: string
+          status?: string
+          strategy?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_class?: string | null
+          created_at?: string
+          fund_name?: string
+          geography?: string | null
+          id?: string
+          manager?: string | null
+          notes?: string | null
+          priority?: string
+          status?: string
+          strategy?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       crm_tasks: {
         Row: {
           created_at: string
