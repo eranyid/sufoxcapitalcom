@@ -37,7 +37,6 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
   const [loading, setLoading] = useState(false);
   const [taskName, setTaskName] = useState('');
   const [description, setDescription] = useState('');
-  const [owner, setOwner] = useState('Me');
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [status, setStatus] = useState<TaskStatus>('backlog');
   const [urgency, setUrgency] = useState<TaskUrgency>('medium');
@@ -45,7 +44,6 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
   const resetForm = () => {
     setTaskName('');
     setDescription('');
-    setOwner('Me');
     setDueDate(undefined);
     setStatus('backlog');
     setUrgency('medium');
@@ -58,7 +56,6 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
     const result = await onAdd({
       task_name: taskName.trim(),
       description: description.trim() || null,
-      owner: owner.trim() || 'Me',
       due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
       status,
       urgency,
@@ -107,44 +104,31 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="owner">Owner</Label>
-              <Input
-                id="owner"
-                value={owner}
-                onChange={(e) => setOwner(e.target.value)}
-                placeholder="Me"
-                className="bg-background"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Due Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal bg-background',
-                      !dueDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, 'PP') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-popover border-border z-50" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          <div className="space-y-2">
+            <Label>Due Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full justify-start text-left font-normal bg-background',
+                    !dueDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate ? format(dueDate, 'PP') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-popover border-border z-50" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dueDate}
+                  onSelect={setDueDate}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
