@@ -33,7 +33,10 @@ const moreNavItems = [
   { path: '/scenarios', label: 'Scenarios' },
   { path: '/valuations', label: 'Valuations' },
   { path: '/policy', label: 'Policy' },
-  { path: '/crm', label: 'CRM' },
+  { path: '/crm', label: 'CRM Hub' },
+  { path: '/crm/tasks', label: 'CRM Tasks' },
+  { path: '/crm/companies', label: 'CRM Companies' },
+  { path: '/crm/funds', label: 'CRM Funds' },
   { path: '/settings', label: 'Settings' },
 ];
 
