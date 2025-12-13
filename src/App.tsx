@@ -25,6 +25,7 @@ const InvestmentPolicy = lazy(() => import("./pages/InvestmentPolicy"));
 const Auth = lazy(() => import("./pages/Auth"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
+const CRM = lazy(() => import("./pages/CRM"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -107,6 +108,11 @@ const App = () => (
                   <Route path="/alpaca-test" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <AlpacaTest />
+                    </Suspense>
+                  } />
+                  <Route path="/crm" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <CRM />
                     </Suspense>
                   } />
                 </Route>
