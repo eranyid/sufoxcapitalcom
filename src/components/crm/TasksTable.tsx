@@ -63,7 +63,6 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
     setEditValues({
       task_name: task.task_name,
       description: task.description,
-      owner: task.owner,
       due_date: task.due_date,
       status: task.status,
       urgency: task.urgency,
@@ -195,8 +194,7 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
               <TableHead className="w-[280px]">
                 <SortableHeader field="task_name">Task</SortableHeader>
               </TableHead>
-              <TableHead className="w-[200px]">Description</TableHead>
-              <TableHead className="w-[100px]">Owner</TableHead>
+              <TableHead className="w-[220px]">Description</TableHead>
               <TableHead className="w-[120px]">
                 <SortableHeader field="due_date">Due Date</SortableHeader>
               </TableHead>
@@ -212,7 +210,7 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
           <TableBody>
             {filteredAndSortedTasks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   No tasks found
                 </TableCell>
               </TableRow>
@@ -236,7 +234,7 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
                       />
                     ) : (
                       <span 
-                        className="cursor-pointer hover:text-primary transition-colors font-medium"
+                        className="cursor-pointer text-primary hover:text-primary/80 transition-colors font-medium"
                         onClick={() => startEdit(task)}
                       >
                         {task.task_name}
@@ -259,24 +257,6 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
                         onClick={() => startEdit(task)}
                       >
                         {task.description || '—'}
-                      </span>
-                    )}
-                  </TableCell>
-
-                  {/* Owner */}
-                  <TableCell>
-                    {editingId === task.id ? (
-                      <Input
-                        value={editValues.owner || ''}
-                        onChange={(e) => setEditValues(v => ({ ...v, owner: e.target.value }))}
-                        className="h-8 text-xs bg-background"
-                      />
-                    ) : (
-                      <span 
-                        className="text-xs cursor-pointer hover:text-primary"
-                        onClick={() => startEdit(task)}
-                      >
-                        {task.owner}
                       </span>
                     )}
                   </TableCell>
