@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          owner: string | null
+          status: string
+          task_name: string
+          updated_at: string
+          urgency: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          owner?: string | null
+          status?: string
+          task_name: string
+          updated_at?: string
+          urgency?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          owner?: string | null
+          status?: string
+          task_name?: string
+          updated_at?: string
+          urgency?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       custom_scenarios: {
         Row: {
           created_at: string
