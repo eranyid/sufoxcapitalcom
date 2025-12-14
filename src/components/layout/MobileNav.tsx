@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -40,6 +40,14 @@ const moreNavItems = [
 export function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const { isAdmin } = useAuth();
+  const location = useLocation();
+
+  const handleNavClick = (path: string, e: React.MouseEvent) => {
+    if (location.pathname === path) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
@@ -50,6 +58,7 @@ export function MobileNav() {
             <NavLink
               key={path}
               to={path}
+              onClick={(e) => handleNavClick(path, e)}
               className={({ isActive }) => cn(
                 "flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[56px] min-h-[44px] rounded-lg transition-colors",
                 isActive 
