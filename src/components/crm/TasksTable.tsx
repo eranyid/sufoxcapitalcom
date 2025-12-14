@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Trash2, Check, X, CalendarIcon, ArrowUpDown, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
@@ -7,7 +7,6 @@ import { TaskStatusBadge } from './TaskStatusBadge';
 import { TaskUrgencyBadge } from './TaskUrgencyBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
@@ -62,7 +61,6 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
     setEditingId(task.id);
     setEditValues({
       task_name: task.task_name,
-      description: task.description,
       due_date: task.due_date,
       status: task.status,
       urgency: task.urgency,
@@ -191,17 +189,16 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[280px]">
+              <TableHead className="w-[320px]">
                 <SortableHeader field="task_name">Task</SortableHeader>
               </TableHead>
-              <TableHead className="w-[220px]">Description</TableHead>
-              <TableHead className="w-[120px]">
+              <TableHead className="w-[140px]">
                 <SortableHeader field="due_date">Due Date</SortableHeader>
               </TableHead>
-              <TableHead className="w-[130px]">
+              <TableHead className="w-[140px]">
                 <SortableHeader field="status">Status</SortableHeader>
               </TableHead>
-              <TableHead className="w-[100px]">
+              <TableHead className="w-[120px]">
                 <SortableHeader field="urgency">Urgency</SortableHeader>
               </TableHead>
               <TableHead className="w-[80px]"></TableHead>
@@ -210,7 +207,7 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
           <TableBody>
             {filteredAndSortedTasks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                   No tasks found
                 </TableCell>
               </TableRow>
@@ -238,25 +235,6 @@ export function TasksTable({ tasks, onUpdate, onDelete }: TasksTableProps) {
                         onClick={() => startEdit(task)}
                       >
                         {task.task_name}
-                      </span>
-                    )}
-                  </TableCell>
-
-                  {/* Description */}
-                  <TableCell>
-                    {editingId === task.id ? (
-                      <Textarea
-                        value={editValues.description || ''}
-                        onChange={(e) => setEditValues(v => ({ ...v, description: e.target.value }))}
-                        className="h-16 text-xs bg-background resize-none"
-                        rows={2}
-                      />
-                    ) : (
-                      <span 
-                        className="text-xs text-muted-foreground cursor-pointer hover:text-foreground line-clamp-2"
-                        onClick={() => startEdit(task)}
-                      >
-                        {task.description || '—'}
                       </span>
                     )}
                   </TableCell>
