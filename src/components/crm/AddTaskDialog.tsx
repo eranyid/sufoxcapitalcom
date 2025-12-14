@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Popover,
   PopoverContent,
@@ -36,14 +35,12 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [taskName, setTaskName] = useState('');
-  const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [status, setStatus] = useState<TaskStatus>('backlog');
   const [urgency, setUrgency] = useState<TaskUrgency>('medium');
 
   const resetForm = () => {
     setTaskName('');
-    setDescription('');
     setDueDate(undefined);
     setStatus('backlog');
     setUrgency('medium');
@@ -55,7 +52,6 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
     setLoading(true);
     const result = await onAdd({
       task_name: taskName.trim(),
-      description: description.trim() || null,
       due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
       status,
       urgency,
@@ -89,18 +85,6 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
               onChange={(e) => setTaskName(e.target.value)}
               placeholder="Enter task name"
               className="bg-background"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Objective / Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Define the goal of this task"
-              rows={3}
-              className="bg-background resize-none"
             />
           </div>
 
