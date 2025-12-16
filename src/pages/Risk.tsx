@@ -57,17 +57,17 @@ export default function Risk() {
           subtitle="Annualized"
         />
         <KPICard
-          title="Turnover YTD"
-          value={`${turnoverYTD.toFixed(1)}%`}
-          icon={RefreshCw}
-          subtitle="Year-to-Date"
-        />
-        <KPICard
           title="Sortino"
           value={hasData ? riskMetrics.sortinoRatio.toFixed(2) : '0.00'}
           icon={Target}
           trend={hasData && riskMetrics.sortinoRatio >= 1 ? 'up' : 'neutral'}
           subtitle="Downside"
+        />
+        <KPICard
+          title="Turnover YTD"
+          value={`${turnoverYTD.toFixed(1)}%`}
+          icon={RefreshCw}
+          subtitle="Year-to-Date"
         />
         <KPICard
           title="Max DD"
