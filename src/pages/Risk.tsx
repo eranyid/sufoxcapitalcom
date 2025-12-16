@@ -8,7 +8,7 @@ import { SystematicRiskPie } from '@/components/dashboard/SystematicRiskPie';
 import { FactorCorrelationHeatmap } from '@/components/dashboard/FactorCorrelationHeatmap';
 import { computeFactorModel } from '@/lib/factorModel';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge, Crosshair, Layers } from 'lucide-react';
+import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge, Crosshair, Layers, RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
 
 export default function Risk() {
@@ -21,6 +21,25 @@ export default function Risk() {
     if (!hasData) return null;
     return computeFactorModel(transactions, valuations);
   }, [transactions, valuations, hasData]);
+
+  // Calculate YTD Turnover
+  const turnoverYTD = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const ytdTransactions = transactions.filter(t => {
+      const txYear = new Date(t.date).getFullYear();
+      return txYear === currentYear;
+    });
+    
+    const totalTraded = ytdTransactions.reduce((sum, t) => {
+      return sum + (t.quantity * t.pricePerUnit);
+    }, 0);
+    
+    // Calculate as percentage of current portfolio value
+    if (performanceMetrics && performanceMetrics.totalValue > 0) {
+      return (totalTraded / performanceMetrics.totalValue) * 100;
+    }
+    return 0;
+  }, [transactions, performanceMetrics]);
 
   return (
     <div className="section-spacing animate-fade-in">
@@ -38,11 +57,10 @@ export default function Risk() {
           subtitle="Annualized"
         />
         <KPICard
-          title="Sharpe"
-          value={hasData ? riskMetrics.sharpeRatio.toFixed(2) : '0.00'}
-          icon={Target}
-          trend={hasData && riskMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
-          subtitle={`Rf: ${settings.riskFreeRate}%`}
+          title="Turnover YTD"
+          value={`${turnoverYTD.toFixed(1)}%`}
+          icon={RefreshCw}
+          subtitle="Year-to-Date"
         />
         <KPICard
           title="Sortino"
@@ -143,8 +161,8 @@ export default function Risk() {
                   <p className="text-muted-foreground">Std dev of returns, annualized</p>
                 </div>
                 <div>
-                  <h4 className="text-primary font-semibold mb-0.5">Sharpe Ratio</h4>
-                  <p className="text-muted-foreground">Risk-adjusted return (&gt;1 good)</p>
+                  <h4 className="text-primary font-semibold mb-0.5">Turnover</h4>
+                  <p className="text-muted-foreground">Trading volume vs. AUM</p>
                 </div>
                 <div>
                   <h4 className="text-primary font-semibold mb-0.5">Sortino Ratio</h4>
