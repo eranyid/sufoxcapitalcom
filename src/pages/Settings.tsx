@@ -638,6 +638,38 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Data Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-primary" />
+            Data Management
+          </CardTitle>
+          <CardDescription>
+            Advanced data recovery and maintenance options
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <button
+            onClick={() => navigate('/trash')}
+            className="w-full flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-destructive/10 rounded-lg">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Trash (Deleted Items)</p>
+                <p className="text-sm text-muted-foreground">
+                  View and restore deleted records (retained for 30 days)
+                </p>
+              </div>
+            </div>
+            <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
+          </button>
+        </CardContent>
+      </Card>
+
       {/* Help */}
       <Card>
         <CardHeader>

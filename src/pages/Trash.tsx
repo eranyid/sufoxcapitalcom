@@ -146,6 +146,17 @@ export default function Trash() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
+      {/* Warning Banner */}
+      <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/30 rounded-lg">
+        <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+        <div className="text-sm">
+          <p className="font-medium text-warning">Administrative View</p>
+          <p className="text-muted-foreground mt-1">
+            Deleted items are retained for up to 30 days. Restoring items will re-activate them across the system.
+          </p>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
