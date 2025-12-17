@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.fetch-fred-data]
 verify_jwt = true
+
+[functions.cleanup-trash]
+verify_jwt = false
