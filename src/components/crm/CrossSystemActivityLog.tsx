@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -68,6 +69,7 @@ interface Props {
 }
 
 export default function CrossSystemActivityLog({ projectId }: Props) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { transactions } = usePortfolio();
   const [crmLogs, setCrmLogs] = useState<CrmActivityEntry[]>([]);
@@ -245,7 +247,11 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
   const handleNavigate = (item: UnifiedActivityItem) => {
     setOpen(false);
     if (item.type === 'trade' && item.sourceId) {
-      window.location.href = `/transactions?highlight=${item.sourceId}`;
+      navigate(`/transactions?highlight=${item.sourceId}`);
+    } else if (item.type === 'rebalance') {
+      navigate('/research');
+    } else if (item.type === 'crm_add' || item.type === 'crm_move') {
+      // Stay on current CRM project page - just close dialog
     }
   };
 
