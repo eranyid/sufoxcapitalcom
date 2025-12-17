@@ -1,20 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, ChevronDown, ChevronRight, Trash2, Pencil, ArrowRight, MoreHorizontal } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Trash2, ArrowRight, MoreHorizontal, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { CrmFund, GroupName, GROUP_OPTIONS, FUND_STATUS_OPTIONS, FundStatus, PRIORITY_OPTIONS, Priority } from '@/types/crm';
+import { CrmFund, GroupName, GROUP_OPTIONS, BOARD_STATUS_OPTIONS } from '@/types/crm';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -44,8 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { FundStatusBadge } from './FundStatusBadge';
-import { PriorityBadge } from './PriorityBadge';
+import { BoardStatusBadge } from './BoardStatusBadge';
 
 interface Props {
   projectId: string;
@@ -55,8 +46,6 @@ export default function ProjectFundsBoard({ projectId }: Props) {
   const { user } = useAuth();
   const [funds, setFunds] = useState<CrmFund[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState<Partial<CrmFund>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Record<GroupName, boolean>>({
     ongoing_holding: true,
@@ -89,6 +78,29 @@ export default function ProjectFundsBoard({ projectId }: Props) {
   const handleCreate = async (groupName: GroupName) => {
     if (!user || !newFundName.trim()) return;
 
+    const tempId = `temp-${Date.now()}`;
+    const tempFund: CrmFund = {
+      id: tempId,
+      user_id: user.id,
+      project_id: projectId,
+      fund_name: newFundName,
+      group_name: groupName,
+      status: 'working_on_it',
+      strategy: null,
+      asset_class: null,
+      geography: null,
+      manager: null,
+      priority: 'medium',
+      notes: null,
+      timeline_start: null,
+      timeline_end: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setFunds(prev => [tempFund, ...prev]);
+    setNewFundName('');
+    setAddingToGroup(null);
+
     const { data, error } = await supabase
       .from('crm_funds')
       .insert({
@@ -96,7 +108,7 @@ export default function ProjectFundsBoard({ projectId }: Props) {
         project_id: projectId,
         fund_name: newFundName,
         group_name: groupName,
-        status: 'screening',
+        status: 'working_on_it',
         priority: 'medium',
       })
       .select()
@@ -104,35 +116,72 @@ export default function ProjectFundsBoard({ projectId }: Props) {
 
     if (error) {
       toast.error('Failed to create fund');
+      setFunds(prev => prev.filter(f => f.id !== tempId));
+      console.error(error);
+      return;
+    }
+
+    setFunds(prev => prev.map(f => f.id === tempId ? (data as CrmFund) : f));
+    toast.success('Fund added');
+  };
+
+  const handleInlineUpdate = async (id: string, field: keyof CrmFund, value: string | null) => {
+    const original = funds.find(f => f.id === id);
+    if (!original) return;
+
+    setFunds(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
+
+    const { error } = await supabase
+      .from('crm_funds')
+      .update({ [field]: value })
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Failed to update');
+      setFunds(prev => prev.map(f => f.id === id ? original : f));
+      console.error(error);
+    }
+  };
+
+  const handleDuplicate = async (fund: CrmFund) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('crm_funds')
+      .insert({
+        user_id: user.id,
+        project_id: projectId,
+        fund_name: `${fund.fund_name} (copy)`,
+        group_name: fund.group_name,
+        status: fund.status,
+        strategy: fund.strategy,
+        asset_class: fund.asset_class,
+        geography: fund.geography,
+        manager: fund.manager,
+        priority: fund.priority,
+        notes: fund.notes,
+        timeline_start: fund.timeline_start,
+        timeline_end: fund.timeline_end,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error('Failed to duplicate');
       console.error(error);
       return;
     }
 
     setFunds(prev => [data as CrmFund, ...prev]);
-    setNewFundName('');
-    setAddingToGroup(null);
-    toast.success('Fund added');
-  };
-
-  const handleUpdate = async (id: string, updates: Partial<CrmFund>) => {
-    const { error } = await supabase
-      .from('crm_funds')
-      .update(updates)
-      .eq('id', id);
-
-    if (error) {
-      toast.error('Failed to update fund');
-      console.error(error);
-      return;
-    }
-
-    setFunds(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
-    setEditingId(null);
-    setEditValues({});
+    toast.success('Fund duplicated');
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
+
+    const original = funds.find(f => f.id === deleteId);
+    setFunds(prev => prev.filter(f => f.id !== deleteId));
+    setDeleteId(null);
 
     const { error } = await supabase
       .from('crm_funds')
@@ -141,18 +190,12 @@ export default function ProjectFundsBoard({ projectId }: Props) {
 
     if (error) {
       toast.error('Failed to delete fund');
+      if (original) setFunds(prev => [original, ...prev]);
       console.error(error);
       return;
     }
 
-    setFunds(prev => prev.filter(f => f.id !== deleteId));
-    setDeleteId(null);
     toast.success('Fund deleted');
-  };
-
-  const startEdit = (fund: CrmFund) => {
-    setEditingId(fund.id);
-    setEditValues(fund);
   };
 
   const toggleGroup = (group: GroupName) => {
@@ -169,212 +212,202 @@ export default function ProjectFundsBoard({ projectId }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {GROUP_OPTIONS.map(group => (
         <Collapsible 
           key={group.value} 
           open={expandedGroups[group.value]}
           onOpenChange={() => toggleGroup(group.value)}
         >
-          <div className="border border-border rounded-lg overflow-hidden">
+          <div className="border border-border rounded overflow-hidden">
             <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between p-3 bg-muted/30 cursor-pointer hover:bg-muted/50">
+              <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50">
                 <div className="flex items-center gap-2">
-                  {expandedGroups[group.value] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                  <span className="font-medium">{group.label}</span>
-                  <Badge variant="secondary" className="text-xs">
+                  {expandedGroups[group.value] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <span className="font-medium text-sm">{group.label}</span>
+                  <Badge variant="secondary" className="text-xs h-5">
                     {groupedFunds[group.value]?.length || 0}
                   </Badge>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="h-7 text-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     setAddingToGroup(group.value);
                     setExpandedGroups(prev => ({ ...prev, [group.value]: true }));
                   }}
                 >
-                  <Plus size={14} className="mr-1" />
+                  <Plus size={12} className="mr-1" />
                   Add
                 </Button>
               </div>
             </CollapsibleTrigger>
 
             <CollapsibleContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[180px]">Name</TableHead>
-                    <TableHead>Strategy</TableHead>
-                    <TableHead>Asset Class</TableHead>
-                    <TableHead>Geography</TableHead>
-                    <TableHead>Manager</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Notes</TableHead>
-                    <TableHead className="w-[80px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {addingToGroup === group.value && (
-                    <TableRow>
-                      <TableCell colSpan={9}>
-                        <div className="flex items-center gap-2">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/20">
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[180px]">Name</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Status</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Strategy</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Asset Class</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Geography</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[150px]">Notes</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[140px]">Timeline</th>
+                      <th className="w-[50px]"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {addingToGroup === group.value && (
+                      <tr className="border-b border-border">
+                        <td colSpan={8} className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={newFundName}
+                              onChange={e => setNewFundName(e.target.value)}
+                              placeholder="Fund name..."
+                              className="h-8 text-sm"
+                              autoFocus
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleCreate(group.value);
+                                if (e.key === 'Escape') setAddingToGroup(null);
+                              }}
+                            />
+                            <Button size="sm" className="h-8" onClick={() => handleCreate(group.value)}>Add</Button>
+                            <Button size="sm" variant="ghost" className="h-8" onClick={() => setAddingToGroup(null)}>Cancel</Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {groupedFunds[group.value]?.length === 0 && addingToGroup !== group.value && (
+                      <tr>
+                        <td colSpan={8} className="text-center text-muted-foreground py-6 text-sm">
+                          No items
+                        </td>
+                      </tr>
+                    )}
+                    {groupedFunds[group.value]?.map(fund => (
+                      <tr key={fund.id} className="border-b border-border hover:bg-muted/10 group/row">
+                        <td className="px-3 py-1.5">
                           <Input
-                            value={newFundName}
-                            onChange={e => setNewFundName(e.target.value)}
-                            placeholder="Fund name..."
-                            autoFocus
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') handleCreate(group.value);
-                              if (e.key === 'Escape') setAddingToGroup(null);
+                            defaultValue={fund.fund_name}
+                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
+                            onBlur={e => {
+                              if (e.target.value !== fund.fund_name) {
+                                handleInlineUpdate(fund.id, 'fund_name', e.target.value);
+                              }
                             }}
                           />
-                          <Button size="sm" onClick={() => handleCreate(group.value)}>Add</Button>
-                          <Button size="sm" variant="ghost" onClick={() => setAddingToGroup(null)}>Cancel</Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {groupedFunds[group.value]?.length === 0 && addingToGroup !== group.value && (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                        No funds in this group
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {groupedFunds[group.value]?.map(fund => (
-                    <TableRow key={fund.id} className="group">
-                      <TableCell>
-                        {editingId === fund.id ? (
-                          <Input
-                            value={editValues.fund_name || ''}
-                            onChange={e => setEditValues(prev => ({ ...prev, fund_name: e.target.value }))}
-                            className="h-8"
-                          />
-                        ) : (
-                          <span className="font-medium">{fund.fund_name}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === fund.id ? (
-                          <Input
-                            value={editValues.strategy || ''}
-                            onChange={e => setEditValues(prev => ({ ...prev, strategy: e.target.value }))}
-                            className="h-8"
-                          />
-                        ) : (
-                          fund.strategy || '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === fund.id ? (
-                          <Input
-                            value={editValues.asset_class || ''}
-                            onChange={e => setEditValues(prev => ({ ...prev, asset_class: e.target.value }))}
-                            className="h-8"
-                          />
-                        ) : (
-                          fund.asset_class || '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === fund.id ? (
-                          <Input
-                            value={editValues.geography || ''}
-                            onChange={e => setEditValues(prev => ({ ...prev, geography: e.target.value }))}
-                            className="h-8"
-                          />
-                        ) : (
-                          fund.geography || '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === fund.id ? (
-                          <Input
-                            value={editValues.manager || ''}
-                            onChange={e => setEditValues(prev => ({ ...prev, manager: e.target.value }))}
-                            className="h-8"
-                          />
-                        ) : (
-                          fund.manager || '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === fund.id ? (
+                        </td>
+                        <td className="px-3 py-1.5">
                           <Select
-                            value={editValues.status}
-                            onValueChange={v => setEditValues(prev => ({ ...prev, status: v as FundStatus }))}
+                            value={fund.status}
+                            onValueChange={v => handleInlineUpdate(fund.id, 'status', v)}
                           >
-                            <SelectTrigger className="h-8 w-[110px]">
-                              <SelectValue />
+                            <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[110px]">
+                              <BoardStatusBadge status={fund.status} />
                             </SelectTrigger>
                             <SelectContent>
-                              {FUND_STATUS_OPTIONS.map(opt => (
+                              {BOARD_STATUS_OPTIONS.map(opt => (
                                 <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                        ) : (
-                          <FundStatusBadge status={fund.status} />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingId === fund.id ? (
-                          <Select
-                            value={editValues.priority}
-                            onValueChange={v => setEditValues(prev => ({ ...prev, priority: v as Priority }))}
-                          >
-                            <SelectTrigger className="h-8 w-[100px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PRIORITY_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <PriorityBadge priority={fund.priority} />
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-[150px] truncate">
-                        {editingId === fund.id ? (
+                        </td>
+                        <td className="px-3 py-1.5">
                           <Input
-                            value={editValues.notes || ''}
-                            onChange={e => setEditValues(prev => ({ ...prev, notes: e.target.value }))}
-                            className="h-8"
+                            defaultValue={fund.strategy || ''}
+                            placeholder="-"
+                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[100px]"
+                            onBlur={e => {
+                              if (e.target.value !== (fund.strategy || '')) {
+                                handleInlineUpdate(fund.id, 'strategy', e.target.value || null);
+                              }
+                            }}
                           />
-                        ) : (
-                          fund.notes || '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                          {editingId === fund.id ? (
-                            <>
-                              <Button size="sm" variant="ghost" onClick={() => handleUpdate(fund.id, editValues)}>Save</Button>
-                              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
-                            </>
-                          ) : (
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <Input
+                            defaultValue={fund.asset_class || ''}
+                            placeholder="-"
+                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
+                            onBlur={e => {
+                              if (e.target.value !== (fund.asset_class || '')) {
+                                handleInlineUpdate(fund.id, 'asset_class', e.target.value || null);
+                              }
+                            }}
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <Input
+                            defaultValue={fund.geography || ''}
+                            placeholder="-"
+                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
+                            onBlur={e => {
+                              if (e.target.value !== (fund.geography || '')) {
+                                handleInlineUpdate(fund.id, 'geography', e.target.value || null);
+                              }
+                            }}
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <Input
+                            defaultValue={fund.notes || ''}
+                            placeholder="-"
+                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
+                            onBlur={e => {
+                              if (e.target.value !== (fund.notes || '')) {
+                                handleInlineUpdate(fund.id, 'notes', e.target.value || null);
+                              }
+                            }}
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <div className="flex gap-1">
+                            <Input
+                              type="date"
+                              defaultValue={fund.timeline_start || ''}
+                              className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[85px]"
+                              onBlur={e => {
+                                if (e.target.value !== (fund.timeline_start || '')) {
+                                  handleInlineUpdate(fund.id, 'timeline_start', e.target.value || null);
+                                }
+                              }}
+                            />
+                            <Input
+                              type="date"
+                              defaultValue={fund.timeline_end || ''}
+                              className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[85px]"
+                              onBlur={e => {
+                                if (e.target.value !== (fund.timeline_end || '')) {
+                                  handleInlineUpdate(fund.id, 'timeline_end', e.target.value || null);
+                                }
+                              }}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <div className="opacity-0 group-hover/row:opacity-100">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                <Button size="icon" variant="ghost" className="h-7 w-7">
                                   <MoreHorizontal size={14} />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => startEdit(fund)}>
-                                  <Pencil size={14} className="mr-2" />
-                                  Edit
+                                <DropdownMenuItem onClick={() => handleDuplicate(fund)}>
+                                  <Copy size={14} className="mr-2" />
+                                  Duplicate
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Move to</div>
                                 {GROUP_OPTIONS.filter(g => g.value !== fund.group_name).map(g => (
                                   <DropdownMenuItem 
                                     key={g.value} 
-                                    onClick={() => handleUpdate(fund.id, { group_name: g.value })}
+                                    onClick={() => handleInlineUpdate(fund.id, 'group_name', g.value)}
                                   >
                                     <ArrowRight size={14} className="mr-2" />
                                     {g.label}
@@ -390,13 +423,13 @@ export default function ProjectFundsBoard({ projectId }: Props) {
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </CollapsibleContent>
           </div>
         </Collapsible>

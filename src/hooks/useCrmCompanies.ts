@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CrmCompany, CompanyStatus } from '@/types/crm';
+import { CrmCompany } from '@/types/crm';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -43,7 +43,7 @@ export function useCrmCompanies() {
         sector: company.sector || null,
         geography: company.geography || null,
         investment_thesis: company.investment_thesis || null,
-        status: company.status || 'research',
+        status: company.status || 'working_on_it',
         notes: company.notes || null,
       })
       .select()

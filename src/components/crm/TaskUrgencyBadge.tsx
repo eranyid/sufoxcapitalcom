@@ -8,9 +8,8 @@ interface TaskUrgencyBadgeProps {
 
 const urgencyStyles: Record<TaskUrgency, string> = {
   low: 'bg-slate-500/20 text-slate-400 border-slate-500/40',
-  medium: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
-  high: 'bg-orange-500/20 text-orange-400 border-orange-500/40',
-  critical: 'bg-red-500/20 text-red-400 border-red-500/40',
+  medium: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+  high: 'bg-rose-500/20 text-rose-400 border-rose-500/40',
 };
 
 export function TaskUrgencyBadge({ urgency, className }: TaskUrgencyBadgeProps) {
