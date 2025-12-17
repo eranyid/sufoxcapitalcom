@@ -430,45 +430,6 @@ export type Database = {
         }
         Relationships: []
       }
-      news_sources: {
-        Row: {
-          created_at: string
-          enabled: boolean
-          id: string
-          last_test_status: string | null
-          last_tested_at: string | null
-          name: string | null
-          order_index: number
-          updated_at: string
-          url: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          last_test_status?: string | null
-          last_tested_at?: string | null
-          name?: string | null
-          order_index?: number
-          updated_at?: string
-          url: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          last_test_status?: string | null
-          last_tested_at?: string | null
-          name?: string | null
-          order_index?: number
-          updated_at?: string
-          url?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       passkey_credentials: {
         Row: {
           counter: number

@@ -1,5 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 
@@ -60,6 +62,22 @@ function getPercentile(sortedValues: number[], percentile: number): number {
 
 export default function Overview() {
   const { transactions, valuations, performanceMetrics, riskMetrics, loading } = usePortfolio();
+  const { user } = useAuth();
+  const [rssFeedUrl, setRssFeedUrl] = useState<string | null>(null);
+
+  // Load RSS feed URL
+  useEffect(() => {
+    const loadRssFeed = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('portfolio_settings')
+        .select('rss_feed_url')
+        .eq('user_id', user.id)
+        .single();
+      setRssFeedUrl(data?.rss_feed_url || null);
+    };
+    loadRssFeed();
+  }, [user]);
 
   // Compute factor model
   const factorModel = useMemo(() => {
@@ -162,7 +180,7 @@ export default function Overview() {
   return (
     <div className="animate-fade-in">
       {/* News Ticker */}
-      <NewsTicker />
+      <NewsTicker rssUrl={rssFeedUrl} />
       
       <div className="section-spacing">
       {/* Header - Mobile Optimized */}

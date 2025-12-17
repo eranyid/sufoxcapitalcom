@@ -1,14 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useMultiRssFeed } from '@/hooks/useMultiRssFeed';
+import { useRssFeed } from '@/hooks/useRssFeed';
 import { cn } from '@/lib/utils';
 
 interface NewsTickerProps {
-  // Legacy prop - no longer used but kept for compatibility
-  rssUrl?: string | null;
+  rssUrl: string | null;
 }
 
 export function NewsTicker({ rssUrl }: NewsTickerProps) {
-  const { items, error, sourcesCount } = useMultiRssFeed();
+  const { items, error } = useRssFeed(rssUrl);
   const [isPaused, setIsPaused] = useState(false);
   const tickerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -52,8 +51,8 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
     };
   }, [items, animate]);
 
-  // No sources configured
-  if (sourcesCount === 0) {
+  // No RSS URL configured
+  if (!rssUrl) {
     return (
       <div className="w-full bg-card border border-border rounded-md">
         <div className="flex items-center h-7 px-3">
@@ -61,7 +60,7 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
             LIVE NEWS
           </span>
           <span className="text-[10px] font-mono text-muted-foreground">
-            No sources configured. Add feeds in Settings → News.
+            Configure RSS feed in Settings
           </span>
         </div>
       </div>
@@ -140,7 +139,9 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
                 className="inline-flex items-center text-[10px] md:text-[11px] font-mono hover:text-primary transition-colors px-2 group flex-shrink-0"
               >
                 <span className="text-primary/70 mr-1.5">{item.formattedTime}</span>
-                <span className="text-muted-foreground mr-1.5">[{item.source}]</span>
+                {item.source && (
+                  <span className="text-muted-foreground mr-1.5">[{item.source}]</span>
+                )}
                 <span className="text-foreground/90 group-hover:text-primary transition-colors">
                   {item.title}
                 </span>
