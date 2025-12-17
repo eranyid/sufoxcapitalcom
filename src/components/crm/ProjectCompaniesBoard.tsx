@@ -486,6 +486,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Ticker</th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[70px]">Qty</th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Value</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Mkt Cap</th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Status</th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Sector</th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[80px]">Geo</th>
@@ -497,7 +498,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                       <DroppableGroup groupId={group.value}>
                         {addingToGroup === group.value && (
                           <tr className="border-b border-border">
-                            <td colSpan={10} className="px-3 py-2">
+                            <td colSpan={11} className="px-3 py-2">
                               <div className="flex items-center gap-2">
                                 <Input
                                   value={newCompanyName}
@@ -518,7 +519,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                         )}
                         {groupedCompanies[group.value]?.length === 0 && addingToGroup !== group.value && (
                           <tr>
-                            <td colSpan={10} className="text-center text-muted-foreground py-6 text-sm">
+                            <td colSpan={11} className="text-center text-muted-foreground py-6 text-sm">
                               No items — drag here to add
                             </td>
                           </tr>
@@ -616,6 +617,19 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                               ) : (
                                 <span className="text-muted-foreground">-</span>
                               )}
+                            </td>
+                            {/* Market Cap */}
+                            <td className="px-3 py-1.5">
+                              <Input
+                                defaultValue={company.market_cap || ''}
+                                placeholder="-"
+                                className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[80px] text-right font-mono"
+                                onBlur={e => {
+                                  if (e.target.value !== (company.market_cap || '')) {
+                                    handleInlineUpdate(company.id, 'market_cap', e.target.value || null);
+                                  }
+                                }}
+                              />
                             </td>
                             {/* Status */}
                             <td className="px-3 py-1.5">
