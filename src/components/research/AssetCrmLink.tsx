@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useActivityLog } from '@/hooks/useActivityLog';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { 
   Building2, 
@@ -48,6 +49,7 @@ interface CrmProject {
 export default function AssetCrmLink() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { logActivity } = useActivityLog();
   const { transactions, valuations } = usePortfolio();
   const [selectedTicker, setSelectedTicker] = useState<string>('');
   const [linkedCompanies, setLinkedCompanies] = useState<CrmCompanyLink[]>([]);
@@ -176,6 +178,19 @@ export default function AssetCrmLink() {
       toast.error('Failed to add to CRM');
       return;
     }
+
+    // Log activity
+    await logActivity({
+      projectId: targetProject.id,
+      ticker: selectedTicker,
+      action: 'research_add',
+      details: {
+        source: 'portfolio_research',
+        assetName: selectedAsset.name,
+        value: selectedAsset.value,
+        quantity: selectedAsset.quantity
+      }
+    });
 
     toast.success(`Added ${selectedTicker} to CRM → ${targetProject.name}`);
     
