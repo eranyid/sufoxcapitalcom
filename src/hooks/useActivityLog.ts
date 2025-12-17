@@ -12,7 +12,8 @@ export type ActivityAction =
   | 'crm_move'
   | 'crm_update'
   | 'research_add'
-  | 'watchlist_convert';
+  | 'watchlist_convert'
+  | 'compliance_check_manual';
 
 interface LogActivityParams {
   projectId: string;

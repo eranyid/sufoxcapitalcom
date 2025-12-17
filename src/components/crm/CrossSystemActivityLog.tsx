@@ -14,7 +14,8 @@ import {
   RefreshCw,
   Filter,
   Building2,
-  DollarSign
+  DollarSign,
+  ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,11 +46,11 @@ interface CrmActivityEntry {
   created_at: string;
 }
 
-type ActivityType = 'all' | 'trade' | 'crm' | 'rebalance';
+type ActivityType = 'all' | 'trade' | 'crm' | 'rebalance' | 'compliance';
 
 interface UnifiedActivityItem {
   id: string;
-  type: 'trade' | 'crm_move' | 'crm_add' | 'rebalance';
+  type: 'trade' | 'crm_move' | 'crm_add' | 'rebalance' | 'compliance';
   ticker: string;
   description: string;
   timestamp: string;
@@ -61,6 +62,8 @@ interface UnifiedActivityItem {
     action?: string;
     fromGroup?: string;
     toGroup?: string;
+    status?: string;
+    query?: string;
   };
 }
 
@@ -160,6 +163,15 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
           type = 'crm_add';
           description = 'Added from Research to CRM Potential';
           break;
+        case 'compliance_check_manual': {
+          type = 'compliance';
+          const compDetails = log.details as { query?: string; status?: string };
+          const statusLabel = compDetails.status === 'allowed' ? '✓ Allowed' 
+            : compDetails.status === 'allowed_with_conditions' ? '⚠ Conditional' 
+            : '✗ Not Allowed';
+          description = `Compliance check: ${statusLabel}`;
+          break;
+        }
         default:
           description = log.action;
       }
@@ -188,6 +200,7 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
     if (filter === 'trade') return items.filter(i => i.type === 'trade');
     if (filter === 'crm') return items.filter(i => i.type === 'crm_move' || i.type === 'crm_add');
     if (filter === 'rebalance') return items.filter(i => i.type === 'rebalance');
+    if (filter === 'compliance') return items.filter(i => i.type === 'compliance');
 
     return items;
   }, [transactions, crmLogs, filter]);
@@ -204,6 +217,8 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
         return <ArrowDownRight size={14} className="text-orange-400" />;
       case 'rebalance':
         return <RefreshCw size={14} className="text-blue-400" />;
+      case 'compliance':
+        return <ShieldCheck size={14} className="text-blue-400" />;
       default:
         return <Activity size={14} />;
     }

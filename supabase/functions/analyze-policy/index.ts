@@ -58,11 +58,12 @@ serve(async (req) => {
   }
 
   try {
-    const { policy, portfolio, proposedTrade, mode = 'full' } = await req.json() as { 
+    const { policy, portfolio, proposedTrade, query, mode = 'full' } = await req.json() as { 
       policy: PolicyData; 
       portfolio: PortfolioSummary;
       proposedTrade?: ProposedTrade;
-      mode?: 'full' | 'pre-trade';
+      query?: string;
+      mode?: 'full' | 'pre-trade' | 'compliance-check';
     };
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -71,8 +72,33 @@ serve(async (req) => {
     }
 
     // Build the analysis prompt based on mode
-    const systemPrompt = mode === 'pre-trade' 
-      ? `You are an expert investment compliance officer. Your role is to evaluate whether a PROPOSED TRADE would keep a portfolio aligned with the investor's investment policy.
+    let systemPrompt: string;
+    
+    if (mode === 'compliance-check') {
+      systemPrompt = `You are an expert investment compliance officer. Your role is to evaluate whether a USER'S INTENDED ACTION would be allowed under their investment policy.
+
+You will receive:
+1. The investor's written strategy and philosophy
+2. Their structured policy constraints (allocation limits, risk tolerance, leverage rules, etc.)
+3. A summary of their CURRENT portfolio
+4. A natural language description of what they want to do
+
+Your task is to:
+1. Understand the user's intent
+2. Evaluate if the action would violate any policy constraints
+3. Provide a clear decision with reasoning
+
+**You MUST respond with EXACTLY this format:**
+
+**STATUS:** [EXACTLY one of: "Allowed" OR "Allowed with conditions" OR "Not allowed"]
+
+**REASONING:** [2-3 sentences explaining why, referencing specific policy constraints]
+
+**GUIDANCE:** [If not allowed or with conditions: specific steps to make it compliant. If allowed: brief confirmation or monitoring suggestion. Keep it actionable.]
+
+Be precise and reference actual numbers from the policy. No generic advice.`;
+    } else if (mode === 'pre-trade') {
+      systemPrompt = `You are an expert investment compliance officer. Your role is to evaluate whether a PROPOSED TRADE would keep a portfolio aligned with the investor's investment policy.
 
 You will receive:
 1. The investor's written strategy and philosophy
@@ -97,8 +123,9 @@ Your task is to:
 
 **Recommendation**:
 - If approved: any monitoring suggestions
-- If rejected: what would need to change to make the trade compliant`
-      : `You are an expert investment compliance officer and portfolio analyst. Your role is to evaluate whether a portfolio aligns with an investor's stated investment policy and strategy.
+- If rejected: what would need to change to make the trade compliant`;
+    } else {
+      systemPrompt = `You are an expert investment compliance officer and portfolio analyst. Your role is to evaluate whether a portfolio aligns with an investor's stated investment policy and strategy.
 
 You will receive:
 1. The investor's written strategy and philosophy
@@ -118,10 +145,16 @@ Your task is to provide a professional evaluation with:
 3. **Actionable Recommendations** (2-4 specific actions to improve alignment)
 
 Be precise, professional, and actionable. Reference specific numbers and percentages from the policy and portfolio.`;
+    }
 
-    const userPrompt = mode === 'pre-trade' && proposedTrade
-      ? buildPreTradePrompt(policy, portfolio, proposedTrade)
-      : buildAnalysisPrompt(policy, portfolio);
+    let userPrompt: string;
+    if (mode === 'compliance-check' && query) {
+      userPrompt = buildComplianceCheckPrompt(policy, portfolio, query);
+    } else if (mode === 'pre-trade' && proposedTrade) {
+      userPrompt = buildPreTradePrompt(policy, portfolio, proposedTrade);
+    } else {
+      userPrompt = buildAnalysisPrompt(policy, portfolio);
+    }
 
     console.log(`Calling Lovable AI with openai/gpt-5 model... Mode: ${mode}`);
     
@@ -173,9 +206,11 @@ Be precise, professional, and actionable. Reference specific numbers and percent
     }
 
     // Parse the AI response to extract structured data
-    const analysis = parseAIResponse(aiResponse);
+    const analysis = mode === 'compliance-check' 
+      ? parseComplianceResponse(aiResponse)
+      : parseAIResponse(aiResponse);
 
-    console.log("Analysis complete:", analysis.classification);
+    console.log("Analysis complete, mode:", mode);
 
     return new Response(JSON.stringify({ 
       success: true,
@@ -422,6 +457,138 @@ function parseAIResponse(response: string): {
     classification,
     findings,
     recommendations,
+    fullAnalysis: response
+  };
+}
+
+function buildComplianceCheckPrompt(policy: PolicyData, portfolio: PortfolioSummary, query: string): string {
+  const parts: string[] = [];
+
+  // Strategy section
+  parts.push("## INVESTMENT STRATEGY & PHILOSOPHY");
+  if (policy.strategy_philosophy) {
+    parts.push(policy.strategy_philosophy);
+  } else {
+    parts.push("(No written strategy provided)");
+  }
+
+  // Policy constraints section
+  parts.push("\n## POLICY CONSTRAINTS");
+  parts.push(`- Equity allocation: ${policy.equity_min_pct}% - ${policy.equity_max_pct}%`);
+  parts.push(`- Fixed income allocation: ${policy.fixed_income_min_pct}% - ${policy.fixed_income_max_pct}%`);
+  parts.push(`- Alternatives allocation: ${policy.alternatives_min_pct}% - ${policy.alternatives_max_pct}%`);
+  parts.push(`- Minimum cash: ${policy.cash_min_pct}%`);
+  parts.push(`- Max single position: ${policy.max_single_position_pct}%`);
+  parts.push(`- Max sector allocation: ${policy.max_sector_allocation_pct}%`);
+  parts.push(`- Risk tolerance: ${policy.risk_tolerance}`);
+  parts.push(`- Investment horizon: ${policy.investment_horizon_years} years`);
+  parts.push(`- Leverage allowed: ${policy.leverage_allowed ? `Yes (max ${policy.max_leverage_ratio}x)` : 'No'}`);
+  parts.push(`- Minimum liquid assets: ${policy.min_liquid_assets_pct}%`);
+
+  if (Object.keys(policy.geographic_limits).length > 0) {
+    parts.push("\nGeographic limits:");
+    for (const [region, limits] of Object.entries(policy.geographic_limits)) {
+      parts.push(`  - ${region}: ${limits.min}% - ${limits.max}%`);
+    }
+  }
+
+  if (policy.special_constraints) {
+    parts.push(`\nSpecial constraints: ${policy.special_constraints}`);
+  }
+
+  // Portfolio summary section
+  parts.push("\n## CURRENT PORTFOLIO SUMMARY");
+  parts.push(`- Total value: $${portfolio.totalValue.toLocaleString()}`);
+  parts.push(`- Number of holdings: ${portfolio.numberOfHoldings}`);
+  parts.push(`- Cash position: ${portfolio.cashPct.toFixed(1)}%`);
+
+  parts.push("\nAllocation by asset type:");
+  for (const [type, pct] of Object.entries(portfolio.allocationByAssetType)) {
+    parts.push(`  - ${type}: ${pct.toFixed(1)}%`);
+  }
+
+  parts.push("\nAllocation by geography:");
+  for (const [geo, pct] of Object.entries(portfolio.allocationByGeography)) {
+    parts.push(`  - ${geo}: ${pct.toFixed(1)}%`);
+  }
+
+  parts.push("\nTop 5 positions:");
+  portfolio.topPositions.slice(0, 5).forEach((pos, i) => {
+    parts.push(`  ${i + 1}. ${pos.ticker}: ${pos.weight.toFixed(1)}%`);
+  });
+
+  // User query
+  parts.push("\n## USER'S INTENDED ACTION");
+  parts.push(`"${query}"`);
+
+  parts.push("\n---\nPlease evaluate whether this action would be allowed under the investment policy. Provide your STATUS, REASONING, and GUIDANCE.");
+
+  return parts.join("\n");
+}
+
+function parseComplianceResponse(response: string): {
+  status: 'allowed' | 'allowed_with_conditions' | 'not_allowed';
+  reasoning: string;
+  guidance: string | null;
+  fullAnalysis: string;
+} {
+  let status: 'allowed' | 'allowed_with_conditions' | 'not_allowed' = 'not_allowed';
+  let reasoning = '';
+  let guidance: string | null = null;
+
+  const lines = response.split('\n');
+  let currentSection = '';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const lowerTrimmed = trimmed.toLowerCase();
+
+    // Detect status
+    if (lowerTrimmed.includes('**status:**') || lowerTrimmed.startsWith('status:')) {
+      const statusText = trimmed.replace(/\*\*status:\*\*/i, '').replace(/status:/i, '').trim().toLowerCase();
+      if (statusText.includes('allowed with conditions') || statusText.includes('with conditions')) {
+        status = 'allowed_with_conditions';
+      } else if (statusText.includes('not allowed') || statusText.includes('not_allowed')) {
+        status = 'not_allowed';
+      } else if (statusText.includes('allowed')) {
+        status = 'allowed';
+      }
+      continue;
+    }
+
+    // Detect section headers
+    if (lowerTrimmed.includes('**reasoning:**') || lowerTrimmed.startsWith('reasoning:')) {
+      currentSection = 'reasoning';
+      const content = trimmed.replace(/\*\*reasoning:\*\*/i, '').replace(/reasoning:/i, '').trim();
+      if (content) reasoning = content;
+      continue;
+    }
+
+    if (lowerTrimmed.includes('**guidance:**') || lowerTrimmed.startsWith('guidance:')) {
+      currentSection = 'guidance';
+      const content = trimmed.replace(/\*\*guidance:\*\*/i, '').replace(/guidance:/i, '').trim();
+      if (content) guidance = content;
+      continue;
+    }
+
+    // Accumulate content for current section
+    if (trimmed && currentSection === 'reasoning' && !lowerTrimmed.includes('**')) {
+      reasoning += (reasoning ? ' ' : '') + trimmed;
+    }
+    if (trimmed && currentSection === 'guidance' && !lowerTrimmed.includes('**')) {
+      guidance = (guidance || '') + (guidance ? ' ' : '') + trimmed;
+    }
+  }
+
+  // Fallbacks
+  if (!reasoning) {
+    reasoning = 'Unable to determine compliance reasoning from the analysis.';
+  }
+
+  return {
+    status,
+    reasoning,
+    guidance,
     fullAnalysis: response
   };
 }
