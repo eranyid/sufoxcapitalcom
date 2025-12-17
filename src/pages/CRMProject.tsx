@@ -43,6 +43,7 @@ import { toast } from 'sonner';
 import ProjectCompaniesBoard from '@/components/crm/ProjectCompaniesBoard';
 import ProjectFundsBoard from '@/components/crm/ProjectFundsBoard';
 import ProjectTasksBoard from '@/components/crm/ProjectTasksBoard';
+import CrmActivityLog from '@/components/crm/CrmActivityLog';
 
 const LAST_PROJECT_KEY = 'crm_last_project_id';
 
@@ -248,23 +249,27 @@ export default function CRMProject() {
         </div>
 
         {/* Actions */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal size={18} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={openEdit}>
-              <Pencil size={14} className="mr-2" />
-              Edit Project
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setDeleteOpen(true)} className="text-destructive">
-              <Trash2 size={14} className="mr-2" />
-              Delete Project
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <CrmActivityLog projectId={project.id} />
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreHorizontal size={18} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={openEdit}>
+                <Pencil size={14} className="mr-2" />
+                Edit Project
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDeleteOpen(true)} className="text-destructive">
+                <Trash2 size={14} className="mr-2" />
+                Delete Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Tabs */}

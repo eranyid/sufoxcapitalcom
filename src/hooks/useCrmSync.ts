@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/investment';
 import { toast } from 'sonner';
 
-const LAST_PROJECT_KEY = 'sufox_last_crm_project';
+const LAST_PROJECT_KEY = 'crm_last_project_id';
 
 interface SyncResult {
   success: boolean;
