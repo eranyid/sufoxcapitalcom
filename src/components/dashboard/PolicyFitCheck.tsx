@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { Shield, Play, Loader2, CheckCircle2, AlertTriangle, XCircle, AlertCircle, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { ComplianceCheckModal } from './ComplianceCheckModal';
+import { useActivityLog } from '@/hooks/useActivityLog';
 
 interface PolicyAnalysis {
   classification: string;
@@ -42,11 +44,43 @@ interface PolicyData {
 export function PolicyFitCheck() {
   const { user } = useAuth();
   const { transactions, valuations, cashBalances } = usePortfolio();
+  const { logActivity } = useActivityLog();
   const [isRunning, setIsRunning] = useState(false);
   const [analysis, setAnalysis] = useState<PolicyAnalysis | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [policy, setPolicy] = useState<PolicyData | null>(null);
   const [portfolioSummary, setPortfolioSummary] = useState<any>(null);
+  const [defaultProjectId, setDefaultProjectId] = useState<string | null>(null);
+
+  // Fetch default project for logging
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('crm_projects')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data?.[0]) setDefaultProjectId(data[0].id);
+      });
+  }, [user]);
+
+  const handleComplianceCheckComplete = async (result: { status: string; reasoning: string; guidance: string | null }, query: string) => {
+    if (!defaultProjectId) return;
+    
+    await logActivity({
+      projectId: defaultProjectId,
+      ticker: 'COMPLIANCE',
+      action: 'compliance_check_manual',
+      details: {
+        query,
+        status: result.status,
+        reasoning: result.reasoning,
+        guidance: result.guidance
+      }
+    });
+  };
 
   const getClassificationConfig = (classification: string) => {
     if (classification.includes('Feasible & Suitable')) {
@@ -249,23 +283,26 @@ export function PolicyFitCheck() {
               <p className="text-sm text-muted-foreground mb-4">
                 Check if your portfolio aligns with your investment policy using AI analysis
               </p>
-              <Button 
-                onClick={runPolicyCheck} 
-                disabled={isRunning}
-                className="gradient-gold text-primary-foreground"
-              >
-                {isRunning ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-2" />
-                    Run Policy Check
-                  </>
-                )}
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                <Button 
+                  onClick={runPolicyCheck} 
+                  disabled={isRunning}
+                  className="gradient-gold text-primary-foreground"
+                >
+                  {isRunning ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      Run Policy Check
+                    </>
+                  )}
+                </Button>
+                <ComplianceCheckModal onCheckComplete={handleComplianceCheckComplete} />
+              </div>
               <div className="mt-3">
                 <Link to="/policy" className="text-xs text-primary hover:underline flex items-center justify-center gap-1">
                   <ExternalLink className="h-3 w-3" />
