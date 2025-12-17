@@ -28,6 +28,7 @@ const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
 const CRM = lazy(() => import("./pages/CRM"));
 const CRMProject = lazy(() => import("./pages/CRMProject"));
+const Trash = lazy(() => import("./pages/Trash"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -121,6 +122,11 @@ const App = () => (
                   <Route path="/crm/projects/:projectId" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <CRMProject />
+                    </Suspense>
+                  } />
+                  <Route path="/trash" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Trash />
                     </Suspense>
                   } />
                 </Route>

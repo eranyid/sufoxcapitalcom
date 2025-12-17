@@ -16,6 +16,7 @@ export function useCrmFunds(projectId?: string) {
     let query = supabase
       .from('crm_funds')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (projectId) {
@@ -90,7 +91,7 @@ export function useCrmFunds(projectId?: string) {
   const deleteFund = async (id: string) => {
     const { error } = await supabase
       .from('crm_funds')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {
@@ -100,7 +101,7 @@ export function useCrmFunds(projectId?: string) {
     }
 
     setFunds(prev => prev.filter(f => f.id !== id));
-    toast.success('Fund deleted');
+    toast.success('Fund moved to trash');
     return true;
   };
 

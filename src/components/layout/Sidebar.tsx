@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, ChevronLeft, ChevronRight, Scan, LogOut, FlaskConical, FileCheck, Users, Search, Contact } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, ChevronLeft, ChevronRight, Scan, LogOut, FlaskConical, FileCheck, Users, Search, Contact, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,6 +45,10 @@ const navItems = [{
   path: '/crm',
   icon: Contact,
   label: 'CRM'
+}, {
+  path: '/trash',
+  icon: Trash2,
+  label: 'TRASH'
 }, {
   path: '/settings',
   icon: Settings,

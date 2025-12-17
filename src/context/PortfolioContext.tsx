@@ -85,7 +85,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         const { data: txData } = await supabase
           .from('transactions')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .is('deleted_at', null);
         
         if (txData) {
           setUserTransactions(txData.map(tx => ({
@@ -108,7 +109,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         const { data: valData } = await supabase
           .from('valuations')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .is('deleted_at', null);
         
         if (valData) {
           setUserValuations(valData.map(val => ({
@@ -280,7 +282,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     const { error } = await supabase
       .from('transactions')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id)
       .eq('user_id', user.id);
     
@@ -358,7 +360,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     const { error } = await supabase
       .from('valuations')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id)
       .eq('user_id', user.id);
     

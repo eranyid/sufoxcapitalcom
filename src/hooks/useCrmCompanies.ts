@@ -16,6 +16,7 @@ export function useCrmCompanies() {
     const { data, error } = await supabase
       .from('crm_companies')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -79,7 +80,7 @@ export function useCrmCompanies() {
   const deleteCompany = async (id: string) => {
     const { error } = await supabase
       .from('crm_companies')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {
@@ -89,7 +90,7 @@ export function useCrmCompanies() {
     }
 
     setCompanies(prev => prev.filter(c => c.id !== id));
-    toast.success('Company deleted');
+    toast.success('Company moved to trash');
     return true;
   };
 

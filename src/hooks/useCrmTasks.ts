@@ -16,6 +16,7 @@ export function useCrmTasks() {
     const { data, error } = await supabase
       .from('crm_tasks')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -78,7 +79,7 @@ export function useCrmTasks() {
   const deleteTask = async (id: string) => {
     const { error } = await supabase
       .from('crm_tasks')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {
@@ -88,7 +89,7 @@ export function useCrmTasks() {
     }
 
     setTasks(prev => prev.filter(t => t.id !== id));
-    toast.success('Task deleted');
+    toast.success('Task moved to trash');
     return true;
   };
 
