@@ -4,7 +4,7 @@ import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { ContributionChart } from '@/components/dashboard/ContributionChart';
 import { PerformanceCalendarHeatmap } from '@/components/dashboard/PerformanceCalendarHeatmap';
 import { calculateContributions, calculateMonthlyReturns } from '@/lib/calculations';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, Target, Award, Percent } from 'lucide-react';
 
@@ -77,11 +77,11 @@ export default function Performance() {
             <ContributionChart data={contributions} />
             
             {/* Monthly Returns Table */}
-            <Card variant="panel" size="md">
-              <CardHeader className="pb-2">
-                <CardTitle>Monthly Returns History</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="bloomberg-panel">
+              <div className="bloomberg-header">
+                <span className="bloomberg-header-title">Monthly Returns History</span>
+              </div>
+              <div className="p-3">
                 <div className="max-h-[200px] overflow-auto">
                   <Table>
                     <TableHeader>
@@ -106,19 +106,19 @@ export default function Performance() {
                     </TableBody>
                   </Table>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Calendar Heatmap - After Contribution */}
           <PerformanceCalendarHeatmap data={performanceMetrics.monthlyReturns} />
 
           {/* Holdings Contribution Table */}
-          <Card variant="panel">
-            <CardHeader className="pb-2">
-              <CardTitle>Holdings Contribution Detail</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="bloomberg-panel">
+            <div className="bloomberg-header">
+              <span className="bloomberg-header-title">Holdings Contribution Detail</span>
+            </div>
+            <div className="p-3">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -141,17 +141,20 @@ export default function Performance() {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </>
       ) : (
-        <Card variant="panel" size="md">
-          <CardContent className="py-12 text-center">
+        <div className="bloomberg-panel">
+          <div className="bloomberg-header">
+            <span className="bloomberg-header-title">Performance Data</span>
+          </div>
+          <div className="py-12 text-center">
             <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-sm font-medium mb-2 text-primary">No Performance Data</h3>
             <p className="text-muted-foreground text-xs">Add transactions and valuations to view performance analytics.</p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );

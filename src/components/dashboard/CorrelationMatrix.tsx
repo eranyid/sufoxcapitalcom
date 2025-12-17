@@ -11,13 +11,15 @@ export function CorrelationMatrix({ transactions, valuations }: CorrelationMatri
 
   if (tickers.length < 2) {
     return (
-      <div className="bloomberg-panel p-4">
-        <div className="bloomberg-header mb-4">
-          <span className="text-primary">■</span> Correlation Matrix
+      <div className="bloomberg-panel">
+        <div className="bloomberg-header">
+          <span className="bloomberg-header-title">Correlation Matrix</span>
         </div>
-        <p className="text-muted-foreground text-xs text-center py-4">
-          Need at least 2 assets with 3+ months of data
-        </p>
+        <div className="p-4">
+          <p className="text-muted-foreground text-xs text-center py-4">
+            Need at least 2 assets with 3+ months of data
+          </p>
+        </div>
       </div>
     );
   }
@@ -33,7 +35,7 @@ export function CorrelationMatrix({ transactions, valuations }: CorrelationMatri
   return (
     <div className="bloomberg-panel">
       <div className="bloomberg-header">
-        <span className="text-primary">■</span> Correlation Matrix
+        <span className="bloomberg-header-title">Correlation Matrix</span>
       </div>
       <div className="p-4 overflow-x-auto">
         <table className="w-full text-xs">

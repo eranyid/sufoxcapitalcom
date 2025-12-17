@@ -11,13 +11,15 @@ export function RiskContributionTable({ transactions, valuations }: RiskContribu
 
   if (riskContributions.length === 0) {
     return (
-      <div className="bloomberg-panel p-4">
-        <div className="bloomberg-header mb-4">
-          <span className="text-primary">■</span> Risk Contribution
+      <div className="bloomberg-panel">
+        <div className="bloomberg-header">
+          <span className="bloomberg-header-title">Risk Contribution</span>
         </div>
-        <p className="text-muted-foreground text-xs text-center py-4">
-          No data available
-        </p>
+        <div className="p-4">
+          <p className="text-muted-foreground text-xs text-center py-4">
+            No data available
+          </p>
+        </div>
       </div>
     );
   }
@@ -25,7 +27,7 @@ export function RiskContributionTable({ transactions, valuations }: RiskContribu
   return (
     <div className="bloomberg-panel">
       <div className="bloomberg-header">
-        <span className="text-primary">■</span> Risk Contribution by Asset
+        <span className="bloomberg-header-title">Risk Contribution by Asset</span>
       </div>
       <div className="p-4">
         <table className="w-full">

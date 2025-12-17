@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -50,11 +49,11 @@ export function PerformanceCalendarHeatmap({ data }: PerformanceCalendarHeatmapP
   const formatPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 
   return (
-    <Card variant="panel" className="h-auto">
-      <CardHeader className="pb-3">
-        <CardTitle>Monthly Returns Heatmap</CardTitle>
-      </CardHeader>
-      <CardContent className="pb-4">
+    <div className="bloomberg-panel">
+      <div className="bloomberg-header">
+        <span className="bloomberg-header-title">Monthly Returns Heatmap</span>
+      </div>
+      <div className="p-3">
         <TooltipProvider>
           <div className="overflow-x-auto -mx-2 px-2">
             <table className="w-full">
@@ -152,7 +151,7 @@ export function PerformanceCalendarHeatmap({ data }: PerformanceCalendarHeatmapP
             </div>
           </div>
         </TooltipProvider>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

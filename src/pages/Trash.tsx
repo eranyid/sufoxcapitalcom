@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTrash, DeletedItem } from '@/hooks/useTrash';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -131,15 +131,18 @@ export default function Trash() {
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-10 w-32" />
         </div>
-        <Card className="border-border/40">
-          <CardContent className="p-6">
+        <div className="bloomberg-panel">
+          <div className="bloomberg-header">
+            <span className="bloomberg-header-title">Deleted Items</span>
+          </div>
+          <div className="p-6">
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map(i => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -211,13 +214,11 @@ export default function Trash() {
         </div>
       </div>
 
-      <Card className="border-border/40">
-        <CardHeader className="border-b border-border/40 pb-4">
-          <CardTitle className="text-lg font-medium">
-            Deleted Items ({filteredItems.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
+      <div className="bloomberg-panel">
+        <div className="bloomberg-header">
+          <span className="bloomberg-header-title">Deleted Items ({filteredItems.length})</span>
+        </div>
+        <div className="p-0">
           {filteredItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Trash2 className="h-12 w-12 mb-4 opacity-50" />
@@ -284,8 +285,8 @@ export default function Trash() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Restore Confirmation */}
       <AlertDialog open={confirmAction?.type === 'restore'} onOpenChange={() => setConfirmAction(null)}>

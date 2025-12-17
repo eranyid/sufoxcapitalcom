@@ -412,15 +412,21 @@ export function MonteCarloSimulation({
   
   if (monthlyReturns.length < 3 && inputMode === 'portfolio') {
     return (
-      <div className="bloomberg-panel p-6 text-center">
-        <Dice6 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-        <p className="text-muted-foreground text-xs">Minimum 3 months of returns required for Monte Carlo simulation</p>
-        <button 
-          onClick={() => setInputMode('manual')}
-          className="mt-2 text-[10px] text-primary hover:underline"
-        >
-          Or switch to Manual Input mode →
-        </button>
+      <div className="bloomberg-panel">
+        <div className="bloomberg-header">
+          <Dice6 className="h-3.5 w-3.5 text-primary" />
+          <span className="bloomberg-header-title">Monte Carlo Risk Engine</span>
+        </div>
+        <div className="p-6 text-center">
+          <Dice6 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+          <p className="text-muted-foreground text-xs">Minimum 3 months of returns required for Monte Carlo simulation</p>
+          <button 
+            onClick={() => setInputMode('manual')}
+            className="mt-2 text-[10px] text-primary hover:underline"
+          >
+            Or switch to Manual Input mode →
+          </button>
+        </div>
       </div>
     );
   }

@@ -49,10 +49,10 @@ export function CashManagement() {
 
   return (
     <div className="bloomberg-panel">
-      <div className="bloomberg-header flex items-center justify-between">
+      <div className="bloomberg-header justify-between">
         <div className="flex items-center gap-2">
           <Wallet className="h-3.5 w-3.5 text-primary" />
-          <span>Cash Balances</span>
+          <span className="bloomberg-header-title">Cash Balances</span>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>

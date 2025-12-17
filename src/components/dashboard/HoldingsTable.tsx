@@ -120,7 +120,7 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
   return (
     <div className="bloomberg-panel">
       <div className="bloomberg-header">
-        <span className="text-primary">■</span> Current Holdings
+        <span className="bloomberg-header-title">Current Holdings</span>
       </div>
       <div className="overflow-x-auto">
         <Table>
