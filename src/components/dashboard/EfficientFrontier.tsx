@@ -235,7 +235,7 @@ export function EfficientFrontier() {
     return (
       <div className="bloomberg-panel">
         <div className="bloomberg-header">
-          <span className="text-primary">■</span> Efficient Frontier
+          <span className="bloomberg-header-title">Efficient Frontier</span>
         </div>
         <div className="p-8 text-center">
           <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
@@ -251,10 +251,9 @@ export function EfficientFrontier() {
   return (
     <>
       <div className="bloomberg-panel">
-        <div className="bloomberg-header flex items-center justify-between">
+        <div className="bloomberg-header justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-primary">■</span> 
-            Efficient Frontier
+            <span className="bloomberg-header-title">Efficient Frontier</span>
             <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-sm font-mono">
               MARKOWITZ
             </span>

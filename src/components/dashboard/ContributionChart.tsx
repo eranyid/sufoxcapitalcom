@@ -1,5 +1,4 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ContributionToReturn } from '@/types/investment';
 
 interface ContributionChartProps {
@@ -10,11 +9,11 @@ export function ContributionChart({ data }: ContributionChartProps) {
   const chartData = data.slice(0, 10);
 
   return (
-    <Card className="glass-card">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">Contribution to Returns</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="bloomberg-panel">
+      <div className="bloomberg-header">
+        <span className="bloomberg-header-title">Contribution to Returns</span>
+      </div>
+      <div className="p-3">
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, left: 50, bottom: 5 }}>
@@ -34,11 +33,11 @@ export function ContributionChart({ data }: ContributionChartProps) {
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))', 
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
+                  borderRadius: '0'
                 }}
                 formatter={(value: number) => [`$${value.toLocaleString()}`, 'Contribution']}
               />
-              <Bar dataKey="contribution" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="contribution" radius={[0, 2, 2, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
@@ -49,7 +48,7 @@ export function ContributionChart({ data }: ContributionChartProps) {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

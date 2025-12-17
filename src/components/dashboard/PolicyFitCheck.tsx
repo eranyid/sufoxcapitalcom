@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -270,14 +270,12 @@ export function PolicyFitCheck() {
 
   return (
     <>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            AI Policy Fit Check
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="bloomberg-panel">
+        <div className="bloomberg-header">
+          <Shield className="h-3.5 w-3.5 text-primary" />
+          <span className="bloomberg-header-title">AI Policy Fit Check</span>
+        </div>
+        <div className="p-3 space-y-4">
           {!analysis ? (
             <div className="text-center py-4">
               <p className="text-sm text-muted-foreground mb-4">
@@ -350,8 +348,8 @@ export function PolicyFitCheck() {
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Detail Dialog */}
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
