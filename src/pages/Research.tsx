@@ -4,7 +4,6 @@ import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
-import AssetCrmLink from '@/components/research/AssetCrmLink';
 import { usePortfolio } from '@/context/PortfolioContext';
 
 const Research = () => {
@@ -27,11 +26,6 @@ const Research = () => {
         <div className="flex items-center gap-3 mb-6">
           <Search className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-mono text-foreground tracking-tight">RESEARCH</h1>
-        </div>
-
-        {/* Asset Selection for Research */}
-        <div className="mb-4 max-w-sm">
-          <AssetCrmLink />
         </div>
 
         {/* Monte Carlo Simulation */}
