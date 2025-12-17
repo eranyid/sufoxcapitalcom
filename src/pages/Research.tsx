@@ -5,7 +5,6 @@ import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
 import AssetCrmLink from '@/components/research/AssetCrmLink';
-import ResearchWatchlist from '@/components/research/ResearchWatchlist';
 import { usePortfolio } from '@/context/PortfolioContext';
 
 const Research = () => {
@@ -30,11 +29,10 @@ const Research = () => {
           <h1 className="text-xl font-mono text-foreground tracking-tight">RESEARCH</h1>
         </div>
 
-        {/* Asset CRM Link & Watchlist */}
+        {/* Asset Research & CRM Integration */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-          <div className="space-y-4">
+          <div>
             <AssetCrmLink />
-            <ResearchWatchlist />
           </div>
           <div className="lg:col-span-2">
             {/* Placeholder for future asset-specific research */}
