@@ -29,17 +29,9 @@ const Research = () => {
           <h1 className="text-xl font-mono text-foreground tracking-tight">RESEARCH</h1>
         </div>
 
-        {/* Asset Research & CRM Integration */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-          <div>
-            <AssetCrmLink />
-          </div>
-          <div className="lg:col-span-2">
-            {/* Placeholder for future asset-specific research */}
-            <div className="h-full min-h-[200px] rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground text-sm">
-              Select an asset to view detailed research
-            </div>
-          </div>
+        {/* Asset Selection for Research */}
+        <div className="mb-4 max-w-sm">
+          <AssetCrmLink />
         </div>
 
         {/* Monte Carlo Simulation */}
