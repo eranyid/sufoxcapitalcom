@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTrash, DeletedItem } from '@/hooks/useTrash';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +31,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { Trash2, RotateCcw, AlertTriangle, Package, FileText, Building2, Landmark, CheckSquare, FolderOpen } from 'lucide-react';
+import { Trash2, RotateCcw, AlertTriangle, Package, FileText, Building2, Landmark, CheckSquare, FolderOpen, Play, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const typeIcons: Record<DeletedItem['type'], React.ReactNode> = {
   transaction: <FileText className="h-4 w-4" />,
@@ -60,12 +62,44 @@ const typeBadgeVariants: Record<DeletedItem['type'], 'default' | 'secondary' | '
 };
 
 export default function Trash() {
-  const { items, loading, restoreItem, permanentlyDelete, emptyTrash, getDaysRemaining } = useTrash();
+  const { items, loading, restoreItem, permanentlyDelete, emptyTrash, getDaysRemaining, refetch } = useTrash();
   const [typeFilter, setTypeFilter] = useState<DeletedItem['type'] | 'all'>('all');
+  const [runningCleanup, setRunningCleanup] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     type: 'restore' | 'delete' | 'empty';
     item?: DeletedItem;
   } | null>(null);
+
+  const handleRunCleanup = async () => {
+    setRunningCleanup(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cleanup-trash');
+      
+      if (error) {
+        console.error('Cleanup error:', error);
+        toast.error('Failed to run cleanup');
+        return;
+      }
+
+      if (data?.success) {
+        const totalDeleted = Object.values(data.details as Record<string, number>)
+          .filter((v): v is number => typeof v === 'number' && v > 0)
+          .reduce((a, b) => a + b, 0);
+        
+        if (totalDeleted > 0) {
+          toast.success(`Cleanup complete: ${totalDeleted} expired items permanently deleted`);
+          refetch();
+        } else {
+          toast.info('No expired items to clean up');
+        }
+      }
+    } catch (err) {
+      console.error('Cleanup failed:', err);
+      toast.error('Cleanup job failed');
+    } finally {
+      setRunningCleanup(false);
+    }
+  };
 
   const filteredItems = typeFilter === 'all' 
     ? items 
@@ -123,7 +157,21 @@ export default function Trash() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRunCleanup}
+            disabled={runningCleanup}
+          >
+            {runningCleanup ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4 mr-1" />
+            )}
+            Run Cleanup Now
+          </Button>
+          
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Filter by type" />
