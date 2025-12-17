@@ -17,6 +17,8 @@ import {
   Activity,
   Filter,
   Calendar,
+  CalendarDays,
+  List,
   ChevronDown,
   ChevronRight,
   ExternalLink,
@@ -41,7 +43,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
+import OperationalCalendar, { CalendarEvent } from './OperationalCalendar';
 
 interface CrmActivityEntry {
   id: string;
@@ -88,6 +95,7 @@ interface TimelineEvent {
     impactSummary?: string;
     taskStatus?: string;
     urgency?: string;
+    dueDate?: string;
     trades?: Array<{ ticker: string; action: string; value: number; weightChange: number }>;
   };
 }
@@ -96,6 +104,8 @@ interface Props {
   projectId: string;
 }
 
+type ViewMode = 'timeline' | 'calendar';
+
 export default function ProjectTimeline({ projectId }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -103,6 +113,7 @@ export default function ProjectTimeline({ projectId }: Props) {
   const [crmLogs, setCrmLogs] = useState<CrmActivityEntry[]>([]);
   const [tasks, setTasks] = useState<CrmTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
   const [filter, setFilter] = useState<EventType>('all');
   const [tickerFilter, setTickerFilter] = useState('');
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
@@ -295,7 +306,7 @@ export default function ProjectTimeline({ projectId }: Props) {
       });
     });
 
-    // Add task events (creation only for now)
+    // Add task events - include due date
     tasks.forEach(task => {
       events.push({
         id: `task-${task.id}`,
@@ -303,12 +314,13 @@ export default function ProjectTimeline({ projectId }: Props) {
         ticker: 'TASK',
         title: task.task_name,
         description: `Status: ${task.status.replace('_', ' ')} | Urgency: ${task.urgency}`,
-        timestamp: task.created_at,
+        timestamp: task.due_date || task.created_at,
         sourceModule: 'Tasks',
         sourceId: task.id,
         details: {
           taskStatus: task.status,
-          urgency: task.urgency
+          urgency: task.urgency,
+          dueDate: task.due_date || undefined
         }
       });
     });
@@ -340,6 +352,151 @@ export default function ProjectTimeline({ projectId }: Props) {
 
     return filtered;
   }, [transactions, valuations, crmLogs, tasks, filter, tickerFilter]);
+
+  // Calendar events (unfiltered for calendar view's own filters)
+  const calendarEvents: CalendarEvent[] = useMemo(() => {
+    const events: CalendarEvent[] = [];
+
+    // Calculate current positions and weights
+    const positions = calculatePositions(transactions);
+    const latestVals = getLatestValuations(valuations);
+    
+    let totalValue = 0;
+    for (const [ticker, pos] of Object.entries(positions)) {
+      if (pos.quantity > 0) {
+        const valData = latestVals[ticker];
+        const price = valData?.pricePerUnit || pos.avgCost;
+        totalValue += pos.quantity * price;
+      }
+    }
+
+    // Add transactions
+    transactions.forEach(tx => {
+      const isBuy = tx.transactionType === 'buy';
+      const pos = positions[tx.ticker];
+      const valData = latestVals[tx.ticker];
+      const currentPrice = valData?.pricePerUnit || tx.pricePerUnit;
+      const currentValue = (pos?.quantity || 0) * currentPrice;
+      const weight = totalValue > 0 ? (currentValue / totalValue) : 0;
+      
+      events.push({
+        id: `tx-${tx.id}`,
+        type: isBuy ? 'trade_buy' : 'trade_sell',
+        ticker: tx.ticker,
+        title: isBuy ? 'Position Opened / Added' : 'Position Reduced / Closed',
+        description: isBuy 
+          ? `Bought ${tx.quantity.toLocaleString()} shares @ $${tx.pricePerUnit.toFixed(2)}`
+          : `Sold ${tx.quantity.toLocaleString()} shares @ $${tx.pricePerUnit.toFixed(2)}`,
+        timestamp: tx.date,
+        sourceModule: 'Transactions',
+        sourceId: tx.id,
+        status: 'executed',
+        details: {
+          quantity: tx.quantity,
+          price: tx.pricePerUnit,
+          value: tx.quantity * tx.pricePerUnit,
+          weight: weight * 100
+        }
+      });
+    });
+
+    // Add CRM activity logs
+    crmLogs.forEach(log => {
+      let type: CalendarEvent['type'] = 'crm_update';
+      let title = '';
+      let description = '';
+      let sourceModule: CalendarEvent['sourceModule'] = 'CRM';
+      let details: CalendarEvent['details'] = {};
+      let status: CalendarEvent['status'] = 'executed';
+
+      switch (log.action) {
+        case 'auto_add_ongoing':
+          type = 'crm_add';
+          title = 'Added to Portfolio Holdings';
+          description = 'Auto-linked from transaction';
+          break;
+        case 'auto_move_old_exits':
+          type = 'crm_move';
+          title = 'Position Fully Exited';
+          description = 'Moved to Old Exits';
+          break;
+        case 'rebalance_planned': {
+          type = 'rebalance';
+          title = 'Rebalance Analysis';
+          const rebalDetails = log.details as { numberOfTrades?: number; totalTurnover?: number };
+          description = `Planned ${rebalDetails.numberOfTrades || 0} trades`;
+          sourceModule = 'Research';
+          status = 'planned';
+          details = { value: rebalDetails.totalTurnover };
+          break;
+        }
+        case 'rebalance_executed':
+          type = 'rebalance';
+          title = 'Rebalance Executed';
+          description = 'Portfolio rebalancing completed';
+          sourceModule = 'Research';
+          break;
+        case 'compliance_check_manual': {
+          type = 'compliance';
+          title = 'Compliance Check';
+          const compDetails = log.details as { query?: string; status?: string; reasoning?: string };
+          description = compDetails.query || 'Manual compliance check';
+          sourceModule = 'Policy';
+          details = {
+            status: compDetails.status,
+            query: compDetails.query,
+            reasoning: compDetails.reasoning
+          };
+          break;
+        }
+        case 'watchlist_convert':
+        case 'research_add':
+          type = 'crm_add';
+          title = 'Added to Research Pipeline';
+          description = 'New company added';
+          sourceModule = 'Research';
+          break;
+        default:
+          title = log.action.replace(/_/g, ' ');
+          description = '';
+      }
+
+      events.push({
+        id: `crm-${log.id}`,
+        type,
+        ticker: log.ticker,
+        title,
+        description,
+        timestamp: log.created_at,
+        sourceModule,
+        sourceId: log.source_transaction_id || undefined,
+        status,
+        details
+      });
+    });
+
+    // Add task events with due dates
+    tasks.forEach(task => {
+      events.push({
+        id: `task-${task.id}`,
+        type: 'task',
+        ticker: 'TASK',
+        title: task.task_name,
+        description: `${task.status.replace('_', ' ')} | ${task.urgency}`,
+        timestamp: task.due_date || task.created_at,
+        sourceModule: 'Tasks',
+        sourceId: task.id,
+        status: task.status === 'completed' ? 'executed' : 'planned',
+        details: {
+          taskStatus: task.status,
+          urgency: task.urgency,
+          dueDate: task.due_date || undefined
+        }
+      });
+    });
+
+    return events;
+  }, [transactions, valuations, crmLogs, tasks]);
 
   const toggleExpand = (id: string) => {
     setExpandedEvents(prev => {
@@ -440,7 +597,15 @@ export default function ProjectTimeline({ projectId }: Props) {
     }
   };
 
-  // Group events by date
+  const handleCalendarNavigate = (path: string, params?: Record<string, string>) => {
+    if (params?.highlight) {
+      navigate(`${path}?highlight=${params.highlight}`);
+    } else {
+      navigate(path);
+    }
+  };
+
+  // Group events by date (for timeline view)
   const groupedEvents = useMemo(() => {
     const groups: { date: string; events: TimelineEvent[] }[] = [];
     let currentDate = '';
@@ -470,60 +635,116 @@ export default function ProjectTimeline({ projectId }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
+      {/* View Toggle & Filters */}
       <div className="flex flex-wrap items-center gap-3 p-4 bg-card/50 rounded-lg border border-border">
-        <div className="flex items-center gap-2">
-          <Filter size={14} className="text-muted-foreground" />
-          <Select value={filter} onValueChange={(v) => setFilter(v as EventType)}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Events</SelectItem>
-              <SelectItem value="trade">Trades</SelectItem>
-              <SelectItem value="crm">CRM Changes</SelectItem>
-              <SelectItem value="rebalance">Rebalance</SelectItem>
-              <SelectItem value="compliance">Compliance</SelectItem>
-              <SelectItem value="task">Tasks</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* View Toggle */}
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => v && setViewMode(v as ViewMode)}
+          className="bg-muted/30 rounded-lg p-0.5"
+        >
+          <ToggleGroupItem
+            value="timeline"
+            aria-label="Timeline view"
+            className={cn(
+              "h-7 px-3 text-xs gap-1.5",
+              viewMode === 'timeline' && "bg-background shadow-sm"
+            )}
+          >
+            <List size={14} />
+            Timeline
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="calendar"
+            aria-label="Calendar view"
+            className={cn(
+              "h-7 px-3 text-xs gap-1.5",
+              viewMode === 'calendar' && "bg-background shadow-sm"
+            )}
+          >
+            <CalendarDays size={14} />
+            Calendar
+          </ToggleGroupItem>
+        </ToggleGroup>
 
-        <div className="relative flex-1 min-w-[200px] max-w-[300px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Filter by ticker or name..."
-            value={tickerFilter}
-            onChange={(e) => setTickerFilter(e.target.value)}
-            className="h-8 text-xs pl-9 pr-8"
-          />
-          {tickerFilter && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-              onClick={() => setTickerFilter('')}
-            >
-              <X size={12} />
-            </Button>
-          )}
-        </div>
+        {/* Separator */}
+        <div className="h-6 w-px bg-border" />
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
-          <Activity size={12} />
-          <span>{timelineEvents.length} events</span>
-        </div>
+        {/* Timeline-specific filters (only show for timeline view) */}
+        {viewMode === 'timeline' && (
+          <>
+            <div className="flex items-center gap-2">
+              <Filter size={14} className="text-muted-foreground" />
+              <Select value={filter} onValueChange={(v) => setFilter(v as EventType)}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Events</SelectItem>
+                  <SelectItem value="trade">Trades</SelectItem>
+                  <SelectItem value="crm">CRM Changes</SelectItem>
+                  <SelectItem value="rebalance">Rebalance</SelectItem>
+                  <SelectItem value="compliance">Compliance</SelectItem>
+                  <SelectItem value="task">Tasks</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Filter by ticker or name..."
+                value={tickerFilter}
+                onChange={(e) => setTickerFilter(e.target.value)}
+                className="h-8 text-xs pl-9 pr-8"
+              />
+              {tickerFilter && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                  onClick={() => setTickerFilter('')}
+                >
+                  <X size={12} />
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
+              <Activity size={12} />
+              <span>{timelineEvents.length} events</span>
+            </div>
+          </>
+        )}
+
+        {viewMode === 'calendar' && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
+            <CalendarDays size={12} />
+            <span>{calendarEvents.length} total events</span>
+          </div>
+        )}
       </div>
 
-      {/* Timeline */}
-      {timelineEvents.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Activity size={48} className="mx-auto mb-4 opacity-30" />
-          <p className="text-sm">No activity recorded yet.</p>
-          <p className="text-xs mt-1">Events will appear here as you trade, update CRM, and run analyses.</p>
-        </div>
-      ) : (
-        <ScrollArea className="h-[calc(100vh-320px)]">
+      {/* Calendar View */}
+      {viewMode === 'calendar' && (
+        <OperationalCalendar
+          events={calendarEvents}
+          onNavigate={handleCalendarNavigate}
+        />
+      )}
+
+      {/* Timeline View */}
+      {viewMode === 'timeline' && (
+        <>
+          {timelineEvents.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <Activity size={48} className="mx-auto mb-4 opacity-30" />
+              <p className="text-sm">No activity recorded yet.</p>
+              <p className="text-xs mt-1">Events will appear here as you trade, update CRM, and run analyses.</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-[calc(100vh-320px)]">
           <div className="space-y-6 pr-4">
             {groupedEvents.map(group => (
               <div key={group.date}>
@@ -693,32 +914,34 @@ export default function ProjectTimeline({ projectId }: Props) {
             ))}
           </div>
         </ScrollArea>
-      )}
+          )}
 
-      {/* Summary Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-card/30 rounded-lg border border-border text-xs text-muted-foreground">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            <DollarSign size={12} className="text-green-400" />
-            Trades: {timelineEvents.filter(e => e.type === 'trade_buy' || e.type === 'trade_sell').length}
-          </span>
-          <span className="flex items-center gap-1">
-            <Building2 size={12} className="text-primary" />
-            CRM: {timelineEvents.filter(e => e.type.startsWith('crm')).length}
-          </span>
-          <span className="flex items-center gap-1">
-            <ShieldCheck size={12} className="text-blue-400" />
-            Compliance: {timelineEvents.filter(e => e.type === 'compliance').length}
-          </span>
-          <span className="flex items-center gap-1">
-            <RefreshCw size={12} className="text-blue-400" />
-            Rebalance: {timelineEvents.filter(e => e.type === 'rebalance').length}
-          </span>
-        </div>
-        <span className="font-mono">
-          Last updated: {format(new Date(), 'MMM d, HH:mm')}
-        </span>
-      </div>
+          {/* Summary Footer */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-card/30 rounded-lg border border-border text-xs text-muted-foreground">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <DollarSign size={12} className="text-green-400" />
+                Trades: {timelineEvents.filter(e => e.type === 'trade_buy' || e.type === 'trade_sell').length}
+              </span>
+              <span className="flex items-center gap-1">
+                <Building2 size={12} className="text-primary" />
+                CRM: {timelineEvents.filter(e => e.type.startsWith('crm')).length}
+              </span>
+              <span className="flex items-center gap-1">
+                <ShieldCheck size={12} className="text-blue-400" />
+                Compliance: {timelineEvents.filter(e => e.type === 'compliance').length}
+              </span>
+              <span className="flex items-center gap-1">
+                <RefreshCw size={12} className="text-blue-400" />
+                Rebalance: {timelineEvents.filter(e => e.type === 'rebalance').length}
+              </span>
+            </div>
+            <span className="font-mono">
+              Last updated: {format(new Date(), 'MMM d, HH:mm')}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
