@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Building2, Landmark, CheckSquare, Plus, MoreHorizontal, Pencil, Trash2, FolderKanban } from 'lucide-react';
+import { ArrowLeft, Building2, Landmark, CheckSquare, Plus, MoreHorizontal, Pencil, Trash2, FolderKanban, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -43,6 +43,7 @@ import { toast } from 'sonner';
 import ProjectCompaniesBoard from '@/components/crm/ProjectCompaniesBoard';
 import ProjectFundsBoard from '@/components/crm/ProjectFundsBoard';
 import ProjectTasksBoard from '@/components/crm/ProjectTasksBoard';
+import ProjectTimeline from '@/components/crm/ProjectTimeline';
 import CrossSystemActivityLog from '@/components/crm/CrossSystemActivityLog';
 
 const LAST_PROJECT_KEY = 'crm_last_project_id';
@@ -296,6 +297,13 @@ export default function CRMProject() {
             <CheckSquare size={16} />
             Tasks
           </TabsTrigger>
+          <TabsTrigger 
+            value="timeline" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 gap-2"
+          >
+            <History size={16} />
+            Timeline
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="companies" className="mt-6">
@@ -308,6 +316,10 @@ export default function CRMProject() {
 
         <TabsContent value="tasks" className="mt-6">
           <ProjectTasksBoard projectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="timeline" className="mt-6">
+          <ProjectTimeline projectId={project.id} />
         </TabsContent>
       </Tabs>
 
