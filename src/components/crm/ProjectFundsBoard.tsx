@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, ChevronDown, ChevronRight, Trash2, ArrowRight, MoreHorizontal, Copy } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Trash2, ArrowRight, MoreHorizontal, Copy, GripVertical } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CrmFund, GroupName, GROUP_OPTIONS, BOARD_STATUS_OPTIONS } from '@/types/crm';
@@ -37,9 +37,69 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { BoardStatusBadge } from './BoardStatusBadge';
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  useDroppable,
+} from '@dnd-kit/core';
+import {
+  useSortable,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Props {
   projectId: string;
+}
+
+function DraggableRow({ fund, children }: { fund: CrmFund; children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: fund.id, data: { fund } });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b border-border hover:bg-muted/10 group/row">
+      <td className="px-2 py-1.5 w-[30px]">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded opacity-50 hover:opacity-100"
+        >
+          <GripVertical size={14} />
+        </div>
+      </td>
+      {children}
+    </tr>
+  );
+}
+
+function DroppableGroup({ groupId, children }: { groupId: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: groupId });
+
+  return (
+    <tbody ref={setNodeRef} className={isOver ? 'bg-primary/5' : ''}>
+      {children}
+    </tbody>
+  );
 }
 
 export default function ProjectFundsBoard({ projectId }: Props) {
@@ -54,6 +114,12 @@ export default function ProjectFundsBoard({ projectId }: Props) {
   });
   const [addingToGroup, setAddingToGroup] = useState<GroupName | null>(null);
   const [newFundName, setNewFundName] = useState('');
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor)
+  );
 
   const fetchFunds = useCallback(async () => {
     const { data, error } = await supabase
@@ -202,238 +268,283 @@ export default function ProjectFundsBoard({ projectId }: Props) {
     setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const activeFund = funds.find(f => f.id === active.id);
+    if (!activeFund) return;
+
+    const targetGroup = GROUP_OPTIONS.find(g => g.value === over.id);
+    if (targetGroup && targetGroup.value !== activeFund.group_name) {
+      handleInlineUpdate(activeFund.id, 'group_name', targetGroup.value);
+      return;
+    }
+
+    const overFund = funds.find(f => f.id === over.id);
+    if (overFund && overFund.group_name !== activeFund.group_name) {
+      handleInlineUpdate(activeFund.id, 'group_name', overFund.group_name);
+    }
+  };
+
   const groupedFunds = GROUP_OPTIONS.reduce((acc, group) => {
     acc[group.value] = funds.filter(f => f.group_name === group.value);
     return acc;
   }, {} as Record<GroupName, CrmFund[]>);
+
+  const activeFund = activeId ? funds.find(f => f.id === activeId) : null;
 
   if (loading) {
     return <div className="h-64 bg-muted/50 animate-pulse rounded" />;
   }
 
   return (
-    <div className="space-y-3">
-      {GROUP_OPTIONS.map(group => (
-        <Collapsible 
-          key={group.value} 
-          open={expandedGroups[group.value]}
-          onOpenChange={() => toggleGroup(group.value)}
-        >
-          <div className="border border-border rounded overflow-hidden">
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50">
-                <div className="flex items-center gap-2">
-                  {expandedGroups[group.value] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  <span className="font-medium text-sm">{group.label}</span>
-                  <Badge variant="secondary" className="text-xs h-5">
-                    {groupedFunds[group.value]?.length || 0}
-                  </Badge>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="space-y-3">
+        {GROUP_OPTIONS.map(group => (
+          <Collapsible 
+            key={group.value} 
+            open={expandedGroups[group.value]}
+            onOpenChange={() => toggleGroup(group.value)}
+          >
+            <div className="border border-border rounded overflow-hidden">
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    {expandedGroups[group.value] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    <span className="font-medium text-sm">{group.label}</span>
+                    <Badge variant="secondary" className="text-xs h-5">
+                      {groupedFunds[group.value]?.length || 0}
+                    </Badge>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAddingToGroup(group.value);
+                      setExpandedGroups(prev => ({ ...prev, [group.value]: true }));
+                    }}
+                  >
+                    <Plus size={12} className="mr-1" />
+                    Add
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAddingToGroup(group.value);
-                    setExpandedGroups(prev => ({ ...prev, [group.value]: true }));
-                  }}
-                >
-                  <Plus size={12} className="mr-1" />
-                  Add
-                </Button>
-              </div>
-            </CollapsibleTrigger>
+              </CollapsibleTrigger>
 
-            <CollapsibleContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/20">
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[180px]">Name</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Status</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Strategy</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Asset Class</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Geography</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[150px]">Notes</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[140px]">Timeline</th>
-                      <th className="w-[50px]"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {addingToGroup === group.value && (
-                      <tr className="border-b border-border">
-                        <td colSpan={8} className="px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              value={newFundName}
-                              onChange={e => setNewFundName(e.target.value)}
-                              placeholder="Fund name..."
-                              className="h-8 text-sm"
-                              autoFocus
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleCreate(group.value);
-                                if (e.key === 'Escape') setAddingToGroup(null);
-                              }}
-                            />
-                            <Button size="sm" className="h-8" onClick={() => handleCreate(group.value)}>Add</Button>
-                            <Button size="sm" variant="ghost" className="h-8" onClick={() => setAddingToGroup(null)}>Cancel</Button>
-                          </div>
-                        </td>
+              <CollapsibleContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/20">
+                        <th className="w-[30px]"></th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[180px]">Name</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Status</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Strategy</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Asset Class</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Geography</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[150px]">Notes</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[140px]">Timeline</th>
+                        <th className="w-[50px]"></th>
                       </tr>
-                    )}
-                    {groupedFunds[group.value]?.length === 0 && addingToGroup !== group.value && (
-                      <tr>
-                        <td colSpan={8} className="text-center text-muted-foreground py-6 text-sm">
-                          No items
-                        </td>
-                      </tr>
-                    )}
-                    {groupedFunds[group.value]?.map(fund => (
-                      <tr key={fund.id} className="border-b border-border hover:bg-muted/10 group/row">
-                        <td className="px-3 py-1.5">
-                          <Input
-                            defaultValue={fund.fund_name}
-                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
-                            onBlur={e => {
-                              if (e.target.value !== fund.fund_name) {
-                                handleInlineUpdate(fund.id, 'fund_name', e.target.value);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Select
-                            value={fund.status}
-                            onValueChange={v => handleInlineUpdate(fund.id, 'status', v)}
-                          >
-                            <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[110px]">
-                              <BoardStatusBadge status={fund.status} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {BOARD_STATUS_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Input
-                            defaultValue={fund.strategy || ''}
-                            placeholder="-"
-                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[100px]"
-                            onBlur={e => {
-                              if (e.target.value !== (fund.strategy || '')) {
-                                handleInlineUpdate(fund.id, 'strategy', e.target.value || null);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Input
-                            defaultValue={fund.asset_class || ''}
-                            placeholder="-"
-                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
-                            onBlur={e => {
-                              if (e.target.value !== (fund.asset_class || '')) {
-                                handleInlineUpdate(fund.id, 'asset_class', e.target.value || null);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Input
-                            defaultValue={fund.geography || ''}
-                            placeholder="-"
-                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
-                            onBlur={e => {
-                              if (e.target.value !== (fund.geography || '')) {
-                                handleInlineUpdate(fund.id, 'geography', e.target.value || null);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Input
-                            defaultValue={fund.notes || ''}
-                            placeholder="-"
-                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
-                            onBlur={e => {
-                              if (e.target.value !== (fund.notes || '')) {
-                                handleInlineUpdate(fund.id, 'notes', e.target.value || null);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <div className="flex gap-1">
-                            <Input
-                              type="date"
-                              defaultValue={fund.timeline_start || ''}
-                              className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[85px]"
-                              onBlur={e => {
-                                if (e.target.value !== (fund.timeline_start || '')) {
-                                  handleInlineUpdate(fund.id, 'timeline_start', e.target.value || null);
-                                }
-                              }}
-                            />
-                            <Input
-                              type="date"
-                              defaultValue={fund.timeline_end || ''}
-                              className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[85px]"
-                              onBlur={e => {
-                                if (e.target.value !== (fund.timeline_end || '')) {
-                                  handleInlineUpdate(fund.id, 'timeline_end', e.target.value || null);
-                                }
-                              }}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <div className="opacity-0 group-hover/row:opacity-100">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-7 w-7">
-                                  <MoreHorizontal size={14} />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleDuplicate(fund)}>
-                                  <Copy size={14} className="mr-2" />
-                                  Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Move to</div>
-                                {GROUP_OPTIONS.filter(g => g.value !== fund.group_name).map(g => (
-                                  <DropdownMenuItem 
-                                    key={g.value} 
-                                    onClick={() => handleInlineUpdate(fund.id, 'group_name', g.value)}
-                                  >
-                                    <ArrowRight size={14} className="mr-2" />
-                                    {g.label}
-                                  </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => setDeleteId(fund.id)}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 size={14} className="mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CollapsibleContent>
+                    </thead>
+                    <SortableContext items={groupedFunds[group.value]?.map(f => f.id) || []} strategy={verticalListSortingStrategy}>
+                      <DroppableGroup groupId={group.value}>
+                        {addingToGroup === group.value && (
+                          <tr className="border-b border-border">
+                            <td colSpan={9} className="px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={newFundName}
+                                  onChange={e => setNewFundName(e.target.value)}
+                                  placeholder="Fund name..."
+                                  className="h-8 text-sm"
+                                  autoFocus
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') handleCreate(group.value);
+                                    if (e.key === 'Escape') setAddingToGroup(null);
+                                  }}
+                                />
+                                <Button size="sm" className="h-8" onClick={() => handleCreate(group.value)}>Add</Button>
+                                <Button size="sm" variant="ghost" className="h-8" onClick={() => setAddingToGroup(null)}>Cancel</Button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        {groupedFunds[group.value]?.length === 0 && addingToGroup !== group.value && (
+                          <tr>
+                            <td colSpan={9} className="text-center text-muted-foreground py-6 text-sm">
+                              No items — drag here to add
+                            </td>
+                          </tr>
+                        )}
+                        {groupedFunds[group.value]?.map(fund => (
+                          <DraggableRow key={fund.id} fund={fund}>
+                            <td className="px-3 py-1.5">
+                              <Input
+                                defaultValue={fund.fund_name}
+                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
+                                onBlur={e => {
+                                  if (e.target.value !== fund.fund_name) {
+                                    handleInlineUpdate(fund.id, 'fund_name', e.target.value);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <Select
+                                value={fund.status}
+                                onValueChange={v => handleInlineUpdate(fund.id, 'status', v)}
+                              >
+                                <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[110px]">
+                                  <BoardStatusBadge status={fund.status} />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border border-border z-50">
+                                  {BOARD_STATUS_OPTIONS.map(opt => (
+                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <Input
+                                defaultValue={fund.strategy || ''}
+                                placeholder="-"
+                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[100px]"
+                                onBlur={e => {
+                                  if (e.target.value !== (fund.strategy || '')) {
+                                    handleInlineUpdate(fund.id, 'strategy', e.target.value || null);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <Input
+                                defaultValue={fund.asset_class || ''}
+                                placeholder="-"
+                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
+                                onBlur={e => {
+                                  if (e.target.value !== (fund.asset_class || '')) {
+                                    handleInlineUpdate(fund.id, 'asset_class', e.target.value || null);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <Input
+                                defaultValue={fund.geography || ''}
+                                placeholder="-"
+                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
+                                onBlur={e => {
+                                  if (e.target.value !== (fund.geography || '')) {
+                                    handleInlineUpdate(fund.id, 'geography', e.target.value || null);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <Input
+                                defaultValue={fund.notes || ''}
+                                placeholder="-"
+                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
+                                onBlur={e => {
+                                  if (e.target.value !== (fund.notes || '')) {
+                                    handleInlineUpdate(fund.id, 'notes', e.target.value || null);
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <div className="flex gap-1">
+                                <Input
+                                  type="date"
+                                  defaultValue={fund.timeline_start || ''}
+                                  className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[85px]"
+                                  onBlur={e => {
+                                    if (e.target.value !== (fund.timeline_start || '')) {
+                                      handleInlineUpdate(fund.id, 'timeline_start', e.target.value || null);
+                                    }
+                                  }}
+                                />
+                                <Input
+                                  type="date"
+                                  defaultValue={fund.timeline_end || ''}
+                                  className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[85px]"
+                                  onBlur={e => {
+                                    if (e.target.value !== (fund.timeline_end || '')) {
+                                      handleInlineUpdate(fund.id, 'timeline_end', e.target.value || null);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <div className="opacity-0 group-hover/row:opacity-100">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7">
+                                      <MoreHorizontal size={14} />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="bg-popover border border-border z-50">
+                                    <DropdownMenuItem onClick={() => handleDuplicate(fund)}>
+                                      <Copy size={14} className="mr-2" />
+                                      Duplicate
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Move to</div>
+                                    {GROUP_OPTIONS.filter(g => g.value !== fund.group_name).map(g => (
+                                      <DropdownMenuItem 
+                                        key={g.value} 
+                                        onClick={() => handleInlineUpdate(fund.id, 'group_name', g.value)}
+                                      >
+                                        <ArrowRight size={14} className="mr-2" />
+                                        {g.label}
+                                      </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                      onClick={() => setDeleteId(fund.id)}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 size={14} className="mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </td>
+                          </DraggableRow>
+                        ))}
+                      </DroppableGroup>
+                    </SortableContext>
+                  </table>
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+        ))}
+      </div>
+
+      <DragOverlay>
+        {activeFund && (
+          <div className="bg-card border border-primary rounded px-3 py-2 shadow-lg text-sm">
+            {activeFund.fund_name}
           </div>
-        </Collapsible>
-      ))}
+        )}
+      </DragOverlay>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
@@ -451,6 +562,6 @@ export default function ProjectFundsBoard({ projectId }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </DndContext>
   );
 }
