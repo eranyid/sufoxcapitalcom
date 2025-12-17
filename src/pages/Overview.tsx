@@ -10,6 +10,7 @@ import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
 import { CashManagement } from '@/components/dashboard/CashManagement';
 import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { NewsTicker } from '@/components/dashboard/NewsTicker';
+import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
 import { calculateCorrelationMatrix } from '@/lib/calculations';
 import { generatePDFReport, MonteCarloResultsForPDF, CorrelationMatrixForPDF } from '@/lib/pdfReport';
 import { computeFactorModel } from '@/lib/factorModel';
@@ -290,12 +291,11 @@ export default function Overview() {
         />
       )}
 
-      {/* Cash Management & Policy Check - Stack on mobile */}
+      {/* Cash Management, Policy Check & CRM Summary - Stack on mobile */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
-        <div className="lg:col-span-2">
-          <CashManagement />
-        </div>
+        <CashManagement />
         <PolicyFitCheck />
+        <CrmSummaryWidget />
       </div>
 
       {/* Current Holdings */}
