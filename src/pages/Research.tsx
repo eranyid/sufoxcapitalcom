@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react';
 import TradingViewTickerTape from '@/components/dashboard/TradingViewTickerTape';
 import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
+import EconomicCalendar from '@/components/dashboard/EconomicCalendar';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
@@ -42,6 +43,11 @@ const Research = () => {
 
         {/* Efficient Frontier Module */}
         <EfficientFrontier />
+
+        {/* Economic Calendar */}
+        <div className="mt-4">
+          <EconomicCalendar />
+        </div>
 
         {/* Rebalance Tool */}
         <div className="mt-4">
