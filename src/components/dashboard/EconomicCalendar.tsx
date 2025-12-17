@@ -47,16 +47,19 @@ const EconomicCalendar = () => {
             </Button>
           </div>
         ) : (
-          <iframe
-            src={CALENDAR_URL}
-            width="100%"
-            className="h-[600px] md:h-[700px] lg:h-[650px] border-0"
-            frameBorder="0"
-            allowTransparency={true}
-            onError={() => setLoadError(true)}
-            title="Economic Calendar"
-            sandbox="allow-scripts allow-same-origin"
-          />
+          <div className="bg-background">
+            <iframe
+              src={CALENDAR_URL}
+              width="100%"
+              className="h-[600px] md:h-[700px] lg:h-[650px] border-0 bg-background"
+              frameBorder="0"
+              allowTransparency={true}
+              onError={() => setLoadError(true)}
+              title="Economic Calendar"
+              sandbox="allow-scripts allow-same-origin"
+              style={{ backgroundColor: 'hsl(var(--background))' }}
+            />
+          </div>
         )}
       </div>
     </div>
