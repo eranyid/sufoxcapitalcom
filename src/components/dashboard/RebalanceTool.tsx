@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Scale, TrendingUp, TrendingDown, AlertCircle, Plus, Trash2, RefreshCw, ArrowRight, BarChart3, FileText, Loader2, Equal } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useActivityLog } from '@/hooks/useActivityLog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -85,6 +86,7 @@ const COLORS = [
 export function RebalanceTool() {
   const { transactions, valuations, performanceMetrics } = usePortfolio();
   const { user } = useAuth();
+  const { logRebalanceActivity } = useActivityLog();
   const [isOpen, setIsOpen] = useState(true);
   const [minTradeSize, setMinTradeSize] = useState(0.5);
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -96,6 +98,23 @@ export function RebalanceTool() {
   const [loadingEqualWeight, setLoadingEqualWeight] = useState(false);
   const [policyApplied, setPolicyApplied] = useState(false);
   const [equalWeightApplied, setEqualWeightApplied] = useState(false);
+  const [firstProjectId, setFirstProjectId] = useState<string | null>(null);
+
+  // Fetch first project for activity logging
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('crm_projects')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setFirstProjectId(data[0].id);
+        }
+      });
+  }, [user]);
 
   // Calculate current holdings from transactions and valuations
   const currentHoldings = useMemo((): Holding[] => {
@@ -672,7 +691,23 @@ export function RebalanceTool() {
             {/* Action Buttons */}
             <div className="flex gap-2">
               <Button
-                onClick={() => setShowAnalysis(true)}
+                onClick={async () => {
+                  setShowAnalysis(true);
+                  // Log rebalance activity after analysis is generated
+                  if (firstProjectId && analysis) {
+                    await logRebalanceActivity(firstProjectId, {
+                      trades: analysis.trades.map(t => ({
+                        ticker: t.ticker,
+                        action: t.action,
+                        value: t.value,
+                        weightChange: t.weightChange
+                      })),
+                      totalTurnover: analysis.totalTurnover,
+                      numberOfTrades: analysis.numberOfTrades,
+                      cashImpact: analysis.cashImpact
+                    });
+                  }
+                }}
                 className="flex-1 h-8 text-xs"
                 disabled={Math.abs(totalTargetWeight - 100) >= 5}
               >

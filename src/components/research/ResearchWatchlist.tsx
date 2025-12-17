@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useActivityLog } from '@/hooks/useActivityLog';
 import { 
   Eye, 
   Plus, 
@@ -47,6 +48,7 @@ interface CrmCompany {
 
 export default function ResearchWatchlist() {
   const { user } = useAuth();
+  const { logActivity } = useActivityLog();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [projects, setProjects] = useState<CrmProject[]>([]);
   const [crmCompanies, setCrmCompanies] = useState<CrmCompany[]>([]);
@@ -157,6 +159,18 @@ export default function ResearchWatchlist() {
       setAddingSymbol(null);
       return;
     }
+
+    // Log activity
+    await logActivity({
+      projectId: targetProject.id,
+      ticker: item.symbol,
+      action: 'watchlist_convert',
+      details: {
+        source: 'watchlist',
+        displayName: item.display_name,
+        assetClass: item.asset_class
+      }
+    });
 
     toast.success(`Added ${item.symbol} to CRM → ${targetProject.name}`);
     

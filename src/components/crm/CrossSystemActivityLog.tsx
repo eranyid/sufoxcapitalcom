@@ -141,6 +141,23 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
           type = 'crm_move';
           description = 'Manual CRM update';
           break;
+        case 'rebalance_planned':
+          type = 'rebalance';
+          const details = log.details as { numberOfTrades?: number; totalTurnover?: number; trades?: unknown[] };
+          description = `Rebalance planned: ${details.numberOfTrades || 0} trades, $${Math.round(details.totalTurnover || 0).toLocaleString()} turnover`;
+          break;
+        case 'rebalance_executed':
+          type = 'rebalance';
+          description = 'Rebalance executed';
+          break;
+        case 'watchlist_convert':
+          type = 'crm_add';
+          description = 'Converted from watchlist to CRM Potential';
+          break;
+        case 'research_add':
+          type = 'crm_add';
+          description = 'Added from Research to CRM Potential';
+          break;
         default:
           description = log.action;
       }
@@ -153,7 +170,10 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
         timestamp: log.created_at,
         sourceId: log.source_transaction_id || undefined,
         metadata: {
-          action: log.action
+          action: log.action,
+          ...(log.action === 'rebalance_planned' && {
+            value: (log.details as { totalTurnover?: number })?.totalTurnover
+          })
         }
       });
     });
