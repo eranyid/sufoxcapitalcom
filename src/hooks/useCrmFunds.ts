@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CrmFund, FundStatus, Priority } from '@/types/crm';
+import { CrmFund, FundStatus, Priority, GroupName } from '@/types/crm';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-export function useCrmFunds() {
+export function useCrmFunds(projectId?: string) {
   const { user } = useAuth();
   const [funds, setFunds] = useState<CrmFund[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,10 +13,16 @@ export function useCrmFunds() {
     if (!user) return;
     
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('crm_funds')
       .select('*')
       .order('created_at', { ascending: false });
+
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast.error('Failed to load funds');
@@ -25,7 +31,7 @@ export function useCrmFunds() {
       setFunds((data as CrmFund[]) || []);
     }
     setLoading(false);
-  }, [user]);
+  }, [user, projectId]);
 
   useEffect(() => {
     fetchFunds();
@@ -38,6 +44,7 @@ export function useCrmFunds() {
       .from('crm_funds')
       .insert({
         user_id: user.id,
+        project_id: fund.project_id || null,
         fund_name: fund.fund_name,
         strategy: fund.strategy || null,
         asset_class: fund.asset_class || null,
@@ -46,6 +53,9 @@ export function useCrmFunds() {
         status: fund.status || 'screening',
         priority: fund.priority || 'medium',
         notes: fund.notes || null,
+        group_name: fund.group_name || 'potential',
+        timeline_start: fund.timeline_start || null,
+        timeline_end: fund.timeline_end || null,
       })
       .select()
       .single();
