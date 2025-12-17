@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, ChevronDown, ChevronRight, Trash2, ArrowRight, MoreHorizontal, Copy, GripVertical, Link2 } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus, ChevronDown, ChevronRight, Trash2, ArrowRight, MoreHorizontal, Copy, GripVertical, Link2, Unlink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { usePortfolio } from '@/context/PortfolioContext';
 import { CrmCompany, GroupName, GROUP_OPTIONS, BOARD_STATUS_OPTIONS } from '@/types/crm';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,15 @@ interface Props {
   projectId: string;
 }
 
+interface HoldingData {
+  ticker: string;
+  assetName: string;
+  quantity: number;
+  avgCost: number;
+  currentValue: number;
+  latestPrice: number;
+}
+
 function DraggableRow({ company, children }: { company: CrmCompany; children: React.ReactNode }) {
   const {
     attributes,
@@ -111,6 +121,7 @@ function DroppableGroup({ groupId, children }: { groupId: string; children: Reac
 
 export default function ProjectCompaniesBoard({ projectId }: Props) {
   const { user } = useAuth();
+  const { transactions, valuations } = usePortfolio();
   const [companies, setCompanies] = useState<CrmCompany[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -122,6 +133,71 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
   const [addingToGroup, setAddingToGroup] = useState<GroupName | null>(null);
   const [newCompanyName, setNewCompanyName] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Calculate holdings from transactions
+  const holdingsMap = useMemo(() => {
+    const map = new Map<string, HoldingData>();
+    
+    transactions.forEach(tx => {
+      const ticker = tx.ticker.toUpperCase();
+      const existing = map.get(ticker);
+      
+      if (tx.transactionType === 'buy') {
+        if (existing) {
+          const newQty = existing.quantity + tx.quantity;
+          const newTotalCost = existing.avgCost * existing.quantity + tx.pricePerUnit * tx.quantity;
+          map.set(ticker, {
+            ...existing,
+            quantity: newQty,
+            avgCost: newTotalCost / newQty,
+          });
+        } else {
+          map.set(ticker, {
+            ticker,
+            assetName: tx.assetName,
+            quantity: tx.quantity,
+            avgCost: tx.pricePerUnit,
+            currentValue: 0,
+            latestPrice: tx.pricePerUnit,
+          });
+        }
+      } else {
+        if (existing) {
+          map.set(ticker, {
+            ...existing,
+            quantity: existing.quantity - tx.quantity,
+          });
+        }
+      }
+    });
+
+    // Get latest prices from valuations
+    valuations.forEach(val => {
+      const ticker = val.ticker.toUpperCase();
+      const holding = map.get(ticker);
+      if (holding) {
+        holding.latestPrice = val.pricePerUnit;
+        holding.currentValue = holding.quantity * val.pricePerUnit;
+      }
+    });
+
+    // Calculate current value for holdings without valuations
+    map.forEach((holding) => {
+      if (holding.currentValue === 0 && holding.quantity > 0) {
+        holding.currentValue = holding.quantity * holding.avgCost;
+      }
+    });
+
+    return map;
+  }, [transactions, valuations]);
+
+  // Get available tickers for linking (tickers not already linked to a company in this project)
+  const availableTickers = useMemo(() => {
+    const linkedTickers = new Set(companies.filter(c => c.ticker).map(c => c.ticker!.toUpperCase()));
+    return Array.from(holdingsMap.values())
+      .filter(h => h.quantity > 0 && !linkedTickers.has(h.ticker))
+      .sort((a, b) => a.ticker.localeCompare(b.ticker));
+  }, [holdingsMap, companies]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -215,6 +291,53 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
       setCompanies(prev => prev.map(c => c.id === id ? original : c));
       console.error(error);
     }
+  };
+
+  const handleLinkTicker = async (companyId: string, ticker: string | null) => {
+    const original = companies.find(c => c.id === companyId);
+    if (!original) return;
+
+    // Optimistic update
+    setCompanies(prev => prev.map(c => 
+      c.id === companyId 
+        ? { ...c, ticker: ticker?.toUpperCase() || null, is_auto_linked: !!ticker } 
+        : c
+    ));
+
+    const { error } = await supabase
+      .from('crm_companies')
+      .update({ 
+        ticker: ticker?.toUpperCase() || null,
+        is_auto_linked: !!ticker
+      })
+      .eq('id', companyId);
+
+    if (error) {
+      toast.error('Failed to link ticker');
+      setCompanies(prev => prev.map(c => c.id === companyId ? original : c));
+      console.error(error);
+      return;
+    }
+
+    if (ticker) {
+      toast.success(`Linked ${ticker.toUpperCase()} to ${original.company_name}`);
+    } else {
+      toast.success(`Unlinked ticker from ${original.company_name}`);
+    }
+  };
+
+  const getHoldingData = (ticker: string | null): HoldingData | null => {
+    if (!ticker) return null;
+    return holdingsMap.get(ticker.toUpperCase()) || null;
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   };
 
   const handleDuplicate = async (company: CrmCompany) => {
@@ -359,13 +482,14 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                     <thead>
                       <tr className="border-b border-border bg-muted/20">
                         <th className="w-[30px]"></th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[180px]">Name</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Status</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Market Cap</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Sector</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Geography</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[150px]">Notes</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[140px]">Timeline</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[160px]">Name</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Ticker</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[70px]">Qty</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Value</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Status</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Sector</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[80px]">Geo</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[120px]">Notes</th>
                         <th className="w-[50px]"></th>
                       </tr>
                     </thead>
@@ -373,7 +497,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                       <DroppableGroup groupId={group.value}>
                         {addingToGroup === group.value && (
                           <tr className="border-b border-border">
-                            <td colSpan={9} className="px-3 py-2">
+                            <td colSpan={10} className="px-3 py-2">
                               <div className="flex items-center gap-2">
                                 <Input
                                   value={newCompanyName}
@@ -394,13 +518,16 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                         )}
                         {groupedCompanies[group.value]?.length === 0 && addingToGroup !== group.value && (
                           <tr>
-                            <td colSpan={9} className="text-center text-muted-foreground py-6 text-sm">
+                            <td colSpan={10} className="text-center text-muted-foreground py-6 text-sm">
                               No items — drag here to add
                             </td>
                           </tr>
                         )}
-                        {groupedCompanies[group.value]?.map(company => (
+                        {groupedCompanies[group.value]?.map(company => {
+                          const holding = getHoldingData(company.ticker);
+                          return (
                           <DraggableRow key={company.id} company={company}>
+                            {/* Name */}
                             <td className="px-3 py-1.5">
                               <div className="flex items-center gap-1.5">
                                 <Input
@@ -412,27 +539,91 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                     }
                                   }}
                                 />
-                                {company.is_auto_linked && (
+                                {company.ticker && (
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Link2 size={12} className="text-primary shrink-0" />
+                                        <Link2 size={12} className={company.is_auto_linked ? "text-primary shrink-0" : "text-muted-foreground shrink-0"} />
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p className="text-xs">Auto-linked from Transactions</p>
-                                        {company.ticker && <p className="text-xs text-muted-foreground">Ticker: {company.ticker}</p>}
+                                        <p className="text-xs">{company.is_auto_linked ? 'Auto-linked' : 'Manually linked'}</p>
+                                        <p className="text-xs text-muted-foreground">Ticker: {company.ticker}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
                                 )}
                               </div>
                             </td>
+                            {/* Ticker Selector */}
+                            <td className="px-3 py-1.5">
+                              {company.ticker ? (
+                                <div className="flex items-center gap-1">
+                                  <Badge variant="outline" className="font-mono text-xs bg-primary/10 border-primary/30">
+                                    {company.ticker}
+                                  </Badge>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          size="icon" 
+                                          variant="ghost" 
+                                          className="h-5 w-5 opacity-50 hover:opacity-100"
+                                          onClick={() => handleLinkTicker(company.id, null)}
+                                        >
+                                          <Unlink size={10} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">Unlink ticker</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                              ) : (
+                                <Select onValueChange={v => handleLinkTicker(company.id, v)}>
+                                  <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[80px]">
+                                    <SelectValue placeholder="Link..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover border border-border z-50">
+                                    {availableTickers.length === 0 ? (
+                                      <div className="px-2 py-1.5 text-xs text-muted-foreground">No holdings available</div>
+                                    ) : (
+                                      availableTickers.map(h => (
+                                        <SelectItem key={h.ticker} value={h.ticker}>
+                                          <span className="font-mono">{h.ticker}</span>
+                                          <span className="text-muted-foreground ml-1">({h.quantity})</span>
+                                        </SelectItem>
+                                      ))
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </td>
+                            {/* Qty */}
+                            <td className="px-3 py-1.5 text-right font-mono text-xs">
+                              {holding ? (
+                                <span className={holding.quantity > 0 ? 'text-foreground' : 'text-muted-foreground'}>
+                                  {holding.quantity.toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            {/* Value */}
+                            <td className="px-3 py-1.5 text-right font-mono text-xs">
+                              {holding && holding.quantity > 0 ? (
+                                <span className="text-green-400">{formatCurrency(holding.currentValue)}</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            {/* Status */}
                             <td className="px-3 py-1.5">
                               <Select
                                 value={company.status}
                                 onValueChange={v => handleInlineUpdate(company.id, 'status', v)}
                               >
-                                <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[110px]">
+                                <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[95px]">
                                   <BoardStatusBadge status={company.status} />
                                 </SelectTrigger>
                                 <SelectContent className="bg-popover border border-border z-50">
@@ -442,23 +633,12 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                 </SelectContent>
                               </Select>
                             </td>
-                            <td className="px-3 py-1.5">
-                              <Input
-                                defaultValue={company.market_cap || ''}
-                                placeholder="-"
-                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
-                                onBlur={e => {
-                                  if (e.target.value !== (company.market_cap || '')) {
-                                    handleInlineUpdate(company.id, 'market_cap', e.target.value || null);
-                                  }
-                                }}
-                              />
-                            </td>
+                            {/* Sector */}
                             <td className="px-3 py-1.5">
                               <Input
                                 defaultValue={company.sector || ''}
                                 placeholder="-"
-                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[100px]"
+                                className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
                                 onBlur={e => {
                                   if (e.target.value !== (company.sector || '')) {
                                     handleInlineUpdate(company.id, 'sector', e.target.value || null);
@@ -466,11 +646,12 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                 }}
                               />
                             </td>
+                            {/* Geography */}
                             <td className="px-3 py-1.5">
                               <Input
                                 defaultValue={company.geography || ''}
                                 placeholder="-"
-                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent w-[80px]"
+                                className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[70px]"
                                 onBlur={e => {
                                   if (e.target.value !== (company.geography || '')) {
                                     handleInlineUpdate(company.id, 'geography', e.target.value || null);
@@ -478,11 +659,12 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                 }}
                               />
                             </td>
+                            {/* Notes */}
                             <td className="px-3 py-1.5">
                               <Input
                                 defaultValue={company.notes || ''}
                                 placeholder="-"
-                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
+                                className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent"
                                 onBlur={e => {
                                   if (e.target.value !== (company.notes || '')) {
                                     handleInlineUpdate(company.id, 'notes', e.target.value || null);
@@ -490,30 +672,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                 }}
                               />
                             </td>
-                            <td className="px-3 py-1.5">
-                              <div className="flex gap-1">
-                                <Input
-                                  type="date"
-                                  defaultValue={company.timeline_start || ''}
-                                  className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[85px]"
-                                  onBlur={e => {
-                                    if (e.target.value !== (company.timeline_start || '')) {
-                                      handleInlineUpdate(company.id, 'timeline_start', e.target.value || null);
-                                    }
-                                  }}
-                                />
-                                <Input
-                                  type="date"
-                                  defaultValue={company.timeline_end || ''}
-                                  className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[85px]"
-                                  onBlur={e => {
-                                    if (e.target.value !== (company.timeline_end || '')) {
-                                      handleInlineUpdate(company.id, 'timeline_end', e.target.value || null);
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </td>
+                            {/* Actions */}
                             <td className="px-2 py-1.5">
                               <div className="opacity-0 group-hover/row:opacity-100">
                                 <DropdownMenu>
@@ -551,7 +710,8 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                               </div>
                             </td>
                           </DraggableRow>
-                        ))}
+                        );
+                        })}
                       </DroppableGroup>
                     </SortableContext>
                   </table>
