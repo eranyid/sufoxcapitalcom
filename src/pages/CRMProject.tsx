@@ -43,7 +43,7 @@ import { toast } from 'sonner';
 import ProjectCompaniesBoard from '@/components/crm/ProjectCompaniesBoard';
 import ProjectFundsBoard from '@/components/crm/ProjectFundsBoard';
 import ProjectTasksBoard from '@/components/crm/ProjectTasksBoard';
-import CrmActivityLog from '@/components/crm/CrmActivityLog';
+import CrossSystemActivityLog from '@/components/crm/CrossSystemActivityLog';
 
 const LAST_PROJECT_KEY = 'crm_last_project_id';
 
@@ -250,7 +250,7 @@ export default function CRMProject() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <CrmActivityLog projectId={project.id} />
+          <CrossSystemActivityLog projectId={project.id} />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
