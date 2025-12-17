@@ -4,6 +4,7 @@ import { calculatePerformanceMetrics, calculateRiskMetrics } from '@/lib/calcula
 import { sampleTransactions, sampleValuations } from '@/lib/sampleData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { syncCrmFromTransaction } from '@/hooks/useCrmSync';
 
 interface PortfolioContextType {
   transactions: Transaction[];
@@ -231,6 +232,16 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         ? cashBalances[txCurrency] - totalCost
         : cashBalances[txCurrency] + (tx.quantity * tx.pricePerUnit - tx.fees);
       await updateCashBalance(txCurrency, newAmount);
+    }
+    
+    // Sync CRM Companies board based on transaction (only for equity asset types)
+    if (tx.assetType === 'equity' || tx.assetType === 'etf') {
+      try {
+        await syncCrmFromTransaction(user.id, userTransactions, tx, data.id);
+      } catch (err) {
+        console.error('CRM sync failed:', err);
+        // Don't fail the transaction if CRM sync fails
+      }
     }
   };
 

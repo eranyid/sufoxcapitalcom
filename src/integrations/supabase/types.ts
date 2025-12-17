@@ -44,6 +44,47 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          project_id: string
+          source_transaction_id: string | null
+          ticker: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          project_id: string
+          source_transaction_id?: string | null
+          ticker: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          project_id?: string
+          source_transaction_id?: string | null
+          ticker?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activity_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "crm_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_companies: {
         Row: {
           company_name: string
@@ -52,11 +93,14 @@ export type Database = {
           group_name: string
           id: string
           investment_thesis: string | null
+          is_auto_linked: boolean | null
           market_cap: string | null
           notes: string | null
           project_id: string | null
           sector: string | null
+          source_transaction_id: string | null
           status: string
+          ticker: string | null
           timeline_end: string | null
           timeline_start: string | null
           updated_at: string
@@ -69,11 +113,14 @@ export type Database = {
           group_name?: string
           id?: string
           investment_thesis?: string | null
+          is_auto_linked?: boolean | null
           market_cap?: string | null
           notes?: string | null
           project_id?: string | null
           sector?: string | null
+          source_transaction_id?: string | null
           status?: string
+          ticker?: string | null
           timeline_end?: string | null
           timeline_start?: string | null
           updated_at?: string
@@ -86,11 +133,14 @@ export type Database = {
           group_name?: string
           id?: string
           investment_thesis?: string | null
+          is_auto_linked?: boolean | null
           market_cap?: string | null
           notes?: string | null
           project_id?: string | null
           sector?: string | null
+          source_transaction_id?: string | null
           status?: string
+          ticker?: string | null
           timeline_end?: string | null
           timeline_start?: string | null
           updated_at?: string

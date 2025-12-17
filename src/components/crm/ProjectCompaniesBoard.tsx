@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, ChevronDown, ChevronRight, Trash2, ArrowRight, MoreHorizontal, Copy, GripVertical } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Trash2, ArrowRight, MoreHorizontal, Copy, GripVertical, Link2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CrmCompany, GroupName, GROUP_OPTIONS, BOARD_STATUS_OPTIONS } from '@/types/crm';
@@ -7,6 +7,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -151,6 +157,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
       user_id: user.id,
       project_id: projectId,
       company_name: newCompanyName,
+      ticker: null,
       group_name: groupName,
       status: 'working_on_it',
       market_cap: null,
@@ -160,6 +167,8 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
       notes: null,
       timeline_start: null,
       timeline_end: null,
+      is_auto_linked: false,
+      source_transaction_id: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -393,15 +402,30 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                         {groupedCompanies[group.value]?.map(company => (
                           <DraggableRow key={company.id} company={company}>
                             <td className="px-3 py-1.5">
-                              <Input
-                                defaultValue={company.company_name}
-                                className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
-                                onBlur={e => {
-                                  if (e.target.value !== company.company_name) {
-                                    handleInlineUpdate(company.id, 'company_name', e.target.value);
-                                  }
-                                }}
-                              />
+                              <div className="flex items-center gap-1.5">
+                                <Input
+                                  defaultValue={company.company_name}
+                                  className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent flex-1"
+                                  onBlur={e => {
+                                    if (e.target.value !== company.company_name) {
+                                      handleInlineUpdate(company.id, 'company_name', e.target.value);
+                                    }
+                                  }}
+                                />
+                                {company.is_auto_linked && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Link2 size={12} className="text-primary shrink-0" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">Auto-linked from Transactions</p>
+                                        {company.ticker && <p className="text-xs text-muted-foreground">Ticker: {company.ticker}</p>}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
                             </td>
                             <td className="px-3 py-1.5">
                               <Select

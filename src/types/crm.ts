@@ -35,6 +35,7 @@ export interface CrmCompany {
   user_id: string;
   project_id: string | null;
   company_name: string;
+  ticker: string | null;
   market_cap: string | null;
   sector: string | null;
   geography: string | null;
@@ -44,6 +45,8 @@ export interface CrmCompany {
   group_name: GroupName;
   timeline_start: string | null;
   timeline_end: string | null;
+  is_auto_linked: boolean;
+  source_transaction_id: string | null;
   created_at: string;
   updated_at: string;
 }
