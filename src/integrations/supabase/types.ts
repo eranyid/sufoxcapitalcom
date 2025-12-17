@@ -49,12 +49,16 @@ export type Database = {
           company_name: string
           created_at: string
           geography: string | null
+          group_name: string
           id: string
           investment_thesis: string | null
           market_cap: string | null
           notes: string | null
+          project_id: string | null
           sector: string | null
           status: string
+          timeline_end: string | null
+          timeline_start: string | null
           updated_at: string
           user_id: string
         }
@@ -62,12 +66,16 @@ export type Database = {
           company_name: string
           created_at?: string
           geography?: string | null
+          group_name?: string
           id?: string
           investment_thesis?: string | null
           market_cap?: string | null
           notes?: string | null
+          project_id?: string | null
           sector?: string | null
           status?: string
+          timeline_end?: string | null
+          timeline_start?: string | null
           updated_at?: string
           user_id: string
         }
@@ -75,16 +83,28 @@ export type Database = {
           company_name?: string
           created_at?: string
           geography?: string | null
+          group_name?: string
           id?: string
           investment_thesis?: string | null
           market_cap?: string | null
           notes?: string | null
+          project_id?: string | null
           sector?: string | null
           status?: string
+          timeline_end?: string | null
+          timeline_start?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_companies_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "crm_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_funds: {
         Row: {
@@ -92,12 +112,16 @@ export type Database = {
           created_at: string
           fund_name: string
           geography: string | null
+          group_name: string
           id: string
           manager: string | null
           notes: string | null
           priority: string
+          project_id: string | null
           status: string
           strategy: string | null
+          timeline_end: string | null
+          timeline_start: string | null
           updated_at: string
           user_id: string
         }
@@ -106,12 +130,16 @@ export type Database = {
           created_at?: string
           fund_name: string
           geography?: string | null
+          group_name?: string
           id?: string
           manager?: string | null
           notes?: string | null
           priority?: string
+          project_id?: string | null
           status?: string
           strategy?: string | null
+          timeline_end?: string | null
+          timeline_start?: string | null
           updated_at?: string
           user_id: string
         }
@@ -120,12 +148,57 @@ export type Database = {
           created_at?: string
           fund_name?: string
           geography?: string | null
+          group_name?: string
           id?: string
           manager?: string | null
           notes?: string | null
           priority?: string
+          project_id?: string | null
           status?: string
           strategy?: string | null
+          timeline_end?: string | null
+          timeline_start?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_funds_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "crm_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -138,6 +211,7 @@ export type Database = {
           due_date: string | null
           id: string
           owner: string | null
+          project_id: string | null
           status: string
           task_name: string
           updated_at: string
@@ -150,6 +224,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           owner?: string | null
+          project_id?: string | null
           status?: string
           task_name: string
           updated_at?: string
@@ -162,13 +237,22 @@ export type Database = {
           due_date?: string | null
           id?: string
           owner?: string | null
+          project_id?: string | null
           status?: string
           task_name?: string
           updated_at?: string
           urgency?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "crm_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       custom_scenarios: {
         Row: {
