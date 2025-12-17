@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, ChevronDown, ChevronRight, GripVertical, Trash2, Pencil } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Trash2, Pencil, ArrowRight, MoreHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CrmCompany, GroupName, GROUP_OPTIONS, COMPANY_STATUS_OPTIONS, CompanyStatus } from '@/types/crm';
@@ -22,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Collapsible,
   CollapsibleContent,
@@ -317,14 +324,38 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                               <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
                             </>
                           ) : (
-                            <>
-                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEdit(company)}>
-                                <Pencil size={14} />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(company.id)}>
-                                <Trash2 size={14} />
-                              </Button>
-                            </>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                  <MoreHorizontal size={14} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => startEdit(company)}>
+                                  <Pencil size={14} className="mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Move to</div>
+                                {GROUP_OPTIONS.filter(g => g.value !== company.group_name).map(g => (
+                                  <DropdownMenuItem 
+                                    key={g.value} 
+                                    onClick={() => handleUpdate(company.id, { group_name: g.value })}
+                                  >
+                                    <ArrowRight size={14} className="mr-2" />
+                                    {g.label}
+                                  </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => setDeleteId(company.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 size={14} className="mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </TableCell>
