@@ -89,6 +89,7 @@ export type Database = {
         Row: {
           company_name: string
           created_at: string
+          deleted_at: string | null
           geography: string | null
           group_name: string
           id: string
@@ -109,6 +110,7 @@ export type Database = {
         Insert: {
           company_name: string
           created_at?: string
+          deleted_at?: string | null
           geography?: string | null
           group_name?: string
           id?: string
@@ -129,6 +131,7 @@ export type Database = {
         Update: {
           company_name?: string
           created_at?: string
+          deleted_at?: string | null
           geography?: string | null
           group_name?: string
           id?: string
@@ -160,6 +163,7 @@ export type Database = {
         Row: {
           asset_class: string | null
           created_at: string
+          deleted_at: string | null
           fund_name: string
           geography: string | null
           group_name: string
@@ -178,6 +182,7 @@ export type Database = {
         Insert: {
           asset_class?: string | null
           created_at?: string
+          deleted_at?: string | null
           fund_name: string
           geography?: string | null
           group_name?: string
@@ -196,6 +201,7 @@ export type Database = {
         Update: {
           asset_class?: string | null
           created_at?: string
+          deleted_at?: string | null
           fund_name?: string
           geography?: string | null
           group_name?: string
@@ -224,6 +230,7 @@ export type Database = {
       crm_projects: {
         Row: {
           created_at: string
+          deleted_at: string | null
           description: string | null
           id: string
           name: string
@@ -234,6 +241,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
           name: string
@@ -244,6 +252,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
           name?: string
@@ -257,6 +266,7 @@ export type Database = {
       crm_tasks: {
         Row: {
           created_at: string
+          deleted_at: string | null
           description: string | null
           due_date: string | null
           id: string
@@ -270,6 +280,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
@@ -283,6 +294,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
@@ -623,6 +635,7 @@ export type Database = {
           created_at: string
           currency: string
           date: string
+          deleted_at: string | null
           fees: number | null
           geography: string
           id: string
@@ -640,6 +653,7 @@ export type Database = {
           created_at?: string
           currency?: string
           date: string
+          deleted_at?: string | null
           fees?: number | null
           geography?: string
           id?: string
@@ -657,6 +671,7 @@ export type Database = {
           created_at?: string
           currency?: string
           date?: string
+          deleted_at?: string | null
           fees?: number | null
           geography?: string
           id?: string
@@ -696,6 +711,7 @@ export type Database = {
           asset_id: string | null
           asset_name: string
           created_at: string
+          deleted_at: string | null
           fx_rate: number | null
           id: string
           month: string
@@ -708,6 +724,7 @@ export type Database = {
           asset_id?: string | null
           asset_name: string
           created_at?: string
+          deleted_at?: string | null
           fx_rate?: number | null
           id?: string
           month: string
@@ -720,6 +737,7 @@ export type Database = {
           asset_id?: string | null
           asset_name?: string
           created_at?: string
+          deleted_at?: string | null
           fx_rate?: number | null
           id?: string
           month?: string
@@ -736,6 +754,7 @@ export type Database = {
     }
     Functions: {
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      cleanup_soft_deleted_items: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

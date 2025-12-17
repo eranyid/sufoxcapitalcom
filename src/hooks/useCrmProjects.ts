@@ -16,6 +16,7 @@ export function useCrmProjects() {
     const { data, error } = await supabase
       .from('crm_projects')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -76,7 +77,7 @@ export function useCrmProjects() {
   const deleteProject = async (id: string) => {
     const { error } = await supabase
       .from('crm_projects')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {
@@ -86,7 +87,7 @@ export function useCrmProjects() {
     }
 
     setProjects(prev => prev.filter(p => p.id !== id));
-    toast.success('Project deleted');
+    toast.success('Project moved to trash');
     return true;
   };
 
