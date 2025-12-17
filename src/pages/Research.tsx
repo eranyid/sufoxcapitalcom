@@ -4,6 +4,7 @@ import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
+import AssetCrmLink from '@/components/research/AssetCrmLink';
 import { usePortfolio } from '@/context/PortfolioContext';
 
 const Research = () => {
@@ -26,6 +27,19 @@ const Research = () => {
         <div className="flex items-center gap-3 mb-6">
           <Search className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-mono text-foreground tracking-tight">RESEARCH</h1>
+        </div>
+
+        {/* Asset CRM Link - Research Integration */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+          <div className="lg:col-span-1">
+            <AssetCrmLink />
+          </div>
+          <div className="lg:col-span-2">
+            {/* Placeholder for future asset-specific research */}
+            <div className="h-full min-h-[200px] rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground text-sm">
+              Select an asset to view detailed research
+            </div>
+          </div>
         </div>
 
         {/* Monte Carlo Simulation */}
