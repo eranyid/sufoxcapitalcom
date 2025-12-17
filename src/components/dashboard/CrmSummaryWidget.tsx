@@ -29,11 +29,11 @@ export default function CrmSummaryWidget() {
     const fetchSummary = async () => {
       setLoading(true);
       
-      // Fetch pending tasks (backlog + in_progress)
+      // Fetch in-progress tasks only
       const { data: tasks, error: tasksError } = await supabase
         .from('crm_tasks')
         .select('id, status')
-        .in('status', ['backlog', 'in_progress']);
+        .eq('status', 'in_progress');
 
       // Fetch recent potential companies (last 5)
       const { data: companies, error: companiesError } = await supabase
@@ -105,7 +105,7 @@ export default function CrmSummaryWidget() {
               <CheckSquare className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-mono uppercase">Pending Tasks</p>
+              <p className="text-xs text-muted-foreground font-mono uppercase">In Progress</p>
               <p className="text-lg font-bold font-mono tabular-nums">{summary.pendingTasksCount}</p>
             </div>
           </div>
