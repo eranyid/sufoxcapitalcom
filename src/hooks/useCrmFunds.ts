@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CrmFund, FundStatus, Priority, GroupName } from '@/types/crm';
+import { CrmFund, Priority, GroupName } from '@/types/crm';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -50,7 +50,7 @@ export function useCrmFunds(projectId?: string) {
         asset_class: fund.asset_class || null,
         geography: fund.geography || null,
         manager: fund.manager || null,
-        status: fund.status || 'screening',
+        status: fund.status || 'working_on_it',
         priority: fund.priority || 'medium',
         notes: fund.notes || null,
         group_name: fund.group_name || 'potential',
