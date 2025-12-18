@@ -220,21 +220,20 @@ export default function ProjectTasksBoard({ projectId }: Props) {
           open={expandedGroups[group.value]}
           onOpenChange={() => toggleGroup(group.value)}
         >
-          <div className="rounded-lg overflow-hidden bg-[#0F1115]">
-            {/* Section Header - Minimal with left accent */}
+          <div className="border border-border rounded overflow-hidden">
             <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white/[0.02] border-l-[3px] border-l-[#4B4BC3]">
-                <div className="flex items-center gap-3">
-                  {expandedGroups[group.value] ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
-                  <span className="font-medium text-sm text-white">{group.label}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4B4BC3]/15 text-[#8B8BD9]">
+              <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50">
+                <div className="flex items-center gap-2">
+                  {expandedGroups[group.value] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <span className="font-medium text-sm">{group.label}</span>
+                  <Badge variant="secondary" className="text-xs h-5">
                     {groupedTasks[group.value]?.length || 0}
-                  </span>
+                  </Badge>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                  className="h-7 text-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     setAddingToGroup(group.value);
@@ -250,14 +249,13 @@ export default function ProjectTasksBoard({ projectId }: Props) {
             <CollapsibleContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  {/* Column Header - Subtle tint */}
                   <thead>
-                    <tr className="bg-[#266E73]/10">
-                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[220px]">Task</th>
-                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[110px]">Status</th>
-                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[120px]">Due Date</th>
-                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[100px]">Urgency</th>
-                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 min-w-[150px]">Notes</th>
+                    <tr className="border-b border-border bg-muted/20">
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[220px]">Task</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[110px]">Status</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Due Date</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Urgency</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[150px]">Notes</th>
                       <th className="w-[50px]"></th>
                     </tr>
                   </thead>
@@ -291,7 +289,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                       </tr>
                     )}
                     {groupedTasks[group.value]?.map(task => (
-                      <tr key={task.id} className="border-b border-white/[0.04] hover:bg-[#266E73]/[0.06] group/row transition-colors">
+                      <tr key={task.id} className="border-b border-border hover:bg-muted/10 group/row">
                         <td className="px-3 py-1.5">
                           <Input
                             defaultValue={task.task_name}

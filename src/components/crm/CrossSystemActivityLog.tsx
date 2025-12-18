@@ -212,9 +212,9 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
           ? <TrendingUp size={14} className="text-green-400" />
           : <TrendingDown size={14} className="text-red-400" />;
       case 'crm_add':
-        return <ArrowUpRight size={14} className="text-blue-400" />;
+        return <ArrowUpRight size={14} className="text-primary" />;
       case 'crm_move':
-        return <ArrowDownRight size={14} className="text-blue-400" />;
+        return <ArrowDownRight size={14} className="text-orange-400" />;
       case 'rebalance':
         return <RefreshCw size={14} className="text-blue-400" />;
       case 'compliance':
@@ -238,13 +238,13 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
         );
       case 'crm_add':
         return (
-          <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
             CRM ADD
           </Badge>
         );
       case 'crm_move':
         return (
-          <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
+          <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30 text-xs">
             CRM MOVE
           </Badge>
         );

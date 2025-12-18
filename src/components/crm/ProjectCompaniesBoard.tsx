@@ -94,7 +94,7 @@ function DraggableRow({ company, children }: { company: CrmCompany; children: Re
   };
 
   return (
-    <tr ref={setNodeRef} style={style} className="border-b border-white/[0.04] hover:bg-[#266E73]/[0.06] group/row transition-colors">
+    <tr ref={setNodeRef} style={style} className="border-b border-border hover:bg-muted/10 group/row">
       <td className="px-2 py-1.5 w-[30px]">
         <div
           {...attributes}
@@ -450,21 +450,20 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
             open={expandedGroups[group.value]}
             onOpenChange={() => toggleGroup(group.value)}
           >
-            <div className="rounded-lg overflow-hidden bg-[#0F1115]">
-              {/* Section Header - Minimal with left accent */}
+            <div className="border border-border rounded overflow-hidden">
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white/[0.02] border-l-[3px] border-l-[#4B4BC3]">
-                  <div className="flex items-center gap-3">
-                    {expandedGroups[group.value] ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
-                    <span className="font-medium text-sm text-white">{group.label}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4B4BC3]/15 text-[#8B8BD9]">
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    {expandedGroups[group.value] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    <span className="font-medium text-sm">{group.label}</span>
+                    <Badge variant="secondary" className="text-xs h-5">
                       {groupedCompanies[group.value]?.length || 0}
-                    </span>
+                    </Badge>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                    className="h-7 text-xs"
                     onClick={(e) => {
                       e.stopPropagation();
                       setAddingToGroup(group.value);
@@ -480,23 +479,22 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
               <CollapsibleContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    {/* Column Header - Subtle tint */}
                     <thead>
-                      <tr className="bg-[#266E73]/10">
+                      <tr className="border-b border-border bg-muted/20">
                         <th className="w-[30px]"></th>
-                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[160px]">Name</th>
-                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[90px]">Ticker</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[160px]">Name</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Ticker</th>
                         {group.value !== 'potential' && (
                           <>
-                            <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[70px]">Qty</th>
-                            <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[90px]">Value</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[70px]">Qty</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Value</th>
                           </>
                         )}
-                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[90px]">Mkt Cap</th>
-                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[100px]">Status</th>
-                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[90px]">Sector</th>
-                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[80px]">Geo</th>
-                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 min-w-[120px]">Notes</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Mkt Cap</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Status</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Sector</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[80px]">Geo</th>
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[120px]">Notes</th>
                         <th className="w-[50px]"></th>
                       </tr>
                     </thead>
@@ -551,7 +549,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Link2 size={12} className={company.is_auto_linked ? "text-blue-400 shrink-0" : "text-muted-foreground shrink-0"} />
+                                        <Link2 size={12} className={company.is_auto_linked ? "text-primary shrink-0" : "text-muted-foreground shrink-0"} />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p className="text-xs">{company.is_auto_linked ? 'Auto-linked' : 'Manually linked'}</p>
@@ -579,7 +577,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                 />
                               ) : company.ticker ? (
                                 <div className="flex items-center gap-1">
-                                  <Badge variant="outline" className="font-mono text-xs bg-blue-500/10 border-blue-500/30 text-blue-400">
+                                  <Badge variant="outline" className="font-mono text-xs bg-primary/10 border-primary/30">
                                     {company.ticker}
                                   </Badge>
                                   <TooltipProvider>
