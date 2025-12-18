@@ -124,12 +124,6 @@
   }
 }
 
-/* CRM-specific accent colors */
-.crm-accent-blue {
-  --crm-blue: 217 91% 60%;
-  --crm-blue-muted: 217 70% 35%;
-}
-
 @layer base {
   * {
     @apply border-border;

@@ -220,20 +220,21 @@ export default function ProjectTasksBoard({ projectId }: Props) {
           open={expandedGroups[group.value]}
           onOpenChange={() => toggleGroup(group.value)}
         >
-          <div className="border border-border rounded overflow-hidden border-l-2 border-l-blue-500/50">
+          <div className="rounded-lg overflow-hidden">
+            {/* Section Header - Dark Blue */}
             <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50 border-t-2 border-t-blue-500/30">
-                <div className="flex items-center gap-2">
-                  {expandedGroups[group.value] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  <span className="font-medium text-sm">{group.label}</span>
-                  <Badge variant="secondary" className="text-xs h-5">
+              <div className="flex items-center justify-between px-4 py-3 bg-[#1e3a5f] cursor-pointer hover:bg-[#234670] rounded-t-lg">
+                <div className="flex items-center gap-3">
+                  {expandedGroups[group.value] ? <ChevronDown size={16} className="text-blue-200" /> : <ChevronRight size={16} className="text-blue-200" />}
+                  <span className="font-semibold text-sm text-white">{group.label}</span>
+                  <Badge className="text-xs h-5 bg-blue-500/30 text-blue-100 border-blue-400/30">
                     {groupedTasks[group.value]?.length || 0}
                   </Badge>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs text-blue-100 hover:text-white hover:bg-blue-500/20"
                   onClick={(e) => {
                     e.stopPropagation();
                     setAddingToGroup(group.value);
@@ -247,15 +248,16 @@ export default function ProjectTasksBoard({ projectId }: Props) {
             </CollapsibleTrigger>
 
             <CollapsibleContent>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border-x border-b border-border rounded-b-lg">
                 <table className="w-full text-sm">
+                  {/* Column Header - Light Blue */}
                   <thead>
-                    <tr className="border-b border-border bg-muted/20">
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[220px]">Task</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[110px]">Status</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Due Date</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Urgency</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[150px]">Notes</th>
+                    <tr className="bg-[#2a4a6f]">
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[220px]">Task</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[110px]">Status</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[120px]">Due Date</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[100px]">Urgency</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 min-w-[150px]">Notes</th>
                       <th className="w-[50px]"></th>
                     </tr>
                   </thead>
@@ -289,7 +291,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                       </tr>
                     )}
                     {groupedTasks[group.value]?.map(task => (
-                      <tr key={task.id} className="border-b border-border hover:bg-blue-500/5 focus-within:ring-1 focus-within:ring-blue-500/30 group/row">
+                      <tr key={task.id} className="border-b border-border/50 hover:bg-blue-900/10 group/row">
                         <td className="px-3 py-1.5">
                           <Input
                             defaultValue={task.task_name}
