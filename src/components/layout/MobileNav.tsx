@@ -25,19 +25,19 @@ import {
 
 const primaryNavItems = [
   { path: '/', icon: LayoutDashboard, label: 'Overview' },
-  { path: '/research', icon: Search, label: 'Research' },
-  { path: '/crm', icon: Contact, label: 'CRM' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/performance', icon: TrendingUp, label: 'Performance' },
+  { path: '/risk', icon: Shield, label: 'Risk' },
+  { path: '/research', icon: FlaskConical, label: 'Research' },
 ];
 
 const moreNavItems = [
-  { path: '/performance', icon: TrendingUp, label: 'Performance' },
-  { path: '/risk', icon: Shield, label: 'Risk' },
+  { path: '/crm', icon: Contact, label: 'CRM' },
   { path: '/scenarios', icon: FlaskConical, label: 'Scenarios' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },
+  { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function MobileNav() {
