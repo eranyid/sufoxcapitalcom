@@ -75,7 +75,7 @@ export default function CrmActivityLog({ projectId }: Props) {
     switch (action) {
       case 'auto_add_ongoing':
         return (
-          <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30 text-xs">
+          <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
             <ArrowUpRight size={10} className="mr-1" />
             {getActionLabel(action)}
           </Badge>
@@ -89,7 +89,7 @@ export default function CrmActivityLog({ projectId }: Props) {
         );
       default:
         return (
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
             {getActionLabel(action)}
           </Badge>
         );

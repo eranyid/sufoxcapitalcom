@@ -220,9 +220,9 @@ export default function ProjectTasksBoard({ projectId }: Props) {
           open={expandedGroups[group.value]}
           onOpenChange={() => toggleGroup(group.value)}
         >
-          <div className="border border-border rounded overflow-hidden">
+          <div className="border border-border rounded overflow-hidden border-l-2 border-l-blue-500/50">
             <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50">
+              <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50 border-t-2 border-t-blue-500/30">
                 <div className="flex items-center gap-2">
                   {expandedGroups[group.value] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   <span className="font-medium text-sm">{group.label}</span>
@@ -289,7 +289,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                       </tr>
                     )}
                     {groupedTasks[group.value]?.map(task => (
-                      <tr key={task.id} className="border-b border-border hover:bg-muted/10 group/row">
+                      <tr key={task.id} className="border-b border-border hover:bg-blue-500/5 focus-within:ring-1 focus-within:ring-blue-500/30 group/row">
                         <td className="px-3 py-1.5">
                           <Input
                             defaultValue={task.task_name}
