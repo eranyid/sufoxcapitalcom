@@ -484,8 +484,12 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                         <th className="w-[30px]"></th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[160px]">Name</th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Ticker</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[70px]">Qty</th>
-                        <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Value</th>
+                        {group.value !== 'potential' && (
+                          <>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[70px]">Qty</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Value</th>
+                          </>
+                        )}
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Mkt Cap</th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Status</th>
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[90px]">Sector</th>
@@ -498,7 +502,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                       <DroppableGroup groupId={group.value}>
                         {addingToGroup === group.value && (
                           <tr className="border-b border-border">
-                            <td colSpan={11} className="px-3 py-2">
+                            <td colSpan={group.value === 'potential' ? 9 : 11} className="px-3 py-2">
                               <div className="flex items-center gap-2">
                                 <Input
                                   value={newCompanyName}
@@ -519,13 +523,14 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                         )}
                         {groupedCompanies[group.value]?.length === 0 && addingToGroup !== group.value && (
                           <tr>
-                            <td colSpan={11} className="text-center text-muted-foreground py-6 text-sm">
+                            <td colSpan={group.value === 'potential' ? 9 : 11} className="text-center text-muted-foreground py-6 text-sm">
                               No items — drag here to add
                             </td>
                           </tr>
                         )}
                         {groupedCompanies[group.value]?.map(company => {
                           const holding = getHoldingData(company.ticker);
+                          const isPotential = group.value === 'potential';
                           return (
                           <DraggableRow key={company.id} company={company}>
                             {/* Name */}
@@ -555,9 +560,22 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                 )}
                               </div>
                             </td>
-                            {/* Ticker Selector */}
+                            {/* Ticker */}
                             <td className="px-3 py-1.5">
-                              {company.ticker ? (
+                              {isPotential ? (
+                                // Manual text input for Potential companies
+                                <Input
+                                  defaultValue={company.ticker || ''}
+                                  placeholder="Ticker..."
+                                  className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[80px] font-mono uppercase"
+                                  onBlur={e => {
+                                    const newTicker = e.target.value.trim().toUpperCase() || null;
+                                    if (newTicker !== (company.ticker || null)) {
+                                      handleInlineUpdate(company.id, 'ticker', newTicker);
+                                    }
+                                  }}
+                                />
+                              ) : company.ticker ? (
                                 <div className="flex items-center gap-1">
                                   <Badge variant="outline" className="font-mono text-xs bg-primary/10 border-primary/30">
                                     {company.ticker}
@@ -600,24 +618,28 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                 </Select>
                               )}
                             </td>
-                            {/* Qty */}
-                            <td className="px-3 py-1.5 text-right font-mono text-xs">
-                              {holding ? (
-                                <span className={holding.quantity > 0 ? 'text-foreground' : 'text-muted-foreground'}>
-                                  {holding.quantity.toLocaleString()}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                            </td>
-                            {/* Value */}
-                            <td className="px-3 py-1.5 text-right font-mono text-xs">
-                              {holding && holding.quantity > 0 ? (
-                                <span className="text-green-400">{formatCurrency(holding.currentValue)}</span>
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                            </td>
+                            {/* Qty - only for non-potential */}
+                            {!isPotential && (
+                              <td className="px-3 py-1.5 text-right font-mono text-xs">
+                                {holding ? (
+                                  <span className={holding.quantity > 0 ? 'text-foreground' : 'text-muted-foreground'}>
+                                    {holding.quantity.toLocaleString()}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </td>
+                            )}
+                            {/* Value - only for non-potential */}
+                            {!isPotential && (
+                              <td className="px-3 py-1.5 text-right font-mono text-xs">
+                                {holding && holding.quantity > 0 ? (
+                                  <span className="text-green-400">{formatCurrency(holding.currentValue)}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </td>
+                            )}
                             {/* Market Cap */}
                             <td className="px-3 py-1.5">
                               <Input
