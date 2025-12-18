@@ -1,12 +1,17 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  TrendingUp, 
-  Shield, 
-  Scan, 
   Search,
-  FlaskConical,
+  Contact,
+  Settings,
   MoreHorizontal,
+  TrendingUp,
+  Shield,
+  FlaskConical,
+  Scan,
+  ArrowRightLeft,
+  Calendar,
+  FileCheck,
   Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,26 +20,24 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 
 const primaryNavItems = [
   { path: '/', icon: LayoutDashboard, label: 'Overview' },
-  { path: '/performance', icon: TrendingUp, label: 'Perform' },
-  { path: '/risk', icon: Shield, label: 'Risk' },
-  { path: '/xray', icon: Scan, label: 'X-Ray' },
-  { path: '/research', icon: FlaskConical, label: 'Research' },
+  { path: '/research', icon: Search, label: 'Research' },
+  { path: '/crm', icon: Contact, label: 'CRM' },
+  { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 const moreNavItems = [
-  { path: '/transactions', label: 'Transactions' },
-  { path: '/scenarios', label: 'Scenarios' },
-  { path: '/valuations', label: 'Valuations' },
-  { path: '/policy', label: 'Policy' },
-  { path: '/crm', label: 'CRM' },
-  { path: '/settings', label: 'Settings' },
+  { path: '/performance', icon: TrendingUp, label: 'Performance' },
+  { path: '/risk', icon: Shield, label: 'Risk' },
+  { path: '/scenarios', icon: FlaskConical, label: 'Scenarios' },
+  { path: '/xray', icon: Scan, label: 'X-Ray' },
+  { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
+  { path: '/valuations', icon: Calendar, label: 'Valuations' },
+  { path: '/policy', icon: FileCheck, label: 'Policy' },
 ];
 
 export function MobileNav() {
@@ -48,6 +51,10 @@ export function MobileNav() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  // Check if any "more" item is currently active
+  const isMoreItemActive = moreNavItems.some(item => location.pathname === item.path) || 
+    (isAdmin && location.pathname === '/admin/users');
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border md:hidden">
@@ -76,7 +83,7 @@ export function MobileNav() {
             <SheetTrigger asChild>
               <button className={cn(
                 "flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[56px] min-h-[44px] rounded-lg transition-colors",
-                moreOpen 
+                moreOpen || isMoreItemActive
                   ? "text-primary bg-sidebar-accent" 
                   : "text-muted-foreground hover:text-primary hover:bg-sidebar-accent/50"
               )}>
@@ -84,39 +91,48 @@ export function MobileNav() {
                 <span className="text-[10px] font-medium tracking-tight">More</span>
               </button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl">
-              <SheetHeader>
-                <SheetTitle className="text-primary text-sm tracking-wider">More Options</SheetTitle>
-              </SheetHeader>
-              <div className="grid grid-cols-3 gap-3 py-6">
-                {moreNavItems.map(({ path, label }) => (
+            <SheetContent 
+              side="bottom" 
+              className="bg-sidebar border-sidebar-border rounded-t-3xl px-4 pb-8"
+            >
+              {/* Drag handle indicator */}
+              <div className="flex justify-center pt-3 pb-4">
+                <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+              </div>
+              
+              {/* Menu items */}
+              <div className="space-y-1">
+                {moreNavItems.map(({ path, icon: Icon, label }) => (
                   <NavLink
                     key={path}
                     to={path}
                     onClick={() => setMoreOpen(false)}
                     className={({ isActive }) => cn(
-                      "flex items-center justify-center py-4 px-3 rounded-xl text-sm font-medium transition-colors min-h-[56px]",
+                      "flex items-center gap-4 py-3.5 px-4 rounded-xl text-sm font-medium transition-colors",
                       isActive 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-secondary text-foreground hover:bg-sidebar-accent"
+                        ? "bg-primary/15 text-primary" 
+                        : "text-foreground hover:bg-sidebar-accent"
                     )}
                   >
-                    {label}
+                    <Icon size={20} strokeWidth={1.5} className="text-muted-foreground" />
+                    <span>{label}</span>
                   </NavLink>
                 ))}
+                
+                {/* Admin link - only for admins */}
                 {isAdmin && (
                   <NavLink
                     to="/admin/users"
                     onClick={() => setMoreOpen(false)}
                     className={({ isActive }) => cn(
-                      "flex items-center justify-center gap-2 py-4 px-3 rounded-xl text-sm font-medium transition-colors min-h-[56px]",
+                      "flex items-center gap-4 py-3.5 px-4 rounded-xl text-sm font-medium transition-colors mt-2 border-t border-sidebar-border pt-4",
                       isActive 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-primary/20 text-primary hover:bg-primary/30"
+                        ? "bg-primary/15 text-primary" 
+                        : "text-primary hover:bg-primary/10"
                     )}
                   >
-                    <Users size={16} />
-                    Admin
+                    <Users size={20} strokeWidth={1.5} />
+                    <span>Admin</span>
                   </NavLink>
                 )}
               </div>
