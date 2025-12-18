@@ -77,7 +77,7 @@ function DraggableRow({ fund, children }: { fund: CrmFund; children: React.React
   };
 
   return (
-    <tr ref={setNodeRef} style={style} className="border-b border-border/30 hover:bg-[#266E73]/8 group/row transition-colors">
+    <tr ref={setNodeRef} style={style} className="border-b border-white/[0.04] hover:bg-[#266E73]/[0.06] group/row transition-colors">
       <td className="px-2 py-1.5 w-[30px]">
         <div
           {...attributes}
@@ -318,21 +318,21 @@ export default function ProjectFundsBoard({ projectId }: Props) {
             open={expandedGroups[group.value]}
             onOpenChange={() => toggleGroup(group.value)}
           >
-            <div className="rounded-lg overflow-hidden">
-              {/* Section Header - Dark Blue #4B4BC3 */}
+            <div className="rounded-lg overflow-hidden bg-[#0F1115]">
+              {/* Section Header - Minimal with left accent */}
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between px-4 py-3.5 bg-[#4B4BC3] cursor-pointer hover:bg-[#5555d0] rounded-t-lg">
+                <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white/[0.02] border-l-[3px] border-l-[#4B4BC3]">
                   <div className="flex items-center gap-3">
-                    {expandedGroups[group.value] ? <ChevronDown size={16} className="text-white/70" /> : <ChevronRight size={16} className="text-white/70" />}
-                    <span className="font-medium text-[15px] text-white/95">{group.label}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/15 text-white/80">
+                    {expandedGroups[group.value] ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
+                    <span className="font-medium text-sm text-white">{group.label}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4B4BC3]/15 text-[#8B8BD9]">
                       {groupedFunds[group.value]?.length || 0}
                     </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-white/80 hover:text-white hover:bg-white/10"
+                    className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       setAddingToGroup(group.value);
@@ -348,17 +348,17 @@ export default function ProjectFundsBoard({ projectId }: Props) {
               <CollapsibleContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    {/* Column Header - Teal #266E73 */}
+                    {/* Column Header - Subtle tint */}
                     <thead>
-                      <tr className="bg-[#266E73]">
+                      <tr className="bg-[#266E73]/10">
                         <th className="w-[30px]"></th>
-                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[180px]">Name</th>
-                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[120px]">Status</th>
-                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[120px]">Strategy</th>
-                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[100px]">Asset Class</th>
-                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[100px]">Geography</th>
-                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 min-w-[150px]">Notes</th>
-                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[140px]">Timeline</th>
+                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[180px]">Name</th>
+                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[120px]">Status</th>
+                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[120px]">Strategy</th>
+                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[100px]">Asset Class</th>
+                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[100px]">Geography</th>
+                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 min-w-[150px]">Notes</th>
+                        <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[140px]">Timeline</th>
                         <th className="w-[50px]"></th>
                       </tr>
                     </thead>

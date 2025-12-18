@@ -220,21 +220,21 @@ export default function ProjectTasksBoard({ projectId }: Props) {
           open={expandedGroups[group.value]}
           onOpenChange={() => toggleGroup(group.value)}
         >
-          <div className="rounded-lg overflow-hidden">
-            {/* Section Header - Dark Blue #4B4BC3 */}
+          <div className="rounded-lg overflow-hidden bg-[#0F1115]">
+            {/* Section Header - Minimal with left accent */}
             <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between px-4 py-3.5 bg-[#4B4BC3] cursor-pointer hover:bg-[#5555d0] rounded-t-lg">
+              <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white/[0.02] border-l-[3px] border-l-[#4B4BC3]">
                 <div className="flex items-center gap-3">
-                  {expandedGroups[group.value] ? <ChevronDown size={16} className="text-white/70" /> : <ChevronRight size={16} className="text-white/70" />}
-                  <span className="font-medium text-[15px] text-white/95">{group.label}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-white/15 text-white/80">
+                  {expandedGroups[group.value] ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
+                  <span className="font-medium text-sm text-white">{group.label}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4B4BC3]/15 text-[#8B8BD9]">
                     {groupedTasks[group.value]?.length || 0}
                   </span>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-white/80 hover:text-white hover:bg-white/10"
+                  className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     setAddingToGroup(group.value);
@@ -250,14 +250,14 @@ export default function ProjectTasksBoard({ projectId }: Props) {
             <CollapsibleContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  {/* Column Header - Teal #266E73 */}
+                  {/* Column Header - Subtle tint */}
                   <thead>
-                    <tr className="bg-[#266E73]">
-                      <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[220px]">Task</th>
-                      <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[110px]">Status</th>
-                      <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[120px]">Due Date</th>
-                      <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[100px]">Urgency</th>
-                      <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 min-w-[150px]">Notes</th>
+                    <tr className="bg-[#266E73]/10">
+                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[220px]">Task</th>
+                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[110px]">Status</th>
+                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[120px]">Due Date</th>
+                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 w-[100px]">Urgency</th>
+                      <th className="text-left px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-400 min-w-[150px]">Notes</th>
                       <th className="w-[50px]"></th>
                     </tr>
                   </thead>
@@ -291,7 +291,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                       </tr>
                     )}
                     {groupedTasks[group.value]?.map(task => (
-                      <tr key={task.id} className="border-b border-border/30 hover:bg-[#266E73]/8 group/row transition-colors">
+                      <tr key={task.id} className="border-b border-white/[0.04] hover:bg-[#266E73]/[0.06] group/row transition-colors">
                         <td className="px-3 py-1.5">
                           <Input
                             defaultValue={task.task_name}
