@@ -283,9 +283,9 @@ export default function CrossSystemActivityLog({ projectId }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button variant="outline" size="sm" className="gap-1.5 px-2 md:px-3">
           <Activity size={14} />
-          Activity Log
+          <span className="hidden md:inline">Activity Log</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[85vh]">
