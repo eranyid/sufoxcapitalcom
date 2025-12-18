@@ -94,7 +94,7 @@ function DraggableRow({ company, children }: { company: CrmCompany; children: Re
   };
 
   return (
-    <tr ref={setNodeRef} style={style} className="border-b border-border hover:bg-muted/10 group/row">
+    <tr ref={setNodeRef} style={style} className="border-b border-border hover:bg-blue-500/5 focus-within:ring-1 focus-within:ring-blue-500/30 group/row">
       <td className="px-2 py-1.5 w-[30px]">
         <div
           {...attributes}
@@ -450,9 +450,9 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
             open={expandedGroups[group.value]}
             onOpenChange={() => toggleGroup(group.value)}
           >
-            <div className="border border-border rounded overflow-hidden">
+            <div className="border border-border rounded overflow-hidden border-l-2 border-l-blue-500/50">
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50">
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer hover:bg-muted/50 border-t-2 border-t-blue-500/30">
                   <div className="flex items-center gap-2">
                     {expandedGroups[group.value] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     <span className="font-medium text-sm">{group.label}</span>
@@ -549,7 +549,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Link2 size={12} className={company.is_auto_linked ? "text-primary shrink-0" : "text-muted-foreground shrink-0"} />
+                                        <Link2 size={12} className={company.is_auto_linked ? "text-blue-400 shrink-0" : "text-muted-foreground shrink-0"} />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p className="text-xs">{company.is_auto_linked ? 'Auto-linked' : 'Manually linked'}</p>
@@ -577,7 +577,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
                                 />
                               ) : company.ticker ? (
                                 <div className="flex items-center gap-1">
-                                  <Badge variant="outline" className="font-mono text-xs bg-primary/10 border-primary/30">
+                                  <Badge variant="outline" className="font-mono text-xs bg-blue-500/10 border-blue-500/30 text-blue-400">
                                     {company.ticker}
                                   </Badge>
                                   <TooltipProvider>

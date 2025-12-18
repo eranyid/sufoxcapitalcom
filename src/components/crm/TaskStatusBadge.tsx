@@ -8,7 +8,7 @@ interface TaskStatusBadgeProps {
 
 const statusStyles: Record<TaskStatus, string> = {
   backlog: 'bg-muted text-muted-foreground border-border',
-  in_progress: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+  in_progress: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
   blocked: 'bg-rose-500/20 text-rose-400 border-rose-500/40',
   done: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
 };
