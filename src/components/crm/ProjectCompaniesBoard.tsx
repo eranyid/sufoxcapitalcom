@@ -94,7 +94,7 @@ function DraggableRow({ company, children }: { company: CrmCompany; children: Re
   };
 
   return (
-    <tr ref={setNodeRef} style={style} className="border-b border-border/50 hover:bg-blue-900/10 group/row">
+    <tr ref={setNodeRef} style={style} className="border-b border-border/30 hover:bg-[#266E73]/8 group/row transition-colors">
       <td className="px-2 py-1.5 w-[30px]">
         <div
           {...attributes}
@@ -451,20 +451,20 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
             onOpenChange={() => toggleGroup(group.value)}
           >
             <div className="rounded-lg overflow-hidden">
-              {/* Section Header - Dark Blue */}
+              {/* Section Header - Dark Blue #4B4BC3 */}
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between px-4 py-3 bg-[#1e3a5f] cursor-pointer hover:bg-[#234670] rounded-t-lg">
+                <div className="flex items-center justify-between px-4 py-3.5 bg-[#4B4BC3] cursor-pointer hover:bg-[#5555d0] rounded-t-lg">
                   <div className="flex items-center gap-3">
-                    {expandedGroups[group.value] ? <ChevronDown size={16} className="text-blue-200" /> : <ChevronRight size={16} className="text-blue-200" />}
-                    <span className="font-semibold text-sm text-white">{group.label}</span>
-                    <Badge className="text-xs h-5 bg-blue-500/30 text-blue-100 border-blue-400/30">
+                    {expandedGroups[group.value] ? <ChevronDown size={16} className="text-white/70" /> : <ChevronRight size={16} className="text-white/70" />}
+                    <span className="font-medium text-[15px] text-white/95">{group.label}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/15 text-white/80">
                       {groupedCompanies[group.value]?.length || 0}
-                    </Badge>
+                    </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-blue-100 hover:text-white hover:bg-blue-500/20"
+                    className="h-7 text-xs text-white/80 hover:text-white hover:bg-white/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       setAddingToGroup(group.value);
@@ -478,25 +478,25 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
               </CollapsibleTrigger>
 
               <CollapsibleContent>
-                <div className="overflow-x-auto border-x border-b border-border rounded-b-lg">
+                <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    {/* Column Header - Light Blue */}
+                    {/* Column Header - Teal #266E73 */}
                     <thead>
-                      <tr className="bg-[#2a4a6f]">
+                      <tr className="bg-[#266E73]">
                         <th className="w-[30px]"></th>
-                        <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[160px]">Name</th>
-                        <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[90px]">Ticker</th>
+                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[160px]">Name</th>
+                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[90px]">Ticker</th>
                         {group.value !== 'potential' && (
                           <>
-                            <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[70px]">Qty</th>
-                            <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[90px]">Value</th>
+                            <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[70px]">Qty</th>
+                            <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[90px]">Value</th>
                           </>
                         )}
-                        <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[90px]">Mkt Cap</th>
-                        <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[100px]">Status</th>
-                        <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[90px]">Sector</th>
-                        <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 w-[80px]">Geo</th>
-                        <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-200/80 min-w-[120px]">Notes</th>
+                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[90px]">Mkt Cap</th>
+                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[100px]">Status</th>
+                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[90px]">Sector</th>
+                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 w-[80px]">Geo</th>
+                        <th className="text-left px-3 py-2.5 text-[10px] font-medium uppercase tracking-widest text-white/60 min-w-[120px]">Notes</th>
                         <th className="w-[50px]"></th>
                       </tr>
                     </thead>
