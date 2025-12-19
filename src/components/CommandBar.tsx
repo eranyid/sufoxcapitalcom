@@ -37,7 +37,6 @@ import {
   AlertTriangle,
   XCircle,
   Loader2,
-  Terminal
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -388,8 +387,8 @@ export function CommandBar() {
       {/* Command Dialog */}
       <CommandDialog open={open} onOpenChange={setOpen}>
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
-          <Terminal className="h-4 w-4 text-primary" />
-          <span className="text-xs font-mono text-muted-foreground">COMMAND BAR</span>
+          <span className="font-mono font-bold text-orange-500">&gt;_</span>
+          <span className="text-xs font-mono text-muted-foreground tracking-widest">COMMAND BAR</span>
           <kbd className="ml-auto text-[10px] font-mono px-1.5 py-0.5 bg-muted rounded border border-border">
             ⌘K
           </kbd>
