@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { MobileHeader } from './MobileHeader';
@@ -8,8 +8,10 @@ import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { Database } from 'lucide-react';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
+import { CommandBar } from '@/components/CommandBar';
 
 export function DashboardLayout() {
+  const navigate = useNavigate();
   const { sampleDataMode } = usePortfolio();
   const [watchdogPanelOpen, setWatchdogPanelOpen] = useState(false);
   const { 
@@ -58,6 +60,9 @@ export function DashboardLayout() {
             />
           </div>
           <div className="flex items-center gap-4 font-mono text-muted-foreground">
+            <kbd className="text-[9px] px-1.5 py-0.5 bg-muted rounded border border-border/50 hidden lg:inline-block">
+              ⌘K
+            </kbd>
             <span>USD</span>
             <span>{new Date().toLocaleDateString()}</span>
             <span className="text-primary">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
@@ -82,6 +87,14 @@ export function DashboardLayout() {
         errorCount={errorCount}
         warningCount={warningCount}
         infoCount={infoCount}
+      />
+
+      {/* Global Command Bar */}
+      <CommandBar 
+        onOpenActivityLog={() => {
+          // Navigate to CRM where activity log is available
+          navigate('/crm', { state: { openActivityLog: true } });
+        }} 
       />
     </div>
   );

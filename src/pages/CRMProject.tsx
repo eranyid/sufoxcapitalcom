@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Building2, Landmark, CheckSquare, Plus, MoreHorizontal, Pencil, Trash2, FolderKanban, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,11 +52,15 @@ export default function CRMProject() {
   const { projectId } = useParams<{ projectId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [project, setProject] = useState<CrmProject | null>(null);
   const [allProjects, setAllProjects] = useState<CrmProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'companies');
+  
+  // Handle tab from URL params or navigation state
+  const tabFromState = (location.state as { tab?: string })?.tab;
+  const [activeTab, setActiveTab] = useState(tabFromState || searchParams.get('tab') || 'companies');
   
   // Edit/Delete state
   const [editOpen, setEditOpen] = useState(false);
@@ -75,6 +79,16 @@ export default function CRMProject() {
       localStorage.setItem(LAST_PROJECT_KEY, projectId);
     }
   }, [projectId]);
+
+  // Handle tab navigation from command bar
+  useEffect(() => {
+    const tabFromState = (location.state as { tab?: string })?.tab;
+    if (tabFromState && ['companies', 'funds', 'tasks', 'timeline'].includes(tabFromState)) {
+      setActiveTab(tabFromState);
+      // Clear the state to prevent re-applying on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Fetch project and all projects for switcher
   useEffect(() => {
