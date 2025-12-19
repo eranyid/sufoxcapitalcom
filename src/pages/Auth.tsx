@@ -8,12 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle, Eye, EyeOff, ArrowLeft, Lock, ShieldCheck, FileText } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FaceIdIcon } from '@/components/icons/FaceIdIcon';
 import { z } from 'zod';
+import sufoxLogo from '@/assets/sufox-logo.png';
+
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
+
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +37,7 @@ export default function Auth() {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
   const {
     signIn,
     signUp,
@@ -41,6 +45,7 @@ export default function Auth() {
     loading,
     resetPassword
   } = useAuth();
+
   const {
     isSupported: isFaceIdSupported,
     hasPasskey,
@@ -49,12 +54,15 @@ export default function Auth() {
     registerPasskey,
     authenticateWithPasskey
   } = usePasskey();
+
   const navigate = useNavigate();
+
   useEffect(() => {
     if (user && !loading) {
       navigate('/');
     }
   }, [user, loading, navigate]);
+
   const validateForm = (isSignUp = false) => {
     const newErrors: {
       email?: string;
@@ -75,6 +83,7 @@ export default function Auth() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -84,7 +93,6 @@ export default function Auth() {
     } = await signIn(email, password);
     setIsLoading(false);
     if (!error) {
-      // After successful login, offer passkey setup if supported and not already set up
       if (isFaceIdSupported && !hasPasskey) {
         setShowPasskeySetup(true);
       } else {
@@ -92,6 +100,7 @@ export default function Auth() {
       }
     }
   };
+
   const handleFaceIdSignIn = async () => {
     setFaceIdError(null);
     const success = await authenticateWithPasskey();
@@ -99,16 +108,19 @@ export default function Auth() {
       navigate('/');
     }
   };
+
   const handleSetupPasskey = async () => {
     const success = await registerPasskey();
     if (success) {
       navigate('/');
     }
   };
+
   const handleSkipPasskeySetup = () => {
     setShowPasskeySetup(false);
     navigate('/');
   };
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     const emailResult = emailSchema.safeParse(forgotPasswordEmail);
@@ -123,6 +135,7 @@ export default function Auth() {
       setForgotPasswordSent(true);
     }
   };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(true)) return;
@@ -135,25 +148,68 @@ export default function Auth() {
       setShowEmailConfirmation(true);
     }
   };
+
   if (loading) {
-    return <div className="min-h-screen min-h-dvh bg-background flex items-center justify-center p-4">
+    return (
+      <div className="min-h-screen min-h-dvh bg-background flex items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>;
+      </div>
+    );
   }
-  return <div className="min-h-screen min-h-dvh bg-background flex flex-col lg:flex-row">
+
+  return (
+    <div className="min-h-screen min-h-dvh bg-background flex flex-col lg:flex-row relative overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 100px,
+            hsl(var(--border)) 100px,
+            hsl(var(--border)) 101px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 100px,
+            hsl(var(--border)) 100px,
+            hsl(var(--border)) 101px
+          )`
+        }} />
+      </div>
+
       {/* Left panel - branding (hidden on mobile, visible on desktop) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12">
-        <div>
-          <div className="bloomberg-gradient-bar w-24 mb-6" />
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">SUFOX CAPITAL LP</h1>
-          <p className="text-muted-foreground mt-2">
-            Professional Portfolio Analytics
-          </p>
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden">
+        {/* Gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-card via-card to-secondary/30" />
+        
+        {/* Subtle chart lines decoration */}
+        <div className="absolute inset-0 opacity-[0.03] overflow-hidden">
+          <svg className="w-full h-full" viewBox="0 0 400 400" preserveAspectRatio="none">
+            <path d="M0,200 Q100,150 200,180 T400,160" stroke="currentColor" strokeWidth="1" fill="none" className="text-primary" />
+            <path d="M0,250 Q100,200 200,220 T400,200" stroke="currentColor" strokeWidth="1" fill="none" className="text-primary" />
+            <path d="M0,300 Q100,280 200,260 T400,280" stroke="currentColor" strokeWidth="1" fill="none" className="text-primary" />
+          </svg>
         </div>
         
-        <div className="space-y-8">
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-secondary rounded">
+        {/* Glow effect */}
+        <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 border-r border-border/50 -mr-12 pr-12">
+          <div className="flex items-center gap-4 mb-8">
+            <img src={sufoxLogo} alt="SUFOX Capital" className="h-14 w-auto" />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">SUFOX CAPITAL</h1>
+              <p className="text-sm text-muted-foreground">Portfolio & Risk Analytics Terminal</p>
+            </div>
+          </div>
+          <div className="bloomberg-gradient-bar w-32 mb-8" />
+        </div>
+        
+        <div className="relative z-10 space-y-8">
+          <div className="flex items-start gap-4 group">
+            <div className="p-2.5 bg-secondary/80 rounded border border-border/50 group-hover:border-primary/30 transition-colors">
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -162,8 +218,8 @@ export default function Auth() {
             </div>
           </div>
           
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-secondary rounded">
+          <div className="flex items-start gap-4 group">
+            <div className="p-2.5 bg-secondary/80 rounded border border-border/50 group-hover:border-primary/30 transition-colors">
               <Shield className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -172,8 +228,8 @@ export default function Auth() {
             </div>
           </div>
           
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-secondary rounded">
+          <div className="flex items-start gap-4 group">
+            <div className="p-2.5 bg-secondary/80 rounded border border-border/50 group-hover:border-primary/30 transition-colors">
               <Database className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -183,25 +239,48 @@ export default function Auth() {
           </div>
         </div>
         
-        <p className="text-xs text-muted-foreground">© 2024 SUFOX CAPITAL LP. All rights reserved.</p>
+        <div className="relative z-10 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">© 2024 SUFOX CAPITAL LP. All rights reserved.</p>
+          <span className="text-xs text-muted-foreground font-mono">Terminal v1.0</span>
+        </div>
       </div>
       
       {/* Right panel - auth forms */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 safe-area-inset">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 safe-area-inset relative z-10">
         {/* Mobile branding header */}
-        <div className="lg:hidden w-full max-w-md mb-8">
-          <div className="bloomberg-gradient-bar w-16 mb-4" />
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Hedge Fund Studio
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Professional Portfolio Analytics
-          </p>
+        <div className="lg:hidden w-full max-w-md mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <img src={sufoxLogo} alt="SUFOX Capital" className="h-10 w-auto" />
+              <div>
+                <h1 className="text-lg font-bold text-foreground tracking-tight">
+                  SUFOX CAPITAL
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  Portfolio & Risk Analytics Terminal
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-secondary/80 rounded border border-border/50">
+              <ShieldCheck className="h-3 w-3 text-primary" />
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Secure Access</span>
+            </div>
+          </div>
+          <div className="bloomberg-gradient-bar w-20" />
         </div>
 
-        <Card className="w-full max-w-md bg-card border-border">
+        {/* Secure Access chip - desktop */}
+        <div className="hidden lg:flex absolute top-6 right-6 items-center gap-1.5 px-3 py-1.5 bg-secondary/80 rounded border border-border/50">
+          <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Secure Access</span>
+        </div>
+
+        <Card className="w-full max-w-md bg-gradient-to-b from-card to-card/95 border border-border/80 shadow-[inset_0_1px_0_0_hsl(var(--muted)/0.2),0_10px_40px_-10px_hsl(0_0%_0%/0.5)] rounded-lg animate-in fade-in-0 duration-500">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-xl text-foreground">Welcome</CardTitle>
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xl text-foreground">Welcome</CardTitle>
+            </div>
             <CardDescription className="text-sm">Sign in to your account or create a new one</CardDescription>
           </CardHeader>
           <CardContent>
@@ -258,7 +337,8 @@ export default function Auth() {
                   </Button>
 
                   {/* Face ID Sign In Button */}
-                  {isFaceIdSupported && <div className="mt-4 space-y-2">
+                  {isFaceIdSupported && (
+                    <div className="mt-4 space-y-2">
                       <div className="relative">
                         <div className="absolute inset-0 flex items-center">
                           <span className="w-full border-t border-border" />
@@ -278,12 +358,14 @@ export default function Auth() {
                       </p>
                       
                       {faceIdError && <p className="text-xs text-destructive text-center">{faceIdError}</p>}
-                    </div>}
+                    </div>
+                  )}
                 </form>
               </TabsContent>
               
               {/* Passkey Setup Prompt */}
-              {showPasskeySetup && <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-inset">
+              {showPasskeySetup && (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-inset">
                   <Card className="w-full max-w-md bg-card border-border">
                     <CardHeader className="text-center space-y-4">
                       <div className="mx-auto p-4 bg-primary/10 rounded-full w-fit">
@@ -304,10 +386,12 @@ export default function Auth() {
                       </Button>
                     </CardContent>
                   </Card>
-                </div>}
+                </div>
+              )}
 
               {/* Forgot Password Modal */}
-              {showForgotPassword && <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-inset">
+              {showForgotPassword && (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-inset">
                   <Card className="w-full max-w-md bg-card border-border">
                     <CardHeader className="space-y-4">
                       <button type="button" onClick={() => { setShowForgotPassword(false); setForgotPasswordSent(false); setForgotPasswordEmail(''); setErrors({}); }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -356,10 +440,12 @@ export default function Auth() {
                       )}
                     </CardContent>
                   </Card>
-                </div>}
+                </div>
+              )}
 
               <TabsContent value="signup" className="mt-6">
-                {showEmailConfirmation ? <div className="space-y-4 text-center py-4">
+                {showEmailConfirmation ? (
+                  <div className="space-y-4 text-center py-4">
                     <div className="flex justify-center">
                       <div className="p-4 bg-primary/10 rounded-full">
                         <Mail className="h-10 w-10 text-primary" />
@@ -388,66 +474,96 @@ export default function Auth() {
                       </AlertDescription>
                     </Alert>
                     <Button variant="outline" className="mt-4 h-11" onClick={() => {
-                  setShowEmailConfirmation(false);
-                  setEmail('');
-                  setPassword('');
-                  setConfirmPassword('');
-                  setDisplayName('');
-                }}>
+                      setShowEmailConfirmation(false);
+                      setEmail('');
+                      setPassword('');
+                      setConfirmPassword('');
+                      setDisplayName('');
+                    }}>
                       Back to Sign Up
                     </Button>
-                  </div> : <form onSubmit={handleSignUp} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name" className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Display Name
-                    </Label>
-                    <Input id="signup-name" type="text" placeholder="Your name" value={displayName} onChange={e => setDisplayName(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="name" />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Email
-                    </Label>
-                    <Input id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="email" required />
-                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Password
-                    </Label>
-                    <div className="relative">
-                      <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base pr-12" autoComplete="new-password" required />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1" aria-label={showPassword ? "Hide password" : "Show password"}>
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
+                ) : (
+                  <form onSubmit={handleSignUp} className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-name" className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Display Name
+                      </Label>
+                      <Input id="signup-name" type="text" placeholder="Your name" value={displayName} onChange={e => setDisplayName(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="name" />
                     </div>
-                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password" className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Confirm Password
-                    </Label>
-                    <div className="relative">
-                      <Input id="signup-confirm-password" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="bg-input border-border h-12 text-base pr-12" autoComplete="new-password" required />
-                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1" aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
-                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email" className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Email
+                      </Label>
+                      <Input id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} className="bg-input border-border h-12 text-base" autoComplete="email" required />
+                      {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                     </div>
-                    {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
-                  </div>
-                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                    Create Account
-                  </Button>
-                </form>}
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password" className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Password
+                      </Label>
+                      <div className="relative">
+                        <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="bg-input border-border h-12 text-base pr-12" autoComplete="new-password" required />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1" aria-label={showPassword ? "Hide password" : "Show password"}>
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-confirm-password" className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Confirm Password
+                      </Label>
+                      <div className="relative">
+                        <Input id="signup-confirm-password" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="bg-input border-border h-12 text-base pr-12" autoComplete="new-password" required />
+                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1" aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
+                    </div>
+                    <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-medium" disabled={isLoading}>
+                      {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+                      Create Account
+                    </Button>
+                  </form>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
 
-        {/* Mobile footer */}
-        <p className="lg:hidden text-xs text-muted-foreground mt-8 text-center">
-          © 2024 Hedge Fund Studio. All rights reserved.
-        </p>
+        {/* Trust bullets */}
+        <div className="w-full max-w-md mt-6 flex flex-wrap justify-center gap-4 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Lock className="h-3 w-3 text-primary/70" />
+            <span>Encrypted session</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Shield className="h-3 w-3 text-primary/70" />
+            <span>Role-based access</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <FileText className="h-3 w-3 text-primary/70" />
+            <span>Audit-ready activity log</span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="w-full max-w-md mt-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <span className="font-mono">Terminal v1.0</span>
+            <span className="hidden sm:inline text-border">|</span>
+            <span className="lg:hidden">© 2024 SUFOX CAPITAL LP</span>
+          </div>
+          <a 
+            href="mailto:support@sufoxcapital.com" 
+            className="text-primary hover:underline"
+          >
+            Need access?
+          </a>
+        </div>
       </div>
-    </div>;
+    </div>
+  );
 }
