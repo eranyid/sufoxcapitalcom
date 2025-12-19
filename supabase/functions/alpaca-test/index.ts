@@ -19,9 +19,6 @@ serve(async (req) => {
   const apiKeyId = Deno.env.get('ALPACA_API_KEY_ID');
   const apiSecretKey = Deno.env.get('ALPACA_API_SECRET_KEY');
 
-  console.log("API Key ID exists:", !!apiKeyId, "length:", apiKeyId?.length || 0);
-  console.log("API Secret Key exists:", !!apiSecretKey, "length:", apiSecretKey?.length || 0);
-
   if (!apiKeyId || !apiSecretKey) {
     console.error("Missing Alpaca API credentials");
     return new Response(

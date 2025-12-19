@@ -65,8 +65,6 @@ const NAVIGATION_COMMANDS = [
 
 const SPECIAL_COMMANDS = [
   { command: 'poli check', label: 'Compliance Check', icon: ShieldCheck },
-  { command: 'snapshot', label: 'Get Alpaca Snapshot', icon: TrendingUp, hasParam: true, paramHint: 'ticker' },
-  { command: 'price', label: 'Get Latest Price', icon: TrendingUp, hasParam: true, paramHint: 'ticker' },
 ];
 
 export function CommandBar() {
@@ -117,74 +115,10 @@ export function CommandBar() {
   const getMatchingSpecialCommands = useCallback((input: string) => {
     const normalized = input.toLowerCase().trim();
     if (!normalized) return SPECIAL_COMMANDS;
-    const parts = normalized.split(/\s+/);
-    const commandPart = parts[0];
-    
-    return SPECIAL_COMMANDS.filter(cmd => {
-      const cmdBase = cmd.command.toLowerCase().split(' ')[0];
-      // Match if user is typing the command or command with param
-      return cmdBase.startsWith(commandPart) || 
-             cmd.label.toLowerCase().startsWith(normalized) ||
-             normalized.startsWith(cmdBase);
-    });
-  }, []);
-
-  // Alpaca API call
-  const callAlpacaApi = useCallback(async (action: string, ticker: string) => {
-    if (!ticker) {
-      toast.error('Please provide a ticker symbol');
-      return;
-    }
-
-    const loadingToast = toast.loading(`Fetching ${action} for ${ticker.toUpperCase()}...`);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('alpaca-test', {
-        body: { action, symbol: ticker.toUpperCase() },
-      });
-
-      toast.dismiss(loadingToast);
-
-      if (error) throw error;
-      if (data.status === 'error') throw new Error(data.message);
-
-      if (action === 'snapshot') {
-        const snap = data.data;
-        const latestTrade = snap?.latestTrade?.p || snap?.latestTrade?.price || 'N/A';
-        const latestQuote = snap?.latestQuote;
-        const bid = latestQuote?.bp || latestQuote?.bid_price || 'N/A';
-        const ask = latestQuote?.ap || latestQuote?.ask_price || 'N/A';
-        
-        toast.success(
-          <div className="font-mono text-xs space-y-1">
-            <div className="font-bold text-sm">{ticker.toUpperCase()} Snapshot</div>
-            <div>Price: ${typeof latestTrade === 'number' ? latestTrade.toFixed(2) : latestTrade}</div>
-            <div>Bid: ${typeof bid === 'number' ? bid.toFixed(2) : bid}</div>
-            <div>Ask: ${typeof ask === 'number' ? ask.toFixed(2) : ask}</div>
-            <div className="text-muted-foreground">Latency: {data.latency_ms}ms</div>
-          </div>,
-          { duration: 8000 }
-        );
-      } else if (action === 'latest-trade') {
-        const trade = data.data?.trade || data.data;
-        const price = trade?.p || trade?.price || 'N/A';
-        const size = trade?.s || trade?.size || 'N/A';
-        
-        toast.success(
-          <div className="font-mono text-xs space-y-1">
-            <div className="font-bold text-sm">{ticker.toUpperCase()} Price</div>
-            <div>Price: ${typeof price === 'number' ? price.toFixed(2) : price}</div>
-            <div>Size: {size}</div>
-            <div className="text-muted-foreground">Latency: {data.latency_ms}ms</div>
-          </div>,
-          { duration: 6000 }
-        );
-      }
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      console.error('Alpaca API error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to fetch Alpaca data');
-    }
+    return SPECIAL_COMMANDS.filter(cmd => 
+      cmd.command.toLowerCase().startsWith(normalized) ||
+      cmd.label.toLowerCase().startsWith(normalized)
+    );
   }, []);
 
   const handleSelect = useCallback((value: string) => {
@@ -217,26 +151,6 @@ export function CommandBar() {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       const normalized = inputValue.toLowerCase().trim();
-      const parts = normalized.split(/\s+/);
-      const command = parts[0];
-      const param = parts[1]?.toUpperCase();
-      
-      // Alpaca commands
-      if (command === 'snapshot' && param) {
-        e.preventDefault();
-        setOpen(false);
-        setInputValue('');
-        callAlpacaApi('snapshot', param);
-        return;
-      }
-      
-      if (command === 'price' && param) {
-        e.preventDefault();
-        setOpen(false);
-        setInputValue('');
-        callAlpacaApi('latest-trade', param);
-        return;
-      }
       
       // Special command exact match
       if (normalized === 'poli check') {
@@ -255,7 +169,7 @@ export function CommandBar() {
         handleSelect(navMatch.command);
       }
     }
-  }, [inputValue, handleSelect, callAlpacaApi]);
+  }, [inputValue, handleSelect]);
 
   // Build portfolio summary for compliance check
   const buildPortfolioSummary = useCallback(() => {
@@ -481,27 +395,13 @@ export function CommandBar() {
             ⌘K
           </kbd>
         </div>
-        <div className="flex items-center border-b">
-          <input 
-            placeholder="Type a command (e.g. price AAPL)..." 
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex h-11 w-full rounded-md bg-transparent py-3 px-4 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 font-mono"
-            autoFocus
-          />
-        </div>
-        {/* Hint for param commands */}
-        {inputValue.toLowerCase().startsWith('price') && !inputValue.includes(' ') && (
-          <div className="px-4 py-2 bg-muted/50 border-b text-xs font-mono text-muted-foreground">
-            💡 Type: <span className="text-orange-400">price AAPL</span> then press Enter
-          </div>
-        )}
-        {inputValue.toLowerCase().startsWith('snapshot') && !inputValue.includes(' ') && (
-          <div className="px-4 py-2 bg-muted/50 border-b text-xs font-mono text-muted-foreground">
-            💡 Type: <span className="text-orange-400">snapshot AAPL</span> then press Enter
-          </div>
-        )}
+        <CommandInput 
+          placeholder="Type a command..." 
+          value={inputValue}
+          onValueChange={setInputValue}
+          onKeyDown={handleKeyDown}
+          className="font-mono"
+        />
         <CommandList>
           <CommandEmpty className="py-6 text-center">
             <span className="text-muted-foreground font-mono text-sm">No matching commands</span>
@@ -513,21 +413,11 @@ export function CommandBar() {
                 <CommandItem
                   key={cmd.command}
                   value={cmd.command}
-                  onSelect={() => {
-                    // For commands with params, just set the command in input
-                    if ('hasParam' in cmd && cmd.hasParam) {
-                      setInputValue(cmd.command.split(' ')[0] + ' ');
-                    } else {
-                      handleSelect(cmd.command);
-                    }
-                  }}
+                  onSelect={() => handleSelect(cmd.command)}
                   className="font-mono"
                 >
                   <cmd.icon className="mr-2 h-4 w-4 text-blue-400" />
-                  <span className="text-primary font-semibold">{cmd.command.split(' ')[0]}</span>
-                  {'hasParam' in cmd && cmd.hasParam && (
-                    <span className="ml-1 text-orange-400">&lt;{cmd.paramHint}&gt;</span>
-                  )}
+                  <span className="text-primary font-semibold">{cmd.command}</span>
                   <span className="ml-2 text-muted-foreground">→ {cmd.label}</span>
                 </CommandItem>
               ))}
