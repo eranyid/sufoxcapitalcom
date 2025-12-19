@@ -37,6 +37,7 @@ import {
   AlertTriangle,
   XCircle,
   Loader2,
+  HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -59,6 +60,7 @@ const NAVIGATION_COMMANDS = [
   { command: 'value', label: 'Valuations', path: '/valuations', icon: Calendar },
   { command: 'poli', label: 'Policy', path: '/policy', icon: FileCheck },
   { command: 'set', label: 'Settings', path: '/settings', icon: Settings },
+  { command: 'help', label: 'Help & Guide', path: '/help', icon: HelpCircle },
 ];
 
 const SPECIAL_COMMANDS = [
