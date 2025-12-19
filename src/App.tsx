@@ -60,11 +60,6 @@ const App = () => (
                       <Overview />
                     </Suspense>
                   } />
-                  <Route path="/overview" element={
-                    <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <Overview />
-                    </Suspense>
-                  } />
                   <Route path="/performance" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Performance />

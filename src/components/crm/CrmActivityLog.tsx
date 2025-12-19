@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
-import { Activity, ExternalLink, ArrowUpRight, ArrowDownRight, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { Activity, ExternalLink, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,7 +19,7 @@ interface ActivityLogEntry {
   user_id: string;
   project_id: string;
   ticker: string;
-  action: string;
+  action: 'auto_add_ongoing' | 'auto_move_old_exits' | 'manual_edit';
   source_transaction_id: string | null;
   details: Record<string, unknown>;
   created_at: string;
@@ -66,18 +66,12 @@ export default function CrmActivityLog({ projectId }: Props) {
         return 'Moved to Old Exits';
       case 'manual_edit':
         return 'Manual Edit';
-      case 'task_created':
-        return 'Task Created';
-      case 'task_deleted':
-        return 'Task Deleted';
-      case 'status_changed':
-        return 'Status Changed';
       default:
-        return action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return action;
     }
   };
 
-  const getActionBadge = (action: string, details?: Record<string, unknown>) => {
+  const getActionBadge = (action: string) => {
     switch (action) {
       case 'auto_add_ongoing':
         return (
@@ -92,34 +86,6 @@ export default function CrmActivityLog({ projectId }: Props) {
             <ArrowDownRight size={10} className="mr-1" />
             {getActionLabel(action)}
           </Badge>
-        );
-      case 'task_created':
-        return (
-          <Badge variant="outline" className="bg-sky-500/10 text-sky-400 border-sky-500/30 text-xs">
-            <Plus size={10} className="mr-1" />
-            {getActionLabel(action)}
-          </Badge>
-        );
-      case 'task_deleted':
-        return (
-          <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/30 text-xs">
-            <Trash2 size={10} className="mr-1" />
-            {getActionLabel(action)}
-          </Badge>
-        );
-      case 'status_changed':
-        return (
-          <span className="flex items-center gap-1">
-            <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-xs">
-              <RefreshCw size={10} className="mr-1" />
-              Status
-            </Badge>
-            {details?.previousStatus && details?.newStatus && (
-              <span className="text-xs text-muted-foreground">
-                {String(details.previousStatus).replace(/_/g, ' ')} → {String(details.newStatus).replace(/_/g, ' ')}
-              </span>
-            )}
-          </span>
         );
       default:
         return (
@@ -164,7 +130,7 @@ export default function CrmActivityLog({ projectId }: Props) {
                     <div className="font-mono text-sm font-medium text-primary">
                       {log.ticker}
                     </div>
-                    {getActionBadge(log.action, log.details)}
+                    {getActionBadge(log.action)}
                   </div>
                   
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">

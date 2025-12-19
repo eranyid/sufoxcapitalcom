@@ -43,7 +43,7 @@ export function useCrmTasks() {
         description: task.description || null,
         owner: task.owner || 'Me',
         due_date: task.due_date || null,
-        status: task.status || 'seed',
+        status: task.status || 'backlog',
         urgency: task.urgency || 'medium',
       })
       .select()

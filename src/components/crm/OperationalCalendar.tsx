@@ -148,7 +148,7 @@ export default function OperationalCalendar({ events, onNavigate }: Props) {
     const tasks = dayEvents.filter(e => e.type === 'task').length;
     const overdueTasks = dayEvents.filter(e => 
       e.type === 'task' && 
-      e.details?.taskStatus !== 'done' &&
+      e.details?.taskStatus !== 'completed' &&
       e.details?.dueDate &&
       new Date(e.details.dueDate) < new Date()
     ).length;

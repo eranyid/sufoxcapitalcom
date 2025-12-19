@@ -19,8 +19,7 @@ export default function CrmSummaryWidget() {
       const { data, error } = await supabase
         .from('crm_tasks')
         .select('id')
-        .is('deleted_at', null)
-        .in('status', ['seed', 'in_progress', 'blocked']);
+        .eq('status', 'in_progress');
 
       if (!error) {
         setInProgressCount(data?.length || 0);
@@ -72,7 +71,7 @@ export default function CrmSummaryWidget() {
               <CheckSquare className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-[9px] text-muted-foreground font-mono uppercase">Open Tasks</p>
+              <p className="text-[9px] text-muted-foreground font-mono uppercase">In Progress</p>
               <p className="text-lg font-bold font-mono tabular-nums">{inProgressCount}</p>
             </div>
           </div>

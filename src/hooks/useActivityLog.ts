@@ -13,10 +13,7 @@ export type ActivityAction =
   | 'crm_update'
   | 'research_add'
   | 'watchlist_convert'
-  | 'compliance_check_manual'
-  | 'task_created'
-  | 'task_deleted'
-  | 'status_changed';
+  | 'compliance_check_manual';
 
 interface LogActivityParams {
   projectId: string;
