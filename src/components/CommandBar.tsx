@@ -65,6 +65,8 @@ const NAVIGATION_COMMANDS = [
 
 const SPECIAL_COMMANDS = [
   { command: 'poli check', label: 'Compliance Check', icon: ShieldCheck },
+  { command: 'snapshot', label: 'Get Alpaca Snapshot', icon: TrendingUp, hasParam: true, paramHint: 'ticker' },
+  { command: 'price', label: 'Get Latest Price', icon: TrendingUp, hasParam: true, paramHint: 'ticker' },
 ];
 
 export function CommandBar() {
@@ -121,6 +123,64 @@ export function CommandBar() {
     );
   }, []);
 
+  // Alpaca API call
+  const callAlpacaApi = useCallback(async (action: string, ticker: string) => {
+    if (!ticker) {
+      toast.error('Please provide a ticker symbol');
+      return;
+    }
+
+    const loadingToast = toast.loading(`Fetching ${action} for ${ticker.toUpperCase()}...`);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('alpaca-test', {
+        body: { action, symbol: ticker.toUpperCase() },
+      });
+
+      toast.dismiss(loadingToast);
+
+      if (error) throw error;
+      if (data.status === 'error') throw new Error(data.message);
+
+      if (action === 'snapshot') {
+        const snap = data.data;
+        const latestTrade = snap?.latestTrade?.p || snap?.latestTrade?.price || 'N/A';
+        const latestQuote = snap?.latestQuote;
+        const bid = latestQuote?.bp || latestQuote?.bid_price || 'N/A';
+        const ask = latestQuote?.ap || latestQuote?.ask_price || 'N/A';
+        
+        toast.success(
+          <div className="font-mono text-xs space-y-1">
+            <div className="font-bold text-sm">{ticker.toUpperCase()} Snapshot</div>
+            <div>Price: ${typeof latestTrade === 'number' ? latestTrade.toFixed(2) : latestTrade}</div>
+            <div>Bid: ${typeof bid === 'number' ? bid.toFixed(2) : bid}</div>
+            <div>Ask: ${typeof ask === 'number' ? ask.toFixed(2) : ask}</div>
+            <div className="text-muted-foreground">Latency: {data.latency_ms}ms</div>
+          </div>,
+          { duration: 8000 }
+        );
+      } else if (action === 'latest-trade') {
+        const trade = data.data?.trade || data.data;
+        const price = trade?.p || trade?.price || 'N/A';
+        const size = trade?.s || trade?.size || 'N/A';
+        
+        toast.success(
+          <div className="font-mono text-xs space-y-1">
+            <div className="font-bold text-sm">{ticker.toUpperCase()} Price</div>
+            <div>Price: ${typeof price === 'number' ? price.toFixed(2) : price}</div>
+            <div>Size: {size}</div>
+            <div className="text-muted-foreground">Latency: {data.latency_ms}ms</div>
+          </div>,
+          { duration: 6000 }
+        );
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      console.error('Alpaca API error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch Alpaca data');
+    }
+  }, []);
+
   const handleSelect = useCallback((value: string) => {
     const normalized = value.toLowerCase().trim();
     
@@ -151,6 +211,26 @@ export function CommandBar() {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       const normalized = inputValue.toLowerCase().trim();
+      const parts = normalized.split(/\s+/);
+      const command = parts[0];
+      const param = parts[1]?.toUpperCase();
+      
+      // Alpaca commands
+      if (command === 'snapshot' && param) {
+        e.preventDefault();
+        setOpen(false);
+        setInputValue('');
+        callAlpacaApi('snapshot', param);
+        return;
+      }
+      
+      if (command === 'price' && param) {
+        e.preventDefault();
+        setOpen(false);
+        setInputValue('');
+        callAlpacaApi('latest-trade', param);
+        return;
+      }
       
       // Special command exact match
       if (normalized === 'poli check') {
@@ -169,7 +249,7 @@ export function CommandBar() {
         handleSelect(navMatch.command);
       }
     }
-  }, [inputValue, handleSelect]);
+  }, [inputValue, handleSelect, callAlpacaApi]);
 
   // Build portfolio summary for compliance check
   const buildPortfolioSummary = useCallback(() => {

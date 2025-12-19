@@ -38,6 +38,8 @@ const shortcuts = [
   { command: 'crm', description: 'Navigate to CRM', icon: Contact },
   { command: 'set', description: 'Navigate to Settings', icon: Settings },
   { command: 'poli check', description: 'Open Compliance Check modal', icon: CheckCircle },
+  { command: 'snapshot AAPL', description: 'Get Alpaca snapshot for ticker', icon: TrendingUp },
+  { command: 'price AAPL', description: 'Get latest price for ticker', icon: TrendingUp },
 ];
 
 const gettingStartedSteps = [
