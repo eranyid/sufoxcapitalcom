@@ -18,6 +18,7 @@ interface UserProfile {
   created_at: string;
   is_approved: boolean;
   approval_status: string;
+  last_sign_in_at: string | null;
   isAdmin?: boolean;
 }
 
@@ -246,6 +247,7 @@ export default function AdminUsers() {
                         <TableHead className="text-muted-foreground">Email</TableHead>
                         <TableHead className="text-muted-foreground">Name</TableHead>
                         <TableHead className="text-muted-foreground">Signup Date</TableHead>
+                        <TableHead className="text-muted-foreground">Last Login</TableHead>
                         <TableHead className="text-muted-foreground">Status</TableHead>
                         <TableHead className="text-muted-foreground text-right">Actions</TableHead>
                       </TableRow>
@@ -257,6 +259,9 @@ export default function AdminUsers() {
                           <TableCell>{u.display_name || '—'}</TableCell>
                           <TableCell className="text-muted-foreground">
                             {format(new Date(u.created_at), 'MMM d, yyyy HH:mm')}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {u.last_sign_in_at ? format(new Date(u.last_sign_in_at), 'MMM d, yyyy HH:mm') : '—'}
                           </TableCell>
                           <TableCell>{getStatusBadge(u.approval_status, u.is_approved)}</TableCell>
                           <TableCell className="text-right">
@@ -314,6 +319,7 @@ export default function AdminUsers() {
                         <TableHead className="text-muted-foreground">Email</TableHead>
                         <TableHead className="text-muted-foreground">Name</TableHead>
                         <TableHead className="text-muted-foreground">Signup Date</TableHead>
+                        <TableHead className="text-muted-foreground">Last Login</TableHead>
                         <TableHead className="text-muted-foreground">Status</TableHead>
                         <TableHead className="text-muted-foreground text-right">Actions</TableHead>
                       </TableRow>
@@ -330,6 +336,9 @@ export default function AdminUsers() {
                           <TableCell>{u.display_name || '—'}</TableCell>
                           <TableCell className="text-muted-foreground">
                             {format(new Date(u.created_at), 'MMM d, yyyy HH:mm')}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {u.last_sign_in_at ? format(new Date(u.last_sign_in_at), 'MMM d, yyyy HH:mm') : '—'}
                           </TableCell>
                           <TableCell>{getStatusBadge(u.approval_status, u.is_approved)}</TableCell>
                           <TableCell className="text-right">
