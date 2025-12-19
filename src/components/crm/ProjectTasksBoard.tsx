@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, ChevronDown, ChevronRight, Trash2, MoreHorizontal, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
+import { CrmTask, TaskStatus, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
+import { useActivityLog } from '@/hooks/useActivityLog';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import {
   DropdownMenu,
@@ -43,9 +43,10 @@ interface Props {
   projectId: string;
 }
 
+// Single source of truth - ordered as: Seed, In Progress, Done, Blocked
 const TASK_GROUPS = [
+  { value: 'seed', label: 'Seed' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'backlog', label: 'Backlog' },
   { value: 'done', label: 'Done' },
   { value: 'blocked', label: 'Blocked' },
 ] as const;
@@ -54,12 +55,13 @@ type TaskGroup = typeof TASK_GROUPS[number]['value'];
 
 export default function ProjectTasksBoard({ projectId }: Props) {
   const { user } = useAuth();
+  const { logActivity } = useActivityLog();
   const [tasks, setTasks] = useState<CrmTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Record<TaskGroup, boolean>>({
+    seed: true,
     in_progress: true,
-    backlog: true,
     done: false,
     blocked: true,
   });
@@ -71,6 +73,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
       .from('crm_tasks')
       .select('*')
       .eq('project_id', projectId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -128,12 +131,59 @@ export default function ProjectTasksBoard({ projectId }: Props) {
     }
 
     setTasks(prev => prev.map(t => t.id === tempId ? (data as CrmTask) : t));
+    
+    // Log task creation
+    await logActivity({
+      projectId,
+      ticker: newTaskName,
+      action: 'task_created',
+      details: { status, taskId: data.id }
+    });
+    
     toast.success('Task added');
+  };
+
+  const handleStatusChange = async (task: CrmTask, newStatus: string) => {
+    const oldStatus = task.status;
+    if (oldStatus === newStatus) return;
+
+    // Optimistic update
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus as TaskStatus } : t));
+
+    const { error } = await supabase
+      .from('crm_tasks')
+      .update({ status: newStatus })
+      .eq('id', task.id);
+
+    if (error) {
+      toast.error('Failed to update status');
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: oldStatus } : t));
+      console.error(error);
+      return;
+    }
+
+    // Log status change to activity log
+    await logActivity({
+      projectId,
+      ticker: task.task_name,
+      action: 'status_changed',
+      details: {
+        taskId: task.id,
+        previousStatus: oldStatus,
+        newStatus: newStatus,
+      }
+    });
   };
 
   const handleInlineUpdate = async (id: string, field: keyof CrmTask, value: string | null) => {
     const original = tasks.find(t => t.id === id);
     if (!original) return;
+
+    // Use dedicated status handler for status changes
+    if (field === 'status' && value) {
+      await handleStatusChange(original, value);
+      return;
+    }
 
     setTasks(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
 
@@ -186,7 +236,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
 
     const { error } = await supabase
       .from('crm_tasks')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', deleteId);
 
     if (error) {
@@ -196,7 +246,17 @@ export default function ProjectTasksBoard({ projectId }: Props) {
       return;
     }
 
-    toast.success('Task deleted');
+    // Log deletion
+    if (original) {
+      await logActivity({
+        projectId,
+        ticker: original.task_name,
+        action: 'task_deleted',
+        details: { taskId: deleteId }
+      });
+    }
+
+    toast.success('Task moved to trash');
   };
 
   const toggleGroup = (group: TaskGroup) => {
@@ -395,7 +455,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Task?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone.
+              This task will be moved to trash.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
