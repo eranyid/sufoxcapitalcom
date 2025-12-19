@@ -117,10 +117,16 @@ export function CommandBar() {
   const getMatchingSpecialCommands = useCallback((input: string) => {
     const normalized = input.toLowerCase().trim();
     if (!normalized) return SPECIAL_COMMANDS;
-    return SPECIAL_COMMANDS.filter(cmd => 
-      cmd.command.toLowerCase().startsWith(normalized) ||
-      cmd.label.toLowerCase().startsWith(normalized)
-    );
+    const parts = normalized.split(/\s+/);
+    const commandPart = parts[0];
+    
+    return SPECIAL_COMMANDS.filter(cmd => {
+      const cmdBase = cmd.command.toLowerCase().split(' ')[0];
+      // Match if user is typing the command or command with param
+      return cmdBase.startsWith(commandPart) || 
+             cmd.label.toLowerCase().startsWith(normalized) ||
+             normalized.startsWith(cmdBase);
+    });
   }, []);
 
   // Alpaca API call
@@ -493,11 +499,21 @@ export function CommandBar() {
                 <CommandItem
                   key={cmd.command}
                   value={cmd.command}
-                  onSelect={() => handleSelect(cmd.command)}
+                  onSelect={() => {
+                    // For commands with params, just set the command in input
+                    if ('hasParam' in cmd && cmd.hasParam) {
+                      setInputValue(cmd.command.split(' ')[0] + ' ');
+                    } else {
+                      handleSelect(cmd.command);
+                    }
+                  }}
                   className="font-mono"
                 >
                   <cmd.icon className="mr-2 h-4 w-4 text-blue-400" />
-                  <span className="text-primary font-semibold">{cmd.command}</span>
+                  <span className="text-primary font-semibold">{cmd.command.split(' ')[0]}</span>
+                  {'hasParam' in cmd && cmd.hasParam && (
+                    <span className="ml-1 text-orange-400">&lt;{cmd.paramHint}&gt;</span>
+                  )}
                   <span className="ml-2 text-muted-foreground">→ {cmd.label}</span>
                 </CommandItem>
               ))}
