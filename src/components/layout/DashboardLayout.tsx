@@ -8,7 +8,6 @@ import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { Database } from 'lucide-react';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
-import { CommandBar } from '@/components/CommandBar';
 
 export function DashboardLayout() {
   const { sampleDataMode } = usePortfolio();
@@ -84,9 +83,6 @@ export function DashboardLayout() {
         warningCount={warningCount}
         infoCount={infoCount}
       />
-      
-      {/* Global Command Bar */}
-      <CommandBar />
     </div>
   );
 }
