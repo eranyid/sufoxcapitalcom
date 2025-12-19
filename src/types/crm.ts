@@ -1,4 +1,4 @@
-export type TaskStatus = 'backlog' | 'in_progress' | 'done' | 'blocked';
+export type TaskStatus = 'seed' | 'in_progress' | 'done' | 'blocked';
 export type TaskUrgency = 'low' | 'medium' | 'high';
 export type BoardStatus = 'working_on_it' | 'done' | 'stuck';
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
@@ -71,7 +71,7 @@ export interface CrmFund {
 }
 
 export const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-  { value: 'backlog', label: 'Backlog' },
+  { value: 'seed', label: 'Seed' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },
   { value: 'blocked', label: 'Blocked' },
