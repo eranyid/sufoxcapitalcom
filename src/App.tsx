@@ -29,6 +29,7 @@ const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
 const CRM = lazy(() => import("./pages/CRM"));
 const CRMProject = lazy(() => import("./pages/CRMProject"));
 const Trash = lazy(() => import("./pages/Trash"));
+const Help = lazy(() => import("./pages/Help"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -127,6 +128,11 @@ const App = () => (
                   <Route path="/trash" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Trash />
+                    </Suspense>
+                  } />
+                  <Route path="/help" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Help />
                     </Suspense>
                   } />
                 </Route>

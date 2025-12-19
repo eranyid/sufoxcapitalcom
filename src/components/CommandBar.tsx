@@ -28,6 +28,7 @@ const COMMANDS: Record<string, CommandConfig> = {
   'valuations': { path: '/valuations', label: 'Valuations', description: 'Asset valuations' },
   'settings': { path: '/settings', label: 'Settings', description: 'Application settings' },
   'admin': { path: '/admin/users', label: 'Admin', description: 'User administration' },
+  'help': { path: '/help', label: 'Help', description: 'Help and documentation' },
   'activity': { action: 'activity', label: 'Activity Log', description: 'Open activity log' },
 };
 
