@@ -4,17 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     
-    <!-- Preconnect to external origins for faster resource loading -->
-    <link rel="preconnect" href="https://tibawkrjihvibckxutvj.supabase.co" crossorigin />
-    <link rel="dns-prefetch" href="https://tibawkrjihvibckxutvj.supabase.co" />
+    <!-- Preconnect to external origins for faster resource loading - placed first for priority -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://tibawkrjihvibckxutvj.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://tibawkrjihvibckxutvj.supabase.co" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
     
-    <!-- Preload critical fonts for faster LCP -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" as="style" />
+    <!-- Preload critical fonts with high priority -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" as="style" fetchpriority="high" />
     
     <!-- Modulepreload for critical JS to improve LCP -->
-    <link rel="modulepreload" href="/src/main.tsx" />
+    <link rel="modulepreload" href="/src/main.tsx" fetchpriority="high" />
     
     <title>SUFOX Capital | Investment Portfolio Dashboard</title>
     <meta name="description" content="Professional hedge fund investment dashboard for tracking portfolio performance, risk metrics, and asset allocation with institutional-grade analytics.">
