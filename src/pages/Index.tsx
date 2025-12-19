@@ -1,7 +1,8 @@
 import { Navigate } from 'react-router-dom';
 
 const Index = () => {
-  return <Navigate to="/overview" replace />;
+  // Redirect to root path which renders Overview
+  return <Navigate to="/" replace />;
 };
 
 export default Index;
