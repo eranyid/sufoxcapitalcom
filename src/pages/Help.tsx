@@ -27,12 +27,10 @@ import { toast } from 'sonner';
 export default function Help() {
   const { sampleDataMode, setSampleDataMode } = usePortfolio();
 
-  const handleToggleSampleData = () => {
-    setSampleDataMode(!sampleDataMode);
+  const handleLoadSampleData = () => {
     if (!sampleDataMode) {
+      setSampleDataMode(true);
       toast.success('Sample data loaded');
-    } else {
-      toast.success('Sample data cleared');
     }
   };
 
@@ -153,27 +151,18 @@ export default function Help() {
             הנתונים הם לצורכי הדגמה בלבד ולא ישפיעו על הנתונים האמיתיים שלך.
           </p>
           <div className="flex items-center gap-4">
-            <Button 
-              onClick={handleToggleSampleData}
-              variant={sampleDataMode ? "destructive" : "default"}
-              className="gap-2"
-            >
-              {sampleDataMode ? (
-                <>
-                  <RefreshCw className="h-4 w-4" />
-                  Clear Sample Data
-                </>
-              ) : (
-                <>
-                  <Database className="h-4 w-4" />
-                  Load Sample Data
-                </>
-              )}
-            </Button>
-            {sampleDataMode && (
+            {sampleDataMode ? (
               <Badge variant="outline" className="bg-primary/20 text-primary border-primary/50 animate-pulse">
                 Sample Data Active
               </Badge>
+            ) : (
+              <Button 
+                onClick={handleLoadSampleData}
+                className="gap-2"
+              >
+                <Database className="h-4 w-4" />
+                Load Sample Data
+              </Button>
             )}
           </div>
         </CardContent>
