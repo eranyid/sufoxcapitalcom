@@ -481,13 +481,27 @@ export function CommandBar() {
             ⌘K
           </kbd>
         </div>
-        <CommandInput 
-          placeholder="Type a command..." 
-          value={inputValue}
-          onValueChange={setInputValue}
-          onKeyDown={handleKeyDown}
-          className="font-mono"
-        />
+        <div className="flex items-center border-b">
+          <input 
+            placeholder="Type a command (e.g. price AAPL)..." 
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex h-11 w-full rounded-md bg-transparent py-3 px-4 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 font-mono"
+            autoFocus
+          />
+        </div>
+        {/* Hint for param commands */}
+        {inputValue.toLowerCase().startsWith('price') && !inputValue.includes(' ') && (
+          <div className="px-4 py-2 bg-muted/50 border-b text-xs font-mono text-muted-foreground">
+            💡 Type: <span className="text-orange-400">price AAPL</span> then press Enter
+          </div>
+        )}
+        {inputValue.toLowerCase().startsWith('snapshot') && !inputValue.includes(' ') && (
+          <div className="px-4 py-2 bg-muted/50 border-b text-xs font-mono text-muted-foreground">
+            💡 Type: <span className="text-orange-400">snapshot AAPL</span> then press Enter
+          </div>
+        )}
         <CommandList>
           <CommandEmpty className="py-6 text-center">
             <span className="text-muted-foreground font-mono text-sm">No matching commands</span>
