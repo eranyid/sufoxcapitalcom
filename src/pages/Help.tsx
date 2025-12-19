@@ -63,32 +63,32 @@ export default function Help() {
   const gettingStartedSteps = [
     {
       step: 1,
-      title: 'הוספת עסקאות',
-      description: 'התחל בהוספת עסקאות קנייה ומכירה דרך עמוד Transactions. זה הבסיס לכל הניתוחים.',
+      title: 'Add Transactions',
+      description: 'Start by adding buy and sell transactions in the Transactions page. This is the foundation for all analytics.',
       icon: FileText,
     },
     {
       step: 2,
-      title: 'עדכון שווי נכסים',
-      description: 'עדכן את השווי החודשי של הנכסים בעמוד Valuations כדי לעקוב אחר ביצועים.',
+      title: 'Update Valuations',
+      description: 'Update monthly asset valuations in the Valuations page to track performance over time.',
       icon: TrendingUp,
     },
     {
       step: 3,
-      title: 'הגדרת מדיניות השקעה',
-      description: 'הגדר את מדיניות ההשקעה שלך בעמוד Policy לבדיקות תאימות אוטומטיות.',
+      title: 'Set Investment Policy',
+      description: 'Define your investment policy in the Policy page for automated compliance checks.',
       icon: Shield,
     },
     {
       step: 4,
-      title: 'ניהול CRM',
-      description: 'צור פרויקטים וחברות למעקב אחר הזדמנויות השקעה חדשות.',
+      title: 'Manage CRM',
+      description: 'Create projects and track companies to monitor new investment opportunities.',
       icon: Building2,
     },
     {
       step: 5,
-      title: 'ניתוח סיכונים',
-      description: 'צפה בניתוחי סיכון, VaR ו-Monte Carlo בעמוד Risk.',
+      title: 'Analyze Risk',
+      description: 'View risk analysis, VaR, and Monte Carlo simulations in the Risk page.',
       icon: BarChart3,
     },
   ];
@@ -96,32 +96,32 @@ export default function Help() {
   const features = [
     {
       title: 'Overview',
-      description: 'סקירה כללית של הפורטפוליו עם KPIs, הקצאות ומדדי ביצוע',
+      description: 'Portfolio overview with KPIs, allocations and performance metrics',
       icon: Layers,
     },
     {
       title: 'Performance',
-      description: 'ניתוח ביצועים מפורט עם השוואה לבנצ\'מרק',
+      description: 'Detailed performance analysis with benchmark comparison',
       icon: TrendingUp,
     },
     {
       title: 'Risk',
-      description: 'ניתוח סיכונים כולל VaR, Monte Carlo וניתוח תרחישים',
+      description: 'Risk analysis including VaR, Monte Carlo and scenario analysis',
       icon: Shield,
     },
     {
       title: 'Research',
-      description: 'מעקב אחר נכסים פוטנציאליים וניתוח מחקר',
+      description: 'Track potential assets and research analysis',
       icon: Search,
     },
     {
       title: 'CRM',
-      description: 'ניהול קשרים עם חברות, קרנות ומשימות',
+      description: 'Manage relationships with companies, funds and tasks',
       icon: Building2,
     },
     {
       title: 'Scenarios',
-      description: 'בדיקת תרחישי קיצון והשפעתם על הפורטפוליו',
+      description: 'Test stress scenarios and their impact on the portfolio',
       icon: Layers,
     },
   ];
@@ -133,7 +133,7 @@ export default function Help() {
         <HelpCircle className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-bold text-foreground">Help & Information</h1>
-          <p className="text-sm text-muted-foreground">מדריך שימוש וקיצורי מקלדת</p>
+          <p className="text-sm text-muted-foreground">User guide and keyboard shortcuts</p>
         </div>
       </div>
 
@@ -147,8 +147,8 @@ export default function Help() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            אין לך נתונים? הפעל מצב נתוני דוגמא כדי לראות איך המערכת עובדת עם פורטפוליו לדוגמא.
-            הנתונים הם לצורכי הדגמה בלבד ולא ישפיעו על הנתונים האמיתיים שלך.
+            No data yet? Enable sample data mode to see how the system works with a demo portfolio.
+            The data is for demonstration purposes only and will not affect your real data.
           </p>
           <div className="flex items-center gap-4">
             {sampleDataMode ? (
@@ -229,7 +229,7 @@ export default function Help() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Rocket className="h-5 w-5 text-primary" />
-            Getting Started / איך להתחיל
+            Getting Started
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -257,7 +257,7 @@ export default function Help() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Navigation className="h-5 w-5 text-primary" />
-            Features Overview / סקירת תכונות
+            Features Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -285,30 +285,30 @@ export default function Help() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <MousePointer className="h-5 w-5 text-primary" />
-            Quick Tips / טיפים מהירים
+            Quick Tips
           </CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              השתמש ב-Command Bar (<kbd className="px-1 py-0.5 text-xs bg-muted rounded">⌘K</kbd>) לניווט מהיר בין עמודים
+              Use Command Bar (<kbd className="px-1 py-0.5 text-xs bg-muted rounded">⌘K</kbd>) for quick navigation between pages
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              לחץ על Data Watchdog בסרגל העליון לבדיקת תקינות הנתונים
+              Click on Data Watchdog in the top bar to check data integrity
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              ייבא עסקאות מקובץ CSV בעמוד Transactions
+              Import transactions from CSV file in the Transactions page
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              הגדר RSS feeds מותאמים אישית בעמוד Settings
+              Configure custom RSS feeds in the Settings page
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              השתמש במצב נתוני דוגמא (למעלה) כדי להכיר את המערכת
+              Use sample data mode (above) to explore the system
             </li>
           </ul>
         </CardContent>
