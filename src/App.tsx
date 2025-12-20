@@ -32,6 +32,7 @@ const Trash = lazy(() => import("./pages/Trash"));
 const Help = lazy(() => import("./pages/Help"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -147,6 +148,11 @@ const App = () => (
                 <Route path="/terms" element={
                   <Suspense fallback={<AuthLoadingSkeleton />}>
                     <Terms />
+                  </Suspense>
+                } />
+                <Route path="/privacy" element={
+                  <Suspense fallback={<AuthLoadingSkeleton />}>
+                    <Privacy />
                   </Suspense>
                 } />
                 <Route path="*" element={
