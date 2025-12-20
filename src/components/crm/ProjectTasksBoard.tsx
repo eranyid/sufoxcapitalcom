@@ -39,6 +39,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { TaskStatusBadge } from './TaskStatusBadge';
 import { TaskUrgencyBadge } from './TaskUrgencyBadge';
+import { TaskDetailsPanel } from './TaskDetailsPanel';
+import { useTaskActivityLog } from '@/hooks/useTaskActivityLog';
 
 interface Props {
   projectId: string;
@@ -63,6 +65,8 @@ export default function ProjectTasksBoard({ projectId }: Props) {
   });
   const [addingToGroup, setAddingToGroup] = useState<TaskTableGroup | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
+  const [selectedTask, setSelectedTask] = useState<CrmTask | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     const { data, error } = await supabase
@@ -133,11 +137,16 @@ export default function ProjectTasksBoard({ projectId }: Props) {
     toast.success('Task added');
   };
 
-  const handleInlineUpdate = async (id: string, field: keyof CrmTask, value: string | null) => {
+  const handleInlineUpdate = async (id: string, field: keyof CrmTask, value: string | null, oldValue?: string | null) => {
     const original = tasks.find(t => t.id === id);
     if (!original) return;
 
     setTasks(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
+    
+    // Update selected task if it's the one being edited
+    if (selectedTask?.id === id) {
+      setSelectedTask(prev => prev ? { ...prev, [field]: value } : null);
+    }
 
     const { error } = await supabase
       .from('crm_tasks')
@@ -147,8 +156,50 @@ export default function ProjectTasksBoard({ projectId }: Props) {
     if (error) {
       toast.error('Failed to update');
       setTasks(prev => prev.map(t => t.id === id ? original : t));
+      if (selectedTask?.id === id) {
+        setSelectedTask(original);
+      }
       console.error(error);
+      return;
     }
+
+    // Log activity for tracked fields
+    if (user && ['status', 'urgency', 'due_date', 'task_name'].includes(field)) {
+      const actionMap: Record<string, string> = {
+        status: 'status_changed',
+        urgency: 'urgency_changed',
+        due_date: 'due_date_changed',
+        task_name: 'name_changed',
+      };
+      
+      await supabase.from('task_activity_log').insert({
+        task_id: id,
+        user_id: user.id,
+        action: actionMap[field] || 'field_changed',
+        field_name: field,
+        old_value: oldValue ?? String((original as unknown as Record<string, unknown>)[field] ?? ''),
+        new_value: value,
+      });
+    }
+  };
+
+  const handleTaskRowClick = (task: CrmTask, e: React.MouseEvent) => {
+    // Don't open panel if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('input') ||
+      target.closest('button') ||
+      target.closest('[role="combobox"]') ||
+      target.closest('[data-radix-collection-item]')
+    ) {
+      return;
+    }
+    setSelectedTask(task);
+    setIsPanelOpen(true);
+  };
+
+  const handlePanelClose = () => {
+    setIsPanelOpen(false);
   };
 
   const handleDuplicate = async (task: CrmTask) => {
@@ -292,22 +343,27 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                       </tr>
                     )}
                     {groupedTasks[group.value]?.map(task => (
-                      <tr key={task.id} className="border-b border-border hover:bg-muted/10 group/row">
+                      <tr 
+                        key={task.id} 
+                        className="border-b border-border hover:bg-muted/10 group/row cursor-pointer"
+                        onClick={(e) => handleTaskRowClick(task, e)}
+                      >
                         <td className="px-3 py-1.5">
                           <Input
                             defaultValue={task.task_name}
                             className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
+                            onClick={e => e.stopPropagation()}
                             onBlur={e => {
                               if (e.target.value !== task.task_name) {
-                                handleInlineUpdate(task.id, 'task_name', e.target.value);
+                                handleInlineUpdate(task.id, 'task_name', e.target.value, task.task_name);
                               }
                             }}
                           />
                         </td>
-                        <td className="px-3 py-1.5">
+                        <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
                           <Select
                             value={task.status}
-                            onValueChange={v => handleInlineUpdate(task.id, 'status', v)}
+                            onValueChange={v => handleInlineUpdate(task.id, 'status', v, task.status)}
                           >
                             <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[100px]">
                               <TaskStatusBadge status={task.status} />
@@ -319,22 +375,22 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-3 py-1.5">
+                        <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
                           <Input
                             type="date"
                             defaultValue={task.due_date || ''}
                             className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[110px]"
                             onBlur={e => {
                               if (e.target.value !== (task.due_date || '')) {
-                                handleInlineUpdate(task.id, 'due_date', e.target.value || null);
+                                handleInlineUpdate(task.id, 'due_date', e.target.value || null, task.due_date);
                               }
                             }}
                           />
                         </td>
-                        <td className="px-3 py-1.5">
+                        <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
                           <Select
                             value={task.urgency}
-                            onValueChange={v => handleInlineUpdate(task.id, 'urgency', v)}
+                            onValueChange={v => handleInlineUpdate(task.id, 'urgency', v, task.urgency)}
                           >
                             <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[110px]">
                               <TaskUrgencyBadge urgency={task.urgency} />
@@ -348,7 +404,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-3 py-1.5">
+                        <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
                           <Input
                             defaultValue={task.description || ''}
                             placeholder="-"
@@ -411,6 +467,13 @@ export default function ProjectTasksBoard({ projectId }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <TaskDetailsPanel
+        task={selectedTask}
+        isOpen={isPanelOpen}
+        onClose={handlePanelClose}
+        onUpdate={handleInlineUpdate}
+      />
     </div>
   );
 }
