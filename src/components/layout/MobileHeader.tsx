@@ -1,19 +1,22 @@
 import { Database } from 'lucide-react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
-import sufoxLogo from '@/assets/sufox-logo.png';
+import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
 import { useState, useEffect } from 'react';
+
 interface MobileHeaderProps {
   status: 'ok' | 'warning' | 'error';
   errorCount: number;
   warningCount: number;
   onWatchdogClick: () => void;
+  isOnline: boolean;
 }
 export function MobileHeader({
   status,
   errorCount,
   warningCount,
-  onWatchdogClick
+  onWatchdogClick,
+  isOnline
 }: MobileHeaderProps) {
   const {
     sampleDataMode
@@ -46,7 +49,8 @@ export function MobileHeader({
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <OnlineStatusIndicator isOnline={isOnline} compact />
             {sampleDataMode && <span className="flex items-center gap-1 px-2 py-1 bg-primary/20 border border-primary/50 text-primary text-[9px] font-semibold rounded animate-pulse">
                 <Database className="h-3 w-3" />
                 SAMPLE
