@@ -16,10 +16,7 @@ interface CommandConfig {
 
 const COMMANDS: Record<string, CommandConfig> = {
   'overview': { path: '/', label: 'Overview', description: 'Go to dashboard overview' },
-  'crm': { path: '/crm', label: 'CRM', description: 'Open CRM system' },
-  'crm companies': { path: '/crm', tab: 'companies', label: 'CRM Companies', description: 'CRM Companies board' },
-  'crm tasks': { path: '/crm', tab: 'tasks', label: 'CRM Tasks', description: 'CRM Tasks board' },
-  'crm timeline': { path: '/crm', tab: 'timeline', label: 'CRM Timeline', description: 'CRM Timeline view' },
+  'backoffice': { path: '/backoffice', label: 'Back Office', description: 'Investment back office' },
   'performance': { path: '/performance', label: 'Performance', description: 'Portfolio performance analytics' },
   'risk': { path: '/risk', label: 'Risk', description: 'Risk analysis and VaR' },
   'research': { path: '/research', label: 'Research', description: 'Research and watchlist' },

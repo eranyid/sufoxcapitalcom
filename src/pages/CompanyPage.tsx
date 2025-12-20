@@ -1,0 +1,864 @@
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, Building2, Calendar, Edit2, Plus, Trash2, 
+  TrendingUp, AlertTriangle, Target, Clock, DollarSign,
+  MapPin, Briefcase, FileText, CheckSquare, Save, X
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { usePortfolio } from '@/context/PortfolioContext';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { format } from 'date-fns';
+
+interface Company {
+  id: string;
+  company_name: string;
+  ticker: string | null;
+  market_cap: string | null;
+  sector: string | null;
+  geography: string | null;
+  status: string;
+  notes: string | null;
+  investment_thesis: string | null;
+  thesis_summary: string | null;
+  confidence_level: string | null;
+  why_we_own: string | null;
+  time_horizon: string | null;
+  valuation_logic: string | null;
+  exit_criteria: string | null;
+  key_risks: string | null;
+  business_description: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
+interface Decision {
+  id: string;
+  decision_date: string;
+  decision_type: string;
+  rationale: string;
+  created_at: string;
+}
+
+interface Task {
+  id: string;
+  task_name: string;
+  status: string;
+  urgency: string;
+  due_date: string | null;
+}
+
+const CONFIDENCE_OPTIONS = [
+  { value: 'high', label: 'High', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  { value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  { value: 'low', label: 'Low', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'research', label: 'Research' },
+  { value: 'working_on_it', label: 'Active' },
+  { value: 'monitoring', label: 'Monitoring' },
+  { value: 'done', label: 'Exited' },
+  { value: 'stuck', label: 'On Hold' },
+];
+
+const DECISION_TYPES = [
+  { value: 'initiate', label: 'Initiate Position' },
+  { value: 'buy', label: 'Add / Buy' },
+  { value: 'hold', label: 'Hold' },
+  { value: 'sell', label: 'Trim / Sell' },
+  { value: 'exit', label: 'Exit Position' },
+  { value: 'increase', label: 'Increase Target' },
+  { value: 'decrease', label: 'Decrease Target' },
+];
+
+export default function CompanyPage() {
+  const { companyId } = useParams<{ companyId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { transactions, valuations } = usePortfolio();
+  
+  const [company, setCompany] = useState<Company | null>(null);
+  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editMode, setEditMode] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  
+  // Decision dialog
+  const [decisionOpen, setDecisionOpen] = useState(false);
+  const [newDecisionType, setNewDecisionType] = useState('hold');
+  const [newDecisionRationale, setNewDecisionRationale] = useState('');
+  const [newDecisionDate, setNewDecisionDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+  // Calculate current value from portfolio
+  const currentValue = useMemo(() => {
+    if (!company?.ticker) return null;
+    const ticker = company.ticker.toUpperCase();
+    
+    let quantity = 0;
+    transactions.forEach(tx => {
+      if (tx.ticker.toUpperCase() === ticker) {
+        if (tx.transactionType === 'buy') {
+          quantity += tx.quantity;
+        } else {
+          quantity -= tx.quantity;
+        }
+      }
+    });
+
+    if (quantity <= 0) return null;
+
+    // Get latest price
+    const latestVal = valuations
+      .filter(v => v.ticker.toUpperCase() === ticker)
+      .sort((a, b) => b.month.localeCompare(a.month))[0];
+
+    if (latestVal) {
+      return quantity * latestVal.pricePerUnit;
+    }
+
+    // Fallback to avg cost
+    const buys = transactions.filter(t => t.ticker.toUpperCase() === ticker && t.transactionType === 'buy');
+    if (buys.length > 0) {
+      const avgPrice = buys.reduce((sum, t) => sum + t.pricePerUnit * t.quantity, 0) / buys.reduce((sum, t) => sum + t.quantity, 0);
+      return quantity * avgPrice;
+    }
+
+    return null;
+  }, [company?.ticker, transactions, valuations]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!companyId || !user) return;
+
+      const [companyRes, decisionsRes, tasksRes] = await Promise.all([
+        supabase
+          .from('crm_companies')
+          .select('*')
+          .eq('id', companyId)
+          .maybeSingle(),
+        supabase
+          .from('company_decisions')
+          .select('*')
+          .eq('company_id', companyId)
+          .order('decision_date', { ascending: false }),
+        supabase
+          .from('crm_tasks')
+          .select('id, task_name, status, urgency, due_date')
+          .eq('company_id', companyId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false }),
+      ]);
+
+      if (companyRes.error || !companyRes.data) {
+        toast.error('Company not found');
+        navigate('/backoffice');
+        return;
+      }
+
+      setCompany(companyRes.data as Company);
+      setDecisions((decisionsRes.data as Decision[]) || []);
+      setTasks((tasksRes.data as Task[]) || []);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [companyId, user, navigate]);
+
+  const handleUpdate = async (field: keyof Company, value: string | null) => {
+    if (!company) return;
+
+    setSaving(true);
+    const { error } = await supabase
+      .from('crm_companies')
+      .update({ [field]: value })
+      .eq('id', company.id);
+
+    if (error) {
+      toast.error('Failed to update');
+      console.error(error);
+    } else {
+      setCompany(prev => prev ? { ...prev, [field]: value, updated_at: new Date().toISOString() } : null);
+    }
+    setSaving(false);
+    setEditMode(null);
+  };
+
+  const handleDelete = async () => {
+    if (!company) return;
+
+    const { error } = await supabase
+      .from('crm_companies')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', company.id);
+
+    if (error) {
+      toast.error('Failed to delete company');
+      return;
+    }
+
+    toast.success('Company deleted');
+    navigate('/backoffice');
+  };
+
+  const handleAddDecision = async () => {
+    if (!company || !user || !newDecisionRationale.trim()) return;
+
+    const { data, error } = await supabase
+      .from('company_decisions')
+      .insert({
+        user_id: user.id,
+        company_id: company.id,
+        decision_type: newDecisionType,
+        decision_date: newDecisionDate,
+        rationale: newDecisionRationale.trim(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error('Failed to add decision');
+      console.error(error);
+      return;
+    }
+
+    setDecisions(prev => [data as Decision, ...prev]);
+    setDecisionOpen(false);
+    setNewDecisionType('hold');
+    setNewDecisionRationale('');
+    setNewDecisionDate(format(new Date(), 'yyyy-MM-dd'));
+    toast.success('Decision logged');
+  };
+
+  const handleDeleteDecision = async (id: string) => {
+    const { error } = await supabase
+      .from('company_decisions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Failed to delete decision');
+      return;
+    }
+
+    setDecisions(prev => prev.filter(d => d.id !== id));
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const getConfidenceColor = (level: string | null) => {
+    const opt = CONFIDENCE_OPTIONS.find(o => o.value === level);
+    return opt?.color || 'bg-muted text-muted-foreground';
+  };
+
+  const startEdit = (field: string, value: string | null) => {
+    setEditMode(field);
+    setEditValue(value || '');
+  };
+
+  const saveEdit = (field: keyof Company) => {
+    handleUpdate(field, editValue || null);
+  };
+
+  const cancelEdit = () => {
+    setEditMode(null);
+    setEditValue('');
+  };
+
+  if (loading || !company) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+        <div className="h-64 w-full bg-muted animate-pulse rounded" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/backoffice')}>
+            <ArrowLeft size={18} />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{company.company_name}</h1>
+            {company.ticker && (
+              <span className="font-mono text-sm text-muted-foreground">
+                {company.ticker}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
+            value={company.status}
+            onValueChange={v => handleUpdate('status', v)}
+          >
+            <SelectTrigger className="w-[130px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="destructive" size="icon" onClick={() => setDeleteOpen(true)}>
+            <Trash2 size={16} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Executive Summary */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <TrendingUp size={18} className="text-primary" />
+            Executive Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Thesis Summary */}
+            <div className="md:col-span-2 space-y-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider">Thesis Summary</label>
+              {editMode === 'thesis_summary' ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    autoFocus
+                  />
+                  <Button size="icon" variant="ghost" onClick={() => saveEdit('thesis_summary')}><Save size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2"
+                  onClick={() => startEdit('thesis_summary', company.thesis_summary)}
+                >
+                  {company.thesis_summary || <span className="text-muted-foreground italic">Click to add...</span>}
+                </p>
+              )}
+            </div>
+
+            {/* Confidence */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider">Confidence</label>
+              <Select
+                value={company.confidence_level || 'medium'}
+                onValueChange={v => handleUpdate('confidence_level', v)}
+              >
+                <SelectTrigger>
+                  <Badge variant="outline" className={getConfidenceColor(company.confidence_level)}>
+                    {CONFIDENCE_OPTIONS.find(o => o.value === company.confidence_level)?.label || 'Medium'}
+                  </Badge>
+                </SelectTrigger>
+                <SelectContent>
+                  {CONFIDENCE_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Value */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider">Current Value</label>
+              <p className="text-lg font-semibold font-mono">
+                {currentValue !== null ? formatCurrency(currentValue) : '—'}
+              </p>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Last updated: {format(new Date(company.updated_at), 'MMM d, yyyy h:mm a')}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Investment Thesis */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Target size={18} className="text-primary" />
+            Investment Thesis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Why We Own */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <DollarSign size={12} /> Why We Own It
+              </label>
+              {editMode === 'why_we_own' ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    rows={4}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => saveEdit('why_we_own')}>Save</Button>
+                    <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2 min-h-[60px] whitespace-pre-wrap"
+                  onClick={() => startEdit('why_we_own', company.why_we_own)}
+                >
+                  {company.why_we_own || <span className="text-muted-foreground italic">Click to add...</span>}
+                </p>
+              )}
+            </div>
+
+            {/* Time Horizon */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <Clock size={12} /> Time Horizon
+              </label>
+              {editMode === 'time_horizon' ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    placeholder="e.g., 2-3 years"
+                    autoFocus
+                  />
+                  <Button size="icon" variant="ghost" onClick={() => saveEdit('time_horizon')}><Save size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2"
+                  onClick={() => startEdit('time_horizon', company.time_horizon)}
+                >
+                  {company.time_horizon || <span className="text-muted-foreground italic">Click to add...</span>}
+                </p>
+              )}
+            </div>
+
+            {/* Valuation Logic */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <TrendingUp size={12} /> Valuation Logic
+              </label>
+              {editMode === 'valuation_logic' ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    rows={4}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => saveEdit('valuation_logic')}>Save</Button>
+                    <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2 min-h-[60px] whitespace-pre-wrap"
+                  onClick={() => startEdit('valuation_logic', company.valuation_logic)}
+                >
+                  {company.valuation_logic || <span className="text-muted-foreground italic">Click to add...</span>}
+                </p>
+              )}
+            </div>
+
+            {/* Exit Criteria */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <Target size={12} /> Exit Criteria
+              </label>
+              {editMode === 'exit_criteria' ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    rows={4}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => saveEdit('exit_criteria')}>Save</Button>
+                    <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2 min-h-[60px] whitespace-pre-wrap"
+                  onClick={() => startEdit('exit_criteria', company.exit_criteria)}
+                >
+                  {company.exit_criteria || <span className="text-muted-foreground italic">Click to add...</span>}
+                </p>
+              )}
+            </div>
+
+            {/* Key Risks */}
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <AlertTriangle size={12} /> Key Risks
+              </label>
+              {editMode === 'key_risks' ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    rows={3}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => saveEdit('key_risks')}>Save</Button>
+                    <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2 whitespace-pre-wrap"
+                  onClick={() => startEdit('key_risks', company.key_risks)}
+                >
+                  {company.key_risks || <span className="text-muted-foreground italic">Click to add...</span>}
+                </p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data / Snapshot */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <FileText size={18} className="text-primary" />
+            Data / Snapshot
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Market Cap */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider">Market Cap</label>
+              {editMode === 'market_cap' ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    placeholder="e.g., $50B"
+                    autoFocus
+                  />
+                  <Button size="icon" variant="ghost" onClick={() => saveEdit('market_cap')}><Save size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                  onClick={() => startEdit('market_cap', company.market_cap)}
+                >
+                  {company.market_cap || '—'}
+                </p>
+              )}
+            </div>
+
+            {/* Sector */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <Briefcase size={10} /> Sector
+              </label>
+              {editMode === 'sector' ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    autoFocus
+                  />
+                  <Button size="icon" variant="ghost" onClick={() => saveEdit('sector')}><Save size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                  onClick={() => startEdit('sector', company.sector)}
+                >
+                  {company.sector || '—'}
+                </p>
+              )}
+            </div>
+
+            {/* Geography */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <MapPin size={10} /> Geography
+              </label>
+              {editMode === 'geography' ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    autoFocus
+                  />
+                  <Button size="icon" variant="ghost" onClick={() => saveEdit('geography')}><Save size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                  onClick={() => startEdit('geography', company.geography)}
+                >
+                  {company.geography || '—'}
+                </p>
+              )}
+            </div>
+
+            {/* Ticker */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider">Ticker</label>
+              {editMode === 'ticker' ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value.toUpperCase())}
+                    autoFocus
+                  />
+                  <Button size="icon" variant="ghost" onClick={() => saveEdit('ticker')}><Save size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm font-mono cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                  onClick={() => startEdit('ticker', company.ticker)}
+                >
+                  {company.ticker || '—'}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          {/* Business Description */}
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground uppercase tracking-wider">Business Description</label>
+            {editMode === 'business_description' ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  rows={4}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => saveEdit('business_description')}>Save</Button>
+                  <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <p 
+                className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2 min-h-[60px] whitespace-pre-wrap"
+                onClick={() => startEdit('business_description', company.business_description)}
+              >
+                {company.business_description || <span className="text-muted-foreground italic">Click to add...</span>}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Decision Log */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Calendar size={18} className="text-primary" />
+              Decision Log
+            </CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setDecisionOpen(true)} className="gap-1">
+              <Plus size={14} />
+              Add Decision
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {decisions.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              No decisions logged yet
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {decisions.map(decision => (
+                <div key={decision.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded group">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-xs">
+                        {DECISION_TYPES.find(d => d.value === decision.decision_type)?.label || decision.decision_type}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(decision.decision_date), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    <p className="text-sm">{decision.rationale}</p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="opacity-0 group-hover:opacity-100 h-8 w-8"
+                    onClick={() => handleDeleteDecision(decision.id)}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Linked Tasks */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <CheckSquare size={18} className="text-primary" />
+            Linked Tasks
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {tasks.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              No tasks linked to this company
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {tasks.map(task => (
+                <div key={task.id} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                  <span className="text-sm">{task.task_name}</span>
+                  <div className="flex items-center gap-2">
+                    {task.due_date && (
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(task.due_date), 'MMM d')}
+                      </span>
+                    )}
+                    <Badge variant="outline" className="text-xs">
+                      {task.status.replace(/_/g, ' ')}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Company?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will move "{company.company_name}" to trash.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Decision Dialog */}
+      <Dialog open={decisionOpen} onOpenChange={setDecisionOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Log Investment Decision</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Decision Type</label>
+                <Select value={newDecisionType} onValueChange={setNewDecisionType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DECISION_TYPES.map(d => (
+                      <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Date</label>
+                <Input
+                  type="date"
+                  value={newDecisionDate}
+                  onChange={e => setNewDecisionDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Rationale</label>
+              <Textarea
+                value={newDecisionRationale}
+                onChange={e => setNewDecisionRationale(e.target.value)}
+                placeholder="Why are you making this decision?"
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDecisionOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddDecision} disabled={!newDecisionRationale.trim()}>
+              Log Decision
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

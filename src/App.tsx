@@ -26,8 +26,8 @@ const InvestmentPolicy = lazy(() => import("./pages/InvestmentPolicy"));
 const Auth = lazy(() => import("./pages/Auth"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
-const CRM = lazy(() => import("./pages/CRM"));
-const CRMProject = lazy(() => import("./pages/CRMProject"));
+const BackOffice = lazy(() => import("./pages/BackOffice"));
+const CompanyPage = lazy(() => import("./pages/CompanyPage"));
 const Trash = lazy(() => import("./pages/Trash"));
 const Help = lazy(() => import("./pages/Help"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
@@ -118,14 +118,14 @@ const App = () => (
                       <AlpacaTest />
                     </Suspense>
                   } />
-                  <Route path="/crm" element={
+                  <Route path="/backoffice" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <CRM />
+                      <BackOffice />
                     </Suspense>
                   } />
-                  <Route path="/crm/projects/:projectId" element={
+                  <Route path="/backoffice/company/:companyId" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <CRMProject />
+                      <CompanyPage />
                     </Suspense>
                   } />
                   <Route path="/trash" element={
