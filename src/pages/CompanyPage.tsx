@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
-  ArrowLeft, Building2, Calendar, Edit2, Plus, Trash2, 
+  ArrowLeft, Building2, Edit2, Plus, Trash2, 
   TrendingUp, AlertTriangle, Target, Clock, DollarSign,
   MapPin, Briefcase, FileText, CheckSquare, Save, X,
   LineChart, Receipt, BarChart3
 } from 'lucide-react';
 import { CompanyValueChart } from '@/components/crm/CompanyValueChart';
+import { DecisionLogSection, Decision, DECISION_TYPE_OPTIONS } from '@/components/crm/DecisionLogSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -65,13 +66,7 @@ interface Company {
   created_at: string;
 }
 
-interface Decision {
-  id: string;
-  decision_date: string;
-  decision_type: string;
-  rationale: string;
-  created_at: string;
-}
+// Decision interface imported from DecisionLogSection
 
 interface Task {
   id: string;
@@ -95,15 +90,7 @@ const STATUS_OPTIONS = [
   { value: 'stuck', label: 'On Hold' },
 ];
 
-const DECISION_TYPES = [
-  { value: 'initiate', label: 'Initiate Position' },
-  { value: 'buy', label: 'Add / Buy' },
-  { value: 'hold', label: 'Hold' },
-  { value: 'sell', label: 'Trim / Sell' },
-  { value: 'exit', label: 'Exit Position' },
-  { value: 'increase', label: 'Increase Target' },
-  { value: 'decrease', label: 'Decrease Target' },
-];
+// DECISION_TYPES imported from DecisionLogSection as DECISION_TYPE_OPTIONS
 
 export default function CompanyPage() {
   const { companyId } = useParams<{ companyId: string }>();
@@ -120,11 +107,7 @@ export default function CompanyPage() {
   const [editMode, setEditMode] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   
-  // Decision dialog
-  const [decisionOpen, setDecisionOpen] = useState(false);
-  const [newDecisionType, setNewDecisionType] = useState('hold');
-  const [newDecisionRationale, setNewDecisionRationale] = useState('');
-  const [newDecisionDate, setNewDecisionDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  // Decision state managed by DecisionLogSection
 
   // Task dialog
   const [taskOpen, setTaskOpen] = useState(false);
@@ -330,48 +313,7 @@ export default function CompanyPage() {
     navigate('/backoffice');
   };
 
-  const handleAddDecision = async () => {
-    if (!company || !user || !newDecisionRationale.trim()) return;
-
-    const { data, error } = await supabase
-      .from('company_decisions')
-      .insert({
-        user_id: user.id,
-        company_id: company.id,
-        decision_type: newDecisionType,
-        decision_date: newDecisionDate,
-        rationale: newDecisionRationale.trim(),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast.error('Failed to add decision');
-      console.error(error);
-      return;
-    }
-
-    setDecisions(prev => [data as Decision, ...prev]);
-    setDecisionOpen(false);
-    setNewDecisionType('hold');
-    setNewDecisionRationale('');
-    setNewDecisionDate(format(new Date(), 'yyyy-MM-dd'));
-    toast.success('Decision logged');
-  };
-
-  const handleDeleteDecision = async (id: string) => {
-    const { error } = await supabase
-      .from('company_decisions')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast.error('Failed to delete decision');
-      return;
-    }
-
-    setDecisions(prev => prev.filter(d => d.id !== id));
-  };
+  // handleAddDecision and handleDeleteDecision moved to DecisionLogSection
 
   const handleAddTask = async () => {
     if (!company || !user || !newTaskName.trim()) return;
@@ -1062,53 +1004,12 @@ export default function CompanyPage() {
       </Card>
 
       {/* Decision Log */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Calendar size={18} className="text-primary" />
-              Decision Log
-            </CardTitle>
-            <Button size="sm" variant="outline" onClick={() => setDecisionOpen(true)} className="gap-1">
-              <Plus size={14} />
-              Add Decision
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {decisions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              No decisions logged yet
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {decisions.map(decision => (
-                <div key={decision.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded group">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs">
-                        {DECISION_TYPES.find(d => d.value === decision.decision_type)?.label || decision.decision_type}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(decision.decision_date), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    <p className="text-sm">{decision.rationale}</p>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="opacity-0 group-hover:opacity-100 h-8 w-8"
-                    onClick={() => handleDeleteDecision(decision.id)}
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <DecisionLogSection
+        companyId={company.id}
+        companyTicker={company.ticker}
+        decisions={decisions}
+        onDecisionsChange={setDecisions}
+      />
 
       {/* Linked Tasks */}
       <Card>
@@ -1184,54 +1085,7 @@ export default function CompanyPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Decision Dialog */}
-      <Dialog open={decisionOpen} onOpenChange={setDecisionOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Log Investment Decision</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Decision Type</label>
-                <Select value={newDecisionType} onValueChange={setNewDecisionType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DECISION_TYPES.map(d => (
-                      <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Date</label>
-                <Input
-                  type="date"
-                  value={newDecisionDate}
-                  onChange={e => setNewDecisionDate(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Rationale</label>
-              <Textarea
-                value={newDecisionRationale}
-                onChange={e => setNewDecisionRationale(e.target.value)}
-                placeholder="Why are you making this decision?"
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDecisionOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddDecision} disabled={!newDecisionRationale.trim()}>
-              Log Decision
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Decision Dialog handled by DecisionLogSection */}
 
       {/* Task Dialog */}
       <Dialog open={taskOpen} onOpenChange={setTaskOpen}>

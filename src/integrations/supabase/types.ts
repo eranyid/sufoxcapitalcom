@@ -46,32 +46,62 @@ export type Database = {
       }
       company_decisions: {
         Row: {
+          catalyst_timeline: string | null
           company_id: string
+          confidence: number | null
           created_at: string
           decision_date: string
           decision_type: string
+          direction: string | null
+          expected_outcome: string | null
           id: string
+          key_assumptions: string | null
           rationale: string
+          risks_breaks_thesis: string | null
+          size_change: number | null
+          size_unit: string | null
+          tags: string[] | null
+          ticker: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          catalyst_timeline?: string | null
           company_id: string
+          confidence?: number | null
           created_at?: string
           decision_date?: string
           decision_type: string
+          direction?: string | null
+          expected_outcome?: string | null
           id?: string
+          key_assumptions?: string | null
           rationale: string
+          risks_breaks_thesis?: string | null
+          size_change?: number | null
+          size_unit?: string | null
+          tags?: string[] | null
+          ticker?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          catalyst_timeline?: string | null
           company_id?: string
+          confidence?: number | null
           created_at?: string
           decision_date?: string
           decision_type?: string
+          direction?: string | null
+          expected_outcome?: string | null
           id?: string
+          key_assumptions?: string | null
           rationale?: string
+          risks_breaks_thesis?: string | null
+          size_change?: number | null
+          size_unit?: string | null
+          tags?: string[] | null
+          ticker?: string | null
           updated_at?: string
           user_id?: string
         }
