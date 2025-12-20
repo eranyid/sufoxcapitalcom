@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -35,6 +35,43 @@ export function useTaskUpdates(taskId: string | null) {
     setLoading(false);
   }, [taskId]);
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!taskId) return;
+
+    const channel = supabase
+      .channel(`task-updates-${taskId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'task_updates',
+          filter: `task_id=eq.${taskId}`,
+        },
+        (payload) => {
+          setUpdates(prev => [payload.new as TaskUpdate, ...prev]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'task_updates',
+          filter: `task_id=eq.${taskId}`,
+        },
+        (payload) => {
+          setUpdates(prev => prev.filter(u => u.id !== payload.old.id));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [taskId]);
+
   const createUpdate = useCallback(async (content: string) => {
     if (!user || !taskId || !content.trim()) return null;
 
@@ -54,7 +91,6 @@ export function useTaskUpdates(taskId: string | null) {
       return null;
     }
 
-    setUpdates(prev => [data, ...prev]);
     toast.success('Update posted');
     return data;
   }, [user, taskId]);
@@ -71,7 +107,6 @@ export function useTaskUpdates(taskId: string | null) {
       return false;
     }
 
-    setUpdates(prev => prev.filter(u => u.id !== updateId));
     return true;
   }, []);
 

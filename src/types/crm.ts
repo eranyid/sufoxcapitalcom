@@ -26,6 +26,7 @@ export interface CrmTask {
   due_date: string | null;
   status: TaskStatus;
   urgency: TaskUrgency;
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 }

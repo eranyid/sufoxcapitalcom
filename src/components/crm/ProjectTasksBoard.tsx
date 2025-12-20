@@ -89,6 +89,70 @@ export default function ProjectTasksBoard({ projectId }: Props) {
     fetchTasks();
   }, [fetchTasks]);
 
+  // Real-time subscription for tasks
+  useEffect(() => {
+    const channel = supabase
+      .channel(`project-tasks-${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'crm_tasks',
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          const newTask = payload.new as CrmTask;
+          if (!newTask.deleted_at) {
+            setTasks(prev => {
+              // Avoid duplicates (from optimistic updates)
+              if (prev.some(t => t.id === newTask.id)) return prev;
+              return [newTask, ...prev];
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'crm_tasks',
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          const updatedTask = payload.new as CrmTask;
+          if (updatedTask.deleted_at) {
+            // Task was soft-deleted
+            setTasks(prev => prev.filter(t => t.id !== updatedTask.id));
+          } else {
+            setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+            // Update selected task if it's the one being edited
+            if (selectedTask?.id === updatedTask.id) {
+              setSelectedTask(updatedTask);
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'crm_tasks',
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          setTasks(prev => prev.filter(t => t.id !== payload.old.id));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId, selectedTask?.id]);
+
   const handleCreate = async (tableGroup: TaskTableGroup) => {
     if (!user || !newTaskName.trim()) return;
 

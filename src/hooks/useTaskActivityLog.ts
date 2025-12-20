@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -36,6 +36,31 @@ export function useTaskActivityLog(taskId: string | null) {
     setLoading(false);
   }, [taskId]);
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!taskId) return;
+
+    const channel = supabase
+      .channel(`task-activity-${taskId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'task_activity_log',
+          filter: `task_id=eq.${taskId}`,
+        },
+        (payload) => {
+          setActivities(prev => [payload.new as TaskActivity, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [taskId]);
+
   const logActivity = useCallback(async (
     action: string,
     fieldName?: string,
@@ -62,7 +87,6 @@ export function useTaskActivityLog(taskId: string | null) {
       return null;
     }
 
-    setActivities(prev => [data, ...prev]);
     return data;
   }, [user, taskId]);
 
