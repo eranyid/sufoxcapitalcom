@@ -44,6 +44,47 @@ export type Database = {
         }
         Relationships: []
       }
+      company_decisions: {
+        Row: {
+          company_id: string
+          created_at: string
+          decision_date: string
+          decision_type: string
+          id: string
+          rationale: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          decision_date?: string
+          decision_type: string
+          id?: string
+          rationale: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          decision_date?: string
+          decision_type?: string
+          id?: string
+          rationale?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_decisions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_activity_log: {
         Row: {
           action: string
@@ -87,67 +128,91 @@ export type Database = {
       }
       crm_companies: {
         Row: {
+          business_description: string | null
           company_name: string
+          confidence_level: string | null
           created_at: string
           deleted_at: string | null
+          exit_criteria: string | null
           geography: string | null
           group_name: string
           id: string
           investment_thesis: string | null
           is_auto_linked: boolean | null
+          key_risks: string | null
           market_cap: string | null
           notes: string | null
           project_id: string | null
           sector: string | null
           source_transaction_id: string | null
           status: string
+          thesis_summary: string | null
           ticker: string | null
+          time_horizon: string | null
           timeline_end: string | null
           timeline_start: string | null
           updated_at: string
           user_id: string
+          valuation_logic: string | null
+          why_we_own: string | null
         }
         Insert: {
+          business_description?: string | null
           company_name: string
+          confidence_level?: string | null
           created_at?: string
           deleted_at?: string | null
+          exit_criteria?: string | null
           geography?: string | null
           group_name?: string
           id?: string
           investment_thesis?: string | null
           is_auto_linked?: boolean | null
+          key_risks?: string | null
           market_cap?: string | null
           notes?: string | null
           project_id?: string | null
           sector?: string | null
           source_transaction_id?: string | null
           status?: string
+          thesis_summary?: string | null
           ticker?: string | null
+          time_horizon?: string | null
           timeline_end?: string | null
           timeline_start?: string | null
           updated_at?: string
           user_id: string
+          valuation_logic?: string | null
+          why_we_own?: string | null
         }
         Update: {
+          business_description?: string | null
           company_name?: string
+          confidence_level?: string | null
           created_at?: string
           deleted_at?: string | null
+          exit_criteria?: string | null
           geography?: string | null
           group_name?: string
           id?: string
           investment_thesis?: string | null
           is_auto_linked?: boolean | null
+          key_risks?: string | null
           market_cap?: string | null
           notes?: string | null
           project_id?: string | null
           sector?: string | null
           source_transaction_id?: string | null
           status?: string
+          thesis_summary?: string | null
           ticker?: string | null
+          time_horizon?: string | null
           timeline_end?: string | null
           timeline_start?: string | null
           updated_at?: string
           user_id?: string
+          valuation_logic?: string | null
+          why_we_own?: string | null
         }
         Relationships: [
           {
@@ -265,6 +330,7 @@ export type Database = {
       }
       crm_tasks: {
         Row: {
+          company_id: string | null
           created_at: string
           deleted_at: string | null
           description: string | null
@@ -279,6 +345,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -293,6 +360,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -307,6 +375,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "crm_tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "crm_tasks_project_id_fkey"
             columns: ["project_id"]
