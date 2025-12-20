@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, ChevronDown, ChevronRight, Trash2, MoreHorizontal, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS, TaskTableGroup, getTaskTableGroup } from '@/types/crm';
 import { TaskUrgencyOption } from './TaskUrgencyBadge';
 import { toast } from 'sonner';
@@ -55,6 +56,7 @@ const TABLE_GROUPS: { value: TaskTableGroup; label: string; defaultStatus: TaskS
 
 export default function ProjectTasksBoard({ projectId }: Props) {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [tasks, setTasks] = useState<CrmTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -248,7 +250,14 @@ export default function ProjectTasksBoard({ projectId }: Props) {
   };
 
   const handleTaskRowClick = (task: CrmTask, e: React.MouseEvent) => {
-    // Don't open panel if clicking on interactive elements
+    // On mobile, always open panel (table is read-only)
+    if (isMobile) {
+      setSelectedTask(task);
+      setIsPanelOpen(true);
+      return;
+    }
+    
+    // On desktop, don't open panel if clicking on interactive elements
     const target = e.target as HTMLElement;
     if (
       target.closest('input') ||
@@ -371,9 +380,9 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                     <tr className="border-b border-border bg-muted/20">
                       <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[220px]">Task</th>
                       <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[110px]">Status</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px]">Due Date</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px]">Urgency</th>
-                      <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[150px]">Notes</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[120px] hidden sm:table-cell">Due Date</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[100px] hidden sm:table-cell">Urgency</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-[150px] hidden md:table-cell">Notes</th>
                       <th className="w-[50px]"></th>
                     </tr>
                   </thead>
@@ -413,75 +422,99 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                         onClick={(e) => handleTaskRowClick(task, e)}
                       >
                         <td className="px-3 py-1.5">
-                          <Input
-                            defaultValue={task.task_name}
-                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
-                            onClick={e => e.stopPropagation()}
-                            onBlur={e => {
-                              if (e.target.value !== task.task_name) {
-                                handleInlineUpdate(task.id, 'task_name', e.target.value, task.task_name);
-                              }
-                            }}
-                          />
+                          {isMobile ? (
+                            <span className="text-sm truncate block">{task.task_name}</span>
+                          ) : (
+                            <Input
+                              defaultValue={task.task_name}
+                              className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
+                              onClick={e => e.stopPropagation()}
+                              onBlur={e => {
+                                if (e.target.value !== task.task_name) {
+                                  handleInlineUpdate(task.id, 'task_name', e.target.value, task.task_name);
+                                }
+                              }}
+                            />
+                          )}
                         </td>
-                        <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
-                          <Select
-                            value={task.status}
-                            onValueChange={v => handleInlineUpdate(task.id, 'status', v, task.status)}
-                          >
-                            <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[100px]">
-                              <TaskStatusBadge status={task.status} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {STATUS_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <td className="px-3 py-1.5" onClick={e => !isMobile && e.stopPropagation()}>
+                          {isMobile ? (
+                            <TaskStatusBadge status={task.status} />
+                          ) : (
+                            <Select
+                              value={task.status}
+                              onValueChange={v => handleInlineUpdate(task.id, 'status', v, task.status)}
+                            >
+                              <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[100px]">
+                                <TaskStatusBadge status={task.status} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {STATUS_OPTIONS.map(opt => (
+                                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </td>
-                        <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
-                          <Input
-                            type="date"
-                            defaultValue={task.due_date || ''}
-                            className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[110px]"
-                            onBlur={e => {
-                              if (e.target.value !== (task.due_date || '')) {
-                                handleInlineUpdate(task.id, 'due_date', e.target.value || null, task.due_date);
-                              }
-                            }}
-                          />
+                        <td className="px-3 py-1.5 hidden sm:table-cell" onClick={e => !isMobile && e.stopPropagation()}>
+                          {isMobile ? (
+                            <span className="text-xs text-muted-foreground">
+                              {task.due_date || '-'}
+                            </span>
+                          ) : (
+                            <Input
+                              type="date"
+                              defaultValue={task.due_date || ''}
+                              className="h-7 text-xs border-transparent hover:border-border focus:border-primary bg-transparent w-[110px]"
+                              onBlur={e => {
+                                if (e.target.value !== (task.due_date || '')) {
+                                  handleInlineUpdate(task.id, 'due_date', e.target.value || null, task.due_date);
+                                }
+                              }}
+                            />
+                          )}
                         </td>
-                        <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
-                          <Select
-                            value={task.urgency}
-                            onValueChange={v => handleInlineUpdate(task.id, 'urgency', v, task.urgency)}
-                          >
-                            <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[110px]">
-                              <TaskUrgencyBadge urgency={task.urgency} />
-                            </SelectTrigger>
-                            <SelectContent className="bg-popover border border-border shadow-lg">
-                              {URGENCY_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
-                                  <TaskUrgencyOption urgency={opt.value} isSelected={task.urgency === opt.value} />
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <td className="px-3 py-1.5 hidden sm:table-cell" onClick={e => !isMobile && e.stopPropagation()}>
+                          {isMobile ? (
+                            <TaskUrgencyBadge urgency={task.urgency} />
+                          ) : (
+                            <Select
+                              value={task.urgency}
+                              onValueChange={v => handleInlineUpdate(task.id, 'urgency', v, task.urgency)}
+                            >
+                              <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[110px]">
+                                <TaskUrgencyBadge urgency={task.urgency} />
+                              </SelectTrigger>
+                              <SelectContent className="bg-popover border border-border shadow-lg">
+                                {URGENCY_OPTIONS.map(opt => (
+                                  <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
+                                    <TaskUrgencyOption urgency={opt.value} isSelected={task.urgency === opt.value} />
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </td>
-                        <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
-                          <Input
-                            defaultValue={task.description || ''}
-                            placeholder="-"
-                            className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
-                            onBlur={e => {
-                              if (e.target.value !== (task.description || '')) {
-                                handleInlineUpdate(task.id, 'description', e.target.value || null);
-                              }
-                            }}
-                          />
+                        <td className="px-3 py-1.5 hidden md:table-cell" onClick={e => !isMobile && e.stopPropagation()}>
+                          {isMobile ? (
+                            <span className="text-sm text-muted-foreground truncate block">
+                              {task.description || '-'}
+                            </span>
+                          ) : (
+                            <Input
+                              defaultValue={task.description || ''}
+                              placeholder="-"
+                              className="h-7 text-sm border-transparent hover:border-border focus:border-primary bg-transparent"
+                              onBlur={e => {
+                                if (e.target.value !== (task.description || '')) {
+                                  handleInlineUpdate(task.id, 'description', e.target.value || null);
+                                }
+                              }}
+                            />
+                          )}
                         </td>
                         <td className="px-2 py-1.5">
-                          <div className="opacity-0 group-hover/row:opacity-100">
+                          <div className={isMobile ? '' : 'opacity-0 group-hover/row:opacity-100'}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="icon" variant="ghost" className="h-7 w-7">

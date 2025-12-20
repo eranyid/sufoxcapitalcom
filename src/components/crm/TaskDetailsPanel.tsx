@@ -59,10 +59,11 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
         onClick={handleOverlayClick}
       />
 
-      {/* Panel */}
+      {/* Panel - Full screen on mobile */}
       <div
         className={cn(
-          'fixed right-0 top-0 h-full w-full sm:w-[420px] lg:w-[480px] bg-background border-l border-border shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out',
+          'fixed top-0 h-full bg-background border-l border-border shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out',
+          'right-0 w-full sm:w-[420px] lg:w-[480px]',
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
