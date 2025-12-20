@@ -7,7 +7,6 @@ const corsHeaders = {
 
 // Israeli CBS API for CPI (Consumer Price Index)
 // Index ID 120010 = General CPI Index
-const CBS_API_BASE = 'https://api.cbs.gov.il/index/data';
 const CPI_INDEX_ID = '120010';
 
 interface CPIDataPoint {
@@ -15,12 +14,29 @@ interface CPIDataPoint {
   value: number;
 }
 
-interface CBSPriceResponse {
-  Prices?: Array<{
-    date?: string;
-    currBase?: number;
-    value?: number;
-  }>;
+// CBS API response structure
+interface CBSDateEntry {
+  year: number;
+  month: number;
+  monthDesc: string;
+  percent: number;
+  percentYear: number;
+  currBase: {
+    baseDesc: string;
+    value: number;
+  };
+}
+
+interface CBSMonthItem {
+  code: number;
+  name: string;
+  date: CBSDateEntry[];
+}
+
+interface CBSResponse {
+  month: CBSMonthItem[];
+  quarter?: unknown[];
+  paging?: unknown;
 }
 
 serve(async (req) => {
@@ -32,48 +48,47 @@ serve(async (req) => {
   try {
     console.log('Fetching Israeli CPI data from CBS API...');
 
-    // Fetch CPI data from Israeli CBS
-    const response = await fetch(
-      `${CBS_API_BASE}/price?id=${CPI_INDEX_ID}&format=json`,
-      {
-        headers: {
-          'User-Agent': 'Lovable-Portfolio-App/1.0',
-          'Accept': 'application/json',
-        },
-      }
-    );
+    const apiUrl = `https://api.cbs.gov.il/index/data/price?id=${CPI_INDEX_ID}&format=json&download=false`;
+    console.log(`CBS API URL: ${apiUrl}`);
 
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+      },
+    });
+
+    console.log(`CBS Response status: ${response.status}`);
+    
     if (!response.ok) {
-      console.error(`CBS API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`CBS API error: ${errorText.substring(0, 300)}`);
       throw new Error(`CBS API returned ${response.status}`);
     }
 
-    const data: CBSPriceResponse = await response.json();
-    console.log(`Received ${data.Prices?.length || 0} CPI data points`);
+    const data: CBSResponse = await response.json();
+    console.log(`Response has ${data.month?.length || 0} month items`);
 
-    // Transform CBS data to our format
     const cpiData: CPIDataPoint[] = [];
     
-    if (data.Prices && Array.isArray(data.Prices)) {
-      for (const price of data.Prices) {
-        if (price.date && price.currBase !== undefined) {
-          // CBS returns date in format like "2024-01" or "01/2024"
-          let dateStr = price.date;
+    // CBS structure: { month: [{ code, name, date: [{ year, month, currBase: { value } }] }] }
+    if (data.month && Array.isArray(data.month)) {
+      for (const monthItem of data.month) {
+        // Find the CPI index (code 120010)
+        if (monthItem.code === Number(CPI_INDEX_ID) && monthItem.date) {
+          console.log(`Found CPI index with ${monthItem.date.length} date entries`);
           
-          // Convert "01/2024" to "2024-01" if needed
-          if (dateStr.includes('/')) {
-            const parts = dateStr.split('/');
-            if (parts.length === 2) {
-              dateStr = `${parts[1]}-${parts[0].padStart(2, '0')}`;
+          for (const entry of monthItem.date) {
+            if (entry.year && entry.month && entry.currBase?.value !== undefined) {
+              // Format: YYYY-MM
+              const dateStr = `${entry.year}-${String(entry.month).padStart(2, '0')}`;
+              
+              cpiData.push({
+                date: dateStr,
+                value: entry.currBase.value,
+              });
             }
-          }
-          
-          // Validate date format
-          if (/^\d{4}-\d{2}$/.test(dateStr)) {
-            cpiData.push({
-              date: dateStr,
-              value: price.currBase,
-            });
           }
         }
       }
@@ -82,8 +97,14 @@ serve(async (req) => {
     // Sort by date ascending
     cpiData.sort((a, b) => a.date.localeCompare(b.date));
 
-    console.log(`Processed ${cpiData.length} valid CPI entries`);
-    console.log(`Date range: ${cpiData[0]?.date} to ${cpiData[cpiData.length - 1]?.date}`);
+    console.log(`Successfully parsed ${cpiData.length} CPI entries`);
+    if (cpiData.length > 0) {
+      console.log(`Date range: ${cpiData[0].date} to ${cpiData[cpiData.length - 1].date}`);
+      console.log(`Latest values: ${cpiData.slice(-3).map(d => `${d.date}=${d.value}`).join(', ')}`);
+    }
+
+    // Get base year from the response
+    const baseDesc = data.month?.[0]?.date?.[0]?.currBase?.baseDesc || 'Unknown';
 
     return new Response(
       JSON.stringify({
@@ -91,7 +112,8 @@ serve(async (req) => {
         data: cpiData,
         source: 'Israeli Central Bureau of Statistics',
         indexId: CPI_INDEX_ID,
-        indexName: 'Consumer Price Index - General',
+        indexName: 'מדד המחירים לצרכן - כללי (Consumer Price Index - General)',
+        baseYear: baseDesc,
         fetchedAt: new Date().toISOString(),
       }),
       {
@@ -100,7 +122,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error fetching CPI data:', error);
+    console.error('Error in fetch-israel-cpi:', error);
 
     return new Response(
       JSON.stringify({
