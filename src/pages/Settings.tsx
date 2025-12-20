@@ -13,9 +13,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
@@ -692,6 +693,22 @@ export default function Settings() {
             <h4 className="font-medium text-foreground mb-1">4. Review Analytics</h4>
             <p>The dashboard automatically calculates P/L, returns, volatility, Sharpe, drawdowns, VaR, and more.</p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Notification Settings */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" />
+            Notifications
+          </CardTitle>
+          <CardDescription>
+            Configure which notifications you receive
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <NotificationSettings />
         </CardContent>
       </Card>
     </div>

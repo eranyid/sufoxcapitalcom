@@ -6,16 +6,21 @@ import { MobileHeader } from './MobileHeader';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { Database } from 'lucide-react';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
 import { CommandBar } from '@/components/CommandBar';
 import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { NotificationsDrawer } from '@/components/notifications/NotificationsDrawer';
+
 
 export function DashboardLayout() {
   const navigate = useNavigate();
   const { sampleDataMode } = usePortfolio();
   const [watchdogPanelOpen, setWatchdogPanelOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { 
     validationResult, 
     isValidating, 
@@ -26,6 +31,21 @@ export function DashboardLayout() {
     infoCount 
   } = useDataWatchdog();
   const { isOnline } = useOnlineStatus();
+  const { 
+    notifications, 
+    unreadCount, 
+    isLoading: notificationsLoading, 
+    markAsRead, 
+    markAllAsRead 
+  } = useNotifications();
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.task_id) {
+      // Navigate to CRM with task context
+      navigate('/crm', { state: { openTaskId: notification.task_id } });
+      setNotificationsOpen(false);
+    }
+  };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen min-h-dvh w-full bg-background overflow-x-hidden">
@@ -42,6 +62,8 @@ export function DashboardLayout() {
             warningCount={warningCount}
             onWatchdogClick={() => setWatchdogPanelOpen(true)}
             isOnline={isOnline}
+            unreadNotifications={unreadCount}
+            onNotificationsClick={() => setNotificationsOpen(true)}
           />
         </div>
 
@@ -63,6 +85,10 @@ export function DashboardLayout() {
               onClick={() => setWatchdogPanelOpen(true)}
             />
             <OnlineStatusIndicator isOnline={isOnline} />
+            <NotificationBell 
+              unreadCount={unreadCount} 
+              onClick={() => setNotificationsOpen(true)} 
+            />
           </div>
           <div className="flex items-center gap-4 font-mono text-muted-foreground">
             <kbd className="text-[9px] px-1.5 py-0.5 bg-muted rounded border border-border/50 hidden lg:inline-block">
@@ -97,9 +123,19 @@ export function DashboardLayout() {
       {/* Global Command Bar */}
       <CommandBar 
         onOpenActivityLog={() => {
-          // Navigate to CRM where activity log is available
           navigate('/crm', { state: { openActivityLog: true } });
         }} 
+      />
+
+      {/* Notifications Drawer */}
+      <NotificationsDrawer
+        open={notificationsOpen}
+        onOpenChange={setNotificationsOpen}
+        notifications={notifications}
+        onMarkAsRead={markAsRead}
+        onMarkAllAsRead={markAllAsRead}
+        onNotificationClick={handleNotificationClick}
+        isLoading={notificationsLoading}
       />
     </div>
   );

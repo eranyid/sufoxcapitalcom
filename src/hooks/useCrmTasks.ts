@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CrmTask, TaskStatus, TaskUrgency } from '@/types/crm';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { notifyTaskStatusChange, notifyTaskUrgencyChange } from '@/lib/notificationService';
 
 export function useCrmTasks() {
   const { user } = useAuth();
@@ -61,6 +62,9 @@ export function useCrmTasks() {
   };
 
   const updateTask = async (id: string, updates: Partial<CrmTask>) => {
+    // Get current task for comparison
+    const currentTask = tasks.find(t => t.id === id);
+    
     const { error } = await supabase
       .from('crm_tasks')
       .update(updates)
@@ -70,6 +74,30 @@ export function useCrmTasks() {
       toast.error('Failed to update task');
       console.error(error);
       return false;
+    }
+
+    // Generate notifications for status/urgency changes
+    if (currentTask && user) {
+      if (updates.status && updates.status !== currentTask.status) {
+        notifyTaskStatusChange(
+          user.id,
+          currentTask.task_name,
+          id,
+          currentTask.status,
+          updates.status,
+          user.id
+        );
+      }
+      if (updates.urgency && updates.urgency !== currentTask.urgency) {
+        notifyTaskUrgencyChange(
+          user.id,
+          currentTask.task_name,
+          id,
+          currentTask.urgency,
+          updates.urgency,
+          user.id
+        );
+      }
     }
 
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
