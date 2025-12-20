@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
@@ -709,6 +709,35 @@ export default function Settings() {
         </CardHeader>
         <CardContent>
           <NotificationSettings />
+        </CardContent>
+      </Card>
+
+      {/* Legal */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Scale className="h-5 w-5 text-primary" />
+            Legal
+          </CardTitle>
+          <CardDescription>
+            Legal information and disclosures
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a 
+            href="/disclaimer" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">Legal Disclaimer</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Important legal notices and disclaimers
+              </p>
+            </div>
+            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </a>
         </CardContent>
       </Card>
     </div>

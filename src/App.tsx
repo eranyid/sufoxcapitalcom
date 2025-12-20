@@ -30,6 +30,7 @@ const CRM = lazy(() => import("./pages/CRM"));
 const CRMProject = lazy(() => import("./pages/CRMProject"));
 const Trash = lazy(() => import("./pages/Trash"));
 const Help = lazy(() => import("./pages/Help"));
+const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -136,6 +137,12 @@ const App = () => (
                     </Suspense>
                   } />
                 </Route>
+                {/* Public page - accessible without auth */}
+                <Route path="/disclaimer" element={
+                  <Suspense fallback={<AuthLoadingSkeleton />}>
+                    <Disclaimer />
+                  </Suspense>
+                } />
                 <Route path="*" element={
                   <Suspense fallback={<AuthLoadingSkeleton />}>
                     <NotFound />
