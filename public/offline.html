@@ -83,8 +83,50 @@
       </svg>
     </div>
     <h1>You're Offline</h1>
-    <p>Please check your internet connection and try again. The app shell is still available for navigation.</p>
-    <button class="retry-btn" onclick="window.location.reload()">Try Again</button>
+    <p>Please check your internet connection and try again.</p>
+    <button class="retry-btn" id="retry-btn">Try Again</button>
+  </div>
+  <script>
+    const retryBtn = document.getElementById('retry-btn');
+    
+    // Check if we're actually online and reload
+    async function checkAndReload() {
+      retryBtn.textContent = 'Checking...';
+      retryBtn.disabled = true;
+      
+      try {
+        // Try to fetch the app with cache bypass
+        const response = await fetch('/', { 
+          method: 'HEAD',
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        
+        if (response.ok) {
+          // We're back online, reload the page
+          window.location.reload();
+        } else {
+          throw new Error('Network response was not ok');
+        }
+      } catch (error) {
+        // Still offline
+        retryBtn.textContent = 'Try Again';
+        retryBtn.disabled = false;
+      }
+    }
+    
+    retryBtn.addEventListener('click', checkAndReload);
+    
+    // Auto-retry when connection is restored
+    window.addEventListener('online', () => {
+      checkAndReload();
+    });
+    
+    // Check immediately if we're actually online (false positive)
+    if (navigator.onLine) {
+      checkAndReload();
+    }
+  </script>
   </div>
 </body>
 </html>
