@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -38,6 +38,43 @@ export function useTaskFiles(taskId: string | null) {
     setLoading(false);
   }, [taskId]);
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!taskId) return;
+
+    const channel = supabase
+      .channel(`task-files-${taskId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'task_files',
+          filter: `task_id=eq.${taskId}`,
+        },
+        (payload) => {
+          setFiles(prev => [payload.new as TaskFile, ...prev]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'task_files',
+          filter: `task_id=eq.${taskId}`,
+        },
+        (payload) => {
+          setFiles(prev => prev.filter(f => f.id !== payload.old.id));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [taskId]);
+
   const uploadFile = useCallback(async (file: File) => {
     if (!user || !taskId) return null;
 
@@ -75,7 +112,6 @@ export function useTaskFiles(taskId: string | null) {
       return null;
     }
 
-    setFiles(prev => [data, ...prev]);
     toast.success('File uploaded');
     setUploading(false);
     return data;
@@ -101,7 +137,6 @@ export function useTaskFiles(taskId: string | null) {
       return false;
     }
 
-    setFiles(prev => prev.filter(f => f.id !== fileId));
     toast.success('File deleted');
     return true;
   }, []);
