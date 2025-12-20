@@ -124,6 +124,11 @@ export default function CompanyPage() {
   const [newDecisionRationale, setNewDecisionRationale] = useState('');
   const [newDecisionDate, setNewDecisionDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
+  // Task dialog
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskDueDate, setNewTaskDueDate] = useState('');
+
   // Calculate current value from portfolio
   const currentValue = useMemo(() => {
     if (!company?.ticker) return null;
@@ -276,6 +281,50 @@ export default function CompanyPage() {
     }
 
     setDecisions(prev => prev.filter(d => d.id !== id));
+  };
+
+  const handleAddTask = async () => {
+    if (!company || !user || !newTaskName.trim()) return;
+
+    const { data, error } = await supabase
+      .from('crm_tasks')
+      .insert({
+        user_id: user.id,
+        company_id: company.id,
+        task_name: newTaskName.trim(),
+        status: 'in_progress',
+        urgency: 'medium',
+        due_date: newTaskDueDate || null,
+      })
+      .select('id, task_name, status, urgency, due_date')
+      .single();
+
+    if (error) {
+      toast.error('Failed to create task');
+      console.error(error);
+      return;
+    }
+
+    setTasks(prev => [data as Task, ...prev]);
+    setTaskOpen(false);
+    setNewTaskName('');
+    setNewTaskDueDate('');
+    toast.success('Task created');
+  };
+
+  const handleUnlinkTask = async (taskId: string) => {
+    const { error } = await supabase
+      .from('crm_tasks')
+      .update({ company_id: null })
+      .eq('id', taskId);
+
+    if (error) {
+      toast.error('Failed to unlink task');
+      return;
+    }
+
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    toast.success('Task unlinked');
   };
 
   const formatCurrency = (value: number) => {
@@ -761,20 +810,32 @@ export default function CompanyPage() {
       {/* Linked Tasks */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CheckSquare size={18} className="text-primary" />
-            Linked Tasks
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CheckSquare size={18} className="text-primary" />
+              Linked Tasks
+            </CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setTaskOpen(true)} className="gap-1">
+              <Plus size={14} />
+              Add Task
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {tasks.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              No tasks linked to this company
-            </p>
+            <div className="text-center py-6">
+              <p className="text-sm text-muted-foreground mb-3">
+                No tasks linked to this company
+              </p>
+              <Button size="sm" variant="secondary" onClick={() => setTaskOpen(true)} className="gap-1">
+                <Plus size={14} />
+                Create First Task
+              </Button>
+            </div>
           ) : (
             <div className="space-y-2">
               {tasks.map(task => (
-                <div key={task.id} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                <div key={task.id} className="flex items-center justify-between p-2 bg-muted/30 rounded group">
                   <span className="text-sm">{task.task_name}</span>
                   <div className="flex items-center gap-2">
                     {task.due_date && (
@@ -785,6 +846,15 @@ export default function CompanyPage() {
                     <Badge variant="outline" className="text-xs">
                       {task.status.replace(/_/g, ' ')}
                     </Badge>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="opacity-0 group-hover:opacity-100 h-6 w-6"
+                      onClick={() => handleUnlinkTask(task.id)}
+                      title="Unlink task"
+                    >
+                      <X size={12} />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -855,6 +925,43 @@ export default function CompanyPage() {
             <Button variant="outline" onClick={() => setDecisionOpen(false)}>Cancel</Button>
             <Button onClick={handleAddDecision} disabled={!newDecisionRationale.trim()}>
               Log Decision
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Task Dialog */}
+      <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Task for {company.company_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Task Name</label>
+              <Input
+                value={newTaskName}
+                onChange={e => setNewTaskName(e.target.value)}
+                placeholder="e.g., Review Q3 earnings"
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newTaskName.trim()) handleAddTask();
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Due Date (optional)</label>
+              <Input
+                type="date"
+                value={newTaskDueDate}
+                onChange={e => setNewTaskDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTaskOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddTask} disabled={!newTaskName.trim()}>
+              Create Task
             </Button>
           </DialogFooter>
         </DialogContent>
