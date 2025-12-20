@@ -1,5 +1,5 @@
 export type TaskStatus = 'backlog' | 'planned' | 'in_progress' | 'completed' | 'canceled';
-export type TaskUrgency = 'low' | 'medium' | 'high';
+export type TaskUrgency = 'none' | 'urgent' | 'high' | 'medium' | 'low';
 export type BoardStatus = 'working_on_it' | 'done' | 'stuck';
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type ProjectStatus = 'active' | 'monitoring' | 'archived';
@@ -80,9 +80,11 @@ export const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
 ];
 
 export const URGENCY_OPTIONS: { value: TaskUrgency; label: string }[] = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
+  { value: 'none', label: 'No priority' },
+  { value: 'urgent', label: 'Urgent' },
   { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'low', label: 'Low' },
 ];
 
 export const BOARD_STATUS_OPTIONS: { value: BoardStatus; label: string }[] = [

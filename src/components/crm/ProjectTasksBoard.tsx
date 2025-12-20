@@ -3,6 +3,7 @@ import { Plus, ChevronDown, ChevronRight, Trash2, MoreHorizontal, Copy } from 'l
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS, TaskTableGroup, getTaskTableGroup } from '@/types/crm';
+import { TaskUrgencyOption } from './TaskUrgencyBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,7 +98,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
       project_id: projectId,
       task_name: newTaskName,
       status: defaultStatus,
-      urgency: 'medium',
+      urgency: 'none',
       owner: 'Me',
       description: null,
       due_date: null,
@@ -115,7 +116,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
         project_id: projectId,
         task_name: newTaskName,
         status: defaultStatus,
-        urgency: 'medium',
+        urgency: 'none',
         owner: 'Me',
       })
       .select()
@@ -335,12 +336,14 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                             value={task.urgency}
                             onValueChange={v => handleInlineUpdate(task.id, 'urgency', v)}
                           >
-                            <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[90px]">
+                            <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[110px]">
                               <TaskUrgencyBadge urgency={task.urgency} />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-popover border border-border shadow-lg">
                               {URGENCY_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
+                                  <TaskUrgencyOption urgency={opt.value} isSelected={task.urgency === opt.value} />
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
