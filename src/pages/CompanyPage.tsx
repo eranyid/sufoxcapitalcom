@@ -153,32 +153,52 @@ export default function CompanyPage() {
     if (!company?.ticker) return null;
     const ticker = company.ticker.toUpperCase();
     
-    let currentQty = 0;
-    let totalCost = 0;
-    let totalSellProceeds = 0;
-    
     const sortedTxs = [...transactions]
       .filter(tx => tx.ticker.toUpperCase() === ticker)
       .sort((a, b) => a.date.localeCompare(b.date));
     
+    if (sortedTxs.length === 0) return null;
+
+    // Track cost basis using FIFO
+    const costBasisQueue: { qty: number; price: number }[] = [];
+    let realizedPL = 0;
+    let totalBuyCost = 0;
+    let totalBuyQty = 0;
+    
     sortedTxs.forEach(tx => {
       if (tx.transactionType === 'buy') {
-        currentQty += tx.quantity;
-        totalCost += tx.quantity * tx.pricePerUnit + (tx.fees || 0);
+        costBasisQueue.push({ qty: tx.quantity, price: tx.pricePerUnit + (tx.fees || 0) / tx.quantity });
+        totalBuyCost += tx.quantity * tx.pricePerUnit + (tx.fees || 0);
+        totalBuyQty += tx.quantity;
       } else {
-        // FIFO for cost basis calculation
-        const sellValue = tx.quantity * tx.pricePerUnit - (tx.fees || 0);
-        totalSellProceeds += sellValue;
-        currentQty -= tx.quantity;
-        // Reduce cost proportionally
-        if (currentQty > 0 && totalCost > 0) {
-          const costPerUnit = totalCost / (currentQty + tx.quantity);
-          totalCost -= tx.quantity * costPerUnit;
+        // Sell - calculate realized P&L using FIFO
+        let remainingToSell = tx.quantity;
+        const sellPrice = tx.pricePerUnit;
+        const sellFees = tx.fees || 0;
+        
+        while (remainingToSell > 0 && costBasisQueue.length > 0) {
+          const oldest = costBasisQueue[0];
+          const sellQty = Math.min(remainingToSell, oldest.qty);
+          
+          // Realized gain = (sell price - cost basis) * qty - proportional fees
+          const costBasis = oldest.price * sellQty;
+          const sellProceeds = sellPrice * sellQty - (sellFees * sellQty / tx.quantity);
+          realizedPL += sellProceeds - costBasis;
+          
+          oldest.qty -= sellQty;
+          remainingToSell -= sellQty;
+          
+          if (oldest.qty <= 0) {
+            costBasisQueue.shift();
+          }
         }
       }
     });
 
-    if (currentQty <= 0) return null;
+    // Current position
+    const currentQty = costBasisQueue.reduce((sum, lot) => sum + lot.qty, 0);
+    const remainingCost = costBasisQueue.reduce((sum, lot) => sum + lot.qty * lot.price, 0);
+    const avgCostPerShare = currentQty > 0 ? remainingCost / currentQty : 0;
 
     // Get latest price
     const latestVal = valuations
@@ -186,23 +206,34 @@ export default function CompanyPage() {
       .sort((a, b) => b.month.localeCompare(a.month))[0];
 
     const currentPrice = latestVal?.pricePerUnit;
-    const currentValue = currentPrice ? currentQty * currentPrice : null;
-    const avgCostPerShare = totalCost / currentQty;
+    const currentValue = currentPrice && currentQty > 0 ? currentQty * currentPrice : null;
     
     // Calculate unrealized P&L
-    const unrealizedPL = currentValue !== null ? currentValue - totalCost : null;
-    const unrealizedPLPercent = unrealizedPL !== null && totalCost > 0 
-      ? (unrealizedPL / totalCost) * 100 
+    const unrealizedPL = currentValue !== null ? currentValue - remainingCost : null;
+    const unrealizedPLPercent = unrealizedPL !== null && remainingCost > 0 
+      ? (unrealizedPL / remainingCost) * 100 
       : null;
+
+    // Total P&L
+    const totalPL = realizedPL + (unrealizedPL || 0);
+    const totalPLPercent = totalBuyCost > 0 ? (totalPL / totalBuyCost) * 100 : null;
+
+    // Check if position is fully closed
+    const isClosedPosition = currentQty === 0 && realizedPL !== 0;
 
     return {
       quantity: currentQty,
       avgCostPerShare,
-      totalCost,
+      totalCost: remainingCost,
       currentPrice,
       currentValue,
       unrealizedPL,
       unrealizedPLPercent,
+      realizedPL,
+      totalPL,
+      totalPLPercent,
+      totalBuyCost,
+      isClosedPosition,
       latestValuationMonth: latestVal?.month,
     };
   }, [company?.ticker, transactions, valuations]);
@@ -525,55 +556,89 @@ export default function CompanyPage() {
           {/* P&L Summary */}
           {positionMetrics && (
             <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Position P&L</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                {positionMetrics.isClosedPosition ? 'Closed Position P&L' : 'Position P&L'}
+              </h4>
+              
+              {/* Position details - only show for open positions */}
+              {!positionMetrics.isClosedPosition && (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Shares Held</p>
+                      <p className="font-mono font-semibold">{positionMetrics.quantity.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Avg Cost</p>
+                      <p className="font-mono font-semibold">${positionMetrics.avgCostPerShare.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Current Price</p>
+                      <p className="font-mono font-semibold">
+                        {positionMetrics.currentPrice ? `$${positionMetrics.currentPrice.toLocaleString()}` : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Cost Basis</p>
+                      <p className="font-mono font-semibold">{formatCurrency(positionMetrics.totalCost)}</p>
+                    </div>
+                  </div>
+                  <Separator className="my-3" />
+                </>
+              )}
+
+              {/* P&L breakdown */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {/* Realized P&L */}
                 <div>
-                  <p className="text-xs text-muted-foreground">Shares Held</p>
-                  <p className="font-mono font-semibold">{positionMetrics.quantity.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Avg Cost</p>
-                  <p className="font-mono font-semibold">${positionMetrics.avgCostPerShare.toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Current Price</p>
-                  <p className="font-mono font-semibold">
-                    {positionMetrics.currentPrice ? `$${positionMetrics.currentPrice.toLocaleString()}` : '—'}
+                  <p className="text-xs text-muted-foreground">Realized P&L</p>
+                  <p className={`text-lg font-mono font-bold ${positionMetrics.realizedPL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {positionMetrics.realizedPL >= 0 ? '+' : ''}{formatCurrency(positionMetrics.realizedPL)}
                   </p>
                 </div>
+
+                {/* Unrealized P&L - only for open positions */}
+                {!positionMetrics.isClosedPosition && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Unrealized P&L</p>
+                    {positionMetrics.unrealizedPL !== null ? (
+                      <p className={`text-lg font-mono font-bold ${positionMetrics.unrealizedPL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {positionMetrics.unrealizedPL >= 0 ? '+' : ''}{formatCurrency(positionMetrics.unrealizedPL)}
+                      </p>
+                    ) : (
+                      <p className="text-lg font-mono text-muted-foreground">—</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Total P&L */}
                 <div>
-                  <p className="text-xs text-muted-foreground">Total Cost</p>
-                  <p className="font-mono font-semibold">{formatCurrency(positionMetrics.totalCost)}</p>
+                  <p className="text-xs text-muted-foreground">Total P&L</p>
+                  <p className={`text-lg font-mono font-bold ${positionMetrics.totalPL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {positionMetrics.totalPL >= 0 ? '+' : ''}{formatCurrency(positionMetrics.totalPL)}
+                  </p>
                 </div>
-              </div>
-              <Separator className="my-3" />
-              <div className="grid grid-cols-2 gap-4">
+
+                {/* Total Return % */}
                 <div>
-                  <p className="text-xs text-muted-foreground">Unrealized P&L</p>
-                  {positionMetrics.unrealizedPL !== null ? (
-                    <p className={`text-lg font-mono font-bold ${positionMetrics.unrealizedPL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {positionMetrics.unrealizedPL >= 0 ? '+' : ''}{formatCurrency(positionMetrics.unrealizedPL)}
+                  <p className="text-xs text-muted-foreground">Total Return</p>
+                  {positionMetrics.totalPLPercent !== null ? (
+                    <p className={`text-lg font-mono font-bold ${positionMetrics.totalPLPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {positionMetrics.totalPLPercent >= 0 ? '+' : ''}{positionMetrics.totalPLPercent.toFixed(2)}%
                     </p>
                   ) : (
                     <p className="text-lg font-mono text-muted-foreground">—</p>
                   )}
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Return %</p>
-                  {positionMetrics.unrealizedPLPercent !== null ? (
-                    <p className={`text-lg font-mono font-bold ${positionMetrics.unrealizedPLPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {positionMetrics.unrealizedPLPercent >= 0 ? '+' : ''}{positionMetrics.unrealizedPLPercent.toFixed(2)}%
-                    </p>
-                  ) : (
-                    <p className="text-lg font-mono text-muted-foreground">—</p>
-                  )}
-                </div>
               </div>
-              {positionMetrics.latestValuationMonth && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Based on {format(new Date(positionMetrics.latestValuationMonth + '-01'), 'MMMM yyyy')} valuation
-                </p>
-              )}
+
+              {/* Footer info */}
+              <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                <span>Total invested: {formatCurrency(positionMetrics.totalBuyCost)}</span>
+                {positionMetrics.latestValuationMonth && !positionMetrics.isClosedPosition && (
+                  <span>Valuation: {format(new Date(positionMetrics.latestValuationMonth + '-01'), 'MMM yyyy')}</span>
+                )}
+              </div>
             </div>
           )}
 
