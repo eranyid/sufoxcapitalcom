@@ -43,17 +43,15 @@ const urgencyConfig: Record<TaskUrgency, {
 
 export function TaskUrgencyBadge({ urgency, className, showIcon = true, showCheck = false }: TaskUrgencyBadgeProps) {
   const config = urgencyConfig[urgency] || urgencyConfig.none;
-  const label = URGENCY_OPTIONS.find(u => u.value === urgency)?.label || 'No priority';
   const Icon = config.icon;
   
   return (
     <span className={cn(
-      'inline-flex items-center gap-1.5 text-xs',
+      'inline-flex items-center justify-center',
       config.style,
       className
     )}>
-      {showIcon && <Icon size={14} className={config.iconStyle} />}
-      <span>{label}</span>
+      {showIcon && <Icon size={18} className={config.iconStyle} />}
       {showCheck && <Check size={14} className="ml-auto text-primary" />}
     </span>
   );
