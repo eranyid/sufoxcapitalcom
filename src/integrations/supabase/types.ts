@@ -115,6 +115,71 @@ export type Database = {
           },
         ]
       }
+      company_research_entries: {
+        Row: {
+          calculator_type: string | null
+          company_id: string | null
+          created_at: string
+          entry_type: string
+          id: string
+          inputs_json: Json | null
+          output_summary: string | null
+          outputs_json: Json | null
+          question_text: string | null
+          related_holding_id: string | null
+          tags: string[] | null
+          ticker: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          visibility: string
+        }
+        Insert: {
+          calculator_type?: string | null
+          company_id?: string | null
+          created_at?: string
+          entry_type?: string
+          id?: string
+          inputs_json?: Json | null
+          output_summary?: string | null
+          outputs_json?: Json | null
+          question_text?: string | null
+          related_holding_id?: string | null
+          tags?: string[] | null
+          ticker?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          visibility?: string
+        }
+        Update: {
+          calculator_type?: string | null
+          company_id?: string | null
+          created_at?: string
+          entry_type?: string
+          id?: string
+          inputs_json?: Json | null
+          output_summary?: string | null
+          outputs_json?: Json | null
+          question_text?: string | null
+          related_holding_id?: string | null
+          tags?: string[] | null
+          ticker?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_research_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_activity_log: {
         Row: {
           action: string
