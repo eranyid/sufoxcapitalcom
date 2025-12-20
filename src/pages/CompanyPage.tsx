@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { CompanyValueChart } from '@/components/crm/CompanyValueChart';
 import { DecisionLogSection, Decision, DECISION_TYPE_OPTIONS } from '@/components/crm/DecisionLogSection';
+import { ResearchLogSection } from '@/components/crm/ResearchLogSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -1002,6 +1003,12 @@ export default function CompanyPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Calculator & Q&A (Research Log) */}
+      <ResearchLogSection
+        companyId={company.id}
+        companyTicker={company.ticker}
+      />
 
       {/* Decision Log */}
       <DecisionLogSection

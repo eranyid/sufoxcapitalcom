@@ -1,15 +1,23 @@
+import { useState } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { ContributionChart } from '@/components/dashboard/ContributionChart';
 import { PerformanceCalendarHeatmap } from '@/components/dashboard/PerformanceCalendarHeatmap';
 import { calculateContributions, calculateMonthlyReturns } from '@/lib/calculations';
+import { useLatestResearchByTicker, useResearchByTicker, ResearchEntry } from '@/hooks/useCompanyResearch';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, Target, Award, Percent } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, Target, Award, Percent, BookOpen, Calculator, HelpCircle, FileText, MessageSquare } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function Performance() {
   const { transactions, valuations, performanceMetrics, settings } = usePortfolio();
+  const { getLatestForTicker } = useLatestResearchByTicker();
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
+  const { entries: tickerEntries, loading: entriesLoading } = useResearchByTicker(selectedTicker);
 
   const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
   const contributions = calculateContributions(transactions, monthlyReturns);
@@ -126,23 +134,91 @@ export default function Performance() {
                     <TableHead>Name</TableHead>
                     <TableHead className="text-right">Weight</TableHead>
                     <TableHead className="text-right">Contribution</TableHead>
+                    <TableHead>Research</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contributions.map((c) => (
-                    <TableRow key={c.ticker}>
-                      <TableCell className="font-medium text-primary">{c.ticker}</TableCell>
-                      <TableCell>{c.name}</TableCell>
-                      <TableCell className="text-right">{c.weight.toFixed(1)}%</TableCell>
-                      <TableCell className={`text-right ${c.contribution >= 0 ? 'positive' : 'negative'}`}>
-                        {formatCurrency(c.contribution)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {contributions.map((c) => {
+                    const latestResearch = getLatestForTicker(c.ticker);
+                    return (
+                      <TableRow key={c.ticker}>
+                        <TableCell className="font-medium text-primary">{c.ticker}</TableCell>
+                        <TableCell>{c.name}</TableCell>
+                        <TableCell className="text-right">{c.weight.toFixed(1)}%</TableCell>
+                        <TableCell className={`text-right ${c.contribution >= 0 ? 'positive' : 'negative'}`}>
+                          {formatCurrency(c.contribution)}
+                        </TableCell>
+                        <TableCell>
+                          {latestResearch ? (
+                            <button
+                              onClick={() => setSelectedTicker(c.ticker)}
+                              className="text-xs text-left max-w-[150px] truncate text-primary hover:underline cursor-pointer"
+                              title={latestResearch.output_summary || latestResearch.title}
+                            >
+                              {latestResearch.output_summary || latestResearch.title}
+                            </button>
+                          ) : (
+                            <span 
+                              className="text-xs text-muted-foreground cursor-pointer hover:text-foreground"
+                              onClick={() => setSelectedTicker(c.ticker)}
+                            >
+                              No research
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
           </div>
+
+          {/* Research Side Panel */}
+          <Sheet open={!!selectedTicker} onOpenChange={(open) => !open && setSelectedTicker(null)}>
+            <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <BookOpen size={18} />
+                  Research: {selectedTicker}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-3">
+                {entriesLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading...</p>
+                ) : tickerEntries.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No research entries for this holding.</p>
+                ) : (
+                  tickerEntries.map(entry => {
+                    const IconMap = {
+                      CALCULATION: Calculator,
+                      QUESTION: HelpCircle,
+                      ANSWER: MessageSquare,
+                      NOTE: FileText,
+                    };
+                    const Icon = IconMap[entry.entry_type as keyof typeof IconMap] || FileText;
+                    return (
+                      <div key={entry.id} className="border border-border/50 rounded-lg p-3 bg-muted/20">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Icon size={10} />
+                            {entry.entry_type}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(entry.created_at), 'MMM d, yyyy')}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium">{entry.title}</p>
+                        {entry.output_summary && (
+                          <p className="text-xs text-muted-foreground mt-1">{entry.output_summary}</p>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </>
       ) : (
         <div className="bloomberg-panel">
