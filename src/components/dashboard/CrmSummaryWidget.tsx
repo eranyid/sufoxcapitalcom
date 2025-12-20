@@ -30,8 +30,8 @@ export default function CrmSummaryWidget() {
     fetchTasks();
   }, [user]);
 
-  const handleNavigateToCrm = () => {
-    navigate('/crm');
+  const handleNavigateToBackOffice = () => {
+    navigate('/backoffice');
   };
 
   if (loading) {
@@ -59,7 +59,7 @@ export default function CrmSummaryWidget() {
           variant="ghost"
           size="sm"
           className="h-6 text-[10px] font-mono"
-          onClick={handleNavigateToCrm}
+          onClick={handleNavigateToBackOffice}
         >
           Open <ArrowRight className="h-3 w-3 ml-1" />
         </Button>

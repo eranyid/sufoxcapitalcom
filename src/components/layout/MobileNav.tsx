@@ -31,7 +31,7 @@ const primaryNavItems = [
 ];
 
 const moreNavItems = [
-  { path: '/crm', icon: Contact, label: 'CRM' },
+  { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/scenarios', icon: Layers, label: 'Scenarios' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
