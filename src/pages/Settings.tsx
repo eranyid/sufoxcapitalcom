@@ -739,6 +739,20 @@ export default function Settings() {
             <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
           </a>
           <a 
+            href="/privacy" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">Privacy Policy</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Data collection, usage, and protection
+              </p>
+            </div>
+            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </a>
+          <a 
             href="/disclaimer" 
             target="_blank"
             rel="noopener noreferrer"
