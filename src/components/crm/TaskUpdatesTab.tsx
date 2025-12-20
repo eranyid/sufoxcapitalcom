@@ -38,49 +38,51 @@ export function TaskUpdatesTab({ taskId }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Input Section */}
-      <div className="p-4 border-b border-border">
+      {/* Input Section - Mobile optimized */}
+      <div className="p-3 sm:p-4 border-b border-border">
         <Textarea
           ref={textareaRef}
           value={content}
           onChange={e => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Write an update..."
-          className="min-h-[100px] resize-none bg-muted/30 border-border"
+          className="min-h-[80px] sm:min-h-[100px] resize-none bg-muted/30 border-border text-sm"
         />
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between mt-2 gap-2">
+          <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
             Press ⌘+Enter to post
           </span>
           <Button 
             onClick={handlePost} 
             disabled={!content.trim() || posting}
             size="sm"
+            className="ml-auto h-9 px-4"
           >
-            <Send size={14} className="mr-1.5" />
-            Post Update
+            <Send size={14} className="sm:mr-1.5" />
+            <span className="hidden sm:inline">Post Update</span>
+            <span className="sm:hidden">Post</span>
           </Button>
         </div>
       </div>
 
-      {/* Updates List */}
+      {/* Updates List - Mobile optimized */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-4 space-y-3">
+          <div className="p-3 sm:p-4 space-y-3">
             {[1, 2].map(i => (
-              <div key={i} className="h-20 bg-muted/30 animate-pulse rounded" />
+              <div key={i} className="h-16 sm:h-20 bg-muted/30 animate-pulse rounded" />
             ))}
           </div>
         ) : updates.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <MessageSquare size={48} className="text-muted-foreground/30 mb-4" />
-            <h3 className="font-medium text-muted-foreground">No updates yet</h3>
-            <p className="text-sm text-muted-foreground/70 mt-1">
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 sm:p-8">
+            <MessageSquare size={40} className="text-muted-foreground/30 mb-3 sm:mb-4 sm:w-12 sm:h-12" />
+            <h3 className="font-medium text-muted-foreground text-sm sm:text-base">No updates yet</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground/70 mt-1">
               Be the first to add an update
             </p>
           </div>
         ) : (
-          <div className="p-4 space-y-4">
+          <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
             {updates.map(update => (
               <UpdateItem key={update.id} update={update} />
             ))}
@@ -93,16 +95,16 @@ export function TaskUpdatesTab({ taskId }: Props) {
 
 function UpdateItem({ update }: { update: TaskUpdate }) {
   return (
-    <div className="bg-muted/20 rounded-lg p-3 border border-border/50">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-          <span className="text-xs text-primary font-medium">U</span>
+    <div className="bg-muted/20 rounded-lg p-2.5 sm:p-3 border border-border/50">
+      <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+          <span className="text-[10px] sm:text-xs text-primary font-medium">U</span>
         </div>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
           {format(new Date(update.created_at), 'MMM d, yyyy · h:mm a')}
         </span>
       </div>
-      <p className="text-sm whitespace-pre-wrap">{update.content}</p>
+      <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">{update.content}</p>
     </div>
   );
 }
