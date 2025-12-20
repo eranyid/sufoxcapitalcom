@@ -205,8 +205,9 @@ export default function CompanyPage() {
   }, [companyId, user, navigate]);
 
   const handleUpdate = async (field: keyof Company, value: string | null) => {
-    if (!company) return;
+    if (!company || !user) return;
 
+    const oldValue = company[field];
     setSaving(true);
     const { error } = await supabase
       .from('crm_companies')
@@ -218,6 +219,20 @@ export default function CompanyPage() {
       console.error(error);
     } else {
       setCompany(prev => prev ? { ...prev, [field]: value, updated_at: new Date().toISOString() } : null);
+      
+      // Log status changes to company_decisions as a special "status_change" type
+      if (field === 'status' && oldValue !== value) {
+        const oldLabel = STATUS_OPTIONS.find(o => o.value === oldValue)?.label || oldValue;
+        const newLabel = STATUS_OPTIONS.find(o => o.value === value)?.label || value;
+        
+        await supabase.from('company_decisions').insert({
+          user_id: user.id,
+          company_id: company.id,
+          decision_type: 'status_change',
+          rationale: `Status changed from "${oldLabel}" to "${newLabel}"`,
+          decision_date: new Date().toISOString().split('T')[0],
+        });
+      }
     }
     setSaving(false);
     setEditMode(null);

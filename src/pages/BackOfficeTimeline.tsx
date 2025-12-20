@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 
 interface TimelineEvent {
   id: string;
-  type: 'decision' | 'task_activity' | 'crm_activity';
+  type: 'decision' | 'task_activity' | 'crm_activity' | 'status_change';
   timestamp: string;
   companyId: string | null;
   companyName: string | null;
@@ -56,13 +56,14 @@ export default function BackOfficeTimeline() {
       if (decisions) {
         decisions.forEach(d => {
           const company = companyMap[d.company_id];
+          const isStatusChange = d.decision_type === 'status_change';
           allEvents.push({
             id: `decision-${d.id}`,
-            type: 'decision',
+            type: isStatusChange ? 'status_change' : 'decision',
             timestamp: d.decision_date,
             companyId: d.company_id,
             companyName: company?.company_name || 'Unknown Company',
-            title: `Investment Decision: ${d.decision_type}`,
+            title: isStatusChange ? 'Status Change' : `Investment Decision: ${d.decision_type}`,
             description: d.rationale,
           });
         });
@@ -158,6 +159,8 @@ export default function BackOfficeTimeline() {
         return <CheckSquare className="h-4 w-4" />;
       case 'crm_activity':
         return <Building2 className="h-4 w-4" />;
+      case 'status_change':
+        return <Activity className="h-4 w-4" />;
     }
   };
 
@@ -169,6 +172,8 @@ export default function BackOfficeTimeline() {
         return 'bg-blue-500/20 text-blue-400 border-blue-500/40';
       case 'crm_activity':
         return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+      case 'status_change':
+        return 'bg-purple-500/20 text-purple-400 border-purple-500/40';
     }
   };
 
@@ -180,6 +185,8 @@ export default function BackOfficeTimeline() {
         return 'Task';
       case 'crm_activity':
         return 'Activity';
+      case 'status_change':
+        return 'Status';
     }
   };
 
@@ -208,6 +215,7 @@ export default function BackOfficeTimeline() {
           <SelectContent>
             <SelectItem value="all">All Events</SelectItem>
             <SelectItem value="decision">Decisions</SelectItem>
+            <SelectItem value="status_change">Status Changes</SelectItem>
             <SelectItem value="task_activity">Task Activity</SelectItem>
             <SelectItem value="crm_activity">CRM Activity</SelectItem>
           </SelectContent>
