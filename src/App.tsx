@@ -27,6 +27,8 @@ const Auth = lazy(() => import("./pages/Auth"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
 const BackOffice = lazy(() => import("./pages/BackOffice"));
+const BackOfficeTasks = lazy(() => import("./pages/BackOfficeTasks"));
+const BackOfficeTimeline = lazy(() => import("./pages/BackOfficeTimeline"));
 const CompanyPage = lazy(() => import("./pages/CompanyPage"));
 const Trash = lazy(() => import("./pages/Trash"));
 const Help = lazy(() => import("./pages/Help"));
@@ -121,6 +123,16 @@ const App = () => (
                   <Route path="/backoffice" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <BackOffice />
+                    </Suspense>
+                  } />
+                  <Route path="/backoffice/tasks" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <BackOfficeTasks />
+                    </Suspense>
+                  } />
+                  <Route path="/backoffice/timeline" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <BackOfficeTimeline />
                     </Suspense>
                   } />
                   <Route path="/backoffice/company/:companyId" element={

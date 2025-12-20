@@ -166,6 +166,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
       id: tempId,
       user_id: user.id,
       project_id: projectId,
+      company_id: null,
       task_name: newTaskName,
       status: defaultStatus,
       urgency: 'none',
