@@ -119,23 +119,44 @@ export default function BackOffice() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Building2 className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Back Office</h1>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Building2 className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+            <h1 className="text-xl md:text-2xl font-bold">Back Office</h1>
+          </div>
+          <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2 md:hidden">
+            <Plus size={16} />
+          </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate('/backoffice/tasks')} className="gap-2">
+        
+        {/* Action buttons - responsive grid */}
+        <div className="grid grid-cols-2 md:flex md:flex-row gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/backoffice/tasks')} 
+            className="gap-2 text-sm"
+            size="sm"
+          >
             <CheckSquare size={16} />
-            Tasks
+            <span>Tasks</span>
           </Button>
-          <Button variant="outline" onClick={() => navigate('/backoffice/timeline')} className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/backoffice/timeline')} 
+            className="gap-2 text-sm"
+            size="sm"
+          >
             <Activity size={16} />
-            Timeline
+            <span>Timeline</span>
           </Button>
-          <Button onClick={() => setCreateOpen(true)} className="gap-2">
+          <Button 
+            onClick={() => setCreateOpen(true)} 
+            className="gap-2 text-sm hidden md:flex col-span-2 md:col-span-1"
+            size="sm"
+          >
             <Plus size={16} />
             Add Company
           </Button>
@@ -143,7 +164,7 @@ export default function BackOffice() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
+      <div className="relative w-full md:max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search companies..."
