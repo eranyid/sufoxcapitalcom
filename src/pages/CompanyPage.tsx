@@ -148,42 +148,67 @@ export default function CompanyPage() {
       .sort((a, b) => b.month.localeCompare(a.month));
   }, [company?.ticker, valuations]);
 
-  // Calculate current value from portfolio
-  const currentValue = useMemo(() => {
+  // Calculate P&L metrics
+  const positionMetrics = useMemo(() => {
     if (!company?.ticker) return null;
     const ticker = company.ticker.toUpperCase();
     
-    let quantity = 0;
-    transactions.forEach(tx => {
-      if (tx.ticker.toUpperCase() === ticker) {
-        if (tx.transactionType === 'buy') {
-          quantity += tx.quantity;
-        } else {
-          quantity -= tx.quantity;
+    let currentQty = 0;
+    let totalCost = 0;
+    let totalSellProceeds = 0;
+    
+    const sortedTxs = [...transactions]
+      .filter(tx => tx.ticker.toUpperCase() === ticker)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
+    sortedTxs.forEach(tx => {
+      if (tx.transactionType === 'buy') {
+        currentQty += tx.quantity;
+        totalCost += tx.quantity * tx.pricePerUnit + (tx.fees || 0);
+      } else {
+        // FIFO for cost basis calculation
+        const sellValue = tx.quantity * tx.pricePerUnit - (tx.fees || 0);
+        totalSellProceeds += sellValue;
+        currentQty -= tx.quantity;
+        // Reduce cost proportionally
+        if (currentQty > 0 && totalCost > 0) {
+          const costPerUnit = totalCost / (currentQty + tx.quantity);
+          totalCost -= tx.quantity * costPerUnit;
         }
       }
     });
 
-    if (quantity <= 0) return null;
+    if (currentQty <= 0) return null;
 
     // Get latest price
     const latestVal = valuations
       .filter(v => v.ticker.toUpperCase() === ticker)
       .sort((a, b) => b.month.localeCompare(a.month))[0];
 
-    if (latestVal) {
-      return quantity * latestVal.pricePerUnit;
-    }
+    const currentPrice = latestVal?.pricePerUnit;
+    const currentValue = currentPrice ? currentQty * currentPrice : null;
+    const avgCostPerShare = totalCost / currentQty;
+    
+    // Calculate unrealized P&L
+    const unrealizedPL = currentValue !== null ? currentValue - totalCost : null;
+    const unrealizedPLPercent = unrealizedPL !== null && totalCost > 0 
+      ? (unrealizedPL / totalCost) * 100 
+      : null;
 
-    // Fallback to avg cost
-    const buys = transactions.filter(t => t.ticker.toUpperCase() === ticker && t.transactionType === 'buy');
-    if (buys.length > 0) {
-      const avgPrice = buys.reduce((sum, t) => sum + t.pricePerUnit * t.quantity, 0) / buys.reduce((sum, t) => sum + t.quantity, 0);
-      return quantity * avgPrice;
-    }
-
-    return null;
+    return {
+      quantity: currentQty,
+      avgCostPerShare,
+      totalCost,
+      currentPrice,
+      currentValue,
+      unrealizedPL,
+      unrealizedPLPercent,
+      latestValuationMonth: latestVal?.month,
+    };
   }, [company?.ticker, transactions, valuations]);
+
+  // For backward compatibility
+  const currentValue = positionMetrics?.currentValue ?? null;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -496,6 +521,61 @@ export default function CompanyPage() {
               </p>
             </div>
           </div>
+
+          {/* P&L Summary */}
+          {positionMetrics && (
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Position P&L</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Shares Held</p>
+                  <p className="font-mono font-semibold">{positionMetrics.quantity.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Avg Cost</p>
+                  <p className="font-mono font-semibold">${positionMetrics.avgCostPerShare.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Current Price</p>
+                  <p className="font-mono font-semibold">
+                    {positionMetrics.currentPrice ? `$${positionMetrics.currentPrice.toLocaleString()}` : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Total Cost</p>
+                  <p className="font-mono font-semibold">{formatCurrency(positionMetrics.totalCost)}</p>
+                </div>
+              </div>
+              <Separator className="my-3" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Unrealized P&L</p>
+                  {positionMetrics.unrealizedPL !== null ? (
+                    <p className={`text-lg font-mono font-bold ${positionMetrics.unrealizedPL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {positionMetrics.unrealizedPL >= 0 ? '+' : ''}{formatCurrency(positionMetrics.unrealizedPL)}
+                    </p>
+                  ) : (
+                    <p className="text-lg font-mono text-muted-foreground">—</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Return %</p>
+                  {positionMetrics.unrealizedPLPercent !== null ? (
+                    <p className={`text-lg font-mono font-bold ${positionMetrics.unrealizedPLPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {positionMetrics.unrealizedPLPercent >= 0 ? '+' : ''}{positionMetrics.unrealizedPLPercent.toFixed(2)}%
+                    </p>
+                  ) : (
+                    <p className="text-lg font-mono text-muted-foreground">—</p>
+                  )}
+                </div>
+              </div>
+              {positionMetrics.latestValuationMonth && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Based on {format(new Date(positionMetrics.latestValuationMonth + '-01'), 'MMMM yyyy')} valuation
+                </p>
+              )}
+            </div>
+          )}
 
           <p className="text-xs text-muted-foreground">
             Last updated: {format(new Date(company.updated_at), 'MMM d, yyyy h:mm a')}
