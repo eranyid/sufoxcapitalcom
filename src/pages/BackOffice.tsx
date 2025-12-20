@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Plus, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { usePortfolio } from '@/context/PortfolioContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,13 +27,9 @@ interface Company {
   id: string;
   company_name: string;
   ticker: string | null;
+  market_cap: string | null;
   status: string;
   updated_at: string;
-}
-
-interface HoldingData {
-  ticker: string;
-  currentValue: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -48,7 +43,6 @@ const STATUS_COLORS: Record<string, string> = {
 export default function BackOffice() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { transactions, valuations } = usePortfolio();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,67 +50,13 @@ export default function BackOffice() {
   const [newCompanyName, setNewCompanyName] = useState('');
   const [creating, setCreating] = useState(false);
 
-  // Calculate holdings from transactions for value display
-  const holdingsMap = useMemo(() => {
-    const map = new Map<string, HoldingData>();
-    
-    transactions.forEach(tx => {
-      const ticker = tx.ticker.toUpperCase();
-      const existing = map.get(ticker);
-      
-      if (tx.transactionType === 'buy') {
-        if (existing) {
-          map.set(ticker, {
-            ticker,
-            currentValue: existing.currentValue + tx.quantity * tx.pricePerUnit,
-          });
-        } else {
-          map.set(ticker, {
-            ticker,
-            currentValue: tx.quantity * tx.pricePerUnit,
-          });
-        }
-      } else if (existing) {
-        map.set(ticker, {
-          ticker,
-          currentValue: Math.max(0, existing.currentValue - tx.quantity * tx.pricePerUnit),
-        });
-      }
-    });
-
-    // Update with latest valuations
-    const quantityMap = new Map<string, number>();
-    transactions.forEach(tx => {
-      const ticker = tx.ticker.toUpperCase();
-      const existing = quantityMap.get(ticker) || 0;
-      if (tx.transactionType === 'buy') {
-        quantityMap.set(ticker, existing + tx.quantity);
-      } else {
-        quantityMap.set(ticker, existing - tx.quantity);
-      }
-    });
-
-    valuations.forEach(val => {
-      const ticker = val.ticker.toUpperCase();
-      const qty = quantityMap.get(ticker) || 0;
-      if (qty > 0) {
-        map.set(ticker, {
-          ticker,
-          currentValue: qty * val.pricePerUnit,
-        });
-      }
-    });
-
-    return map;
-  }, [transactions, valuations]);
-
   useEffect(() => {
     const fetchCompanies = async () => {
       if (!user) return;
 
       const { data, error } = await supabase
         .from('crm_companies')
-        .select('id, company_name, ticker, status, updated_at')
+        .select('id, company_name, ticker, market_cap, status, updated_at')
         .is('deleted_at', null)
         .order('updated_at', { ascending: false });
 
@@ -143,7 +83,7 @@ export default function BackOffice() {
         company_name: newCompanyName.trim(),
         status: 'research',
       })
-      .select('id, company_name, ticker, status, updated_at')
+      .select('id, company_name, ticker, market_cap, status, updated_at')
       .single();
 
     if (error) {
@@ -159,21 +99,6 @@ export default function BackOffice() {
     setCreating(false);
     toast.success('Company created');
     navigate(`/backoffice/company/${data.id}`);
-  };
-
-  const getCompanyValue = (ticker: string | null): number | null => {
-    if (!ticker) return null;
-    const holding = holdingsMap.get(ticker.toUpperCase());
-    return holding?.currentValue || null;
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   const filteredCompanies = companies.filter(c => {
@@ -238,43 +163,40 @@ export default function BackOffice() {
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="font-semibold">Company Name</TableHead>
                 <TableHead className="font-semibold w-[100px]">Ticker</TableHead>
-                <TableHead className="font-semibold w-[140px] text-right">Value</TableHead>
+                <TableHead className="font-semibold w-[140px]">Market Cap</TableHead>
                 <TableHead className="font-semibold w-[120px]">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCompanies.map(company => {
-                const value = getCompanyValue(company.ticker);
-                return (
-                  <TableRow
-                    key={company.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => navigate(`/backoffice/company/${company.id}`)}
-                  >
-                    <TableCell className="font-medium">{company.company_name}</TableCell>
-                    <TableCell>
-                      {company.ticker ? (
-                        <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
-                          {company.ticker}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {value !== null ? formatCurrency(value) : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={STATUS_COLORS[company.status] || 'bg-muted text-muted-foreground'}
-                      >
-                        {company.status.replace(/_/g, ' ')}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {filteredCompanies.map(company => (
+                <TableRow
+                  key={company.id}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => navigate(`/backoffice/company/${company.id}`)}
+                >
+                  <TableCell className="font-medium">{company.company_name}</TableCell>
+                  <TableCell>
+                    {company.ticker ? (
+                      <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
+                        {company.ticker}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {company.market_cap || '—'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={STATUS_COLORS[company.status] || 'bg-muted text-muted-foreground'}
+                    >
+                      {company.status.replace(/_/g, ' ')}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
