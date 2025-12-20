@@ -12,9 +12,7 @@ import {
   ArrowRightLeft,
   Calendar,
   FileCheck,
-  Users,
-  CheckSquare,
-  Activity
+  Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -34,8 +32,6 @@ const primaryNavItems = [
 
 const moreNavItems = [
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
-  { path: '/backoffice/tasks', icon: CheckSquare, label: 'All Tasks' },
-  { path: '/backoffice/timeline', icon: Activity, label: 'Timeline' },
   { path: '/scenarios', icon: Layers, label: 'Scenarios' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },

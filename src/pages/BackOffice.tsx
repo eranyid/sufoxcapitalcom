@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search } from 'lucide-react';
+import { Building2, Plus, Search, Activity, CheckSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -126,10 +126,20 @@ export default function BackOffice() {
           <Building2 className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Back Office</h1>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gap-2">
-          <Plus size={16} />
-          Add Company
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/backoffice/tasks')} className="gap-2">
+            <CheckSquare size={16} />
+            Tasks
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/backoffice/timeline')} className="gap-2">
+            <Activity size={16} />
+            Timeline
+          </Button>
+          <Button onClick={() => setCreateOpen(true)} className="gap-2">
+            <Plus size={16} />
+            Add Company
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
