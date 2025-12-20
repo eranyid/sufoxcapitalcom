@@ -4,6 +4,7 @@ import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
+import { TaxLotOptimizer } from '@/components/dashboard/TaxLotOptimizer';
 import { usePortfolio } from '@/context/PortfolioContext';
 
 const Research = () => {
@@ -47,6 +48,9 @@ const Research = () => {
         <div className="mt-4">
           <RebalanceTool />
         </div>
+
+        {/* Tax Lot Optimizer */}
+        <TaxLotOptimizer />
       </div>
     </div>
   );
