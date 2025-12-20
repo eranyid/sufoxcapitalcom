@@ -5,10 +5,12 @@ import { MobileNav } from './MobileNav';
 import { MobileHeader } from './MobileHeader';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useDataWatchdog } from '@/hooks/useDataWatchdog';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { Database } from 'lucide-react';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
 import { CommandBar } from '@/components/CommandBar';
+import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
 
 export function DashboardLayout() {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ export function DashboardLayout() {
     warningCount, 
     infoCount 
   } = useDataWatchdog();
+  const { isOnline } = useOnlineStatus();
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen min-h-dvh w-full bg-background overflow-x-hidden">
@@ -38,6 +41,7 @@ export function DashboardLayout() {
             errorCount={errorCount}
             warningCount={warningCount}
             onWatchdogClick={() => setWatchdogPanelOpen(true)}
+            isOnline={isOnline}
           />
         </div>
 
@@ -58,6 +62,7 @@ export function DashboardLayout() {
               warningCount={warningCount}
               onClick={() => setWatchdogPanelOpen(true)}
             />
+            <OnlineStatusIndicator isOnline={isOnline} />
           </div>
           <div className="flex items-center gap-4 font-mono text-muted-foreground">
             <kbd className="text-[9px] px-1.5 py-0.5 bg-muted rounded border border-border/50 hidden lg:inline-block">
