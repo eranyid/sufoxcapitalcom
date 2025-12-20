@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, Building2, Calendar, Edit2, Plus, Trash2, 
   TrendingUp, AlertTriangle, Target, Clock, DollarSign,
-  MapPin, Briefcase, FileText, CheckSquare, Save, X
+  MapPin, Briefcase, FileText, CheckSquare, Save, X,
+  LineChart, Receipt, BarChart3
 } from 'lucide-react';
+import { CompanyValueChart } from '@/components/crm/CompanyValueChart';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -128,6 +130,23 @@ export default function CompanyPage() {
   const [taskOpen, setTaskOpen] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
+
+  // Filter transactions and valuations for this company
+  const companyTransactions = useMemo(() => {
+    if (!company?.ticker) return [];
+    const ticker = company.ticker.toUpperCase();
+    return transactions
+      .filter(tx => tx.ticker.toUpperCase() === ticker)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [company?.ticker, transactions]);
+
+  const companyValuations = useMemo(() => {
+    if (!company?.ticker) return [];
+    const ticker = company.ticker.toUpperCase();
+    return valuations
+      .filter(v => v.ticker.toUpperCase() === ticker)
+      .sort((a, b) => b.month.localeCompare(a.month));
+  }, [company?.ticker, valuations]);
 
   // Calculate current value from portfolio
   const currentValue = useMemo(() => {
@@ -770,6 +789,130 @@ export default function CompanyPage() {
               </p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Position Value Chart */}
+      {company.ticker && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <LineChart size={18} className="text-primary" />
+                Position Value
+              </CardTitle>
+              <span className="text-xs text-muted-foreground">
+                Based on {companyValuations.length} valuations
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <CompanyValueChart
+              transactions={transactions}
+              valuations={valuations}
+              ticker={company.ticker}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Transactions */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Receipt size={18} className="text-primary" />
+              Transactions
+            </CardTitle>
+            <Link to="/transactions">
+              <Button size="sm" variant="ghost" className="text-xs text-muted-foreground">
+                View All →
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!company.ticker ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Add a ticker to sync transactions
+            </p>
+          ) : companyTransactions.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No transactions for {company.ticker}
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              {companyTransactions.slice(0, 10).map(tx => (
+                <div key={tx.id} className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+                  <div className="flex items-center gap-3">
+                    <Badge 
+                      variant="outline" 
+                      className={tx.transactionType === 'buy' 
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                        : 'bg-red-500/20 text-red-400 border-red-500/30'
+                      }
+                    >
+                      {tx.transactionType.toUpperCase()}
+                    </Badge>
+                    <span>{format(new Date(tx.date), 'MMM d, yyyy')}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono">{tx.quantity.toLocaleString()} × ${tx.pricePerUnit.toLocaleString()}</div>
+                    <div className="text-xs text-muted-foreground">
+                      ${(tx.quantity * tx.pricePerUnit).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {companyTransactions.length > 10 && (
+                <p className="text-xs text-muted-foreground text-center pt-2">
+                  +{companyTransactions.length - 10} more transactions
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Valuations */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 size={18} className="text-primary" />
+              Valuations
+            </CardTitle>
+            <Link to="/valuations">
+              <Button size="sm" variant="ghost" className="text-xs text-muted-foreground">
+                View All →
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!company.ticker ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Add a ticker to sync valuations
+            </p>
+          ) : companyValuations.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No valuations for {company.ticker}
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              {companyValuations.slice(0, 10).map(val => (
+                <div key={val.id} className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+                  <span>{format(new Date(val.month + '-01'), 'MMMM yyyy')}</span>
+                  <span className="font-mono">${val.pricePerUnit.toLocaleString()}</span>
+                </div>
+              ))}
+              {companyValuations.length > 10 && (
+                <p className="text-xs text-muted-foreground text-center pt-2">
+                  +{companyValuations.length - 10} more valuations
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
