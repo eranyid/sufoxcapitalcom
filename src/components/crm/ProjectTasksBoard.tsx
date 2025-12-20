@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, ChevronDown, ChevronRight, Trash2, MoreHorizontal, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
+import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS, TaskTableGroup, getTaskTableGroup } from '@/types/crm';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,27 +43,24 @@ interface Props {
   projectId: string;
 }
 
-const TASK_GROUPS = [
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'backlog', label: 'Backlog' },
-  { value: 'done', label: 'Done' },
-  { value: 'blocked', label: 'Blocked' },
-] as const;
-
-type TaskGroup = typeof TASK_GROUPS[number]['value'];
+// Exactly 3 visual table groups
+const TABLE_GROUPS: { value: TaskTableGroup; label: string; defaultStatus: TaskStatus }[] = [
+  { value: 'in_progress', label: 'In Progress', defaultStatus: 'in_progress' },
+  { value: 'done', label: 'Done', defaultStatus: 'completed' },
+  { value: 'canceled', label: 'Canceled', defaultStatus: 'canceled' },
+];
 
 export default function ProjectTasksBoard({ projectId }: Props) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<CrmTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [expandedGroups, setExpandedGroups] = useState<Record<TaskGroup, boolean>>({
+  const [expandedGroups, setExpandedGroups] = useState<Record<TaskTableGroup, boolean>>({
     in_progress: true,
-    backlog: true,
     done: false,
-    blocked: true,
+    canceled: false,
   });
-  const [addingToGroup, setAddingToGroup] = useState<TaskGroup | null>(null);
+  const [addingToGroup, setAddingToGroup] = useState<TaskTableGroup | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
 
   const fetchTasks = useCallback(async () => {
@@ -71,6 +68,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
       .from('crm_tasks')
       .select('*')
       .eq('project_id', projectId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -86,8 +84,11 @@ export default function ProjectTasksBoard({ projectId }: Props) {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handleCreate = async (status: TaskGroup) => {
+  const handleCreate = async (tableGroup: TaskTableGroup) => {
     if (!user || !newTaskName.trim()) return;
+
+    // Get the default status for this table group
+    const defaultStatus = TABLE_GROUPS.find(g => g.value === tableGroup)?.defaultStatus || 'in_progress';
 
     const tempId = `temp-${Date.now()}`;
     const tempTask: CrmTask = {
@@ -95,7 +96,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
       user_id: user.id,
       project_id: projectId,
       task_name: newTaskName,
-      status: status as TaskStatus,
+      status: defaultStatus,
       urgency: 'medium',
       owner: 'Me',
       description: null,
@@ -113,7 +114,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
         user_id: user.id,
         project_id: projectId,
         task_name: newTaskName,
-        status: status,
+        status: defaultStatus,
         urgency: 'medium',
         owner: 'Me',
       })
@@ -186,7 +187,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
 
     const { error } = await supabase
       .from('crm_tasks')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', deleteId);
 
     if (error) {
@@ -196,17 +197,18 @@ export default function ProjectTasksBoard({ projectId }: Props) {
       return;
     }
 
-    toast.success('Task deleted');
+    toast.success('Task moved to trash');
   };
 
-  const toggleGroup = (group: TaskGroup) => {
+  const toggleGroup = (group: TaskTableGroup) => {
     setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
   };
 
-  const groupedTasks = TASK_GROUPS.reduce((acc, group) => {
-    acc[group.value] = tasks.filter(t => t.status === group.value);
+  // Group tasks by their TABLE group (not status) using the helper function
+  const groupedTasks = TABLE_GROUPS.reduce((acc, group) => {
+    acc[group.value] = tasks.filter(t => getTaskTableGroup(t.status) === group.value);
     return acc;
-  }, {} as Record<TaskGroup, CrmTask[]>);
+  }, {} as Record<TaskTableGroup, CrmTask[]>);
 
   if (loading) {
     return <div className="h-64 bg-muted/50 animate-pulse rounded" />;
@@ -214,7 +216,7 @@ export default function ProjectTasksBoard({ projectId }: Props) {
 
   return (
     <div className="space-y-3">
-      {TASK_GROUPS.map(group => (
+      {TABLE_GROUPS.map(group => (
         <Collapsible 
           key={group.value} 
           open={expandedGroups[group.value]}

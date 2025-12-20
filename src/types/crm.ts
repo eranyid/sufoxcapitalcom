@@ -1,4 +1,4 @@
-export type TaskStatus = 'backlog' | 'in_progress' | 'done' | 'blocked';
+export type TaskStatus = 'backlog' | 'planned' | 'in_progress' | 'completed' | 'canceled';
 export type TaskUrgency = 'low' | 'medium' | 'high';
 export type BoardStatus = 'working_on_it' | 'done' | 'stuck';
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
@@ -70,11 +70,13 @@ export interface CrmFund {
   updated_at: string;
 }
 
+// Status options for task status dropdown
 export const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'backlog', label: 'Backlog' },
+  { value: 'planned', label: 'Planned' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'done', label: 'Done' },
-  { value: 'blocked', label: 'Blocked' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'canceled', label: 'Canceled' },
 ];
 
 export const URGENCY_OPTIONS: { value: TaskUrgency; label: string }[] = [
@@ -107,3 +109,21 @@ export const GROUP_OPTIONS: { value: GroupName; label: string }[] = [
   { value: 'potential', label: 'Potential' },
   { value: 'old_exits', label: 'Old Exits' },
 ];
+
+// Table groups for the Tasks board UI - exactly 3 tables
+export type TaskTableGroup = 'in_progress' | 'done' | 'canceled';
+
+// Helper to determine which table a task belongs to based on status
+export function getTaskTableGroup(status: TaskStatus): TaskTableGroup {
+  switch (status) {
+    case 'completed':
+      return 'done';
+    case 'canceled':
+      return 'canceled';
+    case 'backlog':
+    case 'planned':
+    case 'in_progress':
+    default:
+      return 'in_progress';
+  }
+}
