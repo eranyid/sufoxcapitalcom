@@ -66,35 +66,35 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
-        {/* Header */}
-        <div className="flex-shrink-0 border-b border-border p-4">
-          <div className="flex items-start justify-between gap-3">
+        {/* Header - Mobile optimized */}
+        <div className="flex-shrink-0 border-b border-border p-3 sm:p-4">
+          <div className="flex items-start justify-between gap-2 sm:gap-3">
             <div className="flex-1 min-w-0">
               <Input
                 defaultValue={task.task_name}
-                className="text-lg font-semibold border-transparent hover:border-border focus:border-primary bg-transparent px-0 h-auto"
+                className="text-base sm:text-lg font-semibold border-transparent hover:border-border focus:border-primary bg-transparent px-0 h-auto"
                 onBlur={e => {
                   if (e.target.value !== task.task_name) {
                     onUpdate(task.id, 'task_name', e.target.value, task.task_name);
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                 Task ID: {task.id.slice(0, 8)}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="flex-shrink-0">
+            <Button variant="ghost" size="icon" onClick={onClose} className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9">
               <X size={18} />
             </Button>
           </div>
 
-          {/* Status & Urgency */}
-          <div className="flex items-center gap-3 mt-4">
+          {/* Status & Urgency - Mobile optimized with wrapping */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
             <Select
               value={task.status}
               onValueChange={v => onUpdate(task.id, 'status', v, task.status)}
             >
-              <SelectTrigger className="h-8 w-auto gap-2 border-border bg-muted/30">
+              <SelectTrigger className="h-7 sm:h-8 w-auto gap-1.5 sm:gap-2 border-border bg-muted/30 text-xs sm:text-sm">
                 <TaskStatusBadge status={task.status} />
               </SelectTrigger>
               <SelectContent>
@@ -108,7 +108,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
               value={task.urgency}
               onValueChange={v => onUpdate(task.id, 'urgency', v, task.urgency)}
             >
-              <SelectTrigger className="h-8 w-auto gap-2 border-border bg-muted/30">
+              <SelectTrigger className="h-7 sm:h-8 w-auto gap-1.5 sm:gap-2 border-border bg-muted/30 text-xs sm:text-sm">
                 <TaskUrgencyBadge urgency={task.urgency} />
               </SelectTrigger>
               <SelectContent>
@@ -123,7 +123,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
             <Input
               type="date"
               defaultValue={task.due_date || ''}
-              className="h-8 w-auto text-xs border-border bg-muted/30"
+              className="h-7 sm:h-8 w-auto text-[10px] sm:text-xs border-border bg-muted/30"
               onBlur={e => {
                 if (e.target.value !== (task.due_date || '')) {
                   onUpdate(task.id, 'due_date', e.target.value || null, task.due_date);
@@ -133,29 +133,29 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Mobile optimized */}
         <Tabs defaultValue="updates" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="flex-shrink-0 w-full justify-start rounded-none border-b border-border bg-transparent h-auto p-0">
+          <TabsList className="flex-shrink-0 w-full justify-start rounded-none border-b border-border bg-transparent h-auto p-0 overflow-x-auto">
             <TabsTrigger 
               value="updates" 
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 gap-2"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-2.5 sm:py-3 gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0"
             >
               <MessageSquare size={14} />
-              Updates
+              <span className="hidden xs:inline">Updates</span>
             </TabsTrigger>
             <TabsTrigger 
               value="files" 
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 gap-2"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-2.5 sm:py-3 gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0"
             >
               <Paperclip size={14} />
-              Files
+              <span className="hidden xs:inline">Files</span>
             </TabsTrigger>
             <TabsTrigger 
               value="activity" 
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 gap-2"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-2.5 sm:py-3 gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0"
             >
               <Activity size={14} />
-              Activity Log
+              <span className="hidden xs:inline">Activity</span>
             </TabsTrigger>
           </TabsList>
 
