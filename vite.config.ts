@@ -19,7 +19,24 @@ export default defineConfig(({ mode }) => ({
       manifest: false, // We use the manual manifest.webmanifest
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        // Network-first for navigation with proper offline fallback
+        navigateFallback: "/offline.html",
+        navigateFallbackDenylist: [/^\/api/, /^\/auth/],
+        // Critical: This ensures offline.html is only served on actual network failure
+        // by using NetworkFirst for navigation in runtimeCaching
         runtimeCaching: [
+          // Navigation requests - Network First, only fallback on true failure
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages-cache",
+              networkTimeoutSeconds: 3,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",
@@ -64,8 +81,6 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
-        navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/auth/],
       },
       devOptions: {
         enabled: false,
