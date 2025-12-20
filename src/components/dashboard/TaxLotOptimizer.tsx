@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Calculator, TrendingUp, TrendingDown, DollarSign, Calendar, Info, Globe } from 'lucide-react';
+import { Calculator, TrendingUp, Globe, Info, Loader2, AlertCircle } from 'lucide-react';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useIsraelCPI } from '@/hooks/useIsraelCPI';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -8,63 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, parseISO, differenceInDays } from 'date-fns';
-
-// Israeli CPI data (base: 2020 = 100)
-// Source: Israel Central Bureau of Statistics
-const ISRAEL_CPI: Record<string, number> = {
-  '2015-01': 82.1, '2015-02': 82.0, '2015-03': 82.4, '2015-04': 82.6, '2015-05': 82.8, '2015-06': 83.0,
-  '2015-07': 82.6, '2015-08': 82.4, '2015-09': 82.4, '2015-10': 82.2, '2015-11': 82.1, '2015-12': 81.8,
-  '2016-01': 81.5, '2016-02': 81.6, '2016-03': 81.8, '2016-04': 81.8, '2016-05': 82.0, '2016-06': 82.2,
-  '2016-07': 82.0, '2016-08': 81.8, '2016-09': 82.0, '2016-10': 82.2, '2016-11': 82.2, '2016-12': 82.1,
-  '2017-01': 82.0, '2017-02': 82.2, '2017-03': 82.3, '2017-04': 82.4, '2017-05': 82.4, '2017-06': 82.5,
-  '2017-07': 82.3, '2017-08': 82.2, '2017-09': 82.4, '2017-10': 82.5, '2017-11': 82.5, '2017-12': 82.4,
-  '2018-01': 82.5, '2018-02': 82.7, '2018-03': 82.8, '2018-04': 82.9, '2018-05': 83.0, '2018-06': 83.2,
-  '2018-07': 83.3, '2018-08': 83.4, '2018-09': 83.6, '2018-10': 83.8, '2018-11': 83.8, '2018-12': 83.6,
-  '2019-01': 83.6, '2019-02': 83.8, '2019-03': 84.0, '2019-04': 84.2, '2019-05': 84.2, '2019-06': 84.4,
-  '2019-07': 84.3, '2019-08': 84.2, '2019-09': 84.4, '2019-10': 84.5, '2019-11': 84.4, '2019-12': 84.3,
-  '2020-01': 84.4, '2020-02': 84.5, '2020-03': 84.6, '2020-04': 84.4, '2020-05': 84.2, '2020-06': 84.4,
-  '2020-07': 84.3, '2020-08': 84.2, '2020-09': 84.4, '2020-10': 84.4, '2020-11': 84.3, '2020-12': 84.2,
-  '2021-01': 84.4, '2021-02': 84.6, '2021-03': 84.9, '2021-04': 85.2, '2021-05': 85.5, '2021-06': 85.8,
-  '2021-07': 86.0, '2021-08': 86.2, '2021-09': 86.5, '2021-10': 86.8, '2021-11': 87.0, '2021-12': 87.2,
-  '2022-01': 87.5, '2022-02': 87.8, '2022-03': 88.3, '2022-04': 88.8, '2022-05': 89.3, '2022-06': 89.8,
-  '2022-07': 90.0, '2022-08': 90.2, '2022-09': 90.5, '2022-10': 90.8, '2022-11': 91.0, '2022-12': 91.2,
-  '2023-01': 91.5, '2023-02': 91.8, '2023-03': 92.0, '2023-04': 92.3, '2023-05': 92.5, '2023-06': 92.8,
-  '2023-07': 93.0, '2023-08': 93.2, '2023-09': 93.5, '2023-10': 93.8, '2023-11': 94.0, '2023-12': 94.2,
-  '2024-01': 94.5, '2024-02': 94.8, '2024-03': 95.0, '2024-04': 95.3, '2024-05': 95.5, '2024-06': 95.8,
-  '2024-07': 96.0, '2024-08': 96.2, '2024-09': 96.5, '2024-10': 96.8, '2024-11': 97.0, '2024-12': 97.3,
-  '2025-01': 97.5, '2025-02': 97.8, '2025-03': 98.0, '2025-04': 98.2, '2025-05': 98.5, '2025-06': 98.8,
-  '2025-07': 99.0, '2025-08': 99.2, '2025-09': 99.5, '2025-10': 99.8, '2025-11': 100.0, '2025-12': 100.2,
-};
-
-// Get CPI for a given date (uses month's CPI)
-function getCPI(dateStr: string): number {
-  const monthKey = dateStr.substring(0, 7); // YYYY-MM
-  if (ISRAEL_CPI[monthKey]) return ISRAEL_CPI[monthKey];
-  
-  // Find closest available CPI
-  const sortedKeys = Object.keys(ISRAEL_CPI).sort();
-  const lastKey = sortedKeys[sortedKeys.length - 1];
-  const firstKey = sortedKeys[0];
-  
-  if (monthKey > lastKey) return ISRAEL_CPI[lastKey];
-  if (monthKey < firstKey) return ISRAEL_CPI[firstKey];
-  
-  // Interpolate between closest months
-  for (let i = 0; i < sortedKeys.length - 1; i++) {
-    if (sortedKeys[i] <= monthKey && sortedKeys[i + 1] > monthKey) {
-      return ISRAEL_CPI[sortedKeys[i]];
-    }
-  }
-  
-  return ISRAEL_CPI[lastKey];
-}
-
-// Get current CPI (latest available)
-function getCurrentCPI(): number {
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  return getCPI(currentMonth);
-}
 
 // Israeli tax rate on REAL capital gains
 const ISRAEL_CGT_RATE = 0.25; // 25% flat rate
@@ -75,14 +19,14 @@ interface TaxLot {
   assetName: string;
   purchaseDate: string;
   quantity: number;
-  nominalCostBasis: number; // Original purchase cost
-  realCostBasis: number; // CPI-adjusted cost basis
+  nominalCostBasis: number;
+  realCostBasis: number;
   currentPrice: number;
   currentValue: number;
-  nominalGain: number; // Sale Price - Nominal Cost
-  realGain: number; // Sale Price - Real Cost (taxable)
+  nominalGain: number;
+  realGain: number;
   realGainPercent: number;
-  inflationAdjustment: number; // The inflation component (not taxed)
+  inflationAdjustment: number;
   holdingPeriodDays: number;
   purchaseCPI: number;
   currentCPI: number;
@@ -102,13 +46,17 @@ interface OptimizationResult {
 
 export function TaxLotOptimizer() {
   const { transactions, valuations } = usePortfolio();
+  const { getCPI, getCurrentCPI, getBaseInfo, isLoading: cpiLoading, error: cpiError, source: cpiSource } = useIsraelCPI();
   const [selectedTicker, setSelectedTicker] = useState<string>('');
   const [sharesToSell, setSharesToSell] = useState<string>('');
 
-  const currentCPI = useMemo(() => getCurrentCPI(), []);
+  const currentCPI = useMemo(() => getCurrentCPI(), [getCurrentCPI]);
+  const baseInfo = useMemo(() => getBaseInfo(), [getBaseInfo]);
 
   // Build tax lots from transactions with Israeli CPI adjustment
   const { taxLots, tickerOptions } = useMemo(() => {
+    if (cpiLoading) return { taxLots: {}, tickerOptions: [] };
+
     const lotsByTicker: Record<string, TaxLot[]> = {};
     const today = new Date();
 
@@ -143,7 +91,6 @@ export function TaxLotOptimizer() {
             name: tx.assetName,
           });
         } else {
-          // Sell - reduce lots FIFO
           let remaining = tx.quantity;
           while (remaining > 0 && lots.length > 0) {
             if (lots[0].qty <= remaining) {
@@ -165,14 +112,14 @@ export function TaxLotOptimizer() {
           const nominalCostBasis = lot.qty * lot.price;
           const currentValue = lot.qty * currentPrice;
           
-          // Israeli Real Gain Calculation
+          // Israeli Real Gain Calculation using CBS CPI
           const purchaseCPI = getCPI(lot.date);
           const cpiRatio = currentCPI / purchaseCPI;
           const realCostBasis = nominalCostBasis * cpiRatio;
           
           const nominalGain = currentValue - nominalCostBasis;
           const realGain = currentValue - realCostBasis;
-          const inflationAdjustment = realCostBasis - nominalCostBasis; // The inflation component
+          const inflationAdjustment = realCostBasis - nominalCostBasis;
 
           return {
             id: `${ticker}-${idx}`,
@@ -198,14 +145,13 @@ export function TaxLotOptimizer() {
 
     const options = Object.keys(lotsByTicker).sort();
     return { taxLots: lotsByTicker, tickerOptions: options };
-  }, [transactions, valuations, currentCPI]);
+  }, [transactions, valuations, currentCPI, getCPI, cpiLoading]);
 
-  // Get lots for selected ticker
   const selectedLots = selectedTicker ? taxLots[selectedTicker] || [] : [];
   const totalShares = selectedLots.reduce((sum, lot) => sum + lot.quantity, 0);
   const requestedShares = parseFloat(sharesToSell) || 0;
 
-  // Calculate optimization strategies with Israeli tax rules
+  // Calculate optimization strategies
   const optimizations = useMemo((): OptimizationResult[] => {
     if (!selectedTicker || requestedShares <= 0 || selectedLots.length === 0) return [];
     if (requestedShares > totalShares) return [];
@@ -241,7 +187,6 @@ export function TaxLotOptimizer() {
         remaining -= sharesToUse;
       }
 
-      // Israeli tax: 25% on REAL gains only (if positive)
       const taxEstimate = Math.max(0, totalRealGain) * ISRAEL_CGT_RATE;
 
       return {
@@ -257,56 +202,20 @@ export function TaxLotOptimizer() {
       };
     };
 
-    // FIFO - First In, First Out
-    const fifoLots = [...selectedLots].sort((a, b) => 
-      a.purchaseDate.localeCompare(b.purchaseDate)
-    );
-    const fifo = calculateResult(
-      'FIFO',
-      'Sell oldest shares first (default method)',
-      fifoLots
-    );
+    const fifoLots = [...selectedLots].sort((a, b) => a.purchaseDate.localeCompare(b.purchaseDate));
+    const fifo = calculateResult('FIFO', 'Sell oldest shares first (default method)', fifoLots);
 
-    // LIFO - Last In, First Out
-    const lifoLots = [...selectedLots].sort((a, b) => 
-      b.purchaseDate.localeCompare(a.purchaseDate)
-    );
-    const lifo = calculateResult(
-      'LIFO',
-      'Sell newest shares first (higher inflation adjustment)',
-      lifoLots
-    );
+    const lifoLots = [...selectedLots].sort((a, b) => b.purchaseDate.localeCompare(a.purchaseDate));
+    const lifo = calculateResult('LIFO', 'Sell newest shares first (higher inflation adjustment)', lifoLots);
 
-    // Minimize Real Gains (sell highest real cost basis first)
-    const minGainLots = [...selectedLots].sort((a, b) => 
-      (b.realCostBasis / b.quantity) - (a.realCostBasis / a.quantity)
-    );
-    const minGain = calculateResult(
-      'Min Real Gain',
-      'Minimize taxable real gains (highest adjusted cost first)',
-      minGainLots
-    );
+    const minGainLots = [...selectedLots].sort((a, b) => (b.realCostBasis / b.quantity) - (a.realCostBasis / a.quantity));
+    const minGain = calculateResult('Min Real Gain', 'Minimize taxable real gains (highest adjusted cost first)', minGainLots);
 
-    // Maximize Real Gains (sell lowest real cost basis first)
-    const maxGainLots = [...selectedLots].sort((a, b) => 
-      (a.realCostBasis / a.quantity) - (b.realCostBasis / b.quantity)
-    );
-    const maxGain = calculateResult(
-      'Max Real Gain',
-      'Maximize gains for loss offset (lowest adjusted cost first)',
-      maxGainLots
-    );
+    const maxGainLots = [...selectedLots].sort((a, b) => (a.realCostBasis / a.quantity) - (b.realCostBasis / b.quantity));
+    const maxGain = calculateResult('Max Real Gain', 'Maximize gains for loss offset (lowest adjusted cost first)', maxGainLots);
 
-    // Tax Efficient (prioritize real losses, then smallest real gains)
-    const taxEfficientLots = [...selectedLots].sort((a, b) => {
-      // Sort by real gain (losses first, then smallest gains)
-      return a.realGain - b.realGain;
-    });
-    const taxEfficient = calculateResult(
-      'Tax Optimized',
-      'Minimize Israeli CGT (harvest losses + lowest real gains)',
-      taxEfficientLots
-    );
+    const taxEfficientLots = [...selectedLots].sort((a, b) => a.realGain - b.realGain);
+    const taxEfficient = calculateResult('Tax Optimized', 'Minimize Israeli CGT (harvest losses + lowest real gains)', taxEfficientLots);
 
     return [taxEfficient, minGain, fifo, lifo, maxGain];
   }, [selectedTicker, requestedShares, selectedLots, totalShares]);
@@ -320,6 +229,17 @@ export function TaxLotOptimizer() {
   };
 
   const formatCPI = (cpi: number) => cpi.toFixed(1);
+
+  if (cpiLoading) {
+    return (
+      <Card className="mt-4">
+        <CardContent className="py-8 flex items-center justify-center gap-2 text-muted-foreground">
+          <Loader2 className="animate-spin" size={18} />
+          <span>Loading CPI data from Israeli CBS...</span>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mt-4">
@@ -393,12 +313,30 @@ export function TaxLotOptimizer() {
               </div>
             </div>
 
-            {/* Current CPI Info */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-md">
-              <TrendingUp size={14} className="text-primary" />
-              <span>Current CPI Index: <strong className="text-foreground">{formatCPI(currentCPI)}</strong></span>
-              <span className="text-muted-foreground/60">|</span>
-              <span>Base Year: 2020</span>
+            {/* CPI Info */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs bg-muted/30 px-3 py-2 rounded-md">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={14} className="text-primary" />
+                <span>Current CPI: <strong className="text-foreground">{formatCPI(currentCPI)}</strong></span>
+              </div>
+              <span className="hidden sm:inline text-muted-foreground/60">|</span>
+              <span className="text-muted-foreground">
+                Data: {baseInfo.firstDate} → {baseInfo.lastDate} ({baseInfo.dataPoints} points)
+              </span>
+              <span className="hidden sm:inline text-muted-foreground/60">|</span>
+              <span className={`${cpiError ? 'text-amber-400' : 'text-emerald-400'}`}>
+                Source: {cpiSource}
+              </span>
+              {cpiError && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <AlertCircle size={14} className="text-amber-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>{cpiError}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
 
             {/* Tax Lots Table */}
@@ -553,7 +491,7 @@ export function TaxLotOptimizer() {
                 <div className="bg-muted/30 rounded-lg p-3 space-y-1">
                   <p className="text-xs text-muted-foreground">
                     <strong className="text-foreground">Israeli CGT Rules:</strong> Tax is calculated at 25% on real gains only. 
-                    The inflation adjustment (based on CPI) reduces your taxable gain.
+                    The inflation adjustment (based on CBS CPI) reduces your taxable gain.
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <strong>Real Gain</strong> = Sale Price − (Purchase Price × Current CPI ÷ Purchase CPI)
