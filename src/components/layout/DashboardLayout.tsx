@@ -41,8 +41,8 @@ export function DashboardLayout() {
 
   const handleNotificationClick = (notification: Notification) => {
     if (notification.task_id) {
-      // Navigate to CRM with task context
-      navigate('/crm', { state: { openTaskId: notification.task_id } });
+      // Navigate to Back Office with task context
+      navigate('/backoffice', { state: { openTaskId: notification.task_id } });
       setNotificationsOpen(false);
     }
   };
@@ -123,7 +123,7 @@ export function DashboardLayout() {
       {/* Global Command Bar */}
       <CommandBar 
         onOpenActivityLog={() => {
-          navigate('/crm', { state: { openActivityLog: true } });
+          navigate('/backoffice', { state: { openActivityLog: true } });
         }} 
       />
 

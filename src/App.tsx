@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { PortfolioProvider } from "./context/PortfolioContext";
 import { AuthProvider } from "./hooks/useAuth";
@@ -138,6 +138,9 @@ const App = () => (
                       <Help />
                     </Suspense>
                   } />
+                  {/* Legacy CRM redirects to Back Office */}
+                  <Route path="/crm" element={<Navigate to="/backoffice" replace />} />
+                  <Route path="/crm/*" element={<Navigate to="/backoffice" replace />} />
                 </Route>
                 {/* Public pages - accessible without auth */}
                 <Route path="/disclaimer" element={
