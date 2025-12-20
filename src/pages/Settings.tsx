@@ -723,7 +723,21 @@ export default function Settings() {
             Legal information and disclosures
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <a 
+            href="/terms" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">Terms of Service</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                User agreement and service terms
+              </p>
+            </div>
+            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </a>
           <a 
             href="/disclaimer" 
             target="_blank"
