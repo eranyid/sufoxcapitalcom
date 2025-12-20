@@ -469,6 +469,53 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          task_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          task_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          task_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "crm_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       passkey_credentials: {
         Row: {
           counter: number
@@ -511,6 +558,10 @@ export type Database = {
           benchmark_returns: Json | null
           created_at: string
           id: string
+          notify_on_assignment: boolean | null
+          notify_on_new_update: boolean | null
+          notify_on_status_change: boolean | null
+          notify_on_urgency_change: boolean | null
           risk_free_rate: number | null
           rss_feed_url: string | null
           updated_at: string
@@ -521,6 +572,10 @@ export type Database = {
           benchmark_returns?: Json | null
           created_at?: string
           id?: string
+          notify_on_assignment?: boolean | null
+          notify_on_new_update?: boolean | null
+          notify_on_status_change?: boolean | null
+          notify_on_urgency_change?: boolean | null
           risk_free_rate?: number | null
           rss_feed_url?: string | null
           updated_at?: string
@@ -531,6 +586,10 @@ export type Database = {
           benchmark_returns?: Json | null
           created_at?: string
           id?: string
+          notify_on_assignment?: boolean | null
+          notify_on_new_update?: boolean | null
+          notify_on_status_change?: boolean | null
+          notify_on_urgency_change?: boolean | null
           risk_free_rate?: number | null
           rss_feed_url?: string | null
           updated_at?: string

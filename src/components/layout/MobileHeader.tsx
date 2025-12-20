@@ -2,6 +2,7 @@ import { Database } from 'lucide-react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useState, useEffect } from 'react';
 
 interface MobileHeaderProps {
@@ -10,13 +11,17 @@ interface MobileHeaderProps {
   warningCount: number;
   onWatchdogClick: () => void;
   isOnline: boolean;
+  unreadNotifications: number;
+  onNotificationsClick: () => void;
 }
 export function MobileHeader({
   status,
   errorCount,
   warningCount,
   onWatchdogClick,
-  isOnline
+  isOnline,
+  unreadNotifications,
+  onNotificationsClick
 }: MobileHeaderProps) {
   const {
     sampleDataMode
@@ -51,6 +56,10 @@ export function MobileHeader({
           {/* Right Actions */}
           <div className="flex items-center gap-2">
             <OnlineStatusIndicator isOnline={isOnline} compact />
+            <NotificationBell 
+              unreadCount={unreadNotifications} 
+              onClick={onNotificationsClick} 
+            />
             {sampleDataMode && <span className="flex items-center gap-1 px-2 py-1 bg-primary/20 border border-primary/50 text-primary text-[9px] font-semibold rounded animate-pulse">
                 <Database className="h-3 w-3" />
                 SAMPLE
