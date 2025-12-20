@@ -51,7 +51,7 @@ export function TaskUrgencyBadge({ urgency, className, showIcon = true, showChec
       config.style,
       className
     )}>
-      {showIcon && <Icon size={18} className={config.iconStyle} />}
+      {showIcon && <Icon size={22} className={config.iconStyle} />}
       {showCheck && <Check size={14} className="ml-auto text-primary" />}
     </span>
   );
