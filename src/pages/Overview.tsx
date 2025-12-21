@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
-
+import { NavEquityCurve } from '@/components/dashboard/NavEquityCurve';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
 import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
 import { CashManagement } from '@/components/dashboard/CashManagement';
@@ -61,7 +61,7 @@ function getPercentile(sortedValues: number[], percentile: number): number {
 }
 
 export default function Overview() {
-  const { transactions, valuations, performanceMetrics, riskMetrics, loading } = usePortfolio();
+  const { transactions, valuations, performanceMetrics, riskMetrics, cashBalances, settings, loading } = usePortfolio();
   const { user } = useAuth();
   const [rssFeedUrl, setRssFeedUrl] = useState<string | null>(null);
 
@@ -280,6 +280,16 @@ export default function Overview() {
           trend={hasData && performanceMetrics.irr >= 0 ? 'up' : 'down'}
         />
       </div>
+
+      {/* NAV Equity Curve - Above Performance Chart */}
+      {transactions.length > 0 && valuations.length > 0 && (
+        <NavEquityCurve 
+          transactions={transactions} 
+          valuations={valuations} 
+          cashBalances={cashBalances}
+          baseCurrency={settings.baseCurrency === 'ILS' ? 'ILS' : 'USD'}
+        />
+      )}
 
       {/* Performance Chart - Above Cash */}
       {hasData && (
