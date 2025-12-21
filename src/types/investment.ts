@@ -93,6 +93,7 @@ export interface ContributionToReturn {
   name: string;
   contribution: number;
   weight: number;
+  plPercent: number;
 }
 
 // Factor Model Types - defined here to avoid circular dependency

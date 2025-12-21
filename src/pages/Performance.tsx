@@ -11,7 +11,7 @@ import { TrendingUp, Target, Award, Percent } from 'lucide-react';
 export default function Performance() {
   const { transactions, valuations, performanceMetrics, settings } = usePortfolio();
   const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
-  const contributions = calculateContributions(transactions, monthlyReturns);
+  const contributions = calculateContributions(transactions, monthlyReturns, valuations);
 
   const formatPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
@@ -125,6 +125,7 @@ export default function Performance() {
                     <TableHead>Name</TableHead>
                     <TableHead className="text-right">Weight</TableHead>
                     <TableHead className="text-right">Contribution</TableHead>
+                    <TableHead className="text-right">P/L%</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -135,6 +136,9 @@ export default function Performance() {
                       <TableCell className="text-right">{c.weight.toFixed(1)}%</TableCell>
                       <TableCell className={`text-right ${c.contribution >= 0 ? 'positive' : 'negative'}`}>
                         {formatCurrency(c.contribution)}
+                      </TableCell>
+                      <TableCell className={`text-right ${c.plPercent >= 0 ? 'positive' : 'negative'}`}>
+                        {formatPercent(c.plPercent)}
                       </TableCell>
                     </TableRow>
                   ))}

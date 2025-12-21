@@ -314,7 +314,8 @@ function formatAllocationName(key: string): string {
 // Calculate contribution to returns
 export function calculateContributions(
   transactions: Transaction[],
-  monthlyReturns: { month: string; return: number; value: number }[]
+  monthlyReturns: { month: string; return: number; value: number }[],
+  valuations?: MonthlyValuation[]
 ): ContributionToReturn[] {
   if (monthlyReturns.length < 2) return [];
   
@@ -322,6 +323,7 @@ export function calculateContributions(
   const contributions: ContributionToReturn[] = [];
   
   const totalValue = monthlyReturns[monthlyReturns.length - 1]?.value || 0;
+  const latestVals = valuations ? getLatestValuations(valuations) : {};
   
   for (const [ticker, pos] of Object.entries(positions)) {
     const tx = transactions.find(t => t.ticker === ticker);
@@ -332,11 +334,20 @@ export function calculateContributions(
     // Simplified contribution calculation
     const contribution = pos.realizedPL + (pos.quantity > 0 ? pos.quantity * pos.avgCost * 0.1 : 0);
     
+    // Calculate P/L% from cost basis
+    const val = latestVals[ticker];
+    let plPercent = 0;
+    if (val && pos.avgCost > 0) {
+      const currentPrice = val.pricePerUnit * (val.fxRate || 1);
+      plPercent = ((currentPrice - pos.avgCost) / pos.avgCost) * 100;
+    }
+    
     contributions.push({
       ticker,
       name: tx.assetName,
       contribution,
-      weight: weight * 100
+      weight: weight * 100,
+      plPercent
     });
   }
   
