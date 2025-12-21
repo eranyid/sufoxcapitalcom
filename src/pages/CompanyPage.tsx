@@ -598,9 +598,17 @@ export default function CompanyPage() {
           {/* P&L Summary */}
           {positionMetrics && (
             <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                {positionMetrics.isClosedPosition ? 'Closed Position P&L' : 'Position P&L'}
-              </h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {positionMetrics.isClosedPosition ? 'Closed Position P&L' : 'Position P&L'}
+                </h4>
+                {!positionMetrics.isClosedPosition && currentValue !== null && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Current Value</p>
+                    <p className="text-lg font-semibold font-mono text-primary">{formatCurrency(currentValue)}</p>
+                  </div>
+                )}
+              </div>
               
               {/* Position details - only show for open positions */}
               {!positionMetrics.isClosedPosition && (
