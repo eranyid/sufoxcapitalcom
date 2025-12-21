@@ -77,10 +77,12 @@ interface Task {
   due_date: string | null;
 }
 
-const CONFIDENCE_OPTIONS = [
-  { value: 'high', label: 'High', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-  { value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  { value: 'low', label: 'Low', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+const CONVICTION_OPTIONS = [
+  { value: 'speculative', label: 'Speculative', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30' },
+  { value: 'low', label: 'Low Conviction', color: 'bg-amber-400/20 text-amber-300 border-amber-400/30' },
+  { value: 'core', label: 'Core', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  { value: 'high', label: 'High Conviction', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  { value: 'top', label: 'Top Conviction', color: 'bg-green-400/20 text-green-300 border-green-400/30' },
 ];
 
 const STATUS_OPTIONS = [
@@ -369,9 +371,9 @@ export default function CompanyPage() {
     }).format(value);
   };
 
-  const getConfidenceColor = (level: string | null) => {
-    const opt = CONFIDENCE_OPTIONS.find(o => o.value === level);
-    return opt?.color || 'bg-muted text-muted-foreground';
+  const getConvictionColor = (level: string | null) => {
+    const opt = CONVICTION_OPTIONS.find(o => o.value === level);
+    return opt?.color || 'bg-orange-500/20 text-orange-400 border-orange-500/30'; // Default to Core color
   };
 
   const startEdit = (field: string, value: string | null) => {
@@ -467,20 +469,20 @@ export default function CompanyPage() {
               )}
             </div>
 
-            {/* Confidence */}
+            {/* Conviction */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider">Confidence</label>
+              <label className="text-xs text-muted-foreground uppercase tracking-wider">Conviction</label>
               <Select
-                value={company.confidence_level || 'medium'}
+                value={company.confidence_level || 'core'}
                 onValueChange={v => handleUpdate('confidence_level', v)}
               >
                 <SelectTrigger>
-                  <Badge variant="outline" className={getConfidenceColor(company.confidence_level)}>
-                    {CONFIDENCE_OPTIONS.find(o => o.value === company.confidence_level)?.label || 'Medium'}
+                  <Badge variant="outline" className={getConvictionColor(company.confidence_level)}>
+                    {CONVICTION_OPTIONS.find(o => o.value === company.confidence_level)?.label || 'Core'}
                   </Badge>
                 </SelectTrigger>
                 <SelectContent>
-                  {CONFIDENCE_OPTIONS.map(opt => (
+                  {CONVICTION_OPTIONS.map(opt => (
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
