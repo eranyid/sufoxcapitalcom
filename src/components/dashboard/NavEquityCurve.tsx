@@ -248,25 +248,24 @@ export function NavEquityCurve({
 
       {/* Chart Section */}
       <div className="p-4 pt-3">
-        <div className="h-[220px]">
+        <div className="h-[220px]" style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.15))' }}>
           <ResponsiveContainer width="100%" height="100%">
             {showSplit ? (
               <LineChart data={navSeries} margin={{ top: 10, right: 10, left: -5, bottom: 5 }}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
-                  stroke="hsl(var(--border))" 
-                  opacity={0.08}
+                  stroke="rgba(255,255,255,0.04)" 
                   vertical={false}
                 />
                 <XAxis 
                   dataKey="month" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+                  tick={{ fill: '#9CA3AF', fontSize: 9 }}
                   tickFormatter={(v) => v.slice(2, 7).replace('-', '/')}
-                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.2 }}
-                  tickLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.2 }}
+                  axisLine={false}
+                  tickLine={false}
                 />
                 <YAxis 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+                  tick={{ fill: '#9CA3AF', fontSize: 9 }}
                   tickFormatter={formatCurrency}
                   axisLine={false}
                   tickLine={false}
@@ -274,18 +273,23 @@ export function NavEquityCurve({
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'hsl(var(--popover))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '4px',
+                    backgroundColor: '#0F0F0F', 
+                    border: '1px solid rgba(245,158,11,0.35)',
+                    borderRadius: '2px',
                     fontSize: '11px',
-                    fontFamily: 'JetBrains Mono, monospace',
+                    fontFamily: 'JetBrains Mono, ui-monospace, monospace',
                     padding: '8px 12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                   }}
-                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: '4px' }}
-                  formatter={(value: number, name: string) => [formatFullCurrency(value), name]}
+                  labelStyle={{ color: '#9CA3AF', fontWeight: 400, marginBottom: '4px', fontSize: '9px' }}
+                  formatter={(value: number, name: string) => [
+                    <span key={name} style={{ color: '#F2F2F0', fontWeight: 600, fontSize: '12px' }}>
+                      {formatFullCurrency(value)}
+                    </span>, 
+                    name
+                  ]}
                   labelFormatter={(label) => `${label}`}
-                  cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeOpacity: 0.2, strokeDasharray: '4 4' }}
+                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeDasharray: '4 4' }}
                 />
                 <Legend 
                   wrapperStyle={{ fontSize: '9px', paddingTop: '8px' }}
@@ -294,10 +298,10 @@ export function NavEquityCurve({
                 <Line 
                   type="monotone" 
                   dataKey="nav" 
-                  stroke="#F5F5F0"
+                  stroke="#F2F2F0"
                   strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 5, fill: '#F5F5F0', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: '#F2F2F0', stroke: '#F59E0B', strokeWidth: 2 }}
                   name="Total NAV"
                 />
                 <Line 
@@ -306,7 +310,7 @@ export function NavEquityCurve({
                   stroke="hsl(var(--chart-blue))"
                   strokeWidth={1.5}
                   dot={false}
-                  activeDot={{ r: 3, fill: 'hsl(var(--chart-blue))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  activeDot={{ r: 3, fill: 'hsl(var(--chart-blue))', stroke: '#F59E0B', strokeWidth: 2 }}
                   name="Holdings"
                 />
                 <Line 
@@ -316,41 +320,40 @@ export function NavEquityCurve({
                   strokeWidth={1.5}
                   strokeDasharray="4 2"
                   dot={false}
-                  activeDot={{ r: 3, fill: 'hsl(var(--chart-gold))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  activeDot={{ r: 3, fill: 'hsl(var(--chart-gold))', stroke: '#F59E0B', strokeWidth: 2 }}
                   name="Cash"
                 />
               </LineChart>
             ) : (
               <AreaChart data={navSeries} margin={{ top: 10, right: 10, left: -5, bottom: 5 }}>
                 <defs>
-                  {/* Ivory/off-white gradient for institutional look */}
+                  {/* Warm ivory gradient - primary institutional look */}
                   <linearGradient id="navGradientIvory" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#F5F5F0" stopOpacity={0.18}/>
-                    <stop offset="40%" stopColor="#F5F5F0" stopOpacity={0.08}/>
-                    <stop offset="100%" stopColor="#F5F5F0" stopOpacity={0}/>
+                    <stop offset="0%" stopColor="#F2F2F0" stopOpacity={0.18}/>
+                    <stop offset="50%" stopColor="#F2F2F0" stopOpacity={0.06}/>
+                    <stop offset="100%" stopColor="#F2F2F0" stopOpacity={0}/>
                   </linearGradient>
-                  {/* Subtle green tint when positive trend */}
+                  {/* Muted green gradient for positive performance */}
                   <linearGradient id="navGradientPositive" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#A8C6A0" stopOpacity={0.15}/>
-                    <stop offset="40%" stopColor="#A8C6A0" stopOpacity={0.06}/>
-                    <stop offset="100%" stopColor="#A8C6A0" stopOpacity={0}/>
+                    <stop offset="0%" stopColor="rgba(46, 204, 113, 0.18)"/>
+                    <stop offset="50%" stopColor="rgba(46, 204, 113, 0.06)"/>
+                    <stop offset="100%" stopColor="rgba(46, 204, 113, 0.02)"/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
-                  stroke="hsl(var(--border))" 
-                  opacity={0.06}
+                  stroke="rgba(255,255,255,0.04)" 
                   vertical={false}
                 />
                 <XAxis 
                   dataKey="month" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+                  tick={{ fill: '#9CA3AF', fontSize: 9 }}
                   tickFormatter={(v) => v.slice(2, 7).replace('-', '/')}
-                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.2 }}
-                  tickLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.2 }}
+                  axisLine={false}
+                  tickLine={false}
                 />
                 <YAxis 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
+                  tick={{ fill: '#9CA3AF', fontSize: 9 }}
                   tickFormatter={formatCurrency}
                   axisLine={false}
                   tickLine={false}
@@ -358,29 +361,34 @@ export function NavEquityCurve({
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'hsl(var(--popover))', 
-                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: '#0F0F0F', 
+                    border: '1px solid rgba(245,158,11,0.35)',
                     borderRadius: '2px',
                     fontSize: '11px',
-                    fontFamily: 'JetBrains Mono, monospace',
+                    fontFamily: 'JetBrains Mono, ui-monospace, monospace',
                     padding: '10px 14px',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.6)'
                   }}
-                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: '2px', fontSize: '10px' }}
-                  formatter={(value: number) => [formatFullCurrency(value), '']}
+                  labelStyle={{ color: '#9CA3AF', fontWeight: 400, marginBottom: '2px', fontSize: '9px' }}
+                  formatter={(value: number) => [
+                    <span key="nav" style={{ color: '#F2F2F0', fontWeight: 600, fontSize: '13px' }}>
+                      {formatFullCurrency(value)}
+                    </span>, 
+                    ''
+                  ]}
                   labelFormatter={(label) => `${label}`}
-                  cursor={{ stroke: '#F5F5F0', strokeOpacity: 0.15 }}
+                  cursor={{ stroke: 'rgba(255,255,255,0.08)' }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="nav" 
-                  stroke={isOverallPositive ? "#C8D4C0" : "#F5F5F0"}
-                  strokeWidth={2}
+                  stroke="#F2F2F0"
+                  strokeWidth={2.5}
                   fill={isOverallPositive ? "url(#navGradientPositive)" : "url(#navGradientIvory)"}
                   activeDot={{ 
                     r: 5, 
-                    fill: isOverallPositive ? "#C8D4C0" : "#F5F5F0", 
-                    stroke: 'hsl(var(--background))', 
+                    fill: '#F2F2F0', 
+                    stroke: '#F59E0B', 
                     strokeWidth: 2 
                   }}
                   name="nav"
