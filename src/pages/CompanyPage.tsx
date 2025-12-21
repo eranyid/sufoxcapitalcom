@@ -476,8 +476,8 @@ export default function CompanyPage() {
                 value={company.confidence_level || 'core'}
                 onValueChange={v => handleUpdate('confidence_level', v)}
               >
-                <SelectTrigger>
-                  <Badge variant="outline" className={getConvictionColor(company.confidence_level)}>
+                <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 w-auto">
+                  <Badge variant="outline" className={`${getConvictionColor(company.confidence_level)} cursor-pointer hover:brightness-110 transition-all`}>
                     {CONVICTION_OPTIONS.find(o => o.value === company.confidence_level)?.label || 'Core'}
                   </Badge>
                 </SelectTrigger>
