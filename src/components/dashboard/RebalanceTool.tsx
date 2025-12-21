@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Scale, TrendingUp, AlertCircle, Plus, Trash2, RefreshCw, FileText, Loader2, Equal, Calculator, Globe, Info, ArrowRight } from 'lucide-react';
+import { Scale, TrendingUp, AlertCircle, Plus, Trash2, RefreshCw, FileText, Loader2, Equal, Calculator, Globe, Info, ArrowRight, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { useIsraelCPI } from '@/hooks/useIsraelCPI';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { differenceInDays, parseISO, format } from 'date-fns';
+import { generateRebalanceReport } from '@/lib/rebalanceReportPdf';
 
 // Israeli tax rate on REAL capital gains
 const ISRAEL_CGT_RATE = 0.25; // 25% flat rate
@@ -1190,6 +1191,44 @@ export function RebalanceTool() {
                     Estimated Tracking Error Impact: <span className="text-primary font-semibold">{analysis.trackingErrorImpact.toFixed(3)}%</span>
                   </span>
                 </div>
+
+                {/* Export PDF Button */}
+                <Button
+                  onClick={() => {
+                    try {
+                      generateRebalanceReport({
+                        analysis,
+                        currentHoldings,
+                        totalPortfolioValue,
+                        minTradeSize,
+                        cpiInfo: {
+                          currentCPI,
+                          source: cpiSource,
+                          firstDate: baseInfo.firstDate,
+                          lastDate: baseInfo.lastDate,
+                          error: cpiError || undefined,
+                        },
+                        policyApplied,
+                        equalWeightApplied,
+                      });
+                      toast({
+                        title: 'PDF Report Generated',
+                        description: 'Rebalance execution report downloaded successfully.',
+                      });
+                    } catch (err) {
+                      console.error('PDF generation error:', err);
+                      toast({
+                        title: 'PDF Generation Failed',
+                        description: 'There was an error generating the report.',
+                        variant: 'destructive',
+                      });
+                    }
+                  }}
+                  className="w-full h-9 text-xs bg-accent hover:bg-accent/80"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export PDF Execution Report
+                </Button>
               </div>
             )}
           </CardContent>
