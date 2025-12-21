@@ -11,8 +11,21 @@ export interface CompanyFile {
   file_path: string;
   file_size: number | null;
   content_type: string | null;
+  category: string | null;
   created_at: string;
 }
+
+export const FILE_CATEGORIES = [
+  'Earnings',
+  'Reports',
+  'Presentations',
+  'Models',
+  'Notes',
+  'Contracts',
+  'Other',
+] as const;
+
+export type FileCategory = typeof FILE_CATEGORIES[number];
 
 export function useCompanyFiles(companyId: string | null) {
   const { user } = useAuth();
@@ -79,7 +92,7 @@ export function useCompanyFiles(companyId: string | null) {
     };
   }, [companyId]);
 
-  const uploadFile = useCallback(async (file: File) => {
+  const uploadFile = useCallback(async (file: File, category: string = 'Other') => {
     if (!user || !companyId) return null;
 
     setUploading(true);
@@ -105,6 +118,7 @@ export function useCompanyFiles(companyId: string | null) {
         file_path: filePath,
         file_size: file.size,
         content_type: file.type,
+        category,
       })
       .select()
       .single();
