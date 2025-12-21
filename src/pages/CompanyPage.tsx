@@ -439,67 +439,31 @@ export default function CompanyPage() {
       {/* Executive Summary */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <TrendingUp size={18} className="text-primary" />
-            Executive Summary
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TrendingUp size={18} className="text-primary" />
+              Executive Summary
+            </CardTitle>
+            <Select
+              value={company.confidence_level || 'core'}
+              onValueChange={v => handleUpdate('confidence_level', v)}
+            >
+              <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 w-auto">
+                <Badge variant="outline" className={`${getConvictionColor(company.confidence_level)} cursor-pointer hover:brightness-110 transition-all`}>
+                  {CONVICTION_OPTIONS.find(o => o.value === company.confidence_level)?.label || 'Core'}
+                </Badge>
+              </SelectTrigger>
+              <SelectContent>
+                {CONVICTION_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Thesis Summary */}
-            <div className="md:col-span-2 space-y-1">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider">Thesis Summary</label>
-              {editMode === 'thesis_summary' ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={editValue}
-                    onChange={e => setEditValue(e.target.value)}
-                    autoFocus
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => saveEdit('thesis_summary')}><Save size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
-                </div>
-              ) : (
-                <p 
-                  className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2"
-                  onClick={() => startEdit('thesis_summary', company.thesis_summary)}
-                >
-                  {company.thesis_summary || <span className="text-muted-foreground italic">Click to add...</span>}
-                </p>
-              )}
-            </div>
-
-            {/* Conviction */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider">Conviction</label>
-              <Select
-                value={company.confidence_level || 'core'}
-                onValueChange={v => handleUpdate('confidence_level', v)}
-              >
-                <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 w-auto">
-                  <Badge variant="outline" className={`${getConvictionColor(company.confidence_level)} cursor-pointer hover:brightness-110 transition-all`}>
-                    {CONVICTION_OPTIONS.find(o => o.value === company.confidence_level)?.label || 'Core'}
-                  </Badge>
-                </SelectTrigger>
-                <SelectContent>
-                  {CONVICTION_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Value */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider">Current Value</label>
-              <p className="text-lg font-semibold font-mono">
-                {currentValue !== null ? formatCurrency(currentValue) : '—'}
-              </p>
-            </div>
-          </div>
-
-          {/* Snapshot Row */}
-          <div className="mt-4 p-3 bg-muted/20 rounded-lg border border-border/50">
+          {/* Snapshot */}
+          <div className="p-3 bg-muted/20 rounded-lg border border-border/50">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Snapshot</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Market Cap */}
