@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
+  FlaskConical,
   Contact,
   Settings,
   MoreHorizontal,
@@ -26,10 +27,11 @@ const primaryNavItems = [
   { path: '/', icon: LayoutDashboard, label: 'Overview' },
   { path: '/performance', icon: TrendingUp, label: 'Performance' },
   { path: '/risk', icon: Shield, label: 'Risk' },
-  { path: '/backoffice', icon: Contact, label: 'Back Office' },
+  { path: '/research', icon: FlaskConical, label: 'Research' },
 ];
 
 const moreNavItems = [
+  { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/scenarios', icon: Layers, label: 'Scenarios' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },

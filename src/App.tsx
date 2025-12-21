@@ -18,7 +18,7 @@ const Performance = lazy(() => import("./pages/Performance"));
 const Risk = lazy(() => import("./pages/Risk"));
 const ScenarioLab = lazy(() => import("./pages/ScenarioLab"));
 const XRay = lazy(() => import("./pages/XRay"));
-
+const Research = lazy(() => import("./pages/Research"));
 const Transactions = lazy(() => import("./pages/Transactions"));
 const Valuations = lazy(() => import("./pages/Valuations"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -83,6 +83,11 @@ const App = () => (
                   <Route path="/xray" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <XRay />
+                    </Suspense>
+                  } />
+                  <Route path="/research" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Research />
                     </Suspense>
                   } />
                   <Route path="/transactions" element={
