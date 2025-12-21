@@ -52,7 +52,9 @@ export interface PortfolioSettings {
 }
 
 export interface PerformanceMetrics {
-  totalValue: number;
+  totalValue: number;        // NAV = Holdings + Cash (unified metric)
+  holdingsValue: number;     // Market value of holdings only (secondary metric)
+  cashValue: number;         // Total cash balance (for reference)
   totalCost: number;
   realizedPL: number;
   unrealizedPL: number;
