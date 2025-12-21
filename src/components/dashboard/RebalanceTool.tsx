@@ -493,12 +493,19 @@ export function RebalanceTool() {
       const lotValue = lot.currentValue;
       const valueTaken = Math.min(remainingValue, lotValue);
       const proportion = valueTaken / lotValue;
-      const sharesSold = lot.quantity * proportion;
+      // Round to whole shares - no fractional shares allowed
+      const rawSharesSold = lot.quantity * proportion;
+      const sharesSold = Math.round(rawSharesSold);
       
-      const proceeds = valueTaken;
-      const nominalGain = proportion * lot.nominalGain;
-      const realGain = proportion * lot.realGain;
-      const inflationAdj = proportion * lot.inflationAdjustment;
+      // Skip if rounded to 0
+      if (sharesSold === 0) continue;
+      
+      // Recalculate based on actual whole shares sold
+      const actualProportion = sharesSold / lot.quantity;
+      const actualProceeds = sharesSold * lot.currentPrice;
+      const nominalGain = actualProportion * lot.nominalGain;
+      const realGain = actualProportion * lot.realGain;
+      const inflationAdj = actualProportion * lot.inflationAdjustment;
       const taxImpact = Math.max(0, realGain) * ISRAEL_CGT_RATE;
 
       selectedLots.push({
@@ -510,12 +517,12 @@ export function RebalanceTool() {
         currentCPI: lot.currentCPI,
       });
 
-      totalProceeds += proceeds;
+      totalProceeds += actualProceeds;
       totalNominalGain += nominalGain;
       totalRealGain += realGain;
       totalInflationAdj += inflationAdj;
       totalSharesSold += sharesSold;
-      remainingValue -= valueTaken;
+      remainingValue -= actualProceeds;
     }
 
     const taxEstimate = Math.max(0, totalRealGain) * ISRAEL_CGT_RATE;
@@ -557,14 +564,19 @@ export function RebalanceTool() {
       
       if (Math.abs(weightDiff) >= minTradeSize) {
         const action = weightDiff > 0 ? 'BUY' : 'SELL';
-        const tradeValue = Math.abs(valueDiff);
-        const tradeQty = h.currentPrice > 0 ? tradeValue / h.currentPrice : 0;
+        const rawQty = h.currentPrice > 0 ? Math.abs(valueDiff) / h.currentPrice : 0;
+        // Round to whole shares - no fractional shares allowed
+        const tradeQty = Math.round(rawQty);
+        const tradeValue = tradeQty * h.currentPrice;
+
+        // Skip if rounded quantity is 0
+        if (tradeQty === 0) return;
 
         trades.push({
           ticker: h.ticker,
           assetName: h.assetName,
           action,
-          quantity: Math.round(tradeQty * 1000) / 1000,
+          quantity: tradeQty,
           value: tradeValue,
           weightChange: weightDiff
         });
