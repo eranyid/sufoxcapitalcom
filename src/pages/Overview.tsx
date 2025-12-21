@@ -215,7 +215,6 @@ export default function Overview() {
           icon={DollarSign}
           trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
           trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
-          subtitle="Includes cash + all holdings"
         />
       </div>
 
