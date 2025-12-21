@@ -339,12 +339,6 @@ export function NavEquityCurve({
                     <stop offset="50%" stopColor="rgba(46, 204, 113, 0.06)"/>
                     <stop offset="100%" stopColor="rgba(46, 204, 113, 0.02)"/>
                   </linearGradient>
-                  {/* Deep red/burgundy gradient for drawdown/negative performance */}
-                  <linearGradient id="navGradientNegative" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="rgba(192, 57, 43, 0.15)"/>
-                    <stop offset="50%" stopColor="rgba(192, 57, 43, 0.06)"/>
-                    <stop offset="100%" stopColor="rgba(192, 57, 43, 0.02)"/>
-                  </linearGradient>
                 </defs>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
@@ -390,7 +384,7 @@ export function NavEquityCurve({
                   dataKey="nav" 
                   stroke="#F2F2F0"
                   strokeWidth={2.5}
-                  fill={isOverallPositive ? "url(#navGradientPositive)" : "url(#navGradientNegative)"}
+                  fill={isOverallPositive ? "url(#navGradientPositive)" : "url(#navGradientIvory)"}
                   activeDot={{ 
                     r: 5, 
                     fill: '#F2F2F0', 
