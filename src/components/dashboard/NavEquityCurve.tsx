@@ -121,7 +121,7 @@ export function NavEquityCurve({
   const formatCurrency = (value: number) => {
     const prefix = baseCurrency === 'USD' ? '$' : '₪';
     if (value >= 1000000) {
-      return `${prefix}${(value / 1000000).toFixed(2)}M`;
+      return `${prefix}${(value / 1000000).toFixed(1)}M`;
     } else if (value >= 1000) {
       return `${prefix}${(value / 1000).toFixed(0)}K`;
     }
@@ -142,65 +142,91 @@ export function NavEquityCurve({
   }
 
   return (
-    <div className="bloomberg-panel">
-      <div className="bloomberg-header flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="bloomberg-header-title">FUND NAV (Cash + Holdings)</span>
-          {!hasCashData && (
-            <span className="flex items-center gap-1 text-[10px] text-warning bg-warning/10 px-1.5 py-0.5 rounded">
-              <AlertTriangle className="h-3 w-3" />
-              Cash data incomplete
-            </span>
+    <div className="bloomberg-panel animate-fade-in overflow-hidden">
+      {/* Header Section - Distinguished dark background */}
+      <div className="bg-card/80 border-b border-border/40">
+        <div className="px-4 py-3 flex items-center justify-between">
+          {/* Left: Title + Warning */}
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold tracking-wide text-primary">
+                FUND NAV (Cash + Holdings)
+              </h3>
+              {!hasCashData && (
+                <span className="flex items-center gap-1 text-[9px] text-warning bg-warning/10 px-1.5 py-0.5 rounded-sm">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  Cash incomplete
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground font-mono tracking-tight">
+              Portfolio equity curve based on monthly valuations
+            </p>
+          </div>
+          
+          {/* Right: KPIs in a single row */}
+          {kpis && (
+            <div className="flex items-center gap-5">
+              {/* Last NAV */}
+              <div className="flex flex-col items-end">
+                <span className="text-[8px] text-muted-foreground/70 uppercase tracking-widest font-medium">
+                  Last NAV
+                </span>
+                <span className="text-sm font-mono font-bold text-foreground tabular-nums">
+                  {formatFullCurrency(kpis.lastNav)}
+                </span>
+              </div>
+              
+              {/* MoM */}
+              <div className="flex flex-col items-end">
+                <span className="text-[8px] text-muted-foreground/70 uppercase tracking-widest font-medium">
+                  MoM
+                </span>
+                <div className={cn(
+                  "flex items-center gap-0.5 text-sm font-mono font-semibold tabular-nums",
+                  kpis.momChange >= 0 ? "text-positive" : "text-negative"
+                )}>
+                  {kpis.momChange >= 0 ? (
+                    <TrendingUp className="h-3 w-3" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3" />
+                  )}
+                  <span>{kpis.momChange >= 0 ? '+' : ''}{kpis.momChange.toFixed(2)}%</span>
+                </div>
+              </div>
+              
+              {/* YTD */}
+              <div className="flex flex-col items-end">
+                <span className="text-[8px] text-muted-foreground/70 uppercase tracking-widest font-medium">
+                  YTD
+                </span>
+                <div className={cn(
+                  "flex items-center gap-0.5 text-sm font-mono font-semibold tabular-nums",
+                  kpis.ytdChange >= 0 ? "text-positive" : "text-negative"
+                )}>
+                  {kpis.ytdChange >= 0 ? (
+                    <TrendingUp className="h-3 w-3" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3" />
+                  )}
+                  <span>{kpis.ytdChange >= 0 ? '+' : ''}{kpis.ytdChange.toFixed(2)}%</span>
+                </div>
+              </div>
+            </div>
           )}
         </div>
-        
-        {/* KPIs */}
-        {kpis && (
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Last NAV</span>
-              <p className="text-xs font-mono font-medium text-foreground">{formatFullCurrency(kpis.lastNav)}</p>
-            </div>
-            <div className="text-right">
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wide">MoM</span>
-              <p className={cn(
-                "text-xs font-mono font-medium flex items-center justify-end gap-0.5",
-                kpis.momChange >= 0 ? "text-positive" : "text-negative"
-              )}>
-                {kpis.momChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                {kpis.momChange >= 0 ? '+' : ''}{kpis.momChange.toFixed(2)}%
-              </p>
-            </div>
-            <div className="text-right">
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wide">YTD</span>
-              <p className={cn(
-                "text-xs font-mono font-medium flex items-center justify-end gap-0.5",
-                kpis.ytdChange >= 0 ? "text-positive" : "text-negative"
-              )}>
-                {kpis.ytdChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                {kpis.ytdChange >= 0 ? '+' : ''}{kpis.ytdChange.toFixed(2)}%
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-      
-      <div className="px-3 pt-1">
-        <p className="text-[10px] text-muted-foreground font-mono">
-          Portfolio equity curve based on monthly valuations
-        </p>
       </div>
 
-      <div className="p-3">
-        {/* Toggle */}
-        <div className="flex items-center gap-2 mb-2">
+      {/* Controls Bar */}
+      <div className="px-4 py-2 border-b border-border/20 bg-background/50">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setShowSplit(false)}
             className={cn(
-              "text-[10px] font-mono px-2 py-0.5 rounded transition-colors",
+              "text-[10px] font-mono px-3 py-1 rounded-full transition-all duration-200",
               !showSplit 
-                ? "bg-primary text-primary-foreground" 
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                ? "bg-primary text-primary-foreground shadow-sm" 
+                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
             Total NAV
@@ -208,48 +234,61 @@ export function NavEquityCurve({
           <button
             onClick={() => setShowSplit(true)}
             className={cn(
-              "text-[10px] font-mono px-2 py-0.5 rounded transition-colors",
+              "text-[10px] font-mono px-3 py-1 rounded-full transition-all duration-200",
               showSplit 
-                ? "bg-primary text-primary-foreground" 
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                ? "bg-primary text-primary-foreground shadow-sm" 
+                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
             Split: Cash vs Holdings
           </button>
         </div>
+      </div>
 
-        <div className="h-[200px]">
+      {/* Chart Section */}
+      <div className="p-4 pt-3">
+        <div className="h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
             {showSplit ? (
-              <LineChart data={navSeries} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="1 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <LineChart data={navSeries} margin={{ top: 10, right: 10, left: -5, bottom: 5 }}>
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="hsl(var(--border))" 
+                  opacity={0.15}
+                  vertical={false}
+                />
                 <XAxis 
                   dataKey="month" 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                   tickFormatter={(v) => v.slice(2, 7).replace('-', '/')}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.3 }}
+                  tickLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.3 }}
                 />
                 <YAxis 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                   tickFormatter={formatCurrency}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                  width={50}
+                  axisLine={false}
+                  tickLine={false}
+                  width={55}
                 />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--popover))', 
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '0',
+                    borderRadius: '4px',
                     fontSize: '11px',
-                    fontFamily: 'JetBrains Mono'
+                    fontFamily: 'JetBrains Mono, monospace',
+                    padding: '8px 12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
                   }}
-                  labelStyle={{ color: 'hsl(var(--primary))' }}
+                  labelStyle={{ color: 'hsl(var(--primary))', fontWeight: 600, marginBottom: '4px' }}
                   formatter={(value: number, name: string) => [formatFullCurrency(value), name]}
-                  labelFormatter={(label) => `Month: ${label}`}
+                  labelFormatter={(label) => `${label}`}
+                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.3, strokeDasharray: '4 4' }}
                 />
                 <Legend 
-                  wrapperStyle={{ fontSize: '10px' }}
-                  formatter={(value) => <span className="text-muted-foreground">{value}</span>}
+                  wrapperStyle={{ fontSize: '9px', paddingTop: '8px' }}
+                  formatter={(value) => <span className="text-muted-foreground font-mono">{value}</span>}
                 />
                 <Line 
                   type="monotone" 
@@ -257,6 +296,7 @@ export function NavEquityCurve({
                   stroke="hsl(var(--foreground))"
                   strokeWidth={2}
                   dot={false}
+                  activeDot={{ r: 4, fill: 'hsl(var(--foreground))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
                   name="Total NAV"
                 />
                 <Line 
@@ -265,6 +305,7 @@ export function NavEquityCurve({
                   stroke="hsl(var(--chart-blue))"
                   strokeWidth={1.5}
                   dot={false}
+                  activeDot={{ r: 3, fill: 'hsl(var(--chart-blue))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
                   name="Holdings"
                 />
                 <Line 
@@ -274,54 +315,67 @@ export function NavEquityCurve({
                   strokeWidth={1.5}
                   strokeDasharray="4 2"
                   dot={false}
+                  activeDot={{ r: 3, fill: 'hsl(var(--chart-gold))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
                   name="Cash"
                 />
               </LineChart>
             ) : (
-              <AreaChart data={navSeries} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
+              <AreaChart data={navSeries} margin={{ top: 10, right: 10, left: -5, bottom: 5 }}>
                 <defs>
-                  <linearGradient id="navGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--foreground))" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="hsl(var(--foreground))" stopOpacity={0.02}/>
+                  <linearGradient id="navGradientDark" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.2}/>
+                    <stop offset="50%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.08}/>
+                    <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.01}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="1 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="hsl(var(--border))" 
+                  opacity={0.15}
+                  vertical={false}
+                />
                 <XAxis 
                   dataKey="month" 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                   tickFormatter={(v) => v.slice(2, 7).replace('-', '/')}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.3 }}
+                  tickLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.3 }}
                 />
                 <YAxis 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                   tickFormatter={formatCurrency}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                  width={50}
+                  axisLine={false}
+                  tickLine={false}
+                  width={55}
                 />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--popover))', 
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '0',
+                    borderRadius: '4px',
                     fontSize: '11px',
-                    fontFamily: 'JetBrains Mono'
+                    fontFamily: 'JetBrains Mono, monospace',
+                    padding: '8px 12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
                   }}
-                  labelStyle={{ color: 'hsl(var(--primary))' }}
+                  labelStyle={{ color: 'hsl(var(--primary))', fontWeight: 600, marginBottom: '4px' }}
                   formatter={(value: number, name: string) => {
                     if (name === 'nav') {
                       const point = navSeries.find(n => n.nav === value);
                       return [
-                        <div key="nav" className="space-y-1">
-                          <div>NAV: {formatFullCurrency(value)}</div>
+                        <div key="nav" className="space-y-1.5">
+                          <div className="font-semibold text-foreground">{formatFullCurrency(value)}</div>
                           {point && (
-                            <>
-                              <div className="text-[10px] text-muted-foreground">
-                                Holdings: {formatFullCurrency(point.holdings)}
+                            <div className="text-[9px] text-muted-foreground space-y-0.5 pt-1 border-t border-border/30">
+                              <div className="flex justify-between gap-4">
+                                <span>Holdings:</span>
+                                <span className="text-foreground/80">{formatFullCurrency(point.holdings)}</span>
                               </div>
-                              <div className="text-[10px] text-muted-foreground">
-                                Cash: {formatFullCurrency(point.cash)}
+                              <div className="flex justify-between gap-4">
+                                <span>Cash:</span>
+                                <span className="text-foreground/80">{formatFullCurrency(point.cash)}</span>
                               </div>
-                            </>
+                            </div>
                           )}
                         </div>,
                         ''
@@ -330,14 +384,20 @@ export function NavEquityCurve({
                     return [formatFullCurrency(value), name];
                   }}
                   labelFormatter={(label) => `${label}`}
+                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.3, strokeDasharray: '4 4' }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="nav" 
-                  stroke="hsl(var(--foreground))"
+                  stroke="hsl(var(--muted-foreground))"
                   strokeWidth={1.5}
-                  fill="url(#navGradient)"
-                  dot={false}
+                  fill="url(#navGradientDark)"
+                  activeDot={{ 
+                    r: 4, 
+                    fill: 'hsl(var(--foreground))', 
+                    stroke: 'hsl(var(--primary))', 
+                    strokeWidth: 2 
+                  }}
                   name="nav"
                 />
               </AreaChart>
