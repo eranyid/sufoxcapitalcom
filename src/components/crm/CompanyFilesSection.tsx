@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useCompanyFiles, FILE_CATEGORIES, FileCategory } from '@/hooks/useCompanyFiles';
+import { useCompanyFiles, FILE_CATEGORIES, FileCategory, CompanyFile } from '@/hooks/useCompanyFiles';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,9 +28,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Upload, File, FileText, Image, Download, Trash2, Loader2, FolderOpen, Filter, Tag, X } from 'lucide-react';
+import { Upload, File, FileText, Image, Download, Trash2, Loader2, FolderOpen, Filter, Tag, X, GripVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Props {
   companyId: string;
@@ -46,8 +63,124 @@ const CATEGORY_COLORS: Record<string, string> = {
   Other: 'bg-muted text-muted-foreground border-border',
 };
 
+interface SortableFileItemProps {
+  file: CompanyFile;
+  isEditing: boolean;
+  isSelected: boolean;
+  onToggleSelection: () => void;
+  onStartEdit: () => void;
+  onCategoryChange: (category: string) => void;
+  onDownload: () => void;
+  onDelete: () => void;
+  getFileIcon: (contentType: string | null) => React.ComponentType<{ className?: string }>;
+  formatFileSize: (bytes: number | null) => string;
+}
+
+function SortableFileItem({
+  file,
+  isEditing,
+  isSelected,
+  onToggleSelection,
+  onStartEdit,
+  onCategoryChange,
+  onDownload,
+  onDelete,
+  getFileIcon,
+  formatFileSize,
+}: SortableFileItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: file.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const FileIcon = getFileIcon(file.content_type);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 p-2 rounded-lg hover:bg-accent/50 group ${
+        isSelected ? 'bg-primary/10' : ''
+      } ${isDragging ? 'z-50 shadow-lg bg-card' : ''}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 hover:bg-accent rounded shrink-0 touch-none"
+      >
+        <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+      </button>
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={onToggleSelection}
+        className="shrink-0"
+      />
+      <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{file.file_name}</p>
+        <p className="text-xs text-muted-foreground">
+          {formatFileSize(file.file_size)} • {format(new Date(file.created_at), 'MMM d, yyyy')}
+        </p>
+      </div>
+      {isEditing ? (
+        <Select 
+          value={file.category || 'Other'} 
+          onValueChange={onCategoryChange}
+        >
+          <SelectTrigger className="w-[120px] h-7 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FILE_CATEGORIES.map(cat => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={onStartEdit}
+            title="Change category"
+          >
+            <Tag className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={onDownload}
+          >
+            <Download className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-destructive hover:text-destructive"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CompanyFilesSection({ companyId }: Props) {
-  const { files, loading, uploading, uploadFile, deleteFile, updateFileCategory, getFileUrl } = useCompanyFiles(companyId);
+  const { files, loading, uploading, uploadFile, deleteFile, updateFileCategory, reorderFiles, getFileUrl } = useCompanyFiles(companyId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -59,6 +192,17 @@ export function CompanyFilesSection({ companyId }: Props) {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
   const [bulkCategory, setBulkCategory] = useState<FileCategory>('Other');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -168,6 +312,18 @@ export function CompanyFilesSection({ companyId }: Props) {
     toast.success(`Updated ${updated} file${updated !== 1 ? 's' : ''}`);
     clearSelection();
     setBulkCategoryOpen(false);
+  };
+
+  const handleDragEnd = (event: DragEndEvent, category: string, categoryFiles: CompanyFile[]) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = categoryFiles.findIndex(f => f.id === active.id);
+      const newIndex = categoryFiles.findIndex(f => f.id === over.id);
+      
+      const newOrder = arrayMove(categoryFiles, oldIndex, newIndex);
+      reorderFiles(category, newOrder.map(f => f.id));
+    }
   };
 
   const filteredFiles = filterCategory === 'all' 
@@ -312,80 +468,37 @@ export function CompanyFilesSection({ companyId }: Props) {
                     {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <div className="space-y-1 pl-2 border-l-2 border-border">
-                  {categoryFiles.map((file) => {
-                    const FileIcon = getFileIcon(file.content_type);
-                    const isEditing = editingFileId === file.id;
-                    const isSelected = selectedFileIds.has(file.id);
-                    return (
-                      <div
-                        key={file.id}
-                        className={`flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 group ${
-                          isSelected ? 'bg-primary/10' : ''
-                        }`}
-                      >
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleFileSelection(file.id)}
-                          className="shrink-0"
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(e) => handleDragEnd(e, category, categoryFiles)}
+                >
+                  <SortableContext
+                    items={categoryFiles.map(f => f.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-1 pl-2 border-l-2 border-border">
+                      {categoryFiles.map((file) => (
+                        <SortableFileItem
+                          key={file.id}
+                          file={file}
+                          isEditing={editingFileId === file.id}
+                          isSelected={selectedFileIds.has(file.id)}
+                          onToggleSelection={() => toggleFileSelection(file.id)}
+                          onStartEdit={() => setEditingFileId(file.id)}
+                          onCategoryChange={async (v) => {
+                            await updateFileCategory(file.id, v);
+                            setEditingFileId(null);
+                          }}
+                          onDownload={() => handleDownload(file.file_path)}
+                          onDelete={() => deleteFile(file.id, file.file_path)}
+                          getFileIcon={getFileIcon}
+                          formatFileSize={formatFileSize}
                         />
-                        <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{file.file_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatFileSize(file.file_size)} • {format(new Date(file.created_at), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                        {isEditing ? (
-                          <Select 
-                            value={file.category || 'Other'} 
-                            onValueChange={async (v) => {
-                              await updateFileCategory(file.id, v);
-                              setEditingFileId(null);
-                            }}
-                          >
-                            <SelectTrigger className="w-[120px] h-7 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FILE_CATEGORIES.map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => setEditingFileId(file.id)}
-                              title="Change category"
-                            >
-                              <Tag className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleDownload(file.file_path)}
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              onClick={() => deleteFile(file.id, file.file_path)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </div>
             ))}
           </div>
