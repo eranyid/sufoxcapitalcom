@@ -1224,7 +1224,7 @@ export function RebalanceTool() {
                       });
                     }
                   }}
-                  className="w-full h-9 text-xs bg-accent hover:bg-accent/80"
+                  className="w-full h-9 text-xs bg-primary hover:bg-primary/80 text-primary-foreground"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Export PDF Execution Report
