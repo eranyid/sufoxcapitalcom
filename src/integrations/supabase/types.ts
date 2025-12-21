@@ -117,6 +117,7 @@ export type Database = {
       }
       company_files: {
         Row: {
+          category: string | null
           company_id: string
           content_type: string | null
           created_at: string
@@ -127,6 +128,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           company_id: string
           content_type?: string | null
           created_at?: string
@@ -137,6 +139,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           company_id?: string
           content_type?: string | null
           created_at?: string
