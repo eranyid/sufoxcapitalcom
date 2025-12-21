@@ -12,6 +12,7 @@ export interface CompanyFile {
   file_size: number | null;
   content_type: string | null;
   category: string | null;
+  order_index: number | null;
   created_at: string;
 }
 
@@ -41,6 +42,8 @@ export function useCompanyFiles(companyId: string | null) {
       .from('company_files')
       .select('*')
       .eq('company_id', companyId)
+      .order('category', { ascending: true })
+      .order('order_index', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -184,6 +187,37 @@ export function useCompanyFiles(companyId: string | null) {
     return data?.signedUrl;
   }, []);
 
+  const reorderFiles = useCallback(async (category: string, orderedFileIds: string[]) => {
+    // Update local state immediately for responsiveness
+    setFiles(prev => {
+      const otherFiles = prev.filter(f => f.category !== category);
+      const categoryFiles = orderedFileIds.map((id, index) => {
+        const file = prev.find(f => f.id === id);
+        return file ? { ...file, order_index: index } : null;
+      }).filter(Boolean) as CompanyFile[];
+      return [...otherFiles, ...categoryFiles];
+    });
+
+    // Persist to database
+    const updates = orderedFileIds.map((id, index) => 
+      supabase
+        .from('company_files')
+        .update({ order_index: index })
+        .eq('id', id)
+    );
+
+    const results = await Promise.all(updates);
+    const hasError = results.some(r => r.error);
+    
+    if (hasError) {
+      toast.error('Failed to save order');
+      fetchFiles(); // Revert on error
+      return false;
+    }
+    
+    return true;
+  }, [fetchFiles]);
+
   return {
     files,
     loading,
@@ -192,6 +226,7 @@ export function useCompanyFiles(companyId: string | null) {
     uploadFile,
     deleteFile,
     updateFileCategory,
+    reorderFiles,
     getFileUrl,
   };
 }
