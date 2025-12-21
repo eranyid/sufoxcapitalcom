@@ -1,11 +1,10 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Scale, TrendingUp, TrendingDown, AlertCircle, Plus, Trash2, RefreshCw, ArrowRight, BarChart3, FileText, Loader2, Equal, Calculator, Globe, Info } from 'lucide-react';
+import { Scale, TrendingUp, AlertCircle, Plus, Trash2, RefreshCw, FileText, Loader2, Equal, Calculator, Globe, Info, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -14,7 +13,6 @@ import { useActivityLog } from '@/hooks/useActivityLog';
 import { useIsraelCPI } from '@/hooks/useIsraelCPI';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from 'recharts';
 import { differenceInDays, parseISO, format } from 'date-fns';
 
 // Israeli tax rate on REAL capital gains
@@ -80,7 +78,7 @@ interface TaxOptimizedSell {
   netProceeds: number;
 }
 
-interface TaxOptimizedRebalanceAnalysis {
+interface RebalanceAnalysis {
   trades: SuggestedTrade[];
   taxOptimizedSells: TaxOptimizedSell[];
   totalTurnover: number;
@@ -90,22 +88,10 @@ interface TaxOptimizedRebalanceAnalysis {
   trackingErrorImpact: number;
   beforeAllocation: { name: string; weight: number }[];
   afterAllocation: { name: string; weight: number }[];
-  // Tax totals
   totalTaxDue: number;
   totalNetProceeds: number;
-  postTaxAllocation: { name: string; weight: number }[];
   targetsMet: boolean;
   warnings: string[];
-}
-
-interface InvestmentPolicy {
-  equity_min_pct: number | null;
-  equity_max_pct: number | null;
-  fixed_income_min_pct: number | null;
-  fixed_income_max_pct: number | null;
-  alternatives_min_pct: number | null;
-  alternatives_max_pct: number | null;
-  cash_min_pct: number | null;
 }
 
 // Map asset types to policy categories
@@ -124,21 +110,8 @@ const ASSET_TYPE_TO_CATEGORY: Record<string, 'equity' | 'fixed_income' | 'altern
   cash: 'cash'
 };
 
-const COLORS = [
-  'hsl(30, 100%, 50%)',    // Primary orange
-  'hsl(210, 100%, 55%)',   // Blue
-  'hsl(120, 60%, 40%)',    // Green
-  'hsl(280, 70%, 55%)',    // Purple
-  'hsl(45, 100%, 50%)',    // Gold/Yellow
-  'hsl(350, 75%, 55%)',    // Red/Pink
-  'hsl(180, 70%, 45%)',    // Teal
-  'hsl(0, 0%, 60%)',       // Gray
-  'hsl(320, 70%, 50%)',    // Magenta
-  'hsl(15, 90%, 55%)',     // Coral
-];
-
 export function RebalanceTool() {
-  const { transactions, valuations, performanceMetrics } = usePortfolio();
+  const { transactions, valuations } = usePortfolio();
   const { user } = useAuth();
   const { logRebalanceActivity } = useActivityLog();
   const { getCPI, getCurrentCPI, getBaseInfo, isLoading: cpiLoading, error: cpiError, source: cpiSource } = useIsraelCPI();
@@ -146,7 +119,6 @@ export function RebalanceTool() {
   const [isOpen, setIsOpen] = useState(true);
   const [minTradeSize, setMinTradeSize] = useState(0.5);
   const [showAnalysis, setShowAnalysis] = useState(false);
-  const [showTaxOptimizedAnalysis, setShowTaxOptimizedAnalysis] = useState(false);
   const [newPositionTicker, setNewPositionTicker] = useState('');
   const [newPositionTarget, setNewPositionTarget] = useState('');
   const [manualTargets, setManualTargets] = useState<Record<string, number>>({});
@@ -158,6 +130,7 @@ export function RebalanceTool() {
   const [firstProjectId, setFirstProjectId] = useState<string | null>(null);
 
   const currentCPI = useMemo(() => getCurrentCPI(), [getCurrentCPI]);
+  const baseInfo = useMemo(() => getBaseInfo(), [getBaseInfo]);
 
   // Fetch first project for activity logging
   useEffect(() => {
@@ -272,7 +245,6 @@ export function RebalanceTool() {
   const currentHoldings = useMemo((): Holding[] => {
     if (!transactions.length) return [];
 
-    // Calculate net positions
     const positions: Record<string, {
       ticker: string;
       assetName: string;
@@ -294,14 +266,12 @@ export function RebalanceTool() {
       positions[tx.ticker].quantity += tx.transactionType === 'buy' ? tx.quantity : -tx.quantity;
     });
 
-    // Get latest valuations
     valuations.forEach(v => {
       if (positions[v.ticker]) {
         positions[v.ticker].latestPrice = v.pricePerUnit;
       }
     });
 
-    // Filter out zero positions and calculate values
     const holdingsArray = Object.values(positions)
       .filter(p => p.quantity > 0 && p.latestPrice > 0)
       .map(p => ({
@@ -338,13 +308,11 @@ export function RebalanceTool() {
     return holdingsWeight + newPosWeight;
   }, [currentHoldings, newPositions]);
 
-  // Update target weight
   const handleTargetChange = (ticker: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     setManualTargets(prev => ({ ...prev, [ticker]: Math.max(0, Math.min(100, numValue)) }));
   };
 
-  // Add new position
   const handleAddNewPosition = () => {
     if (!newPositionTicker.trim() || !newPositionTarget) return;
     const targetWeight = parseFloat(newPositionTarget) || 0;
@@ -358,22 +326,18 @@ export function RebalanceTool() {
     setNewPositionTarget('');
   };
 
-  // Remove new position
   const handleRemoveNewPosition = (ticker: string) => {
     setNewPositions(prev => prev.filter(p => p.ticker !== ticker));
   };
 
-  // Reset to current weights
   const handleReset = () => {
     setManualTargets({});
     setNewPositions([]);
     setShowAnalysis(false);
-    setShowTaxOptimizedAnalysis(false);
     setPolicyApplied(false);
     setEqualWeightApplied(false);
   };
 
-  // Apply equal weight distribution
   const handleEqualWeight = useCallback(() => {
     if (currentHoldings.length === 0) {
       toast({ title: 'No holdings to rebalance', variant: 'destructive' });
@@ -382,18 +346,15 @@ export function RebalanceTool() {
 
     setLoadingEqualWeight(true);
 
-    // Small timeout for visual feedback
     setTimeout(() => {
       const numHoldings = currentHoldings.length;
-      const equalWeight = Math.floor((100 / numHoldings) * 100) / 100; // Round down to 2 decimals
+      const equalWeight = Math.floor((100 / numHoldings) * 100) / 100;
       
       const newTargets: Record<string, number> = {};
       let totalAssigned = 0;
 
-      // Assign equal weight to all holdings except the last one
       currentHoldings.forEach((h, index) => {
         if (index === currentHoldings.length - 1) {
-          // Last holding gets the remainder to ensure exactly 100%
           newTargets[h.ticker] = Math.round((100 - totalAssigned) * 100) / 100;
         } else {
           newTargets[h.ticker] = equalWeight;
@@ -405,7 +366,6 @@ export function RebalanceTool() {
       setPolicyApplied(false);
       setEqualWeightApplied(true);
       setShowAnalysis(false);
-      setShowTaxOptimizedAnalysis(false);
       setLoadingEqualWeight(false);
 
       toast({
@@ -415,7 +375,6 @@ export function RebalanceTool() {
     }, 150);
   }, [currentHoldings]);
 
-  // Fetch and apply policy weights
   const handleUsePolicyWeights = useCallback(async () => {
     if (!user) {
       toast({ title: 'Not authenticated', variant: 'destructive' });
@@ -430,9 +389,7 @@ export function RebalanceTool() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (!policy) {
         toast({
@@ -443,7 +400,6 @@ export function RebalanceTool() {
         return;
       }
 
-      // Calculate target weights for each asset class using midpoint of min/max
       const policyTargets: Record<string, number> = {
         equity: ((policy.equity_min_pct ?? 0) + (policy.equity_max_pct ?? 100)) / 2,
         fixed_income: ((policy.fixed_income_min_pct ?? 0) + (policy.fixed_income_max_pct ?? 100)) / 2,
@@ -451,7 +407,6 @@ export function RebalanceTool() {
         cash: policy.cash_min_pct ?? 0
       };
 
-      // Normalize to sum to 100%
       const totalPolicyWeight = Object.values(policyTargets).reduce((a, b) => a + b, 0);
       if (totalPolicyWeight > 0 && totalPolicyWeight !== 100) {
         const scale = 100 / totalPolicyWeight;
@@ -460,7 +415,6 @@ export function RebalanceTool() {
         });
       }
 
-      // Group current holdings by asset class
       const holdingsByClass: Record<string, Holding[]> = {
         equity: [],
         fixed_income: [],
@@ -473,7 +427,6 @@ export function RebalanceTool() {
         holdingsByClass[category].push(h);
       });
 
-      // Calculate current weight per class
       const currentClassWeights: Record<string, number> = {
         equity: holdingsByClass.equity.reduce((sum, h) => sum + h.currentWeight, 0),
         fixed_income: holdingsByClass.fixed_income.reduce((sum, h) => sum + h.currentWeight, 0),
@@ -481,7 +434,6 @@ export function RebalanceTool() {
         cash: holdingsByClass.cash.reduce((sum, h) => sum + h.currentWeight, 0)
       };
 
-      // Distribute policy target weights proportionally within each class
       const newTargets: Record<string, number> = {};
 
       Object.entries(holdingsByClass).forEach(([category, holdings]) => {
@@ -490,7 +442,6 @@ export function RebalanceTool() {
 
         if (holdings.length === 0 || currentClassWeight === 0) return;
 
-        // Distribute proportionally based on current weight within class
         holdings.forEach(h => {
           const proportionInClass = h.currentWeight / currentClassWeight;
           newTargets[h.ticker] = targetClassWeight * proportionInClass;
@@ -500,7 +451,6 @@ export function RebalanceTool() {
       setManualTargets(newTargets);
       setPolicyApplied(true);
       setShowAnalysis(false);
-      setShowTaxOptimizedAnalysis(false);
 
       toast({
         title: 'Policy Weights Applied',
@@ -585,9 +535,9 @@ export function RebalanceTool() {
     };
   }, [taxLotsByTicker, currentHoldings]);
 
-  // Calculate tax-optimized rebalance analysis
-  const taxOptimizedAnalysis = useMemo((): TaxOptimizedRebalanceAnalysis | null => {
-    if (!showTaxOptimizedAnalysis || totalPortfolioValue === 0) return null;
+  // Unified Tax-Optimized Rebalance Analysis
+  const analysis = useMemo((): RebalanceAnalysis | null => {
+    if (!showAnalysis || totalPortfolioValue === 0) return null;
 
     const trades: SuggestedTrade[] = [];
     const taxOptimizedSells: TaxOptimizedSell[] = [];
@@ -596,12 +546,15 @@ export function RebalanceTool() {
     let cashImpact = 0;
     let totalTaxDue = 0;
 
-    // Calculate trades for existing holdings
+    // Check if CPI data is available
+    if (cpiError) {
+      warnings.push(`CPI data warning: ${cpiError}`);
+    }
+
     currentHoldings.forEach(h => {
       const weightDiff = h.targetWeight - h.currentWeight;
       const valueDiff = (weightDiff / 100) * totalPortfolioValue;
       
-      // Apply min trade size filter
       if (Math.abs(weightDiff) >= minTradeSize) {
         const action = weightDiff > 0 ? 'BUY' : 'SELL';
         const tradeValue = Math.abs(valueDiff);
@@ -616,7 +569,6 @@ export function RebalanceTool() {
           weightChange: weightDiff
         });
 
-        // For SELL actions, apply tax optimization
         if (action === 'SELL') {
           const taxOptResult = selectTaxOptimizedLots(h.ticker, tradeValue);
           if (taxOptResult) {
@@ -635,7 +587,6 @@ export function RebalanceTool() {
       }
     });
 
-    // Calculate trades for new positions
     newPositions.forEach(np => {
       const targetValue = (np.targetWeight / 100) * totalPortfolioValue;
       
@@ -654,10 +605,8 @@ export function RebalanceTool() {
       }
     });
 
-    // Sort trades by absolute value
     trades.sort((a, b) => b.value - a.value);
 
-    // Calculate before/after allocations
     const beforeAllocation = currentHoldings.map(h => ({
       name: h.ticker,
       weight: h.currentWeight
@@ -674,22 +623,14 @@ export function RebalanceTool() {
       }))
     ].filter(a => a.weight > 0);
 
-    // Post-tax allocation (accounting for tax drag on sells)
-    const totalNetProceeds = taxOptimizedSells.reduce((sum, s) => sum + s.netProceeds, 0);
-    const postTaxAllocation = afterAllocation.map(a => ({
-      name: a.name,
-      weight: a.weight
-    }));
-
-    // Estimate tracking error impact
     const weightChanges = currentHoldings.map(h => Math.abs(h.targetWeight - h.currentWeight));
     const avgWeightChange = weightChanges.length > 0 
       ? weightChanges.reduce((a, b) => a + b, 0) / weightChanges.length 
       : 0;
     const trackingErrorImpact = avgWeightChange * 0.1;
 
-    // Check if targets can be fully met
     const targetsMet = warnings.length === 0 && Math.abs(totalTargetWeight - 100) < 0.5;
+    const totalNetProceeds = taxOptimizedSells.reduce((sum, s) => sum + s.netProceeds, 0);
 
     return {
       trades,
@@ -703,113 +644,10 @@ export function RebalanceTool() {
       afterAllocation,
       totalTaxDue,
       totalNetProceeds,
-      postTaxAllocation,
       targetsMet,
       warnings
     };
-  }, [showTaxOptimizedAnalysis, currentHoldings, newPositions, totalPortfolioValue, minTradeSize, selectTaxOptimizedLots, totalTargetWeight]);
-
-  // Standard analysis (WITH tax estimation integrated)
-  const analysis = useMemo(() => {
-    if (!showAnalysis || totalPortfolioValue === 0) return null;
-
-    const trades: SuggestedTrade[] = [];
-    const taxOptimizedSells: TaxOptimizedSell[] = [];
-    let totalTurnover = 0;
-    let cashImpact = 0;
-    let totalTaxDue = 0;
-
-    currentHoldings.forEach(h => {
-      const weightDiff = h.targetWeight - h.currentWeight;
-      const valueDiff = (weightDiff / 100) * totalPortfolioValue;
-      
-      if (Math.abs(weightDiff) >= minTradeSize) {
-        const action = weightDiff > 0 ? 'BUY' : 'SELL';
-        const tradeValue = Math.abs(valueDiff);
-        const tradeQty = h.currentPrice > 0 ? tradeValue / h.currentPrice : 0;
-
-        trades.push({
-          ticker: h.ticker,
-          assetName: h.assetName,
-          action,
-          quantity: Math.round(tradeQty * 1000) / 1000,
-          value: tradeValue,
-          weightChange: weightDiff
-        });
-
-        // Calculate tax for SELL actions
-        if (action === 'SELL') {
-          const taxOptResult = selectTaxOptimizedLots(h.ticker, tradeValue);
-          if (taxOptResult) {
-            taxOptimizedSells.push(taxOptResult);
-            totalTaxDue += taxOptResult.taxEstimate;
-            cashImpact += taxOptResult.netProceeds;
-          } else {
-            cashImpact += tradeValue;
-          }
-        } else {
-          cashImpact -= tradeValue;
-        }
-
-        totalTurnover += tradeValue;
-      }
-    });
-
-    newPositions.forEach(np => {
-      const targetValue = (np.targetWeight / 100) * totalPortfolioValue;
-      
-      if (np.targetWeight >= minTradeSize) {
-        trades.push({
-          ticker: np.ticker,
-          assetName: `New: ${np.ticker}`,
-          action: 'BUY',
-          quantity: 0,
-          value: targetValue,
-          weightChange: np.targetWeight
-        });
-
-        totalTurnover += targetValue;
-        cashImpact -= targetValue;
-      }
-    });
-
-    trades.sort((a, b) => b.value - a.value);
-
-    const beforeAllocation = currentHoldings.map(h => ({
-      name: h.ticker,
-      weight: h.currentWeight
-    }));
-
-    const afterAllocation = [
-      ...currentHoldings.map(h => ({
-        name: h.ticker,
-        weight: h.targetWeight
-      })),
-      ...newPositions.map(np => ({
-        name: np.ticker,
-        weight: np.targetWeight
-      }))
-    ].filter(a => a.weight > 0);
-
-    const weightChanges = currentHoldings.map(h => Math.abs(h.targetWeight - h.currentWeight));
-    const avgWeightChange = weightChanges.length > 0 
-      ? weightChanges.reduce((a, b) => a + b, 0) / weightChanges.length 
-      : 0;
-    const trackingErrorImpact = avgWeightChange * 0.1;
-
-    return {
-      trades,
-      taxOptimizedSells,
-      totalTurnover: totalTurnover / 2,
-      numberOfTrades: trades.length,
-      cashImpact,
-      estimatedCost: (totalTurnover / 2) * 0.001,
-      trackingErrorImpact,
-      beforeAllocation,
-      afterAllocation,
-      totalTaxDue
-    };
-  }, [showAnalysis, currentHoldings, newPositions, totalPortfolioValue, minTradeSize, selectTaxOptimizedLots]);
+  }, [showAnalysis, currentHoldings, newPositions, totalPortfolioValue, minTradeSize, selectTaxOptimizedLots, totalTargetWeight, cpiError]);
 
   const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
@@ -847,7 +685,7 @@ export function RebalanceTool() {
                 Rebalance Tool
                 <Badge variant="outline" className="ml-2 bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">
                   <Globe size={10} className="mr-1" />
-                  Tax-Optimized
+                  Israeli Tax Rules
                 </Badge>
               </CardTitle>
               <span className="text-[10px] text-muted-foreground">
@@ -861,7 +699,7 @@ export function RebalanceTool() {
             {/* Subtitle and Weight Buttons */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <p className="text-[10px] text-muted-foreground">
-                Compare current vs. target allocation and generate tax-optimized trades.
+                Compare current vs. target allocation with integrated tax optimization (25% on CPI-adjusted real gains).
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -939,9 +777,23 @@ export function RebalanceTool() {
                   <span>Current CPI: <strong className="text-foreground">{currentCPI.toFixed(1)}</strong></span>
                 </div>
                 <span className="hidden sm:inline text-muted-foreground/60">|</span>
+                <span className="text-muted-foreground">
+                  Data: {baseInfo.firstDate} → {baseInfo.lastDate}
+                </span>
+                <span className="hidden sm:inline text-muted-foreground/60">|</span>
                 <span className={`${cpiError ? 'text-amber-400' : 'text-emerald-400'}`}>
                   Source: {cpiSource}
                 </span>
+                {cpiError && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <AlertCircle size={12} className="text-amber-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>{cpiError}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
             )}
 
@@ -1063,12 +915,11 @@ export function RebalanceTool() {
               </Button>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 flex-wrap">
+            {/* Single Action Button */}
+            <div className="flex gap-2">
               <Button
                 onClick={async () => {
                   setShowAnalysis(true);
-                  setShowTaxOptimizedAnalysis(false);
                   if (firstProjectId && analysis) {
                     await logRebalanceActivity(firstProjectId, {
                       trades: analysis.trades.map(t => ({
@@ -1083,36 +934,15 @@ export function RebalanceTool() {
                     });
                   }
                 }}
-                variant="outline"
-                className="flex-1 h-8 text-xs"
-                disabled={Math.abs(totalTargetWeight - 100) >= 5}
-              >
-                <BarChart3 className="h-3 w-3 mr-1" />
-                Generate Analysis
-              </Button>
-              <Button
-                onClick={async () => {
-                  setShowTaxOptimizedAnalysis(true);
-                  setShowAnalysis(false);
-                  if (firstProjectId && taxOptimizedAnalysis) {
-                    await logRebalanceActivity(firstProjectId, {
-                      trades: taxOptimizedAnalysis.trades.map(t => ({
-                        ticker: t.ticker,
-                        action: t.action,
-                        value: t.value,
-                        weightChange: t.weightChange
-                      })),
-                      totalTurnover: taxOptimizedAnalysis.totalTurnover,
-                      numberOfTrades: taxOptimizedAnalysis.numberOfTrades,
-                      cashImpact: taxOptimizedAnalysis.cashImpact
-                    });
-                  }
-                }}
                 className="flex-1 h-8 text-xs bg-blue-600 hover:bg-blue-700"
                 disabled={Math.abs(totalTargetWeight - 100) >= 5 || cpiLoading}
               >
-                <Calculator className="h-3 w-3 mr-1" />
-                Tax-Optimized Rebalance
+                {cpiLoading ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Calculator className="h-3 w-3 mr-1" />
+                )}
+                Generate Tax-Optimized Rebalance
               </Button>
               <Button
                 variant="outline"
@@ -1124,9 +954,21 @@ export function RebalanceTool() {
               </Button>
             </div>
 
-            {/* Standard Analysis Results */}
-            {analysis && showAnalysis && (
+            {/* Analysis Results */}
+            {analysis && (
               <div className="space-y-4 pt-4 border-t border-border">
+                {/* Warnings */}
+                {analysis.warnings.length > 0 && (
+                  <div className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-[10px]">
+                    <AlertCircle className="h-4 w-4 text-yellow-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      {analysis.warnings.map((w, i) => (
+                        <p key={i} className="text-yellow-500">{w}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Summary KPIs */}
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                   <div className="p-2 bg-secondary/30 rounded">
@@ -1138,17 +980,11 @@ export function RebalanceTool() {
                     <div className="text-sm font-mono font-semibold text-foreground">{formatCurrency(analysis.totalTurnover)}</div>
                   </div>
                   <div className="p-2 bg-secondary/30 rounded">
-                    <div className="text-[9px] text-muted-foreground uppercase">Turnover %</div>
-                    <div className="text-sm font-mono font-semibold text-foreground">
-                      {((analysis.totalTurnover / totalPortfolioValue) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                  <div className="p-2 bg-secondary/30 rounded">
                     <div className="text-[9px] text-muted-foreground uppercase">Est. Cost</div>
                     <div className="text-sm font-mono font-semibold text-red-400">{formatCurrency(analysis.estimatedCost)}</div>
                   </div>
                   <div className="p-2 bg-blue-500/20 border border-blue-500/30 rounded">
-                    <div className="text-[9px] text-blue-400 uppercase">Est. Tax (25%)</div>
+                    <div className="text-[9px] text-blue-400 uppercase">Total Tax (25%)</div>
                     <div className="text-sm font-mono font-semibold text-blue-400">{formatCurrency(analysis.totalTaxDue)}</div>
                   </div>
                   <div className="p-2 bg-secondary/30 rounded">
@@ -1159,117 +995,19 @@ export function RebalanceTool() {
                       {analysis.cashImpact >= 0 ? '+' : ''}{formatCurrency(analysis.cashImpact)}
                     </div>
                   </div>
-                </div>
-
-                {/* Trade List */}
-                {analysis.trades.length > 0 && (
-                  <div>
-                    <h4 className="text-[10px] font-mono text-muted-foreground mb-2 uppercase">Suggested Trades</h4>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-[10px] font-mono">
-                        <thead>
-                          <tr className="border-b border-border/50">
-                            <th className="text-left p-2 text-muted-foreground">Action</th>
-                            <th className="text-left p-2 text-muted-foreground">Ticker</th>
-                            <th className="text-left p-2 text-muted-foreground">Asset</th>
-                            <th className="text-right p-2 text-muted-foreground">Qty</th>
-                            <th className="text-right p-2 text-muted-foreground">Value</th>
-                            <th className="text-right p-2 text-muted-foreground">Weight Δ</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {analysis.trades.map((trade, i) => (
-                            <tr key={i} className="border-b border-border/30 hover:bg-secondary/20">
-                              <td className="p-2">
-                                <span className={`px-2 py-0.5 rounded text-[9px] font-semibold ${
-                                  trade.action === 'BUY' 
-                                    ? 'bg-green-500/20 text-green-500' 
-                                    : 'bg-red-500/20 text-red-500'
-                                }`}>
-                                  {trade.action}
-                                </span>
-                              </td>
-                              <td className="p-2 text-primary font-semibold">{trade.ticker}</td>
-                              <td className="p-2 text-foreground truncate max-w-[120px]">{trade.assetName}</td>
-                              <td className="p-2 text-right text-foreground">
-                                {trade.quantity > 0 ? trade.quantity.toLocaleString() : '—'}
-                              </td>
-                              <td className="p-2 text-right text-foreground">{formatCurrency(trade.value)}</td>
-                              <td className={`p-2 text-right font-semibold ${
-                                trade.weightChange > 0 ? 'text-green-500' : 'text-red-500'
-                              }`}>
-                                {trade.weightChange > 0 ? '+' : ''}{trade.weightChange.toFixed(2)}%
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {analysis.trades.length === 0 && (
-                  <div className="text-center p-4 text-muted-foreground text-xs">
-                    No trades required. Portfolio is already at target weights (within {minTradeSize}% tolerance).
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tax-Optimized Analysis Results */}
-            {taxOptimizedAnalysis && showTaxOptimizedAnalysis && (
-              <div className="space-y-4 pt-4 border-t border-border">
-                {/* Warnings */}
-                {taxOptimizedAnalysis.warnings.length > 0 && (
-                  <div className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-[10px]">
-                    <AlertCircle className="h-4 w-4 text-yellow-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      {taxOptimizedAnalysis.warnings.map((w, i) => (
-                        <p key={i} className="text-yellow-500">{w}</p>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Summary KPIs with Tax */}
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                  <div className="p-2 bg-secondary/30 rounded">
-                    <div className="text-[9px] text-muted-foreground uppercase">Trades</div>
-                    <div className="text-sm font-mono font-semibold text-primary">{taxOptimizedAnalysis.numberOfTrades}</div>
-                  </div>
-                  <div className="p-2 bg-secondary/30 rounded">
-                    <div className="text-[9px] text-muted-foreground uppercase">Turnover</div>
-                    <div className="text-sm font-mono font-semibold text-foreground">{formatCurrency(taxOptimizedAnalysis.totalTurnover)}</div>
-                  </div>
-                  <div className="p-2 bg-secondary/30 rounded">
-                    <div className="text-[9px] text-muted-foreground uppercase">Est. Cost</div>
-                    <div className="text-sm font-mono font-semibold text-red-400">{formatCurrency(taxOptimizedAnalysis.estimatedCost)}</div>
-                  </div>
-                  <div className="p-2 bg-blue-500/20 border border-blue-500/30 rounded">
-                    <div className="text-[9px] text-blue-400 uppercase">Total Tax (25%)</div>
-                    <div className="text-sm font-mono font-semibold text-blue-400">{formatCurrency(taxOptimizedAnalysis.totalTaxDue)}</div>
-                  </div>
-                  <div className="p-2 bg-secondary/30 rounded">
-                    <div className="text-[9px] text-muted-foreground uppercase">Net Cash</div>
-                    <div className={`text-sm font-mono font-semibold ${
-                      taxOptimizedAnalysis.cashImpact >= 0 ? 'text-green-500' : 'text-red-400'
-                    }`}>
-                      {taxOptimizedAnalysis.cashImpact >= 0 ? '+' : ''}{formatCurrency(taxOptimizedAnalysis.cashImpact)}
-                    </div>
-                  </div>
                   <div className="p-2 bg-secondary/30 rounded">
                     <div className="text-[9px] text-muted-foreground uppercase">Targets Met</div>
-                    <div className={`text-sm font-mono font-semibold ${taxOptimizedAnalysis.targetsMet ? 'text-green-500' : 'text-yellow-500'}`}>
-                      {taxOptimizedAnalysis.targetsMet ? 'Yes' : 'Partial'}
+                    <div className={`text-sm font-mono font-semibold ${analysis.targetsMet ? 'text-green-500' : 'text-yellow-500'}`}>
+                      {analysis.targetsMet ? 'Yes' : 'Partial'}
                     </div>
                   </div>
                 </div>
 
-                {/* Unified Trade & Tax Execution Table */}
-                {taxOptimizedAnalysis.trades.length > 0 && (
+                {/* Trade Execution Table */}
+                {analysis.trades.length > 0 && (
                   <div>
                     <h4 className="text-[10px] font-mono text-muted-foreground mb-2 uppercase flex items-center gap-2">
-                      Tax-Optimized Trade Execution
+                      Trade Execution
                       <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[8px]">
                         Israeli CGT 25%
                       </Badge>
@@ -1288,8 +1026,8 @@ export function RebalanceTool() {
                           </tr>
                         </thead>
                         <tbody>
-                          {taxOptimizedAnalysis.trades.map((trade, i) => {
-                            const taxData = taxOptimizedAnalysis.taxOptimizedSells.find(s => s.ticker === trade.ticker.toUpperCase());
+                          {analysis.trades.map((trade, i) => {
+                            const taxData = analysis.taxOptimizedSells.find(s => s.ticker === trade.ticker.toUpperCase());
                             return (
                               <tr key={i} className="border-b border-border/30 hover:bg-secondary/20">
                                 <td className="p-2">
@@ -1324,7 +1062,9 @@ export function RebalanceTool() {
                                   <>
                                     <td className="p-2 text-right text-muted-foreground">—</td>
                                     <td className="p-2 text-right text-muted-foreground">—</td>
-                                    <td className="p-2 text-right text-muted-foreground">—</td>
+                                    <td className="p-2 text-right text-muted-foreground">
+                                      {trade.action === 'BUY' ? `-${formatCurrency(trade.value)}` : '—'}
+                                    </td>
                                   </>
                                 )}
                               </tr>
@@ -1334,12 +1074,12 @@ export function RebalanceTool() {
                         <tfoot>
                           <tr className="border-t-2 border-border font-semibold">
                             <td colSpan={3} className="p-2 text-muted-foreground">TOTAL</td>
-                            <td className="p-2 text-right text-foreground">{formatCurrency(taxOptimizedAnalysis.totalTurnover * 2)}</td>
+                            <td className="p-2 text-right text-foreground">{formatCurrency(analysis.totalTurnover * 2)}</td>
                             <td className="p-2 text-right text-emerald-400">
-                              {formatCurrency(taxOptimizedAnalysis.taxOptimizedSells.reduce((sum, s) => sum + s.totalRealGain, 0))}
+                              {formatCurrency(analysis.taxOptimizedSells.reduce((sum, s) => sum + s.totalRealGain, 0))}
                             </td>
-                            <td className="p-2 text-right text-blue-400">{formatCurrency(taxOptimizedAnalysis.totalTaxDue)}</td>
-                            <td className="p-2 text-right text-foreground">{formatCurrency(taxOptimizedAnalysis.totalNetProceeds)}</td>
+                            <td className="p-2 text-right text-blue-400">{formatCurrency(analysis.totalTaxDue)}</td>
+                            <td className="p-2 text-right text-foreground">{formatCurrency(analysis.totalNetProceeds)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -1347,11 +1087,23 @@ export function RebalanceTool() {
                   </div>
                 )}
 
-                {/* Tax Lot Details (Expandable) */}
-                {taxOptimizedAnalysis.taxOptimizedSells.length > 0 && (
+                {/* Tax Lot Selection Details */}
+                {analysis.taxOptimizedSells.length > 0 && (
                   <div className="space-y-3">
-                    <h4 className="text-[10px] font-mono text-muted-foreground uppercase">Tax Lot Selection Details</h4>
-                    {taxOptimizedAnalysis.taxOptimizedSells.map((sell) => (
+                    <h4 className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-2">
+                      Tax Lot Selection Details
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info size={12} className="text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-sm">
+                            <p className="text-xs">Lots selected to minimize Israeli CGT (25% on real gains). Losses and low-gain lots sold first.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </h4>
+                    {analysis.taxOptimizedSells.map((sell) => (
                       <div key={sell.ticker} className="p-3 bg-secondary/20 rounded-lg space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-primary">{sell.ticker}</span>
@@ -1402,6 +1154,12 @@ export function RebalanceTool() {
                   </div>
                 )}
 
+                {analysis.trades.length === 0 && (
+                  <div className="text-center p-4 text-muted-foreground text-xs">
+                    No trades required. Portfolio is already at target weights (within {minTradeSize}% tolerance).
+                  </div>
+                )}
+
                 {/* Israeli Tax Rules Info */}
                 <div className="bg-muted/30 rounded-lg p-3 space-y-1">
                   <p className="text-xs text-muted-foreground">
@@ -1409,21 +1167,15 @@ export function RebalanceTool() {
                     Cost basis is adjusted for inflation using CBS CPI data.
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    <strong>Tax-Optimized Selection:</strong> Lots are selected to minimize real gains (losses first, then lowest gains).
+                    <strong>Real Gain</strong> = Sale Price − (Purchase Price × Current CPI ÷ Purchase CPI)
                   </p>
                 </div>
-
-                {taxOptimizedAnalysis.trades.length === 0 && (
-                  <div className="text-center p-4 text-muted-foreground text-xs">
-                    No trades required. Portfolio is already at target weights (within {minTradeSize}% tolerance).
-                  </div>
-                )}
 
                 {/* Tracking Error Impact */}
                 <div className="flex items-center gap-2 p-2 bg-secondary/30 rounded text-[10px]">
                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    Estimated Tracking Error Impact: <span className="text-primary font-semibold">{taxOptimizedAnalysis.trackingErrorImpact.toFixed(3)}%</span>
+                    Estimated Tracking Error Impact: <span className="text-primary font-semibold">{analysis.trackingErrorImpact.toFixed(3)}%</span>
                   </span>
                 </div>
               </div>
