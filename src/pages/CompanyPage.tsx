@@ -9,6 +9,7 @@ import {
 import { CompanyValueChart } from '@/components/crm/CompanyValueChart';
 import { DecisionLogSection, Decision, DECISION_TYPE_OPTIONS } from '@/components/crm/DecisionLogSection';
 import { ResearchLogSection } from '@/components/crm/ResearchLogSection';
+import { CompanyFilesSection } from '@/components/crm/CompanyFilesSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -1017,6 +1018,9 @@ export default function CompanyPage() {
         decisions={decisions}
         onDecisionsChange={setDecisions}
       />
+
+      {/* Files */}
+      <CompanyFilesSection companyId={company.id} />
 
       {/* Linked Tasks */}
       <Card>
