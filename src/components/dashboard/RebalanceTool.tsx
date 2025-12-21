@@ -112,7 +112,7 @@ const ASSET_TYPE_TO_CATEGORY: Record<string, 'equity' | 'fixed_income' | 'altern
 };
 
 export function RebalanceTool() {
-  const { transactions, valuations } = usePortfolio();
+  const { transactions, valuations, cashBalances, settings } = usePortfolio();
   const { user } = useAuth();
   const { logRebalanceActivity } = useActivityLog();
   const { getCPI, getCurrentCPI, getBaseInfo, isLoading: cpiLoading, error: cpiError, source: cpiSource } = useIsraelCPI();
@@ -296,9 +296,28 @@ export function RebalanceTool() {
     }));
   }, [transactions, valuations, manualTargets]);
 
-  const totalPortfolioValue = useMemo(() => {
+  // Calculate total cash in base currency for unified NAV
+  const totalCashValue = useMemo(() => {
+    const EUR_TO_USD = 1.08;
+    const ILS_TO_USD = 1 / 3.6;
+    const USD_TO_ILS = 3.6;
+    const EUR_TO_ILS = 3.9;
+    
+    if (settings.baseCurrency === 'ILS') {
+      return cashBalances.ILS + (cashBalances.USD * USD_TO_ILS) + (cashBalances.EUR * EUR_TO_ILS);
+    }
+    return cashBalances.USD + (cashBalances.EUR * EUR_TO_USD) + (cashBalances.ILS * ILS_TO_USD);
+  }, [cashBalances, settings.baseCurrency]);
+
+  // Holdings value only (for weight calculations within holdings)
+  const holdingsValue = useMemo(() => {
     return currentHoldings.reduce((sum, h) => sum + h.value, 0);
   }, [currentHoldings]);
+
+  // Total Portfolio Value = NAV = Holdings + Cash (unified with Overview KPI)
+  const totalPortfolioValue = useMemo(() => {
+    return holdingsValue + totalCashValue;
+  }, [holdingsValue, totalCashValue]);
 
   const totalCurrentWeight = useMemo(() => {
     return currentHoldings.reduce((sum, h) => sum + h.currentWeight, 0);

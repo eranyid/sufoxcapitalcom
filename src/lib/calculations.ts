@@ -379,16 +379,44 @@ export function calculateIRR(cashFlows: { date: string; amount: number }[]): num
   return (Math.pow(totalReturned / totalInvested, 1 / years) - 1) * 100;
 }
 
+// Cash balance type for calculations
+interface CashBalancesInput {
+  USD: number;
+  EUR: number;
+  ILS: number;
+}
+
+// Convert cash to base currency (USD by default)
+export function calculateTotalCashInBaseCurrency(
+  cashBalances: CashBalancesInput,
+  baseCurrency: 'USD' | 'ILS' = 'USD'
+): number {
+  // Approximate FX rates for conversion
+  const EUR_TO_USD = 1.08;
+  const ILS_TO_USD = 1 / 3.6;
+  const USD_TO_ILS = 3.6;
+  const EUR_TO_ILS = 3.9;
+  
+  if (baseCurrency === 'USD') {
+    return cashBalances.USD + (cashBalances.EUR * EUR_TO_USD) + (cashBalances.ILS * ILS_TO_USD);
+  } else {
+    return cashBalances.ILS + (cashBalances.USD * USD_TO_ILS) + (cashBalances.EUR * EUR_TO_ILS);
+  }
+}
+
 // Full performance metrics calculation
+// Now includes cash balance in totalValue (NAV = Holdings + Cash)
 export function calculatePerformanceMetrics(
   transactions: Transaction[],
   valuations: MonthlyValuation[],
-  riskFreeRate: number
+  riskFreeRate: number,
+  cashBalances?: CashBalancesInput,
+  baseCurrency: 'USD' | 'ILS' = 'USD'
 ): PerformanceMetrics {
   const positions = calculatePositions(transactions);
   const latestVals = getLatestValuations(valuations);
   
-  let totalValue = 0;
+  let holdingsValue = 0;
   let totalCost = 0;
   let realizedPL = 0;
   
@@ -396,13 +424,21 @@ export function calculatePerformanceMetrics(
     const val = latestVals[ticker];
     if (val && pos.quantity > 0) {
       const currentValue = pos.quantity * val.pricePerUnit * (val.fxRate || 1);
-      totalValue += currentValue;
+      holdingsValue += currentValue;
     }
     totalCost += pos.totalCost;
     realizedPL += pos.realizedPL;
   }
   
-  const unrealizedPL = totalValue - totalCost;
+  // Calculate cash in base currency
+  const cashValue = cashBalances 
+    ? calculateTotalCashInBaseCurrency(cashBalances, baseCurrency)
+    : 0;
+  
+  // NAV = Holdings + Cash (unified Total Portfolio Value)
+  const totalValue = holdingsValue + cashValue;
+  
+  const unrealizedPL = holdingsValue - totalCost;
   const totalPL = realizedPL + unrealizedPL;
   const totalReturn = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
   
@@ -415,7 +451,7 @@ export function calculatePerformanceMetrics(
   const { maxDrawdown, drawdownSeries } = calculateDrawdown(cumulativeReturns);
   const winLossRatio = calculateWinLossRatio(transactions);
   
-  // Cash flows for IRR
+  // Cash flows for IRR (based on holdings only)
   const cashFlows = transactions.map(tx => ({
     date: tx.date,
     amount: tx.transactionType === 'buy' 
@@ -423,8 +459,8 @@ export function calculatePerformanceMetrics(
       : -(tx.quantity * tx.pricePerUnit - tx.fees)
   }));
   
-  if (totalValue > 0) {
-    cashFlows.push({ date: new Date().toISOString().slice(0, 10), amount: -totalValue });
+  if (holdingsValue > 0) {
+    cashFlows.push({ date: new Date().toISOString().slice(0, 10), amount: -holdingsValue });
   }
   
   const irr = calculateIRR(cashFlows);
@@ -435,7 +471,9 @@ export function calculatePerformanceMetrics(
     : 0;
   
   return {
-    totalValue,
+    totalValue,       // NAV = Holdings + Cash
+    holdingsValue,    // Market value of holdings only
+    cashValue,        // Cash portion
     totalCost,
     realizedPL,
     unrealizedPL,

@@ -164,18 +164,39 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   // Recalculate metrics when data changes
+  // Now includes cashBalances in totalValue for unified NAV
   const refreshMetrics = useCallback(() => {
     if (transactions.length > 0 && valuations.length > 0) {
-      const perfMetrics = calculatePerformanceMetrics(transactions, valuations, settings.riskFreeRate);
+      const baseCurrency = settings.baseCurrency === 'ILS' ? 'ILS' : 'USD';
+      const perfMetrics = calculatePerformanceMetrics(
+        transactions, 
+        valuations, 
+        settings.riskFreeRate,
+        cashBalances,
+        baseCurrency
+      );
       setPerformanceMetrics(perfMetrics);
       
       const riskMet = calculateRiskMetrics(transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns);
       setRiskMetrics(riskMet);
+      
+      // Validation guard: check NAV consistency
+      // This helps catch calculation discrepancies during development
+      if (process.env.NODE_ENV === 'development') {
+        const expectedNav = perfMetrics.holdingsValue + perfMetrics.cashValue;
+        const tolerance = 0.01; // $0.01 tolerance for rounding
+        if (Math.abs(perfMetrics.totalValue - expectedNav) > tolerance) {
+          console.warn(
+            `[NAV Consistency Warning] Total Portfolio Value (${perfMetrics.totalValue.toFixed(2)}) ` +
+            `!= Holdings (${perfMetrics.holdingsValue.toFixed(2)}) + Cash (${perfMetrics.cashValue.toFixed(2)})`
+          );
+        }
+      }
     } else {
       setPerformanceMetrics(null);
       setRiskMetrics(null);
     }
-  }, [transactions, valuations, settings]);
+  }, [transactions, valuations, settings, cashBalances]);
 
   useEffect(() => {
     refreshMetrics();

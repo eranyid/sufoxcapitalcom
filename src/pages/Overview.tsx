@@ -207,7 +207,7 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Group 1: Total Portfolio Value - Always full width */}
+      {/* Group 1: Total Portfolio Value (NAV = Cash + Holdings) - Always full width */}
       <div className="w-full">
         <KPICard
           title="Total Portfolio Value"
@@ -215,6 +215,7 @@ export default function Overview() {
           icon={DollarSign}
           trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
           trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
+          subtitle="Includes cash + all holdings"
         />
       </div>
 
