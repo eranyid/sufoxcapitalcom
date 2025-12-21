@@ -115,6 +115,47 @@ export type Database = {
           },
         ]
       }
+      company_files: {
+        Row: {
+          company_id: string
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_files_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_research_entries: {
         Row: {
           calculator_type: string | null
