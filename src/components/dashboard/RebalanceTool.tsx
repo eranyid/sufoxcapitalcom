@@ -129,6 +129,7 @@ export function RebalanceTool() {
   const [policyApplied, setPolicyApplied] = useState(false);
   const [equalWeightApplied, setEqualWeightApplied] = useState(false);
   const [firstProjectId, setFirstProjectId] = useState<string | null>(null);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const currentCPI = useMemo(() => getCurrentCPI(), [getCurrentCPI]);
   const baseInfo = useMemo(() => getBaseInfo(), [getBaseInfo]);
@@ -1194,8 +1195,11 @@ export function RebalanceTool() {
 
                 {/* Export PDF Button */}
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
+                    setIsExportingPdf(true);
                     try {
+                      // Small delay to show animation
+                      await new Promise(resolve => setTimeout(resolve, 300));
                       generateRebalanceReport({
                         analysis,
                         currentHoldings,
@@ -1222,12 +1226,19 @@ export function RebalanceTool() {
                         description: 'There was an error generating the report.',
                         variant: 'destructive',
                       });
+                    } finally {
+                      setIsExportingPdf(false);
                     }
                   }}
+                  disabled={isExportingPdf}
                   className="w-full h-9 text-xs bg-primary hover:bg-primary/80 text-primary-foreground"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export PDF Execution Report
+                  {isExportingPdf ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2 transition-transform group-hover:translate-y-0.5" />
+                  )}
+                  {isExportingPdf ? 'Generating Report...' : 'Export PDF Execution Report'}
                 </Button>
               </div>
             )}
