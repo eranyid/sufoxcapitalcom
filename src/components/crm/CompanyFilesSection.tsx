@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Upload, File, FileText, Image, Download, Trash2, Loader2, FolderOpen, Filter } from 'lucide-react';
+import { Upload, File, FileText, Image, Download, Trash2, Loader2, FolderOpen, Filter, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -35,13 +35,14 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function CompanyFilesSection({ companyId }: Props) {
-  const { files, loading, uploading, uploadFile, deleteFile, getFileUrl } = useCompanyFiles(companyId);
+  const { files, loading, uploading, uploadFile, deleteFile, updateFileCategory, getFileUrl } = useCompanyFiles(companyId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<FileCategory>('Other');
+  const [editingFileId, setEditingFileId] = useState<string | null>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -209,6 +210,7 @@ export function CompanyFilesSection({ companyId }: Props) {
                 <div className="space-y-1 pl-2 border-l-2 border-border">
                   {categoryFiles.map((file) => {
                     const FileIcon = getFileIcon(file.content_type);
+                    const isEditing = editingFileId === file.id;
                     return (
                       <div
                         key={file.id}
@@ -221,24 +223,52 @@ export function CompanyFilesSection({ companyId }: Props) {
                             {formatFileSize(file.file_size)} • {format(new Date(file.created_at), 'MMM d, yyyy')}
                           </p>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleDownload(file.file_path)}
+                        {isEditing ? (
+                          <Select 
+                            value={file.category || 'Other'} 
+                            onValueChange={async (v) => {
+                              await updateFileCategory(file.id, v);
+                              setEditingFileId(null);
+                            }}
                           >
-                            <Download className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={() => deleteFile(file.id, file.file_path)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                            <SelectTrigger className="w-[120px] h-7 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FILE_CATEGORIES.map(cat => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => setEditingFileId(file.id)}
+                              title="Change category"
+                            >
+                              <Tag className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handleDownload(file.file_path)}
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => deleteFile(file.id, file.file_path)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

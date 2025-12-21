@@ -159,6 +159,23 @@ export function useCompanyFiles(companyId: string | null) {
     return true;
   }, []);
 
+  const updateFileCategory = useCallback(async (fileId: string, category: string) => {
+    const { error } = await supabase
+      .from('company_files')
+      .update({ category })
+      .eq('id', fileId);
+
+    if (error) {
+      toast.error('Failed to update category');
+      console.error(error);
+      return false;
+    }
+
+    setFiles(prev => prev.map(f => f.id === fileId ? { ...f, category } : f));
+    toast.success('Category updated');
+    return true;
+  }, []);
+
   const getFileUrl = useCallback(async (filePath: string) => {
     const { data } = await supabase.storage
       .from('company-files')
@@ -174,6 +191,7 @@ export function useCompanyFiles(companyId: string | null) {
     fetchFiles,
     uploadFile,
     deleteFile,
+    updateFileCategory,
     getFileUrl,
   };
 }
