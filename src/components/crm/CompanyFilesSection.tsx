@@ -3,6 +3,7 @@ import { useCompanyFiles, FILE_CATEGORIES, FileCategory } from '@/hooks/useCompa
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -17,8 +18,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Upload, File, FileText, Image, Download, Trash2, Loader2, FolderOpen, Filter, Tag } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Upload, File, FileText, Image, Download, Trash2, Loader2, FolderOpen, Filter, Tag, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface Props {
   companyId: string;
@@ -43,6 +55,10 @@ export function CompanyFilesSection({ companyId }: Props) {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<FileCategory>('Other');
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState<FileCategory>('Other');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -111,6 +127,49 @@ export function CompanyFilesSection({ companyId }: Props) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const toggleFileSelection = (fileId: string) => {
+    setSelectedFileIds(prev => {
+      const next = new Set(prev);
+      if (next.has(fileId)) {
+        next.delete(fileId);
+      } else {
+        next.add(fileId);
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedFileIds(new Set(filteredFiles.map(f => f.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedFileIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    const filesToDelete = files.filter(f => selectedFileIds.has(f.id));
+    let deleted = 0;
+    for (const file of filesToDelete) {
+      const success = await deleteFile(file.id, file.file_path);
+      if (success) deleted++;
+    }
+    toast.success(`Deleted ${deleted} file${deleted !== 1 ? 's' : ''}`);
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
+
+  const handleBulkCategoryChange = async () => {
+    let updated = 0;
+    for (const fileId of selectedFileIds) {
+      const success = await updateFileCategory(fileId, bulkCategory);
+      if (success) updated++;
+    }
+    toast.success(`Updated ${updated} file${updated !== 1 ? 's' : ''}`);
+    clearSelection();
+    setBulkCategoryOpen(false);
+  };
+
   const filteredFiles = filterCategory === 'all' 
     ? files 
     : files.filter(f => f.category === filterCategory);
@@ -122,6 +181,8 @@ export function CompanyFilesSection({ companyId }: Props) {
     acc[cat].push(file);
     return acc;
   }, {} as Record<string, typeof files>);
+
+  const hasSelection = selectedFileIds.size > 0;
 
   return (
     <Card>
@@ -148,6 +209,50 @@ export function CompanyFilesSection({ companyId }: Props) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Bulk Actions Bar */}
+        {hasSelection && (
+          <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
+            <span className="text-sm font-medium text-primary">
+              {selectedFileIds.size} selected
+            </span>
+            <div className="flex-1" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={selectAll}
+            >
+              Select All
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1"
+              onClick={() => setBulkCategoryOpen(true)}
+            >
+              <Tag size={12} />
+              Change Category
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1 text-destructive border-destructive/30 hover:bg-destructive/10"
+              onClick={() => setBulkDeleteOpen(true)}
+            >
+              <Trash2 size={12} />
+              Delete
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={clearSelection}
+            >
+              <X size={14} />
+            </Button>
+          </div>
+        )}
+
         {/* Upload area */}
         <div
           className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
@@ -211,11 +316,19 @@ export function CompanyFilesSection({ companyId }: Props) {
                   {categoryFiles.map((file) => {
                     const FileIcon = getFileIcon(file.content_type);
                     const isEditing = editingFileId === file.id;
+                    const isSelected = selectedFileIds.has(file.id);
                     return (
                       <div
                         key={file.id}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 group"
+                        className={`flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 group ${
+                          isSelected ? 'bg-primary/10' : ''
+                        }`}
                       >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleFileSelection(file.id)}
+                          className="shrink-0"
+                        />
                         <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{file.file_name}</p>
@@ -319,6 +432,58 @@ export function CompanyFilesSection({ companyId }: Props) {
             <Button onClick={handleConfirmUpload} disabled={uploading}>
               {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedFileIds.size} file{selectedFileIds.size !== 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The files will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Category Change Dialog */}
+      <Dialog open={bulkCategoryOpen} onOpenChange={setBulkCategoryOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change category for {selectedFileIds.size} file{selectedFileIds.size !== 1 ? 's' : ''}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">New Category</label>
+              <Select value={bulkCategory} onValueChange={(v) => setBulkCategory(v as FileCategory)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FILE_CATEGORIES.map(cat => (
+                    <SelectItem key={cat} value={cat}>
+                      <Badge variant="outline" className={`${CATEGORY_COLORS[cat]} text-xs`}>
+                        {cat}
+                      </Badge>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkCategoryOpen(false)}>Cancel</Button>
+            <Button onClick={handleBulkCategoryChange}>
+              Update Category
             </Button>
           </DialogFooter>
         </DialogContent>
