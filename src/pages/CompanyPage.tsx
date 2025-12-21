@@ -498,6 +498,139 @@ export default function CompanyPage() {
             </div>
           </div>
 
+          {/* Snapshot Row */}
+          <div className="mt-4 p-3 bg-muted/20 rounded-lg border border-border/50">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Snapshot</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Market Cap */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider">Market Cap</label>
+                {editMode === 'market_cap' ? (
+                  <div className="flex gap-1">
+                    <Input
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      placeholder="e.g., $50B"
+                      className="h-7 text-sm"
+                      autoFocus
+                    />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('market_cap')}><Save size={12} /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
+                  </div>
+                ) : (
+                  <p 
+                    className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                    onClick={() => startEdit('market_cap', company.market_cap)}
+                  >
+                    {company.market_cap || '—'}
+                  </p>
+                )}
+              </div>
+
+              {/* Sector */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <Briefcase size={10} /> Sector
+                </label>
+                {editMode === 'sector' ? (
+                  <div className="flex gap-1">
+                    <Input
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      className="h-7 text-sm"
+                      autoFocus
+                    />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('sector')}><Save size={12} /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
+                  </div>
+                ) : (
+                  <p 
+                    className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                    onClick={() => startEdit('sector', company.sector)}
+                  >
+                    {company.sector || '—'}
+                  </p>
+                )}
+              </div>
+
+              {/* Geography */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <MapPin size={10} /> Geography
+                </label>
+                {editMode === 'geography' ? (
+                  <div className="flex gap-1">
+                    <Input
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      className="h-7 text-sm"
+                      autoFocus
+                    />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('geography')}><Save size={12} /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
+                  </div>
+                ) : (
+                  <p 
+                    className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                    onClick={() => startEdit('geography', company.geography)}
+                  >
+                    {company.geography || '—'}
+                  </p>
+                )}
+              </div>
+
+              {/* Ticker */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider">Ticker</label>
+                {editMode === 'ticker' ? (
+                  <div className="flex gap-1">
+                    <Input
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value.toUpperCase())}
+                      className="h-7 text-sm font-mono"
+                      autoFocus
+                    />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('ticker')}><Save size={12} /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
+                  </div>
+                ) : (
+                  <p 
+                    className="text-sm font-mono cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                    onClick={() => startEdit('ticker', company.ticker)}
+                  >
+                    {company.ticker || '—'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Business Description */}
+            <div className="mt-3 space-y-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider">Business Description</label>
+              {editMode === 'business_description' ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    rows={3}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => saveEdit('business_description')}>Save</Button>
+                    <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <p 
+                  className="text-sm cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1 line-clamp-2"
+                  onClick={() => startEdit('business_description', company.business_description)}
+                >
+                  {company.business_description || <span className="text-muted-foreground italic">Click to add...</span>}
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* P&L Summary */}
           {positionMetrics && (
             <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border">
@@ -744,143 +877,6 @@ export default function CompanyPage() {
         </CardContent>
       </Card>
 
-      {/* Data / Snapshot */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileText size={18} className="text-primary" />
-            Data / Snapshot
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Market Cap */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider">Market Cap</label>
-              {editMode === 'market_cap' ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={editValue}
-                    onChange={e => setEditValue(e.target.value)}
-                    placeholder="e.g., $50B"
-                    autoFocus
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => saveEdit('market_cap')}><Save size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
-                </div>
-              ) : (
-                <p 
-                  className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
-                  onClick={() => startEdit('market_cap', company.market_cap)}
-                >
-                  {company.market_cap || '—'}
-                </p>
-              )}
-            </div>
-
-            {/* Sector */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <Briefcase size={10} /> Sector
-              </label>
-              {editMode === 'sector' ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={editValue}
-                    onChange={e => setEditValue(e.target.value)}
-                    autoFocus
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => saveEdit('sector')}><Save size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
-                </div>
-              ) : (
-                <p 
-                  className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
-                  onClick={() => startEdit('sector', company.sector)}
-                >
-                  {company.sector || '—'}
-                </p>
-              )}
-            </div>
-
-            {/* Geography */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <MapPin size={10} /> Geography
-              </label>
-              {editMode === 'geography' ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={editValue}
-                    onChange={e => setEditValue(e.target.value)}
-                    autoFocus
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => saveEdit('geography')}><Save size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
-                </div>
-              ) : (
-                <p 
-                  className="text-sm font-medium cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
-                  onClick={() => startEdit('geography', company.geography)}
-                >
-                  {company.geography || '—'}
-                </p>
-              )}
-            </div>
-
-            {/* Ticker */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider">Ticker</label>
-              {editMode === 'ticker' ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={editValue}
-                    onChange={e => setEditValue(e.target.value.toUpperCase())}
-                    autoFocus
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => saveEdit('ticker')}><Save size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
-                </div>
-              ) : (
-                <p 
-                  className="text-sm font-mono cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
-                  onClick={() => startEdit('ticker', company.ticker)}
-                >
-                  {company.ticker || '—'}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <Separator className="my-4" />
-
-          {/* Business Description */}
-          <div className="space-y-2">
-            <label className="text-xs text-muted-foreground uppercase tracking-wider">Business Description</label>
-            {editMode === 'business_description' ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={editValue}
-                  onChange={e => setEditValue(e.target.value)}
-                  rows={4}
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => saveEdit('business_description')}>Save</Button>
-                  <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
-                </div>
-              </div>
-            ) : (
-              <p 
-                className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2 min-h-[60px] whitespace-pre-wrap"
-                onClick={() => startEdit('business_description', company.business_description)}
-              >
-                {company.business_description || <span className="text-muted-foreground italic">Click to add...</span>}
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Position Value Chart */}
       {company.ticker && (
