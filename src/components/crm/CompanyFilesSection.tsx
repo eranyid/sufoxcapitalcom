@@ -28,7 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Upload, File, FileText, Image, Download, Trash2, Loader2, FolderOpen, Filter, Tag, X, GripVertical } from 'lucide-react';
+import { Upload, File, FileText, Image, Download, Trash2, Loader2, FolderOpen, Filter, Tag, X, GripVertical, Search, Cloud } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
@@ -192,6 +193,7 @@ export function CompanyFilesSection({ companyId }: Props) {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
   const [bulkCategory, setBulkCategory] = useState<FileCategory>('Other');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -326,9 +328,13 @@ export function CompanyFilesSection({ companyId }: Props) {
     }
   };
 
-  const filteredFiles = filterCategory === 'all' 
-    ? files 
-    : files.filter(f => f.category === filterCategory);
+  // Filter by category and search
+  const filteredFiles = files.filter(f => {
+    const matchesCategory = filterCategory === 'all' || f.category === filterCategory;
+    const matchesSearch = searchQuery === '' || 
+      f.file_name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   // Group files by category
   const groupedFiles = filteredFiles.reduce((acc, file) => {
@@ -343,12 +349,25 @@ export function CompanyFilesSection({ companyId }: Props) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <FolderOpen size={18} className="text-primary" />
             Files
+            <Badge variant="outline" className="ml-1 text-xs gap-1">
+              <Cloud size={10} />
+              Cloud
+            </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search files..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 w-[150px] pl-8 text-xs"
+              />
+            </div>
             <Filter size={14} className="text-muted-foreground" />
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="w-[130px] h-8 text-xs">
