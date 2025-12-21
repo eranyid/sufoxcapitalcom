@@ -141,27 +141,28 @@ export function NavEquityCurve({
     return null;
   }
 
+  // Determine if NAV is trending up overall
+  const isOverallPositive = useMemo(() => {
+    if (navSeries.length < 2) return true;
+    return navSeries[navSeries.length - 1].nav >= navSeries[0].nav;
+  }, [navSeries]);
+
   return (
     <div className="bloomberg-panel animate-fade-in overflow-hidden">
-      {/* Header Section - Distinguished dark background */}
+      {/* Header Section */}
       <div className="bg-card/80 border-b border-border/40">
         <div className="px-4 py-3 flex items-center justify-between">
           {/* Left: Title + Warning */}
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold tracking-wide text-primary">
-                FUND NAV (Cash + Holdings)
-              </h3>
-              {!hasCashData && (
-                <span className="flex items-center gap-1 text-[9px] text-warning bg-warning/10 px-1.5 py-0.5 rounded-sm">
-                  <AlertTriangle className="h-2.5 w-2.5" />
-                  Cash incomplete
-                </span>
-              )}
-            </div>
-            <p className="text-[10px] text-muted-foreground font-mono tracking-tight">
-              Portfolio equity curve based on monthly valuations
-            </p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide text-primary">
+              FUND NAV
+            </h3>
+            {!hasCashData && (
+              <span className="flex items-center gap-1 text-[9px] text-warning bg-warning/10 px-1.5 py-0.5 rounded-sm">
+                <AlertTriangle className="h-2.5 w-2.5" />
+                Cash incomplete
+              </span>
+            )}
           </div>
           
           {/* Right: KPIs in a single row */}
@@ -254,15 +255,15 @@ export function NavEquityCurve({
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke="hsl(var(--border))" 
-                  opacity={0.15}
+                  opacity={0.08}
                   vertical={false}
                 />
                 <XAxis 
                   dataKey="month" 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                   tickFormatter={(v) => v.slice(2, 7).replace('-', '/')}
-                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.3 }}
-                  tickLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.3 }}
+                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.2 }}
+                  tickLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.2 }}
                 />
                 <YAxis 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
@@ -279,12 +280,12 @@ export function NavEquityCurve({
                     fontSize: '11px',
                     fontFamily: 'JetBrains Mono, monospace',
                     padding: '8px 12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
                   }}
-                  labelStyle={{ color: 'hsl(var(--primary))', fontWeight: 600, marginBottom: '4px' }}
+                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: '4px' }}
                   formatter={(value: number, name: string) => [formatFullCurrency(value), name]}
                   labelFormatter={(label) => `${label}`}
-                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.3, strokeDasharray: '4 4' }}
+                  cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeOpacity: 0.2, strokeDasharray: '4 4' }}
                 />
                 <Legend 
                   wrapperStyle={{ fontSize: '9px', paddingTop: '8px' }}
@@ -293,10 +294,10 @@ export function NavEquityCurve({
                 <Line 
                   type="monotone" 
                   dataKey="nav" 
-                  stroke="hsl(var(--foreground))"
-                  strokeWidth={2}
+                  stroke="#F5F5F0"
+                  strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 4, fill: 'hsl(var(--foreground))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: '#F5F5F0', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
                   name="Total NAV"
                 />
                 <Line 
@@ -322,24 +323,31 @@ export function NavEquityCurve({
             ) : (
               <AreaChart data={navSeries} margin={{ top: 10, right: 10, left: -5, bottom: 5 }}>
                 <defs>
-                  <linearGradient id="navGradientDark" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.2}/>
-                    <stop offset="50%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.08}/>
-                    <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.01}/>
+                  {/* Ivory/off-white gradient for institutional look */}
+                  <linearGradient id="navGradientIvory" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F5F5F0" stopOpacity={0.18}/>
+                    <stop offset="40%" stopColor="#F5F5F0" stopOpacity={0.08}/>
+                    <stop offset="100%" stopColor="#F5F5F0" stopOpacity={0}/>
+                  </linearGradient>
+                  {/* Subtle green tint when positive trend */}
+                  <linearGradient id="navGradientPositive" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#A8C6A0" stopOpacity={0.15}/>
+                    <stop offset="40%" stopColor="#A8C6A0" stopOpacity={0.06}/>
+                    <stop offset="100%" stopColor="#A8C6A0" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke="hsl(var(--border))" 
-                  opacity={0.15}
+                  opacity={0.06}
                   vertical={false}
                 />
                 <XAxis 
                   dataKey="month" 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                   tickFormatter={(v) => v.slice(2, 7).replace('-', '/')}
-                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.3 }}
-                  tickLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.3 }}
+                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.2 }}
+                  tickLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.2 }}
                 />
                 <YAxis 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
@@ -352,50 +360,27 @@ export function NavEquityCurve({
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--popover))', 
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '4px',
+                    borderRadius: '2px',
                     fontSize: '11px',
                     fontFamily: 'JetBrains Mono, monospace',
-                    padding: '8px 12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                    padding: '10px 14px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
                   }}
-                  labelStyle={{ color: 'hsl(var(--primary))', fontWeight: 600, marginBottom: '4px' }}
-                  formatter={(value: number, name: string) => {
-                    if (name === 'nav') {
-                      const point = navSeries.find(n => n.nav === value);
-                      return [
-                        <div key="nav" className="space-y-1.5">
-                          <div className="font-semibold text-foreground">{formatFullCurrency(value)}</div>
-                          {point && (
-                            <div className="text-[9px] text-muted-foreground space-y-0.5 pt-1 border-t border-border/30">
-                              <div className="flex justify-between gap-4">
-                                <span>Holdings:</span>
-                                <span className="text-foreground/80">{formatFullCurrency(point.holdings)}</span>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span>Cash:</span>
-                                <span className="text-foreground/80">{formatFullCurrency(point.cash)}</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>,
-                        ''
-                      ];
-                    }
-                    return [formatFullCurrency(value), name];
-                  }}
+                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: '2px', fontSize: '10px' }}
+                  formatter={(value: number) => [formatFullCurrency(value), '']}
                   labelFormatter={(label) => `${label}`}
-                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.3, strokeDasharray: '4 4' }}
+                  cursor={{ stroke: '#F5F5F0', strokeOpacity: 0.15 }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="nav" 
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeWidth={1.5}
-                  fill="url(#navGradientDark)"
+                  stroke={isOverallPositive ? "#C8D4C0" : "#F5F5F0"}
+                  strokeWidth={2}
+                  fill={isOverallPositive ? "url(#navGradientPositive)" : "url(#navGradientIvory)"}
                   activeDot={{ 
-                    r: 4, 
-                    fill: 'hsl(var(--foreground))', 
-                    stroke: 'hsl(var(--primary))', 
+                    r: 5, 
+                    fill: isOverallPositive ? "#C8D4C0" : "#F5F5F0", 
+                    stroke: 'hsl(var(--background))', 
                     strokeWidth: 2 
                   }}
                   name="nav"
