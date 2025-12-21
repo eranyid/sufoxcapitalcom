@@ -3,7 +3,6 @@ import { KPICard } from '@/components/dashboard/KPICard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { ContributionChart } from '@/components/dashboard/ContributionChart';
 import { PerformanceCalendarHeatmap } from '@/components/dashboard/PerformanceCalendarHeatmap';
-import { PriceSparkline } from '@/components/dashboard/PriceSparkline';
 import { calculateContributions, calculateMonthlyReturns } from '@/lib/calculations';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -124,7 +123,6 @@ export default function Performance() {
                   <TableRow>
                     <TableHead>Ticker</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead className="text-center">Trend</TableHead>
                     <TableHead className="text-right">Weight</TableHead>
                     <TableHead className="text-right">Contribution</TableHead>
                     <TableHead className="text-right">P/L%</TableHead>
@@ -135,9 +133,6 @@ export default function Performance() {
                     <TableRow key={c.ticker}>
                       <TableCell className="font-medium text-primary">{c.ticker}</TableCell>
                       <TableCell>{c.name}</TableCell>
-                      <TableCell className="text-center">
-                        <PriceSparkline ticker={c.ticker} valuations={valuations} />
-                      </TableCell>
                       <TableCell className="text-right">{c.weight.toFixed(1)}%</TableCell>
                       <TableCell className={`text-right ${c.contribution >= 0 ? 'positive' : 'negative'}`}>
                         {formatCurrency(c.contribution)}
