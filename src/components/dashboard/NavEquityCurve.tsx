@@ -298,19 +298,19 @@ export function NavEquityCurve({
                 <Line 
                   type="monotone" 
                   dataKey="nav" 
-                  stroke="#F2F2F0"
+                  stroke="#3B82F6"
                   strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 5, fill: '#F2F2F0', stroke: '#F59E0B', strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: '#3B82F6', stroke: '#60A5FA', strokeWidth: 2 }}
                   name="Total NAV"
                 />
                 <Line 
                   type="monotone" 
                   dataKey="holdings" 
-                  stroke="hsl(var(--chart-blue))"
+                  stroke="#F2F2F0"
                   strokeWidth={1.5}
                   dot={false}
-                  activeDot={{ r: 3, fill: 'hsl(var(--chart-blue))', stroke: '#F59E0B', strokeWidth: 2 }}
+                  activeDot={{ r: 3, fill: '#F2F2F0', stroke: '#60A5FA', strokeWidth: 2 }}
                   name="Holdings"
                 />
                 <Line 
