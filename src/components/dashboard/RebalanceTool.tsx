@@ -709,13 +709,15 @@ export function RebalanceTool() {
     };
   }, [showTaxOptimizedAnalysis, currentHoldings, newPositions, totalPortfolioValue, minTradeSize, selectTaxOptimizedLots, totalTargetWeight]);
 
-  // Standard analysis (without tax optimization)
+  // Standard analysis (WITH tax estimation integrated)
   const analysis = useMemo(() => {
     if (!showAnalysis || totalPortfolioValue === 0) return null;
 
     const trades: SuggestedTrade[] = [];
+    const taxOptimizedSells: TaxOptimizedSell[] = [];
     let totalTurnover = 0;
     let cashImpact = 0;
+    let totalTaxDue = 0;
 
     currentHoldings.forEach(h => {
       const weightDiff = h.targetWeight - h.currentWeight;
@@ -735,8 +737,21 @@ export function RebalanceTool() {
           weightChange: weightDiff
         });
 
+        // Calculate tax for SELL actions
+        if (action === 'SELL') {
+          const taxOptResult = selectTaxOptimizedLots(h.ticker, tradeValue);
+          if (taxOptResult) {
+            taxOptimizedSells.push(taxOptResult);
+            totalTaxDue += taxOptResult.taxEstimate;
+            cashImpact += taxOptResult.netProceeds;
+          } else {
+            cashImpact += tradeValue;
+          }
+        } else {
+          cashImpact -= tradeValue;
+        }
+
         totalTurnover += tradeValue;
-        cashImpact -= valueDiff;
       }
     });
 
@@ -784,15 +799,17 @@ export function RebalanceTool() {
 
     return {
       trades,
+      taxOptimizedSells,
       totalTurnover: totalTurnover / 2,
       numberOfTrades: trades.length,
       cashImpact,
       estimatedCost: (totalTurnover / 2) * 0.001,
       trackingErrorImpact,
       beforeAllocation,
-      afterAllocation
+      afterAllocation,
+      totalTaxDue
     };
-  }, [showAnalysis, currentHoldings, newPositions, totalPortfolioValue, minTradeSize]);
+  }, [showAnalysis, currentHoldings, newPositions, totalPortfolioValue, minTradeSize, selectTaxOptimizedLots]);
 
   const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
@@ -1111,7 +1128,7 @@ export function RebalanceTool() {
             {analysis && showAnalysis && (
               <div className="space-y-4 pt-4 border-t border-border">
                 {/* Summary KPIs */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                   <div className="p-2 bg-secondary/30 rounded">
                     <div className="text-[9px] text-muted-foreground uppercase">Trades</div>
                     <div className="text-sm font-mono font-semibold text-primary">{analysis.numberOfTrades}</div>
@@ -1130,8 +1147,12 @@ export function RebalanceTool() {
                     <div className="text-[9px] text-muted-foreground uppercase">Est. Cost</div>
                     <div className="text-sm font-mono font-semibold text-red-400">{formatCurrency(analysis.estimatedCost)}</div>
                   </div>
+                  <div className="p-2 bg-blue-500/20 border border-blue-500/30 rounded">
+                    <div className="text-[9px] text-blue-400 uppercase">Est. Tax (25%)</div>
+                    <div className="text-sm font-mono font-semibold text-blue-400">{formatCurrency(analysis.totalTaxDue)}</div>
+                  </div>
                   <div className="p-2 bg-secondary/30 rounded">
-                    <div className="text-[9px] text-muted-foreground uppercase">Cash Impact</div>
+                    <div className="text-[9px] text-muted-foreground uppercase">Net Cash</div>
                     <div className={`text-sm font-mono font-semibold ${
                       analysis.cashImpact >= 0 ? 'text-green-500' : 'text-red-400'
                     }`}>
