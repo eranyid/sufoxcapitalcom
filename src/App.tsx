@@ -30,6 +30,7 @@ const BackOffice = lazy(() => import("./pages/BackOffice"));
 const BackOfficeTasks = lazy(() => import("./pages/BackOfficeTasks"));
 const BackOfficeTimeline = lazy(() => import("./pages/BackOfficeTimeline"));
 const CompanyPage = lazy(() => import("./pages/CompanyPage"));
+const Calendar = lazy(() => import("./pages/Calendar"));
 const Trash = lazy(() => import("./pages/Trash"));
 const Help = lazy(() => import("./pages/Help"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
@@ -138,6 +139,11 @@ const App = () => (
                   <Route path="/backoffice/company/:companyId" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <CompanyPage />
+                    </Suspense>
+                  } />
+                  <Route path="/calendar" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Calendar />
                     </Suspense>
                   } />
                   <Route path="/trash" element={
