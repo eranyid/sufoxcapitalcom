@@ -41,6 +41,7 @@ export default function Calendar() {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [taskLinks, setTaskLinks] = useState<TaskCalendarLink[]>([]);
   const [syncingTaskId, setSyncingTaskId] = useState<string | null>(null);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   const {
     isConnected,
@@ -49,6 +50,7 @@ export default function Calendar() {
     events,
     eventsLoading,
     lastError,
+    errorCode,
     connect,
     disconnect,
     exchangeCode,
@@ -60,10 +62,41 @@ export default function Calendar() {
 
   const { tasks, loading: tasksLoading } = useCrmTasks();
 
-  // Handle OAuth callback
+  // Handle OAuth callback - both success and error cases
   useEffect(() => {
     const code = searchParams.get('code');
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+    
+    if (error) {
+      // Handle OAuth error from Google
+      console.error('[Calendar] OAuth error:', error, errorDescription);
+      
+      let userMessage = 'Google Calendar connection failed.';
+      switch (error) {
+        case 'access_denied':
+          userMessage = 'Access was denied. Please grant calendar permissions when prompted.';
+          break;
+        case 'invalid_scope':
+          userMessage = 'Invalid permissions requested. Please try again.';
+          break;
+        case 'unauthorized_client':
+          userMessage = 'This app is not authorized. The OAuth app may be in testing mode - ask the app owner to add your Google account as a test user.';
+          break;
+        case 'org_internal':
+          userMessage = 'This app is restricted to internal organization users only.';
+          break;
+        default:
+          userMessage = errorDescription || `Connection failed: ${error}`;
+      }
+      
+      setOauthError(userMessage);
+      setSearchParams({});
+      return;
+    }
+    
     if (code) {
+      setOauthError(null);
       exchangeCode(code).then((success) => {
         if (success) {
           setSearchParams({});
@@ -242,11 +275,40 @@ export default function Calendar() {
         </div>
       </div>
 
-      {lastError && (
+      {/* OAuth Error from Google redirect */}
+      {oauthError && (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-destructive mb-1">Connection Failed</h4>
+                <p className="text-sm text-muted-foreground mb-3">{oauthError}</p>
+                <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/50 rounded">
+                  <strong>Troubleshooting:</strong>
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>If you see "403" or "access denied", the OAuth app may be in Testing mode</li>
+                    <li>Ask the app owner to add your Google account as a test user</li>
+                    <li>Or publish the OAuth app for production use</li>
+                    <li>Check that your redirect URI matches exactly: <code className="bg-muted px-1 rounded">{window.location.origin}/calendar</code></li>
+                  </ul>
+                </div>
+                <Button size="sm" onClick={() => { setOauthError(null); connect(); }}>
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* API/Connection Error */}
+      {lastError && !oauthError && (
         <Card className="border-amber-500/50 bg-amber-500/5">
           <CardContent className="py-3 flex items-center gap-2 text-amber-500">
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">{lastError}</span>
+            {errorCode && <Badge variant="outline" className="text-xs">{errorCode}</Badge>}
             <Button variant="outline" size="sm" className="ml-auto" onClick={connect}>
               Reconnect
             </Button>
