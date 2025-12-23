@@ -951,53 +951,6 @@ export type Database = {
           },
         ]
       }
-      task_calendar_links: {
-        Row: {
-          calendar_id: string
-          created_at: string | null
-          event_id: string
-          id: string
-          last_error: string | null
-          last_synced_at: string | null
-          status: string
-          task_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          calendar_id?: string
-          created_at?: string | null
-          event_id: string
-          id?: string
-          last_error?: string | null
-          last_synced_at?: string | null
-          status?: string
-          task_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          calendar_id?: string
-          created_at?: string | null
-          event_id?: string
-          id?: string
-          last_error?: string | null
-          last_synced_at?: string | null
-          status?: string
-          task_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_calendar_links_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "crm_tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       task_files: {
         Row: {
           content_type: string | null
@@ -1163,39 +1116,6 @@ export type Database = {
           ticker?: string
           transaction_type?: string
           updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_google_tokens: {
-        Row: {
-          access_token: string
-          created_at: string | null
-          expires_at: string
-          id: string
-          refresh_token: string | null
-          scope: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          access_token: string
-          created_at?: string | null
-          expires_at: string
-          id?: string
-          refresh_token?: string | null
-          scope?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          access_token?: string
-          created_at?: string | null
-          expires_at?: string
-          id?: string
-          refresh_token?: string | null
-          scope?: string | null
-          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

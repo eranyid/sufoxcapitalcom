@@ -1,44 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CrmTask, TaskStatus, TaskUrgency } from '@/types/crm';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { notifyTaskStatusChange, notifyTaskUrgencyChange } from '@/lib/notificationService';
 
-// Debounce timeout for calendar sync
-const SYNC_DEBOUNCE_MS = 1500;
-
-async function syncTaskToCalendar(taskId: string, action: 'update' | 'cancel') {
-  try {
-    // Check if task has a calendar link
-    const { data: link } = await supabase
-      .from('task_calendar_links')
-      .select('*')
-      .eq('task_id', taskId)
-      .eq('status', 'linked')
-      .single();
-
-    if (!link) return; // No linked calendar event
-
-    console.log(`[auto-sync] Syncing task ${taskId} with action: ${action}`);
-
-    const { error } = await supabase.functions.invoke('gcal-sync', {
-      body: { taskId, action }
-    });
-
-    if (error) {
-      console.error('[auto-sync] Failed:', error);
-    }
-  } catch (err) {
-    console.error('[auto-sync] Error:', err);
-  }
-}
-
 export function useCrmTasks() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<CrmTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const syncTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
 
   const fetchTasks = useCallback(async () => {
     if (!user) return;
@@ -62,13 +32,6 @@ export function useCrmTasks() {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(syncTimeouts.current).forEach(clearTimeout);
-    };
-  }, []);
 
   const createTask = async (task: Partial<CrmTask>) => {
     if (!user) return null;
@@ -137,37 +100,11 @@ export function useCrmTasks() {
       }
     }
 
-    // Auto-sync to Google Calendar (debounced)
-    if (currentTask) {
-      const shouldSync = updates.due_date !== undefined || updates.status !== undefined || updates.task_name !== undefined;
-      
-      if (shouldSync) {
-        // Clear previous timeout for this task
-        if (syncTimeouts.current[id]) {
-          clearTimeout(syncTimeouts.current[id]);
-        }
-
-        // Determine sync action
-        const newStatus = updates.status || currentTask.status;
-        const isCancelled = newStatus === 'completed' || newStatus === 'canceled';
-        const action = isCancelled ? 'cancel' : 'update';
-
-        // Debounce the sync
-        syncTimeouts.current[id] = setTimeout(() => {
-          syncTaskToCalendar(id, action);
-          delete syncTimeouts.current[id];
-        }, SYNC_DEBOUNCE_MS);
-      }
-    }
-
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     return true;
   };
 
   const deleteTask = async (id: string) => {
-    // Cancel calendar event before deleting
-    syncTaskToCalendar(id, 'cancel');
-
     const { error } = await supabase
       .from('crm_tasks')
       .update({ deleted_at: new Date().toISOString() })

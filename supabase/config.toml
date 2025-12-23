@@ -23,15 +23,3 @@ verify_jwt = false
 
 [functions.fetch-israel-cpi]
 verify_jwt = true
-
-[functions.gcal-auth]
-verify_jwt = true
-
-[functions.gcal-events]
-verify_jwt = true
-
-[functions.gcal-sync]
-verify_jwt = true
-
-[functions.gcal-calendars]
-verify_jwt = true

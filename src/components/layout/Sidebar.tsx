@@ -46,10 +46,6 @@ const navItems = [{
   icon: Building2,
   label: 'BACK OFFICE'
 }, {
-  path: '/calendar',
-  icon: Calendar,
-  label: 'CALENDAR'
-}, {
   path: '/settings',
   icon: Settings,
   label: 'SETTINGS'
