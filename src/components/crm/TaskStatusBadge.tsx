@@ -72,15 +72,15 @@ export function TaskStatusBadge({ status, className }: TaskStatusBadgeProps) {
   const Icon = config.icon;
   
   return (
-    <span className={cn(
-      'inline-flex items-center gap-2 px-2.5 py-1.5 text-sm font-medium rounded-md',
+    <div className={cn(
+      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md',
       config.bgColor,
       config.textColor,
       className
     )}>
-      <Icon className="w-4 h-4" />
-      {label}
-    </span>
+      <Icon className="w-3.5 h-3.5" />
+      <span className="text-sm font-medium">{label}</span>
+    </div>
   );
 }
 
