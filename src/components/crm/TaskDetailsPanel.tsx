@@ -124,7 +124,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
               value={task.urgency}
               onValueChange={v => onUpdate(task.id, 'urgency', v, task.urgency)}
             >
-              <SelectTrigger className="h-9 w-auto gap-1 rounded-lg border-border bg-muted/30 text-sm px-2">
+              <SelectTrigger className="h-9 w-auto rounded-full border-border bg-muted/30 text-sm px-3 [&>svg:last-child]:hidden">
                 <TaskUrgencyBadge urgency={task.urgency} />
               </SelectTrigger>
               <SelectContent>
