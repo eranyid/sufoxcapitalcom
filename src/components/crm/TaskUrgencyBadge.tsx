@@ -45,15 +45,25 @@ export function TaskUrgencyBadge({ urgency, className, showIcon = true, showChec
   const config = urgencyConfig[urgency] || urgencyConfig.none;
   const label = URGENCY_OPTIONS.find(u => u.value === urgency)?.label || 'No priority';
   const Icon = config.icon;
+
+  // Get background color based on urgency
+  const bgColorMap: Record<TaskUrgency, string> = {
+    none: 'bg-muted/30',
+    urgent: 'bg-orange-500/20',
+    high: 'bg-rose-500/20',
+    medium: 'bg-amber-500/20',
+    low: 'bg-blue-500/20',
+  };
   
   return (
     <span className={cn(
-      'inline-flex items-center gap-1.5',
+      'inline-flex items-center gap-1.5 px-3 py-1 rounded-full',
+      bgColorMap[urgency] || 'bg-muted/30',
       config.style,
       className
     )}>
       {showIcon && <Icon size={16} className={config.iconStyle} />}
-      {!showIcon && <span className="text-sm">{label}</span>}
+      {!showIcon && <span className="text-sm font-medium">{label}</span>}
       {showCheck && <Check size={14} className="ml-auto text-primary" />}
     </span>
   );

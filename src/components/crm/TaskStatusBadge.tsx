@@ -73,7 +73,7 @@ export function TaskStatusBadge({ status, className }: TaskStatusBadgeProps) {
   
   return (
     <div className={cn(
-      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md',
+      'inline-flex items-center gap-1.5 px-3 py-1 rounded-full',
       config.bgColor,
       config.textColor,
       className
