@@ -84,9 +84,9 @@ export default function BackOfficeTasks() {
       <div className="flex items-center gap-3">
         <CheckSquare className="h-5 w-5 text-primary" />
         <div>
-          <h2 className="text-lg font-semibold text-foreground">All Tasks</h2>
+          <h2 className="text-lg font-semibold text-foreground">All Issues</h2>
           <p className="text-xs text-muted-foreground">
-            {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} across all companies
+            {filteredTasks.length} issue{filteredTasks.length !== 1 ? 's' : ''} across all companies
           </p>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function BackOfficeTasks() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search tasks or companies..."
+            placeholder="Search issues or companies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 bg-card border-border"
@@ -139,7 +139,7 @@ export default function BackOfficeTasks() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Task Name</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Issue</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Company</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Project</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
@@ -162,7 +162,7 @@ export default function BackOfficeTasks() {
               ) : filteredTasks.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    {tasks.length === 0 ? 'No tasks yet' : 'No tasks match your filters'}
+                    {tasks.length === 0 ? 'No issues yet' : 'No issues match your filters'}
                   </td>
                 </tr>
               ) : (
