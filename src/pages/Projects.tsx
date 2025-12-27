@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FolderKanban, Plus, Search, Calendar } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
@@ -21,12 +21,60 @@ import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import type { ProjectPriority, ProjectHealth } from '@/types/projects';
 
+interface ProjectStats {
+  [projectId: string]: {
+    total: number;
+    completed: number;
+    percent: number;
+  };
+}
+
 export default function Projects() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { projects, loading, refetch } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [projectStats, setProjectStats] = useState<ProjectStats>({});
+
+  // Fetch task stats for all projects
+  useEffect(() => {
+    const fetchTaskStats = async () => {
+      if (!user || projects.length === 0) return;
+
+      const { data: tasks } = await supabase
+        .from('crm_tasks')
+        .select('linked_project_id, status')
+        .not('linked_project_id', 'is', null)
+        .is('deleted_at', null)
+        .eq('user_id', user.id);
+
+      if (!tasks) return;
+
+      const stats: ProjectStats = {};
+      projects.forEach(p => {
+        stats[p.id] = { total: 0, completed: 0, percent: 0 };
+      });
+
+      tasks.forEach(task => {
+        if (task.linked_project_id && stats[task.linked_project_id]) {
+          stats[task.linked_project_id].total++;
+          if (task.status === 'completed' || task.status === 'canceled') {
+            stats[task.linked_project_id].completed++;
+          }
+        }
+      });
+
+      Object.keys(stats).forEach(id => {
+        const s = stats[id];
+        s.percent = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
+      });
+
+      setProjectStats(stats);
+    };
+
+    fetchTaskStats();
+  }, [user, projects]);
 
   const handleCreate = async (data: {
     name: string;
@@ -76,98 +124,104 @@ export default function Projects() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <FolderKanban className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Projects</h2>
-        </div>
+        <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
         <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2">
           <Plus size={16} />
-          <span className="hidden sm:inline">New Project</span>
+          New Project
         </Button>
       </div>
 
       {/* Search */}
-      <div className="relative w-full md:max-w-md">
+      <div className="relative w-full max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search projects..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="pl-9"
+          className="pl-9 bg-background"
         />
       </div>
 
-      {/* Projects Table */}
+      {/* Projects Table or Empty State */}
       {filteredProjects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <FolderKanban size={48} className="text-muted-foreground mb-4" />
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="rounded-full bg-muted p-4 mb-4">
+            <FolderKanban size={32} className="text-muted-foreground" />
+          </div>
           <h2 className="text-lg font-medium">No projects yet</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
             Create your first project to start tracking work.
           </p>
-          <Button onClick={() => setCreateOpen(true)} className="mt-4 gap-2">
+          <Button onClick={() => setCreateOpen(true)} className="mt-6 gap-2">
             <Plus size={16} />
             New Project
           </Button>
         </div>
       ) : (
-        <div className="border border-border rounded-lg overflow-hidden">
+        <div className="rounded-md border border-border overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="font-semibold">Name</TableHead>
-                <TableHead className="font-semibold w-[120px]">Health</TableHead>
-                <TableHead className="font-semibold w-[100px]">Priority</TableHead>
-                <TableHead className="font-semibold w-[120px]">Target Date</TableHead>
-                <TableHead className="font-semibold w-[100px]">Progress</TableHead>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground">Name</TableHead>
+                <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[110px]">Health</TableHead>
+                <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[90px]">Priority</TableHead>
+                <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[110px]">Target</TableHead>
+                <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[120px]">Progress</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProjects.map(project => (
-                <TableRow
-                  key={project.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => navigate(`/backoffice/projects/${project.id}`)}
-                >
-                  <TableCell>
-                    <div>
-                      <span className="font-medium">{project.name}</span>
-                      {project.description && (
-                        <p className="text-xs text-muted-foreground truncate max-w-md">
-                          {project.description}
-                        </p>
+              {filteredProjects.map(project => {
+                const stats = projectStats[project.id] || { total: 0, completed: 0, percent: 0 };
+                return (
+                  <TableRow
+                    key={project.id}
+                    className="cursor-pointer group transition-colors hover:bg-muted/50"
+                    onClick={() => navigate(`/backoffice/projects/${project.id}`)}
+                  >
+                    <TableCell className="py-3">
+                      <div>
+                        <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                          {project.name}
+                        </span>
+                        {project.description && (
+                          <p className="text-xs text-muted-foreground truncate max-w-md mt-0.5">
+                            {project.description}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <ProjectHealthBadge health={project.health_status} />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <ProjectPriorityBadge priority={project.priority} />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      {project.target_date ? (
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Calendar size={12} />
+                          <span className="font-mono text-xs">
+                            {format(new Date(project.target_date), 'MMM d')}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <ProjectHealthBadge health={project.health_status} />
-                  </TableCell>
-                  <TableCell>
-                    <ProjectPriorityBadge priority={project.priority} />
-                  </TableCell>
-                  <TableCell>
-                    {project.target_date ? (
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Calendar size={14} className="text-muted-foreground" />
-                        <span className="font-mono text-xs">
-                          {format(new Date(project.target_date), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="flex items-center gap-2">
+                        <Progress value={stats.percent} className="h-1.5 w-14 bg-muted" />
+                        <span className="text-xs font-mono text-muted-foreground w-8">
+                          {stats.percent}%
                         </span>
                       </div>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={0} className="h-1.5 w-16" />
-                      <span className="text-xs font-mono text-muted-foreground">0%</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
