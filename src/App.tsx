@@ -30,6 +30,8 @@ const BackOffice = lazy(() => import("./pages/BackOffice"));
 const BackOfficeTasks = lazy(() => import("./pages/BackOfficeTasks"));
 const BackOfficeTimeline = lazy(() => import("./pages/BackOfficeTimeline"));
 const CompanyPage = lazy(() => import("./pages/CompanyPage"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
 const Trash = lazy(() => import("./pages/Trash"));
 const Help = lazy(() => import("./pages/Help"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
@@ -138,6 +140,16 @@ const App = () => (
                   <Route path="/backoffice/company/:companyId" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <CompanyPage />
+                    </Suspense>
+                  } />
+                  <Route path="/projects" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Projects />
+                    </Suspense>
+                  } />
+                  <Route path="/projects/:id" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <ProjectDetail />
                     </Suspense>
                   } />
                   <Route path="/trash" element={
