@@ -194,7 +194,7 @@ export default function BackOfficeTasks() {
                         <TaskStatusBadge status={task.status as TaskStatus} />
                       </td>
                       <td className="px-4 py-3">
-                        <TaskUrgencyBadge urgency={task.urgency as TaskUrgency} showIcon={false} />
+                        <TaskUrgencyBadge urgency={task.urgency as TaskUrgency} />
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : '—'}
