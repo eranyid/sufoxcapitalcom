@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search, Activity, CheckSquare } from 'lucide-react';
+import { Building2, Plus, Search, Activity, CheckSquare, FlaskConical, Eye, Wrench, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -32,12 +32,37 @@ interface Company {
   updated_at: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  working_on_it: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  done: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  stuck: 'bg-red-500/20 text-red-400 border-red-500/30',
-  research: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  monitoring: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: string; label: string }> = {
+  research: {
+    icon: <FlaskConical size={14} />,
+    bg: 'bg-blue-500/20',
+    text: 'text-blue-400',
+    label: 'research',
+  },
+  working_on_it: {
+    icon: <Wrench size={14} />,
+    bg: 'bg-amber-500/20',
+    text: 'text-amber-400',
+    label: 'working on it',
+  },
+  monitoring: {
+    icon: <Eye size={14} />,
+    bg: 'bg-purple-500/20',
+    text: 'text-purple-400',
+    label: 'monitoring',
+  },
+  done: {
+    icon: <CheckCircle2 size={14} />,
+    bg: 'bg-emerald-500/20',
+    text: 'text-emerald-400',
+    label: 'done',
+  },
+  stuck: {
+    icon: <AlertCircle size={14} />,
+    bg: 'bg-red-500/20',
+    text: 'text-red-400',
+    label: 'stuck',
+  },
 };
 
 export default function BackOffice() {
@@ -188,12 +213,22 @@ export default function BackOffice() {
                     {company.market_cap || '—'}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={STATUS_COLORS[company.status] || 'bg-muted text-muted-foreground'}
-                    >
-                      {company.status.replace(/_/g, ' ')}
-                    </Badge>
+                    {(() => {
+                      const config = STATUS_CONFIG[company.status];
+                      if (!config) {
+                        return (
+                          <span className="text-muted-foreground text-sm">
+                            {company.status.replace(/_/g, ' ')}
+                          </span>
+                        );
+                      }
+                      return (
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md ${config.bg} ${config.text}`}>
+                          {config.icon}
+                          <span className="text-sm font-medium">{config.label}</span>
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               ))}
