@@ -478,6 +478,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          linked_project_id: string | null
           owner: string | null
           project_id: string | null
           status: string
@@ -493,6 +494,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          linked_project_id?: string | null
           owner?: string | null
           project_id?: string | null
           status?: string
@@ -508,6 +510,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          linked_project_id?: string | null
           owner?: string | null
           project_id?: string | null
           status?: string
@@ -522,6 +525,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_linked_project_id_fkey"
+            columns: ["linked_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {
@@ -847,6 +857,98 @@ export type Database = {
           is_approved?: boolean
           last_sign_in_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      project_updates: {
+        Row: {
+          author_user_id: string
+          created_at: string
+          id: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_health"]
+          text: string
+          user_id: string
+        }
+        Insert: {
+          author_user_id: string
+          created_at?: string
+          id?: string
+          project_id: string
+          status?: Database["public"]["Enums"]["project_health"]
+          text: string
+          user_id: string
+        }
+        Update: {
+          author_user_id?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["project_health"]
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          health_status: Database["public"]["Enums"]["project_health"]
+          id: string
+          labels: string[] | null
+          lead_user_id: string | null
+          name: string
+          priority: Database["public"]["Enums"]["project_priority"]
+          start_date: string | null
+          status: string
+          target_date: string | null
+          team: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          health_status?: Database["public"]["Enums"]["project_health"]
+          id?: string
+          labels?: string[] | null
+          lead_user_id?: string | null
+          name: string
+          priority?: Database["public"]["Enums"]["project_priority"]
+          start_date?: string | null
+          status?: string
+          target_date?: string | null
+          team?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          health_status?: Database["public"]["Enums"]["project_health"]
+          id?: string
+          labels?: string[] | null
+          lead_user_id?: string | null
+          name?: string
+          priority?: Database["public"]["Enums"]["project_priority"]
+          start_date?: string | null
+          status?: string
+          target_date?: string | null
+          team?: string[] | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1282,6 +1384,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      project_health: "on_track" | "at_risk" | "off_track"
+      project_priority: "low" | "medium" | "high"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1410,6 +1514,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      project_health: ["on_track", "at_risk", "off_track"],
+      project_priority: ["low", "medium", "high"],
     },
   },
 } as const
