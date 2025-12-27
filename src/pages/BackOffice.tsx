@@ -119,48 +119,17 @@ export default function BackOffice() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Building2 className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-            <h1 className="text-xl md:text-2xl font-bold">Back Office</h1>
-          </div>
-          <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2 md:hidden">
-            <Plus size={16} />
-          </Button>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Building2 className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Companies</h2>
         </div>
-        
-        {/* Action buttons - responsive grid */}
-        <div className="grid grid-cols-2 md:flex md:flex-row gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/backoffice/tasks')} 
-            className="gap-2 text-sm"
-            size="sm"
-          >
-            <CheckSquare size={16} />
-            <span>Tasks</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/backoffice/timeline')} 
-            className="gap-2 text-sm"
-            size="sm"
-          >
-            <Activity size={16} />
-            <span>Timeline</span>
-          </Button>
-          <Button 
-            onClick={() => setCreateOpen(true)} 
-            className="gap-2 text-sm hidden md:flex col-span-2 md:col-span-1"
-            size="sm"
-          >
-            <Plus size={16} />
-            Add Company
-          </Button>
-        </div>
+        <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2">
+          <Plus size={16} />
+          <span className="hidden sm:inline">Add Company</span>
+        </Button>
       </div>
 
       {/* Search */}

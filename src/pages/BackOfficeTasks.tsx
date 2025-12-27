@@ -79,17 +79,15 @@ export default function BackOfficeTasks() {
   const loading = tasksLoading || companiesLoading || projectsLoading;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <CheckSquare className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">All Tasks</h1>
-            <p className="text-xs text-muted-foreground">
-              {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} across all companies
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <CheckSquare className="h-5 w-5 text-primary" />
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">All Tasks</h2>
+          <p className="text-xs text-muted-foreground">
+            {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} across all companies
+          </p>
         </div>
       </div>
 
@@ -196,7 +194,7 @@ export default function BackOfficeTasks() {
                       <td className="px-4 py-3">
                         {project ? (
                           <Link
-                            to={`/projects/${project.id}`}
+                            to={`/backoffice/projects/${project.id}`}
                             onClick={(e) => e.stopPropagation()}
                             className="text-xs"
                           >

@@ -191,17 +191,15 @@ export default function BackOfficeTimeline() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Activity className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Timeline</h1>
-            <p className="text-xs text-muted-foreground">
-              {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''} across all companies
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <Activity className="h-5 w-5 text-primary" />
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Timeline</h2>
+          <p className="text-xs text-muted-foreground">
+            {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''} across all companies
+          </p>
         </div>
       </div>
 

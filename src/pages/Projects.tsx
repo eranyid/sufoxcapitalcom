@@ -56,7 +56,7 @@ export default function Projects() {
     }
 
     refetch();
-    navigate(`/projects/${newProject.id}`);
+    navigate(`/backoffice/projects/${newProject.id}`);
     return true;
   };
 
@@ -76,19 +76,17 @@ export default function Projects() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FolderKanban className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-            <h1 className="text-xl md:text-2xl font-bold">Projects</h1>
-          </div>
-          <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2">
-            <Plus size={16} />
-            <span className="hidden sm:inline">New Project</span>
-          </Button>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <FolderKanban className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Projects</h2>
         </div>
+        <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2">
+          <Plus size={16} />
+          <span className="hidden sm:inline">New Project</span>
+        </Button>
       </div>
 
       {/* Search */}
@@ -132,7 +130,7 @@ export default function Projects() {
                 <TableRow
                   key={project.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => navigate(`/projects/${project.id}`)}
+                  onClick={() => navigate(`/backoffice/projects/${project.id}`)}
                 >
                   <TableCell>
                     <div>
