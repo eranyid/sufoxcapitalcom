@@ -9,6 +9,7 @@ import {
 import { CompanyValueChart } from '@/components/crm/CompanyValueChart';
 import { DecisionLogSection, Decision, DECISION_TYPE_OPTIONS } from '@/components/crm/DecisionLogSection';
 import { CompanyFilesSection } from '@/components/crm/CompanyFilesSection';
+import { CompanyActivityLog } from '@/components/crm/CompanyActivityLog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -1041,6 +1042,11 @@ export default function CompanyPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Log */}
+      <div className="flex justify-center pt-4">
+        <CompanyActivityLog companyId={company.id} companyName={company.company_name} />
+      </div>
 
       {/* Delete Dialog */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

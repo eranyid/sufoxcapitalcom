@@ -138,9 +138,11 @@ export function DecisionLogSection({
     return Array.from(tagSet).sort();
   }, [decisions]);
 
-  // Filter decisions
+  // Filter decisions - exclude status_change type (auto-logged)
   const filteredDecisions = useMemo(() => {
     return decisions.filter(d => {
+      // Always exclude status_change entries
+      if (d.decision_type === 'status_change') return false;
       if (filterType !== 'all' && d.decision_type !== filterType) return false;
       if (filterTag !== 'all' && !d.tags?.includes(filterTag)) return false;
       return true;
