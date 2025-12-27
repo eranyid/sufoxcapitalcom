@@ -140,7 +140,6 @@ export default function BackOfficeTasks() {
             <thead>
               <tr className="bg-muted/50 border-b border-border">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Issue</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Company</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Project</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Urgency</th>
@@ -152,7 +151,6 @@ export default function BackOfficeTasks() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-border">
                     <td className="px-4 py-3"><Skeleton className="h-4 w-48" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-32" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-5 w-16" /></td>
@@ -161,13 +159,12 @@ export default function BackOfficeTasks() {
                 ))
               ) : filteredTasks.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                     {tasks.length === 0 ? 'No issues yet' : 'No issues match your filters'}
                   </td>
                 </tr>
               ) : (
                 filteredTasks.map(task => {
-                  const company = task.company_id ? companyMap[task.company_id] : null;
                   const project = task.linked_project_id ? projectMap[task.linked_project_id] : null;
                   return (
                     <tr
@@ -177,19 +174,6 @@ export default function BackOfficeTasks() {
                     >
                       <td className="px-4 py-3 font-medium text-foreground">
                         {task.task_name}
-                      </td>
-                      <td className="px-4 py-3">
-                        {company ? (
-                          <Link
-                            to={`/backoffice/company/${company.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-primary hover:underline"
-                          >
-                            {company.company_name}
-                          </Link>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
                       </td>
                       <td className="px-4 py-3">
                         {project ? (
