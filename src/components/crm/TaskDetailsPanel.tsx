@@ -105,7 +105,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
             >
               <SelectTrigger 
                 className={cn(
-                  "h-9 w-auto gap-2 rounded-lg border-transparent text-sm",
+                  "h-9 w-auto rounded-full border-transparent text-sm px-3 [&>svg:last-child]:hidden",
                   statusConfig[task.status]?.bgColor || 'bg-muted/30'
                 )}
               >
@@ -139,7 +139,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
             <Input
               type="date"
               defaultValue={task.due_date || ''}
-              className="h-9 w-auto text-sm rounded-lg border-border bg-muted/30 px-3"
+              className="h-9 w-auto text-sm rounded-full border-border bg-muted/30 px-4"
               onBlur={e => {
                 if (e.target.value !== (task.due_date || '')) {
                   onUpdate(task.id, 'due_date', e.target.value || null, task.due_date);
