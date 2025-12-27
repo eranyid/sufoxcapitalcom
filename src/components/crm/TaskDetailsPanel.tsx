@@ -97,7 +97,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
             </Button>
           </div>
 
-          {/* Status & Urgency - Mobile optimized with wrapping */}
+          {/* Status & Urgency - Rounded buttons, same size */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
             <Select
               value={task.status}
@@ -105,7 +105,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
             >
               <SelectTrigger 
                 className={cn(
-                  "h-9 sm:h-10 w-auto gap-1.5 sm:gap-2 border-transparent text-xs sm:text-sm",
+                  "h-10 min-w-[140px] gap-2 rounded-full border-transparent text-sm",
                   statusConfig[task.status]?.bgColor || 'bg-muted/30'
                 )}
               >
@@ -124,7 +124,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
               value={task.urgency}
               onValueChange={v => onUpdate(task.id, 'urgency', v, task.urgency)}
             >
-              <SelectTrigger className="h-7 sm:h-8 w-auto gap-1.5 sm:gap-2 border-border bg-muted/30 text-xs sm:text-sm">
+              <SelectTrigger className="h-10 min-w-[100px] gap-2 rounded-full border-border bg-muted/30 text-sm">
                 <TaskUrgencyBadge urgency={task.urgency} />
               </SelectTrigger>
               <SelectContent>
@@ -139,7 +139,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
             <Input
               type="date"
               defaultValue={task.due_date || ''}
-              className="h-7 sm:h-8 w-auto text-[10px] sm:text-xs border-border bg-muted/30"
+              className="h-10 min-w-[140px] text-sm rounded-full border-border bg-muted/30 px-4"
               onBlur={e => {
                 if (e.target.value !== (task.due_date || '')) {
                   onUpdate(task.id, 'due_date', e.target.value || null, task.due_date);
