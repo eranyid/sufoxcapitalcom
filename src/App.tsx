@@ -9,6 +9,7 @@ import { PortfolioProvider } from "./context/PortfolioContext";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { BackOfficeLayout } from "./components/layout/BackOfficeLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { DashboardLoadingSkeleton, AuthLoadingSkeleton } from "./components/LoadingSkeleton";
 
@@ -122,36 +123,41 @@ const App = () => (
                       <AlpacaTest />
                     </Suspense>
                   } />
-                  <Route path="/backoffice" element={
-                    <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <BackOffice />
-                    </Suspense>
-                  } />
-                  <Route path="/backoffice/tasks" element={
-                    <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <BackOfficeTasks />
-                    </Suspense>
-                  } />
-                  <Route path="/backoffice/timeline" element={
-                    <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <BackOfficeTimeline />
-                    </Suspense>
-                  } />
-                  <Route path="/backoffice/company/:companyId" element={
-                    <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <CompanyPage />
-                    </Suspense>
-                  } />
-                  <Route path="/projects" element={
-                    <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <Projects />
-                    </Suspense>
-                  } />
-                  <Route path="/projects/:id" element={
-                    <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <ProjectDetail />
-                    </Suspense>
-                  } />
+                  
+                  {/* Back Office with nested routes */}
+                  <Route path="/backoffice" element={<BackOfficeLayout />}>
+                    <Route index element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <BackOffice />
+                      </Suspense>
+                    } />
+                    <Route path="tasks" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <BackOfficeTasks />
+                      </Suspense>
+                    } />
+                    <Route path="timeline" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <BackOfficeTimeline />
+                      </Suspense>
+                    } />
+                    <Route path="projects" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <Projects />
+                      </Suspense>
+                    } />
+                    <Route path="projects/:id" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <ProjectDetail />
+                      </Suspense>
+                    } />
+                    <Route path="company/:companyId" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <CompanyPage />
+                      </Suspense>
+                    } />
+                  </Route>
+                  
                   <Route path="/trash" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Trash />
@@ -162,9 +168,12 @@ const App = () => (
                       <Help />
                     </Suspense>
                   } />
-                  {/* Legacy CRM redirects to Back Office */}
+                  
+                  {/* Legacy redirects */}
                   <Route path="/crm" element={<Navigate to="/backoffice" replace />} />
                   <Route path="/crm/*" element={<Navigate to="/backoffice" replace />} />
+                  <Route path="/projects" element={<Navigate to="/backoffice/projects" replace />} />
+                  <Route path="/projects/:id" element={<Navigate to="/backoffice/projects/:id" replace />} />
                 </Route>
                 {/* Public pages - accessible without auth */}
                 <Route path="/disclaimer" element={

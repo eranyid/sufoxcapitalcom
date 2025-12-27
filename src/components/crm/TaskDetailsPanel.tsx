@@ -166,7 +166,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
             </Select>
             {linkedProject && (
               <Link 
-                to={`/projects/${linkedProject.id}`}
+                to={`/backoffice/projects/${linkedProject.id}`}
                 onClick={(e) => e.stopPropagation()}
                 className="text-xs text-primary hover:underline whitespace-nowrap"
               >

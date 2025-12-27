@@ -102,7 +102,7 @@ export default function ProjectDetail() {
       toast.error('Failed to delete project');
     } else {
       toast.success('Project deleted');
-      navigate('/projects');
+      navigate('/backoffice/projects');
     }
   };
 
@@ -129,7 +129,7 @@ export default function ProjectDetail() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <h2 className="text-lg font-medium">Project not found</h2>
-        <Button variant="outline" onClick={() => navigate('/projects')} className="mt-4">
+        <Button variant="outline" onClick={() => navigate('/backoffice/projects')} className="mt-4">
           Back to Projects
         </Button>
       </div>
@@ -144,7 +144,7 @@ export default function ProjectDetail() {
       <Button 
         variant="ghost" 
         size="sm" 
-        onClick={() => navigate('/projects')}
+        onClick={() => navigate('/backoffice/projects')}
         className="gap-2 -ml-2"
       >
         <ArrowLeft size={16} />
