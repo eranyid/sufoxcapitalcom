@@ -21,6 +21,7 @@ export interface CrmTask {
   user_id: string;
   project_id: string | null;
   company_id: string | null;
+  linked_project_id: string | null;
   task_name: string;
   description: string | null;
   owner: string;

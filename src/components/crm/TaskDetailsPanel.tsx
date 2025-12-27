@@ -1,6 +1,8 @@
 import { useEffect, useCallback } from 'react';
-import { X, MessageSquare, Paperclip, Activity } from 'lucide-react';
+import { X, MessageSquare, Paperclip, Activity, FolderKanban } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { CrmTask, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
+import { useProjects } from '@/hooks/useProjects';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +27,8 @@ interface Props {
 }
 
 export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
+  const { projects } = useProjects();
+
   // Handle ESC key to close
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -47,6 +51,10 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
   };
 
   if (!task) return null;
+
+  const linkedProject = task.linked_project_id 
+    ? projects.find(p => p.id === task.linked_project_id) 
+    : null;
 
   return (
     <>
@@ -131,6 +139,40 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
                 }
               }}
             />
+          </div>
+
+          {/* Project Link */}
+          <div className="mt-3 sm:mt-4 flex items-center gap-2">
+            <FolderKanban size={14} className="text-muted-foreground flex-shrink-0" />
+            <Select
+              value={task.linked_project_id || 'none'}
+              onValueChange={v => onUpdate(task.id, 'linked_project_id', v === 'none' ? null : v, task.linked_project_id)}
+            >
+              <SelectTrigger className="h-7 sm:h-8 flex-1 gap-1.5 sm:gap-2 border-border bg-muted/30 text-xs sm:text-sm">
+                {linkedProject ? (
+                  <span className="truncate">{linkedProject.name}</span>
+                ) : (
+                  <span className="text-muted-foreground">No project</span>
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No project</SelectItem>
+                {projects.map(project => (
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {linkedProject && (
+              <Link 
+                to={`/projects/${linkedProject.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs text-primary hover:underline whitespace-nowrap"
+              >
+                View
+              </Link>
+            )}
           </div>
         </div>
 

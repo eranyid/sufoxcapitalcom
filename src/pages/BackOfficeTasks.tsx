@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckSquare, Search, Filter } from 'lucide-react';
 import { useCrmTasks } from '@/hooks/useCrmTasks';
 import { useCrmCompanies } from '@/hooks/useCrmCompanies';
+import { useProjects } from '@/hooks/useProjects';
 import { TaskStatusBadge } from '@/components/crm/TaskStatusBadge';
 import { TaskUrgencyBadge } from '@/components/crm/TaskUrgencyBadge';
 import { TaskDetailsPanel } from '@/components/crm/TaskDetailsPanel';
@@ -10,11 +11,13 @@ import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS } fro
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 export default function BackOfficeTasks() {
   const { tasks, loading: tasksLoading, updateTask } = useCrmTasks();
   const { companies, loading: companiesLoading } = useCrmCompanies();
+  const { projects, loading: projectsLoading } = useProjects();
   
   const [selectedTask, setSelectedTask] = useState<CrmTask | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -29,6 +32,14 @@ export default function BackOfficeTasks() {
       return acc;
     }, {} as Record<string, typeof companies[0]>);
   }, [companies]);
+
+  // Create project lookup map
+  const projectMap = useMemo(() => {
+    return projects.reduce((acc, project) => {
+      acc[project.id] = project;
+      return acc;
+    }, {} as Record<string, typeof projects[0]>);
+  }, [projects]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -65,7 +76,7 @@ export default function BackOfficeTasks() {
     }
   };
 
-  const loading = tasksLoading || companiesLoading;
+  const loading = tasksLoading || companiesLoading || projectsLoading;
 
   return (
     <div className="space-y-6">
@@ -132,6 +143,7 @@ export default function BackOfficeTasks() {
               <tr className="bg-muted/50 border-b border-border">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Task Name</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Company</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Project</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Urgency</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Due Date</th>
@@ -143,6 +155,7 @@ export default function BackOfficeTasks() {
                   <tr key={i} className="border-b border-border">
                     <td className="px-4 py-3"><Skeleton className="h-4 w-48" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-4 w-32" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-5 w-16" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
@@ -150,13 +163,14 @@ export default function BackOfficeTasks() {
                 ))
               ) : filteredTasks.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     {tasks.length === 0 ? 'No tasks yet' : 'No tasks match your filters'}
                   </td>
                 </tr>
               ) : (
                 filteredTasks.map(task => {
                   const company = task.company_id ? companyMap[task.company_id] : null;
+                  const project = task.linked_project_id ? projectMap[task.linked_project_id] : null;
                   return (
                     <tr
                       key={task.id}
@@ -174,6 +188,21 @@ export default function BackOfficeTasks() {
                             className="text-primary hover:underline"
                           >
                             {company.company_name}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {project ? (
+                          <Link
+                            to={`/projects/${project.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs"
+                          >
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                              {project.name}
+                            </Badge>
                           </Link>
                         ) : (
                           <span className="text-muted-foreground">—</span>
