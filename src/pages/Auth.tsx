@@ -12,7 +12,7 @@ import { TrendingUp, Shield, Database, Loader2, Mail, CheckCircle, Eye, EyeOff, 
 import { Checkbox } from '@/components/ui/checkbox';
 import { FaceIdIcon } from '@/components/icons/FaceIdIcon';
 import { z } from 'zod';
-import sufoxLogo from '@/assets/sufox-logo-new.png';
+import sufoxLogo from '@/assets/sufox-logo.png';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
