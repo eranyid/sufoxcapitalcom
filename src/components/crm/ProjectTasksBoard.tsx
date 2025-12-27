@@ -38,7 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { TaskStatusBadge } from './TaskStatusBadge';
+import { TaskStatusBadge, TaskStatusOption } from './TaskStatusBadge';
 import { TaskUrgencyBadge } from './TaskUrgencyBadge';
 import { TaskDetailsPanel } from './TaskDetailsPanel';
 import { useTaskActivityLog } from '@/hooks/useTaskActivityLog';
@@ -468,12 +468,14 @@ export default function ProjectTasksBoard({ projectId }: Props) {
                               value={task.status}
                               onValueChange={v => handleInlineUpdate(task.id, 'status', v, task.status)}
                             >
-                              <SelectTrigger className="h-7 text-xs border-transparent hover:border-border bg-transparent w-[100px]">
-                                <TaskStatusBadge status={task.status} />
+                              <SelectTrigger className="h-8 text-xs border-transparent hover:border-border bg-transparent w-auto min-w-[120px]">
+                                <TaskStatusBadge status={task.status} className="text-xs py-1 px-2" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-popover border border-border shadow-lg z-50">
                                 {STATUS_OPTIONS.map(opt => (
-                                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                  <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
+                                    <TaskStatusOption status={opt.value} isSelected={task.status === opt.value} />
+                                  </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>

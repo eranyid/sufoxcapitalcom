@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { TaskStatus, STATUS_OPTIONS } from '@/types/crm';
-import { Circle, CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 
 interface TaskStatusBadgeProps {
   status: TaskStatus;
@@ -34,7 +34,7 @@ function InProgressIcon({ className }: { className?: string }) {
   );
 }
 
-const statusConfig: Record<TaskStatus, { 
+export const statusConfig: Record<TaskStatus, { 
   icon: React.ComponentType<{ className?: string }>;
   bgColor: string;
   textColor: string;
@@ -77,6 +77,23 @@ export function TaskStatusBadge({ status, className }: TaskStatusBadgeProps) {
       config.bgColor,
       config.textColor,
       className
+    )}>
+      <Icon className="w-4 h-4" />
+      {label}
+    </span>
+  );
+}
+
+// Option component for Select dropdowns
+export function TaskStatusOption({ status, isSelected }: { status: TaskStatus; isSelected?: boolean }) {
+  const label = STATUS_OPTIONS.find(s => s.value === status)?.label || status;
+  const config = statusConfig[status] || statusConfig.backlog;
+  const Icon = config.icon;
+  
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-2 text-sm font-medium',
+      config.textColor
     )}>
       <span className={cn('flex items-center justify-center w-5 h-5 rounded', config.bgColor)}>
         <Icon className="w-4 h-4" />
