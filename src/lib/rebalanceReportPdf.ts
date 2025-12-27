@@ -68,7 +68,12 @@ interface RebalanceAnalysis {
   trackingErrorImpact: number;
   beforeAllocation: { name: string; weight: number }[];
   afterAllocation: { name: string; weight: number }[];
-  totalTaxDue: number;
+  // Enhanced tax fields
+  totalRealizedGains: number;
+  totalRealizedLosses: number;
+  grossTaxOnGains: number;
+  taxShieldFromLosses: number;
+  netTaxPayable: number;
   totalNetProceeds: number;
   targetsMet: boolean;
   warnings: string[];
@@ -323,7 +328,7 @@ export function generateRebalanceReport(data: RebalanceReportData): void {
   yPos += 35;
   
   // KPI Boxes Row 2
-  addKPIBox(doc, 14, yPos, boxWidth, 'Total Tax (25%)', formatCurrency(analysis.totalTaxDue), 'blue');
+  addKPIBox(doc, 14, yPos, boxWidth, 'Net Tax Payable', formatCurrency(analysis.netTaxPayable), 'blue');
   addKPIBox(doc, 14 + boxWidth + 5, yPos, boxWidth, 'Net Cash Impact', formatCurrency(analysis.cashImpact), analysis.cashImpact >= 0 ? 'positive' : 'negative');
   addKPIBox(doc, 14 + (boxWidth + 5) * 2, yPos, boxWidth, 'Targets Met', analysis.targetsMet ? 'YES' : 'PARTIAL', analysis.targetsMet ? 'positive' : 'accent');
   addKPIBox(doc, 14 + (boxWidth + 5) * 3, yPos, boxWidth, 'Net Proceeds', formatCurrency(analysis.totalNetProceeds), 'positive');
@@ -550,7 +555,7 @@ export function generateRebalanceReport(data: RebalanceReportData): void {
   
   const taxBoxWidth = (pageWidth - 28 - 10) / 3;
   addKPIBox(doc, 14, yPos, taxBoxWidth, 'Total Real Gain', formatCurrency(totalRealGain), totalRealGain >= 0 ? 'positive' : 'negative');
-  addKPIBox(doc, 14 + taxBoxWidth + 5, yPos, taxBoxWidth, 'Total Tax (25%)', formatCurrency(analysis.totalTaxDue), 'blue');
+  addKPIBox(doc, 14 + taxBoxWidth + 5, yPos, taxBoxWidth, 'Net Tax Payable', formatCurrency(analysis.netTaxPayable), 'blue');
   addKPIBox(doc, 14 + (taxBoxWidth + 5) * 2, yPos, taxBoxWidth, 'Net Proceeds After Tax', formatCurrency(analysis.totalNetProceeds), 'positive');
   
   yPos += 40;
@@ -610,7 +615,7 @@ export function generateRebalanceReport(data: RebalanceReportData): void {
           }
         }
       },
-      foot: [['TOTAL', formatCurrency(totalProceeds), '', formatCurrency(totalInflationAdj), formatCurrency(totalRealGain), formatCurrency(analysis.totalTaxDue), formatCurrency(analysis.totalNetProceeds)]],
+      foot: [['TOTAL', formatCurrency(totalProceeds), '', formatCurrency(totalInflationAdj), formatCurrency(totalRealGain), formatCurrency(analysis.netTaxPayable), formatCurrency(analysis.totalNetProceeds)]],
       footStyles: {
         fillColor: [THEME.bg.r, THEME.bg.g, THEME.bg.b] as [number, number, number],
         textColor: [THEME.accent.r, THEME.accent.g, THEME.accent.b] as [number, number, number],
