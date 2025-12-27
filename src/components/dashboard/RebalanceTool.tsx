@@ -89,7 +89,12 @@ interface RebalanceAnalysis {
   trackingErrorImpact: number;
   beforeAllocation: { name: string; weight: number }[];
   afterAllocation: { name: string; weight: number }[];
-  totalTaxDue: number;
+  // Enhanced tax fields
+  totalRealizedGains: number;
+  totalRealizedLosses: number;
+  grossTaxOnGains: number;
+  taxShieldFromLosses: number;
+  netTaxPayable: number;
   totalNetProceeds: number;
   targetsMet: boolean;
   warnings: string[];
@@ -572,7 +577,6 @@ export function RebalanceTool() {
     const warnings: string[] = [];
     let totalTurnover = 0;
     let cashImpact = 0;
-    let totalTaxDue = 0;
 
     // Check if CPI data is available
     if (cpiError) {
@@ -606,8 +610,8 @@ export function RebalanceTool() {
           const taxOptResult = selectTaxOptimizedLots(h.ticker, tradeValue);
           if (taxOptResult) {
             taxOptimizedSells.push(taxOptResult);
-            totalTaxDue += taxOptResult.taxEstimate;
-            cashImpact += taxOptResult.netProceeds;
+            // Cash impact will be recalculated with proper offset later
+            cashImpact += taxOptResult.totalProceeds;
           } else {
             warnings.push(`No tax lots found for ${h.ticker}`);
             cashImpact += tradeValue;
@@ -640,6 +644,26 @@ export function RebalanceTool() {
 
     trades.sort((a, b) => b.value - a.value);
 
+    // ============ ENHANCED ISRAELI TAX CALCULATION WITH OFFSET ============
+    // Calculate total realized gains and losses separately
+    let totalRealizedGains = 0;
+    let totalRealizedLosses = 0;
+
+    taxOptimizedSells.forEach(sell => {
+      if (sell.totalRealGain >= 0) {
+        totalRealizedGains += sell.totalRealGain;
+      } else {
+        totalRealizedLosses += Math.abs(sell.totalRealGain);
+      }
+    });
+
+    // Calculate tax with offset mechanism
+    const grossTaxOnGains = totalRealizedGains * ISRAEL_CGT_RATE;
+    const taxShieldFromLosses = totalRealizedLosses * ISRAEL_CGT_RATE;
+    const netGainForTax = Math.max(0, totalRealizedGains - totalRealizedLosses);
+    const netTaxPayable = netGainForTax * ISRAEL_CGT_RATE;
+    // ======================================================================
+
     const beforeAllocation = currentHoldings.map(h => ({
       name: h.ticker,
       weight: h.currentWeight
@@ -663,19 +687,29 @@ export function RebalanceTool() {
     const trackingErrorImpact = avgWeightChange * 0.1;
 
     const targetsMet = warnings.length === 0 && Math.abs(totalTargetWeight - 100) < 0.5;
-    const totalNetProceeds = taxOptimizedSells.reduce((sum, s) => sum + s.netProceeds, 0);
+    
+    // Net proceeds = gross proceeds - net tax payable (after offset)
+    const totalGrossProceeds = taxOptimizedSells.reduce((sum, s) => sum + s.totalProceeds, 0);
+    const totalNetProceeds = totalGrossProceeds - netTaxPayable;
+    
+    // Adjust cash impact for net tax
+    const adjustedCashImpact = cashImpact - netTaxPayable;
 
     return {
       trades,
       taxOptimizedSells,
       totalTurnover: totalTurnover / 2,
       numberOfTrades: trades.length,
-      cashImpact,
+      cashImpact: adjustedCashImpact,
       estimatedCost: (totalTurnover / 2) * 0.001,
       trackingErrorImpact,
       beforeAllocation,
       afterAllocation,
-      totalTaxDue,
+      totalRealizedGains,
+      totalRealizedLosses,
+      grossTaxOnGains,
+      taxShieldFromLosses,
+      netTaxPayable,
       totalNetProceeds,
       targetsMet,
       warnings
@@ -1002,8 +1036,8 @@ export function RebalanceTool() {
                   </div>
                 )}
 
-                {/* Summary KPIs */}
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                {/* Summary KPIs - Row 1 */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="p-2 bg-secondary/30 rounded">
                     <div className="text-[9px] text-muted-foreground uppercase">Trades</div>
                     <div className="text-sm font-mono font-semibold text-primary">{analysis.numberOfTrades}</div>
@@ -1016,12 +1050,62 @@ export function RebalanceTool() {
                     <div className="text-[9px] text-muted-foreground uppercase">Est. Cost</div>
                     <div className="text-sm font-mono font-semibold text-red-400">{formatCurrency(analysis.estimatedCost)}</div>
                   </div>
-                  <div className="p-2 bg-blue-500/20 border border-blue-500/30 rounded">
-                    <div className="text-[9px] text-blue-400 uppercase">Total Tax (25%)</div>
-                    <div className="text-sm font-mono font-semibold text-blue-400">{formatCurrency(analysis.totalTaxDue)}</div>
-                  </div>
                   <div className="p-2 bg-secondary/30 rounded">
-                    <div className="text-[9px] text-muted-foreground uppercase">Net Cash</div>
+                    <div className="text-[9px] text-muted-foreground uppercase">Targets Met</div>
+                    <div className={`text-sm font-mono font-semibold ${analysis.targetsMet ? 'text-green-500' : 'text-yellow-500'}`}>
+                      {analysis.targetsMet ? 'Yes' : 'Partial'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tax Summary Panel with Offset Mechanism */}
+                <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="text-[10px] font-mono text-blue-400 uppercase font-semibold">Israeli Capital Gains Tax (25%)</div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info size={12} className="text-blue-400" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-sm text-xs" dir="rtl">
+                          <p className="font-medium mb-1">חישוב מס רווחי הון ישראלי:</p>
+                          <p>החישוב מניח מס רווחי הון של 25%.</p>
+                          <p>מכירה בהפסד יוצרת מגן מס בשיעור 25% מההפסד, שמקוזז מרווחים ממומשים אחרים.</p>
+                          <p>התשלום בפועל מחושב לפי הרווח נטו לאחר קיזוז ההפסדים.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div className="p-2 bg-emerald-500/20 rounded">
+                      <div className="text-[9px] text-emerald-400 uppercase">Realized Gains</div>
+                      <div className="text-sm font-mono font-semibold text-emerald-400">+{formatCurrency(analysis.totalRealizedGains)}</div>
+                    </div>
+                    <div className="p-2 bg-red-500/20 rounded">
+                      <div className="text-[9px] text-red-400 uppercase">Realized Losses</div>
+                      <div className="text-sm font-mono font-semibold text-red-400">-{formatCurrency(analysis.totalRealizedLosses)}</div>
+                    </div>
+                    <div className="p-2 bg-amber-500/20 rounded">
+                      <div className="text-[9px] text-amber-400 uppercase">Tax Shield (25%)</div>
+                      <div className="text-sm font-mono font-semibold text-amber-400">{formatCurrency(analysis.taxShieldFromLosses)}</div>
+                    </div>
+                    <div className="p-2 bg-blue-500/30 rounded">
+                      <div className="text-[9px] text-blue-300 uppercase font-semibold">Net Tax Payable</div>
+                      <div className="text-sm font-mono font-semibold text-blue-300">{formatCurrency(analysis.netTaxPayable)}</div>
+                    </div>
+                  </div>
+                  {/* Show offset calculation if there are losses */}
+                  {analysis.totalRealizedLosses > 0 && (
+                    <div className="text-[9px] text-muted-foreground font-mono">
+                      Offset: {formatCurrency(analysis.grossTaxOnGains)} (gross tax) − {formatCurrency(analysis.taxShieldFromLosses)} (tax shield) = {formatCurrency(analysis.netTaxPayable)} (net payable)
+                    </div>
+                  )}
+                </div>
+
+                {/* Net Cash Impact */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 bg-secondary/30 rounded">
+                    <div className="text-[9px] text-muted-foreground uppercase">Net Cash Impact (After Tax)</div>
                     <div className={`text-sm font-mono font-semibold ${
                       analysis.cashImpact >= 0 ? 'text-green-500' : 'text-red-400'
                     }`}>
@@ -1029,10 +1113,8 @@ export function RebalanceTool() {
                     </div>
                   </div>
                   <div className="p-2 bg-secondary/30 rounded">
-                    <div className="text-[9px] text-muted-foreground uppercase">Targets Met</div>
-                    <div className={`text-sm font-mono font-semibold ${analysis.targetsMet ? 'text-green-500' : 'text-yellow-500'}`}>
-                      {analysis.targetsMet ? 'Yes' : 'Partial'}
-                    </div>
+                    <div className="text-[9px] text-muted-foreground uppercase">Net Proceeds (Sells)</div>
+                    <div className="text-sm font-mono font-semibold text-foreground">{formatCurrency(analysis.totalNetProceeds)}</div>
                   </div>
                 </div>
 
@@ -1061,16 +1143,33 @@ export function RebalanceTool() {
                         <tbody>
                           {analysis.trades.map((trade, i) => {
                             const taxData = analysis.taxOptimizedSells.find(s => s.ticker === trade.ticker.toUpperCase());
+                            const isLoss = taxData && taxData.totalRealGain < 0;
+                            const isGain = taxData && taxData.totalRealGain >= 0;
                             return (
                               <tr key={i} className="border-b border-border/30 hover:bg-secondary/20">
                                 <td className="p-2">
-                                  <span className={`px-2 py-0.5 rounded text-[9px] font-semibold ${
-                                    trade.action === 'BUY' 
-                                      ? 'bg-green-500/20 text-green-500' 
-                                      : 'bg-red-500/20 text-red-500'
-                                  }`}>
-                                    {trade.action}
-                                  </span>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className={`px-2 py-0.5 rounded text-[9px] font-semibold cursor-help ${
+                                          trade.action === 'BUY' 
+                                            ? 'bg-green-500/20 text-green-500' 
+                                            : 'bg-red-500/20 text-red-500'
+                                        }`}>
+                                          {trade.action}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent className="text-xs">
+                                        {trade.action === 'BUY' 
+                                          ? 'Purchase - no tax impact' 
+                                          : isGain 
+                                            ? 'Tax 25% on this gain'
+                                            : isLoss
+                                              ? 'Generates 25% tax shield (offset against gains)'
+                                              : 'Sale transaction'}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 </td>
                                 <td className="p-2 text-primary font-semibold">{trade.ticker}</td>
                                 <td className={`p-2 text-right font-semibold ${
@@ -1082,10 +1181,21 @@ export function RebalanceTool() {
                                 {trade.action === 'SELL' && taxData ? (
                                   <>
                                     <td className={`p-2 text-right ${taxData.totalRealGain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                      {taxData.totalRealGain >= 0 ? '+' : ''}{formatCurrency(taxData.totalRealGain)}
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger className="cursor-help">
+                                            {taxData.totalRealGain >= 0 ? '+' : ''}{formatCurrency(taxData.totalRealGain)}
+                                          </TooltipTrigger>
+                                          <TooltipContent className="text-xs">
+                                            {taxData.totalRealGain >= 0 
+                                              ? `Realized gain: taxed at 25% (${formatCurrency(taxData.totalRealGain * 0.25)})`
+                                              : `Realized loss: creates tax shield of ${formatCurrency(Math.abs(taxData.totalRealGain) * 0.25)}`}
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
                                     </td>
                                     <td className="p-2 text-right text-blue-400">
-                                      {formatCurrency(taxData.taxEstimate)}
+                                      {taxData.totalRealGain >= 0 ? formatCurrency(taxData.taxEstimate) : '—'}
                                     </td>
                                     <td className="p-2 text-right text-foreground font-semibold">
                                       {formatCurrency(taxData.netProceeds)}
@@ -1111,7 +1221,7 @@ export function RebalanceTool() {
                             <td className="p-2 text-right text-emerald-400">
                               {formatCurrency(analysis.taxOptimizedSells.reduce((sum, s) => sum + s.totalRealGain, 0))}
                             </td>
-                            <td className="p-2 text-right text-blue-400">{formatCurrency(analysis.totalTaxDue)}</td>
+                            <td className="p-2 text-right text-blue-400">{formatCurrency(analysis.netTaxPayable)}</td>
                             <td className="p-2 text-right text-foreground">{formatCurrency(analysis.totalNetProceeds)}</td>
                           </tr>
                         </tfoot>
