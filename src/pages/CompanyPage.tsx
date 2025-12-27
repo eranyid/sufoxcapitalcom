@@ -418,6 +418,7 @@ export default function CompanyPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <CompanyActivityLog companyId={company.id} companyName={company.company_name} />
           <Select
             value={company.status}
             onValueChange={v => handleUpdate('status', v)}
@@ -1043,10 +1044,6 @@ export default function CompanyPage() {
         </CardContent>
       </Card>
 
-      {/* Activity Log */}
-      <div className="flex justify-center pt-4">
-        <CompanyActivityLog companyId={company.id} companyName={company.company_name} />
-      </div>
 
       {/* Delete Dialog */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
