@@ -12,7 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/components/ui/select';
-import { TaskStatusBadge } from './TaskStatusBadge';
+import { TaskStatusBadge, TaskStatusOption, statusConfig } from './TaskStatusBadge';
 import { TaskUrgencyBadge, TaskUrgencyOption } from './TaskUrgencyBadge';
 import { TaskUpdatesTab } from './TaskUpdatesTab';
 import { TaskFilesTab } from './TaskFilesTab';
@@ -103,12 +103,19 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
               value={task.status}
               onValueChange={v => onUpdate(task.id, 'status', v, task.status)}
             >
-              <SelectTrigger className="h-7 sm:h-8 w-auto gap-1.5 sm:gap-2 border-border bg-muted/30 text-xs sm:text-sm">
-                <TaskStatusBadge status={task.status} />
+              <SelectTrigger 
+                className={cn(
+                  "h-9 sm:h-10 w-auto gap-1.5 sm:gap-2 border-transparent text-xs sm:text-sm",
+                  statusConfig[task.status]?.bgColor || 'bg-muted/30'
+                )}
+              >
+                <TaskStatusBadge status={task.status} className="bg-transparent px-0 py-0" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover border border-border shadow-lg z-50">
                 {STATUS_OPTIONS.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
+                    <TaskStatusOption status={opt.value} isSelected={task.status === opt.value} />
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
