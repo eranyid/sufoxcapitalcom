@@ -91,6 +91,11 @@ export function useTaskUpdates(taskId: string | null) {
       return null;
     }
 
+    // Add to local state immediately (don't rely only on realtime)
+    if (data) {
+      setUpdates(prev => [data as TaskUpdate, ...prev]);
+    }
+
     toast.success('Update posted');
     return data;
   }, [user, taskId]);
