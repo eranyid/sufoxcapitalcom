@@ -39,7 +39,7 @@ export default function CrmSummaryWidget() {
       <div className="bloomberg-panel h-full">
         <div className="bloomberg-header">
           <CheckSquare className="h-3.5 w-3.5 text-primary" />
-          <span className="bloomberg-header-title">Open Tasks</span>
+          <span className="bloomberg-header-title">Open Issues</span>
         </div>
         <div className="p-3">
           <div className="animate-pulse h-12 bg-muted rounded-sm" />
@@ -53,7 +53,7 @@ export default function CrmSummaryWidget() {
       <div className="bloomberg-header justify-between">
         <div className="flex items-center gap-2">
           <CheckSquare className="h-3.5 w-3.5 text-primary" />
-          <span className="bloomberg-header-title">Open Tasks</span>
+          <span className="bloomberg-header-title">Open Issues</span>
         </div>
         <Button
           variant="ghost"
