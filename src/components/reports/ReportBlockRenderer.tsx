@@ -308,28 +308,39 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       );
 
     case 'performance_calendar':
-      // Generate sample monthly returns for display
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const years = [new Date().getFullYear() - 1, new Date().getFullYear()];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
-      // Generate mock data - in real implementation this would come from actual performance data
+      // Use actual monthly returns from performanceMetrics
       const calendarData = useMemo(() => {
-        return years.map(year => ({
-          year,
-          months: months.map((month, i) => {
-            // Use performance metrics if available, otherwise generate sample data
-            const monthReturn = performanceMetrics 
-              ? (performanceMetrics.totalReturn / 12) * (0.5 + Math.random())
-              : (Math.random() * 6 - 2);
+        const actualReturns = performanceMetrics?.monthlyReturns || [];
+        
+        // Create a map for quick lookup: "YYYY-MM" -> return value
+        const returnsByMonth = new Map<string, number>();
+        actualReturns.forEach(({ month, return: ret }) => {
+          returnsByMonth.set(month, ret);
+        });
+        
+        // Get unique years from the data, or use current year if no data
+        const uniqueYears = [...new Set(actualReturns.map(r => r.month.split('-')[0]))];
+        const displayYears = uniqueYears.length > 0 
+          ? uniqueYears.sort().slice(-2) // Show last 2 years
+          : [new Date().getFullYear().toString()];
+        
+        return displayYears.map(year => ({
+          year: parseInt(year),
+          months: monthNames.map((monthName, i) => {
+            const monthKey = `${year}-${String(i + 1).padStart(2, '0')}`;
+            const monthReturn = returnsByMonth.get(monthKey);
             return {
-              month,
-              return: monthReturn * (i < new Date().getMonth() || year < new Date().getFullYear() ? 1 : 0)
+              month: monthName,
+              return: monthReturn ?? null // null means no data, 0 means actual 0% return
             };
           })
         }));
       }, [performanceMetrics]);
 
-      const getReturnColor = (ret: number) => {
+      const getReturnColor = (ret: number | null) => {
+        if (ret === null) return branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor;
         if (ret === 0) return branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor;
         if (ret > 3) return branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor;
         if (ret > 0) return `${branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor}80`;
@@ -339,35 +350,43 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
       return (
         <div className="space-y-2">
-          {calendarData.map(yearData => (
-            <div key={yearData.year}>
-              <p className="text-[9px] font-medium mb-1" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
-                {yearData.year}
+          {calendarData.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                No monthly return data available
               </p>
-              <div className="grid grid-cols-12 gap-1">
-                {yearData.months.map((m, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded flex flex-col items-center justify-center text-center"
-                    style={{ 
-                      backgroundColor: `${getReturnColor(m.return)}25`,
-                      border: `1px solid ${getReturnColor(m.return)}50`
-                    }}
-                  >
-                    <span className="text-[7px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
-                      {m.month}
-                    </span>
-                    <span 
-                      className="text-[8px] font-semibold"
-                      style={{ color: m.return !== 0 ? getReturnColor(m.return) : branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
-                    >
-                      {m.return !== 0 ? `${m.return > 0 ? '+' : ''}${m.return.toFixed(1)}%` : '—'}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
-          ))}
+          ) : (
+            calendarData.map(yearData => (
+              <div key={yearData.year}>
+                <p className="text-[9px] font-medium mb-1" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                  {yearData.year}
+                </p>
+                <div className="grid grid-cols-12 gap-1">
+                  {yearData.months.map((m, i) => (
+                    <div
+                      key={i}
+                      className="aspect-square rounded flex flex-col items-center justify-center text-center"
+                      style={{ 
+                        backgroundColor: `${getReturnColor(m.return)}25`,
+                        border: `1px solid ${getReturnColor(m.return)}50`
+                      }}
+                    >
+                      <span className="text-[7px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                        {m.month}
+                      </span>
+                      <span 
+                        className="text-[8px] font-semibold"
+                        style={{ color: m.return !== null && m.return !== 0 ? getReturnColor(m.return) : branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                      >
+                        {m.return !== null ? `${m.return > 0 ? '+' : ''}${m.return.toFixed(1)}%` : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       );
 
