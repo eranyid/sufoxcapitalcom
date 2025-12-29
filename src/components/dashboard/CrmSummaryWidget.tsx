@@ -1,14 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { CheckSquare, ArrowRight } from 'lucide-react';
+import { TaskStatus, STATUS_OPTIONS } from '@/types/crm';
+import { statusConfig } from '@/components/crm/TaskStatusBadge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+interface TaskCountByStatus {
+  status: TaskStatus;
+  count: number;
+}
 
 export default function CrmSummaryWidget() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [inProgressCount, setInProgressCount] = useState(0);
+  const [taskCounts, setTaskCounts] = useState<TaskCountByStatus[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,17 +26,40 @@ export default function CrmSummaryWidget() {
       setLoading(true);
       const { data, error } = await supabase
         .from('crm_tasks')
-        .select('id')
-        .eq('status', 'in_progress');
+        .select('status')
+        .is('deleted_at', null);
 
-      if (!error) {
-        setInProgressCount(data?.length || 0);
+      if (!error && data) {
+        // Count by status
+        const counts: Record<string, number> = {};
+        data.forEach(task => {
+          counts[task.status] = (counts[task.status] || 0) + 1;
+        });
+        
+        const result: TaskCountByStatus[] = STATUS_OPTIONS.map(opt => ({
+          status: opt.value,
+          count: counts[opt.value] || 0
+        })).filter(item => item.count > 0);
+        
+        setTaskCounts(result);
       }
       setLoading(false);
     };
 
     fetchTasks();
   }, [user]);
+
+  const totalCount = useMemo(() => 
+    taskCounts.reduce((sum, item) => sum + item.count, 0), 
+    [taskCounts]
+  );
+
+  const openCount = useMemo(() => 
+    taskCounts
+      .filter(item => item.status !== 'completed' && item.status !== 'canceled')
+      .reduce((sum, item) => sum + item.count, 0), 
+    [taskCounts]
+  );
 
   const handleNavigateToBackOffice = () => {
     navigate('/backoffice/tasks');
@@ -64,21 +95,49 @@ export default function CrmSummaryWidget() {
           Open <ArrowRight className="h-3 w-3 ml-1" />
         </Button>
       </div>
-      <div className="p-3">
-        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-sm border border-border/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 border border-primary/30">
-              <CheckSquare className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-[9px] text-muted-foreground font-mono uppercase">In Progress</p>
-              <p className="text-lg font-bold font-mono tabular-nums">{inProgressCount}</p>
-            </div>
+      <div className="p-3 space-y-3">
+        {/* Stats row */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 border border-primary/30">
+            <CheckSquare className="h-4 w-4 text-primary" />
           </div>
-          {inProgressCount > 0 && (
-            <span className="text-[10px] text-warning font-mono">Action needed</span>
-          )}
+          <div>
+            <p className="text-[9px] text-muted-foreground font-mono uppercase">Open Issues</p>
+            <p className="text-lg font-bold font-mono tabular-nums">{openCount}</p>
+          </div>
         </div>
+
+        {/* Mini Battery Bar */}
+        {totalCount > 0 && (
+          <TooltipProvider delayDuration={100}>
+            <div className="flex h-4 rounded overflow-hidden border border-border/50 bg-muted/30">
+              {taskCounts.map((item, index) => {
+                const percentage = (item.count / totalCount) * 100;
+                const config = statusConfig[item.status];
+                const label = STATUS_OPTIONS.find(s => s.value === item.status)?.label || item.status;
+                
+                return (
+                  <Tooltip key={item.status}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="h-full cursor-pointer hover:brightness-110 transition-all"
+                        style={{
+                          width: `${percentage}%`,
+                          backgroundColor: config?.hexColor || '#6b7280',
+                          minWidth: percentage > 0 ? '4px' : '0',
+                        }}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-card border-border text-xs">
+                      <p className="font-semibold">{label}</p>
+                      <p className="text-muted-foreground">{item.count} ({percentage.toFixed(0)}%)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
+        )}
       </div>
     </div>
   );
