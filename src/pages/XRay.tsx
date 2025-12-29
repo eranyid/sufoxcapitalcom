@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
-import { calculateAllocations, calculatePositions, getLatestValuations } from '@/lib/calculations';
+import { calculateAllocations, calculatePositions, getLatestValuations, calculateTotalCashInBaseCurrency } from '@/lib/calculations';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Scan, BarChart3, Target, Layers, TrendingUp } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
@@ -208,20 +208,23 @@ export default function XRay() {
 
   const hasData = transactions.length > 0 && valuations.length > 0;
 
-  // Calculate total portfolio value for KPIs
+  // Calculate total portfolio value for KPIs (using same calculation as Overview)
   const totalPortfolioValue = useMemo(() => {
     if (!hasData) return 0;
     const positionsData = calculatePositions(transactions);
     const latestVals = getLatestValuations(valuations);
-    let total = 0;
+    let holdingsValue = 0;
     for (const [ticker, pos] of Object.entries(positionsData)) {
       if (pos.quantity <= 0) continue;
       const val = latestVals[ticker];
       if (!val) continue;
-      total += pos.quantity * val.pricePerUnit * (val.fxRate || 1);
+      holdingsValue += pos.quantity * val.pricePerUnit * (val.fxRate || 1);
     }
-    const cashTotal = (cashBalances?.USD || 0) + (cashBalances?.EUR || 0) + (cashBalances?.ILS || 0);
-    return total + cashTotal;
+    // Use proper currency conversion for cash balances
+    const cashValue = cashBalances 
+      ? calculateTotalCashInBaseCurrency({ USD: cashBalances.USD || 0, EUR: cashBalances.EUR || 0, ILS: cashBalances.ILS || 0 }, 'USD')
+      : 0;
+    return holdingsValue + cashValue;
   }, [transactions, valuations, cashBalances, hasData]);
 
   // Calculate ring data for concentric chart
@@ -260,8 +263,11 @@ export default function XRay() {
       });
     }
 
-    const cashTotal = (cashBalances?.USD || 0) + (cashBalances?.EUR || 0) + (cashBalances?.ILS || 0);
-    totalPortfolioValue += cashTotal;
+    // Use proper currency conversion for cash
+    const cashValue = cashBalances 
+      ? calculateTotalCashInBaseCurrency({ USD: cashBalances.USD || 0, EUR: cashBalances.EUR || 0, ILS: cashBalances.ILS || 0 }, 'USD')
+      : 0;
+    totalPortfolioValue += cashValue;
 
     const positionColors = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98', '#FFA07A', '#B0C4DE', '#FFDAB9', '#E6E6FA', '#F5DEB3', '#D8BFD8', '#FFFACD', '#E0FFFF'];
     
@@ -284,8 +290,8 @@ export default function XRay() {
       group.items.push(holding);
     }
 
-    if (cashTotal > 0) {
-      assetTypeMap.set('Cash', { value: cashTotal, items: [] });
+    if (cashValue > 0) {
+      assetTypeMap.set('Cash', { value: cashValue, items: [] });
     }
 
     const assetClassColors = ['#FF8C00', '#4A90D9', '#50C878', '#9370DB', '#FFD700', '#FF6B6B'];
