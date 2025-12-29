@@ -7,12 +7,14 @@ import {
   Settings2, 
   FileText,
   Maximize2,
-  X
+  Undo2,
+  Redo2,
 } from 'lucide-react';
-import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useReport } from '@/hooks/useReports';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useReportBuilderHistory } from '@/hooks/useUndoRedo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,6 +32,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { 
   ReportBlock, 
@@ -80,8 +87,19 @@ export default function ReportBuilder() {
   const holdings = computedData.holdings;
   const totalValue = computedData.totalPortfolioValue;
   
-  const [blocks, setBlocks] = useState<ReportBlock[]>([]);
-  const [branding, setBranding] = useState<WYSIWYGBranding>(WYSIWYG_DEFAULT_BRANDING);
+  // Use undo/redo hook for blocks and branding
+  const {
+    blocks,
+    branding,
+    setBlocks,
+    setBranding,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    resetState,
+  } = useReportBuilderHistory<ReportBlock[], WYSIWYGBranding>([], WYSIWYG_DEFAULT_BRANDING);
+  
   const [pageSize, setPageSize] = useState<'A4' | 'Letter'>('A4');
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [propertiesPanelOpen, setPropertiesPanelOpen] = useState(false);
@@ -90,6 +108,35 @@ export default function ReportBuilder() {
   const [isExporting, setIsExporting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [initialized, setInitialized] = useState(false);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          if (canRedo) redo();
+        } else {
+          e.preventDefault();
+          if (canUndo) undo();
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+        e.preventDefault();
+        if (canRedo) redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, undo, redo]);
+
+  // Track changes for unsaved indicator
+  useEffect(() => {
+    if (initialized && (canUndo || canRedo)) {
+      setHasChanges(true);
+    }
+  }, [blocks, branding, initialized, canUndo, canRedo]);
 
   // Initialize state from report - convert old sections to blocks if needed
   useEffect(() => {
@@ -100,12 +147,14 @@ export default function ReportBuilder() {
       // Try to detect if sections are actually blocks (have row/colSpan properties)
       const isNewFormat = storedSections.length > 0 && 'row' in storedSections[0] && 'colSpan' in storedSections[0];
       
+      let initialBlocks: ReportBlock[];
+      
       if (isNewFormat) {
         // New block format
-        setBlocks(storedSections as unknown as ReportBlock[]);
+        initialBlocks = storedSections as unknown as ReportBlock[];
       } else {
         // Convert old sections to blocks
-        const convertedBlocks: ReportBlock[] = storedSections
+        initialBlocks = storedSections
           .filter(s => s.enabled)
           .map((section, index) => {
             const libraryItem = BLOCK_LIBRARY.find(b => b.type === section.type as ReportBlockType);
@@ -125,14 +174,14 @@ export default function ReportBuilder() {
               page: 1,
             };
           });
-        setBlocks(convertedBlocks);
       }
       
-      setBranding(convertBrandingToWYSIWYG(report.branding));
+      const initialBranding = convertBrandingToWYSIWYG(report.branding);
+      resetState(initialBlocks, initialBranding);
       setPageSize(report.page_size);
       setInitialized(true);
     }
-  }, [report, initialized]);
+  }, [report, initialized, resetState]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -329,6 +378,42 @@ export default function ReportBuilder() {
               )}
             </div>
             <div className="flex items-center gap-2">
+              {/* Undo/Redo buttons */}
+              <div className="flex items-center border border-border rounded-md">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 rounded-r-none"
+                      onClick={undo}
+                      disabled={!canUndo}
+                    >
+                      <Undo2 size={14} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Undo <kbd className="ml-1.5 text-xs opacity-60">⌘Z</kbd></p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 rounded-l-none border-l border-border"
+                      onClick={redo}
+                      disabled={!canRedo}
+                    >
+                      <Redo2 size={14} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Redo <kbd className="ml-1.5 text-xs opacity-60">⇧⌘Z</kbd></p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -348,7 +433,7 @@ export default function ReportBuilder() {
                 </SelectContent>
               </Select>
               <Button 
-                variant="outline" 
+                variant="outline"
                 size="sm" 
                 className="gap-1.5 h-8"
                 onClick={() => { setSelectedBlockId(null); setPropertiesPanelOpen(true); }}
