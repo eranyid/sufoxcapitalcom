@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
-import { calculateAllocations, calculatePositions, getLatestValuations, calculateTotalCashInBaseCurrency } from '@/lib/calculations';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Scan, BarChart3, Target, Layers, TrendingUp } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { RingSegment } from '@/lib/portfolioEngine';
 
 const COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD'];
 
@@ -113,26 +113,10 @@ function DistributionSection({ title, data }: DistributionSectionProps) {
   );
 }
 
-function TopHoldingsSection({ transactions, valuations }: { transactions: any[]; valuations: any[] }) {
-  const positions = calculatePositions(transactions);
-  const latestVals = getLatestValuations(valuations);
-
-  const holdings: { ticker: string; name: string; value: number; weight: number }[] = [];
-  let totalValue = 0;
-
-  for (const [ticker, pos] of Object.entries(positions)) {
-    if (pos.quantity <= 0) continue;
-    const val = latestVals[ticker];
-    const tx = transactions.find((t: any) => t.ticker === ticker);
-    if (!val || !tx) continue;
-    
-    const value = pos.quantity * val.pricePerUnit * (val.fxRate || 1);
-    totalValue += value;
-    holdings.push({ ticker, name: tx.assetName, value, weight: 0 });
-  }
-
-  holdings.forEach(h => h.weight = (h.value / totalValue) * 100);
-  holdings.sort((a, b) => b.value - a.value);
+/**
+ * TopHoldingsSection - Uses centralized portfolio data
+ */
+function TopHoldingsSection({ holdings }: { holdings: { ticker: string; name: string; currentValue: number; weight: number }[] }) {
   const topHoldings = holdings.slice(0, 10);
 
   return (
@@ -162,7 +146,7 @@ function TopHoldingsSection({ transactions, valuations }: { transactions: any[];
                 <td className="font-mono text-[11px] py-1.5 text-primary font-semibold">{holding.ticker}</td>
                 <td className="font-mono text-[11px] py-1.5 text-muted-foreground truncate max-w-[120px]">{holding.name}</td>
                 <td className="font-mono text-[11px] text-right tabular-nums text-foreground">
-                  ${holding.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  ${holding.currentValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </td>
                 <td className="font-mono text-[11px] text-right tabular-nums font-medium text-foreground">
                   {holding.weight.toFixed(1)}%
@@ -187,156 +171,36 @@ function TopHoldingsSection({ transactions, valuations }: { transactions: any[];
   );
 }
 
-interface RingSegment {
-  id: string;
-  name: string;
-  value: number;
-  weight: number;
-  color: string;
-  ticker?: string;
-  plPercent?: number;
-}
-
+/**
+ * XRay Page - Now uses Single Source of Truth from PortfolioContext
+ * NO LOCAL CALCULATIONS - all data comes from computedData
+ */
 export default function XRay() {
-  const { transactions, valuations, cashBalances } = usePortfolio();
+  // SINGLE SOURCE OF TRUTH: Use computedData from context
+  const { transactions, valuations, computedData } = usePortfolio();
   const isMobile = useIsMobile();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const assetTypeAllocation = calculateAllocations(transactions, valuations, 'assetType');
-  const geographyAllocation = calculateAllocations(transactions, valuations, 'geography');
-  const currencyAllocation = calculateAllocations(transactions, valuations, 'currency');
+  // All data comes from centralized computedData - NO LOCAL CALCULATIONS
+  const {
+    totalPortfolioValue,
+    cashPercent,
+    positionsCount,
+    holdings,
+    assetTypeAllocation,
+    geographyAllocation,
+    currencyAllocation,
+    assetClassRings,
+    geographyRings,
+    positionRings
+  } = computedData;
 
   const hasData = transactions.length > 0 && valuations.length > 0;
-
-  // Calculate total portfolio value for KPIs (using same calculation as Overview)
-  const totalPortfolioValue = useMemo(() => {
-    if (!hasData) return 0;
-    const positionsData = calculatePositions(transactions);
-    const latestVals = getLatestValuations(valuations);
-    let holdingsValue = 0;
-    for (const [ticker, pos] of Object.entries(positionsData)) {
-      if (pos.quantity <= 0) continue;
-      const val = latestVals[ticker];
-      if (!val) continue;
-      holdingsValue += pos.quantity * val.pricePerUnit * (val.fxRate || 1);
-    }
-    // Use proper currency conversion for cash balances
-    const cashValue = cashBalances 
-      ? calculateTotalCashInBaseCurrency({ USD: cashBalances.USD || 0, EUR: cashBalances.EUR || 0, ILS: cashBalances.ILS || 0 }, 'USD')
-      : 0;
-    return holdingsValue + cashValue;
-  }, [transactions, valuations, cashBalances, hasData]);
-
-  // Calculate ring data for concentric chart
-  const { assetClasses, sectors, positions, positionsCount } = useMemo(() => {
-    if (!hasData) {
-      return { assetClasses: [], sectors: [], positions: [], positionsCount: 0 };
-    }
-
-    const positionsData = calculatePositions(transactions);
-    const latestVals = getLatestValuations(valuations);
-    
-    let totalPortfolioValue = 0;
-    const holdingsData: RingSegment[] = [];
-    
-    for (const [ticker, pos] of Object.entries(positionsData)) {
-      if (pos.quantity <= 0) continue;
-      const val = latestVals[ticker];
-      if (!val) continue;
-      
-      const tx = transactions.find(t => t.ticker === ticker);
-      if (!tx) continue;
-      
-      const currentValue = pos.quantity * val.pricePerUnit * (val.fxRate || 1);
-      const costBasis = pos.totalCost;
-      const plPercent = costBasis > 0 ? ((currentValue - costBasis) / costBasis) * 100 : 0;
-      
-      totalPortfolioValue += currentValue;
-      holdingsData.push({
-        id: ticker,
-        name: tx.assetName,
-        ticker: ticker,
-        value: currentValue,
-        weight: 0,
-        color: '',
-        plPercent
-      });
-    }
-
-    // Use proper currency conversion for cash
-    const cashValue = cashBalances 
-      ? calculateTotalCashInBaseCurrency({ USD: cashBalances.USD || 0, EUR: cashBalances.EUR || 0, ILS: cashBalances.ILS || 0 }, 'USD')
-      : 0;
-    totalPortfolioValue += cashValue;
-
-    const positionColors = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98', '#FFA07A', '#B0C4DE', '#FFDAB9', '#E6E6FA', '#F5DEB3', '#D8BFD8', '#FFFACD', '#E0FFFF'];
-    
-    holdingsData.forEach((h, idx) => {
-      h.weight = (h.value / totalPortfolioValue) * 100;
-      h.color = positionColors[idx % positionColors.length];
-    });
-
-    holdingsData.sort((a, b) => b.weight - a.weight);
-
-    const assetTypeMap = new Map<string, { value: number; items: typeof holdingsData }>();
-    for (const holding of holdingsData) {
-      const tx = transactions.find(t => t.ticker === holding.ticker);
-      const assetType = tx?.assetType || 'Other';
-      if (!assetTypeMap.has(assetType)) {
-        assetTypeMap.set(assetType, { value: 0, items: [] });
-      }
-      const group = assetTypeMap.get(assetType)!;
-      group.value += holding.value;
-      group.items.push(holding);
-    }
-
-    if (cashValue > 0) {
-      assetTypeMap.set('Cash', { value: cashValue, items: [] });
-    }
-
-    const assetClassColors = ['#FF8C00', '#4A90D9', '#50C878', '#9370DB', '#FFD700', '#FF6B6B'];
-    const assetClassesData: RingSegment[] = Array.from(assetTypeMap.entries()).map(([name, data], idx) => ({
-      id: `asset-${name}`,
-      name,
-      value: data.value,
-      weight: (data.value / totalPortfolioValue) * 100,
-      color: assetClassColors[idx % assetClassColors.length]
-    }));
-
-    const geoMap = new Map<string, number>();
-    for (const holding of holdingsData) {
-      const tx = transactions.find(t => t.ticker === holding.ticker);
-      const geo = tx?.geography || 'Other';
-      geoMap.set(geo, (geoMap.get(geo) || 0) + holding.value);
-    }
-
-    const sectorColors = ['#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98'];
-    const sectorsData: RingSegment[] = Array.from(geoMap.entries()).map(([name, value], idx) => ({
-      id: `sector-${name}`,
-      name,
-      value,
-      weight: (value / totalPortfolioValue) * 100,
-      color: sectorColors[idx % sectorColors.length]
-    }));
-
-    return {
-      assetClasses: assetClassesData,
-      sectors: sectorsData,
-      positions: holdingsData,
-      positionsCount: holdingsData.length
-    };
-  }, [transactions, valuations, cashBalances, hasData]);
 
   const handleSegmentClick = (segment: RingSegment | { type: string; name: string; weight: number; value: number; ticker?: string; plPercent?: number }) => {
     const id = 'id' in segment ? segment.id : segment.name;
     setSelectedId(prev => prev === id ? null : id);
   };
-
-  const cashPercent = useMemo(() => {
-    if (!hasData || totalPortfolioValue === 0) return 0;
-    const cashTotal = (cashBalances?.USD || 0) + (cashBalances?.EUR || 0) + (cashBalances?.ILS || 0);
-    return (cashTotal / totalPortfolioValue) * 100;
-  }, [cashBalances, totalPortfolioValue, hasData]);
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
@@ -396,93 +260,108 @@ export default function XRay() {
               </div>
             </div>
 
-            {/* Chart Container */}
-            <div className="p-4 md:p-8">
-              <div className="flex justify-center">
-                <div className="relative">
-                  {/* Subtle glow behind chart */}
-                  <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-75" />
-                  <ConcentricRingsChart
-                    assetClasses={assetClasses}
-                    sectors={sectors}
-                    positions={positions}
-                    onSegmentClick={handleSegmentClick}
-                    selectedId={selectedId}
-                    className={isMobile ? "h-[320px] w-[320px]" : "h-[420px]"}
-                  />
-                </div>
+            {/* Mobile KPIs */}
+            <div className="md:hidden grid grid-cols-3 gap-2 px-4 py-3 bg-muted/10">
+              <div className="text-center">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Total Value</p>
+                <p className="text-xs font-mono font-semibold text-foreground tabular-nums">
+                  ${(totalPortfolioValue / 1000).toFixed(0)}K
+                </p>
+              </div>
+              <div className="text-center border-x border-border/30">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Positions</p>
+                <p className="text-xs font-mono font-semibold text-foreground tabular-nums">{positionsCount}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Cash</p>
+                <p className="text-xs font-mono font-semibold text-foreground tabular-nums">{cashPercent.toFixed(1)}%</p>
               </div>
             </div>
 
-            {/* Footer Legend */}
-            <div className="px-4 md:px-6 py-3 border-t border-border/20 bg-muted/10">
-              <div className="flex items-center justify-center gap-4 md:gap-8 text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+            {/* Chart Area - Using centralized ring data */}
+            <div className="p-4 md:p-6">
+              <ConcentricRingsChart
+                assetClasses={assetClassRings}
+                sectors={geographyRings}
+                positions={positionRings}
+                selectedId={selectedId}
+                onSegmentClick={handleSegmentClick}
+              />
+            </div>
+
+            {/* Legend */}
+            <div className="px-4 md:px-6 pb-4 md:pb-6">
+              <div className="flex items-center justify-center gap-6 text-[10px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-gradient-to-br from-primary/80 to-primary/40 border border-primary/30" />
+                  <div className="w-3 h-3 rounded-full border-2 border-primary/60"></div>
                   <span>Asset Classes</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-gradient-to-br from-muted-foreground/60 to-muted-foreground/30 border border-muted-foreground/20" />
+                  <div className="w-3 h-3 rounded-full border-2 border-accent/60"></div>
                   <span>Geography</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-gradient-to-br from-accent/60 to-accent/30 border border-accent/20" />
-                  <span>Positions</span>
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary/40 to-accent/40"></div>
+                  <span>Holdings</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* All sections - visible on all screen sizes */}
-          <div className="space-y-4">
-            {/* Section Divider */}
-            <div className="flex items-center gap-4 py-2">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono flex items-center gap-2">
-                <Layers className="h-3 w-3" />
-                Detailed Breakdown
-              </span>
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+            <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Layers className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Asset Classes</span>
+              </div>
+              <p className="text-lg md:text-xl font-mono font-bold text-foreground">{assetClassRings.length}</p>
             </div>
-
-            {/* Distribution Sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <DistributionSection 
-                title="Asset Class Distribution" 
-                data={assetTypeAllocation} 
-              />
-              <DistributionSection 
-                title="Currency Exposure" 
-                data={currencyAllocation} 
-              />
+            <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Regions</span>
+              </div>
+              <p className="text-lg md:text-xl font-mono font-bold text-foreground">{geographyRings.length}</p>
             </div>
-
-            {/* Geographic Distribution */}
-            <GeographicHeatMap data={geographyAllocation} />
-
-            {/* Section Divider */}
-            <div className="flex items-center gap-4 py-2">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono flex items-center gap-2">
-                <TrendingUp className="h-3 w-3" />
-                Concentration Analysis
-              </span>
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+            <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Holdings</span>
+              </div>
+              <p className="text-lg md:text-xl font-mono font-bold text-foreground">{positionsCount}</p>
             </div>
-
-            {/* Correlation Matrix */}
-            <CorrelationMatrix transactions={transactions} valuations={valuations} />
-
-            {/* Top Holdings */}
-            <TopHoldingsSection transactions={transactions} valuations={valuations} />
+            <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Top 5 Weight</span>
+              </div>
+              <p className="text-lg md:text-xl font-mono font-bold text-foreground">
+                {holdings.slice(0, 5).reduce((sum, h) => sum + h.weight, 0).toFixed(1)}%
+              </p>
+            </div>
           </div>
+
+          {/* Distribution Sections - Using centralized allocation data */}
+          <DistributionSection title="Asset Class Distribution" data={assetTypeAllocation} />
+          <DistributionSection title="Geographic Distribution" data={geographyAllocation} />
+          <DistributionSection title="Currency Distribution" data={currencyAllocation} />
+
+          {/* Top Holdings - Using centralized holdings data */}
+          <TopHoldingsSection holdings={holdings} />
+
+          {/* Correlation Matrix */}
+          <CorrelationMatrix transactions={transactions} valuations={valuations} />
+
+          {/* Geographic Heat Map */}
+          <GeographicHeatMap data={geographyAllocation} />
         </>
       ) : (
-        <div className="bg-card/50 border border-border/40 rounded-xl p-8 text-center">
-          <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-          <h3 className="text-sm font-medium mb-1 text-primary">No Data Available</h3>
-          <p className="text-muted-foreground text-xs max-w-md mx-auto">
-            Add transactions and monthly valuations to see portfolio X-RAY analysis.
+        <div className="bloomberg-panel p-8 text-center">
+          <Scan className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-base font-semibold mb-2 text-foreground">No Data Available</h3>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto">
+            Add transactions and monthly valuations to see the portfolio X-Ray analysis.
           </p>
         </div>
       )}

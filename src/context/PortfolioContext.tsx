@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Transaction, MonthlyValuation, PortfolioSettings, PerformanceMetrics, RiskMetrics, CashBalances, CashCurrency } from '@/types/investment';
 import { calculatePerformanceMetrics, calculateRiskMetrics } from '@/lib/calculations';
+import { computePortfolioData, ComputedPortfolioData, runConsistencyChecks } from '@/lib/portfolioEngine';
 import { sampleTransactions, sampleValuations } from '@/lib/sampleData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +16,8 @@ interface PortfolioContextType {
   cashBalances: CashBalances;
   sampleDataMode: boolean;
   loading: boolean;
+  // NEW: Computed portfolio data - Single Source of Truth
+  computedData: ComputedPortfolioData;
   setSampleDataMode: (enabled: boolean) => void;
   addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   updateTransaction: (id: string, tx: Partial<Transaction>) => Promise<void>;
@@ -163,6 +166,12 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     loadData();
   }, [user]);
 
+  // SINGLE SOURCE OF TRUTH: Compute all portfolio data centrally
+  const computedData = useMemo(() => {
+    const baseCurrency = settings.baseCurrency === 'ILS' ? 'ILS' : 'USD';
+    return computePortfolioData(transactions, valuations, cashBalances, baseCurrency);
+  }, [transactions, valuations, cashBalances, settings.baseCurrency]);
+
   // Recalculate metrics when data changes
   // Now includes cashBalances in totalValue for unified NAV
   const refreshMetrics = useCallback(() => {
@@ -180,23 +189,18 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       const riskMet = calculateRiskMetrics(transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns);
       setRiskMetrics(riskMet);
       
-      // Validation guard: check NAV consistency
-      // This helps catch calculation discrepancies during development
+      // Run consistency checks against computed data
       if (process.env.NODE_ENV === 'development') {
-        const expectedNav = perfMetrics.holdingsValue + perfMetrics.cashValue;
-        const tolerance = 0.01; // $0.01 tolerance for rounding
-        if (Math.abs(perfMetrics.totalValue - expectedNav) > tolerance) {
-          console.warn(
-            `[NAV Consistency Warning] Total Portfolio Value (${perfMetrics.totalValue.toFixed(2)}) ` +
-            `!= Holdings (${perfMetrics.holdingsValue.toFixed(2)}) + Cash (${perfMetrics.cashValue.toFixed(2)})`
-          );
+        const consistencyResult = runConsistencyChecks(computedData, perfMetrics);
+        if (!consistencyResult.isValid) {
+          console.warn('[Portfolio Consistency] Some checks failed:', consistencyResult.checks.filter(c => !c.passed));
         }
       }
     } else {
       setPerformanceMetrics(null);
       setRiskMetrics(null);
     }
-  }, [transactions, valuations, settings, cashBalances]);
+  }, [transactions, valuations, settings, cashBalances, computedData]);
 
   useEffect(() => {
     refreshMetrics();
@@ -552,6 +556,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       cashBalances,
       sampleDataMode,
       loading,
+      computedData, // NEW: Single Source of Truth
       setSampleDataMode,
       addTransaction,
       updateTransaction,
