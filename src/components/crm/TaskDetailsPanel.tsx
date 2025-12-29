@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react';
-import { X, MessageSquare, Paperclip, Activity, FolderKanban } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, MessageSquare, Paperclip, Activity, FolderKanban, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CrmTask, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
 import { useProjects } from '@/hooks/useProjects';
@@ -12,6 +12,16 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { TaskStatusBadge, TaskStatusOption, statusConfig } from './TaskStatusBadge';
 import { TaskUrgencyBadge, TaskUrgencyOption } from './TaskUrgencyBadge';
 import { TaskUpdatesTab } from './TaskUpdatesTab';
@@ -24,10 +34,12 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (id: string, field: keyof CrmTask, value: string | null, oldValue?: string | null) => void;
+  onDelete?: (id: string) => Promise<boolean>;
 }
 
-export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
+export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: Props) {
   const { projects } = useProjects();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Handle ESC key to close
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -92,9 +104,21 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
                 Task ID: {task.id.slice(0, 8)}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9">
-              <X size={18} />
-            </Button>
+            <div className="flex items-center gap-1">
+              {onDelete && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setDeleteOpen(true)} 
+                  className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 size={16} />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={onClose} className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9">
+                <X size={18} />
+              </Button>
+            </div>
           </div>
 
           {/* Status & Urgency - Same height, urgency smallest in middle */}
@@ -219,6 +243,32 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate }: Props) {
             <TaskActivityLogTab taskId={task.id} />
           </TabsContent>
         </Tabs>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Issue</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{task.task_name}"? This will move it to trash.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (onDelete) {
+                    await onDelete(task.id);
+                    onClose();
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </>
   );

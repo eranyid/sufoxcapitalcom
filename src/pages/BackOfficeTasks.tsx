@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 export default function BackOfficeTasks() {
-  const { tasks, loading: tasksLoading, updateTask } = useCrmTasks();
+  const { tasks, loading: tasksLoading, updateTask, deleteTask } = useCrmTasks();
   const { companies, loading: companiesLoading } = useCrmCompanies();
   const { projects, loading: projectsLoading } = useProjects();
   
@@ -221,6 +221,7 @@ export default function BackOfficeTasks() {
           setSelectedTask(null);
         }}
         onUpdate={handleTaskUpdate}
+        onDelete={deleteTask}
       />
     </div>
   );

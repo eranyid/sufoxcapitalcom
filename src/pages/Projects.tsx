@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FolderKanban, Plus, Search, Calendar } from 'lucide-react';
+import { FolderKanban, Plus, Search, Calendar, Trash2 } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,16 @@ import { Progress } from '@/components/ui/progress';
 import { ProjectHealthBadge } from '@/components/projects/ProjectHealthBadge';
 import { ProjectPriorityBadge } from '@/components/projects/ProjectPriorityBadge';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -32,10 +42,19 @@ interface ProjectStats {
 export default function Projects() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { projects, loading, refetch } = useProjects();
+  const { projects, loading, refetch, deleteProject } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [projectStats, setProjectStats] = useState<ProjectStats>({});
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const projectToDelete = deleteId ? projects.find(p => p.id === deleteId) : null;
+
+  const handleDeleteProject = async () => {
+    if (!deleteId) return;
+    await deleteProject(deleteId);
+    setDeleteId(null);
+  };
 
   // Fetch task stats for all projects
   useEffect(() => {
@@ -170,6 +189,7 @@ export default function Projects() {
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[90px]">Priority</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[110px]">Target</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[120px]">Progress</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -219,6 +239,19 @@ export default function Projects() {
                         </span>
                       </div>
                     </TableCell>
+                    <TableCell className="py-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteId(project.id);
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -233,6 +266,27 @@ export default function Projects() {
         onOpenChange={setCreateOpen}
         onCreate={handleCreate}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{projectToDelete?.name}"? This will move it to trash.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProject}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
