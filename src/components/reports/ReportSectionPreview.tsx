@@ -1,21 +1,30 @@
 import { useMemo } from 'react';
 import type { ReportSection, ReportBranding } from '@/types/reports';
-import type { Holding, PortfolioMetrics } from '@/types/investment';
-import { formatCurrency, formatPercent } from '@/lib/calculations';
+import type { PortfolioHolding } from '@/lib/portfolioEngine';
+import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+
+// Local formatting helpers
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+};
+
+const formatPercent = (value: number): string => {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+};
 
 interface Props {
   section: ReportSection;
-  holdings: Holding[];
-  metrics: PortfolioMetrics | null;
-  kpis: { label: string; value: string | number; change?: number }[];
+  holdings: PortfolioHolding[];
+  performanceMetrics: PerformanceMetrics | null;
+  riskMetrics: RiskMetrics | null;
   totalValue: number;
   branding: ReportBranding;
 }
 
 const COLORS = ['#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#00BCD4', '#E91E63', '#795548'];
 
-export function ReportSectionPreview({ section, holdings, metrics, kpis, totalValue, branding }: Props) {
+export function ReportSectionPreview({ section, holdings, performanceMetrics, riskMetrics, totalValue, branding }: Props) {
   const allocationData = useMemo(() => {
     const byType: Record<string, number> = {};
     holdings.forEach(h => {
@@ -53,12 +62,18 @@ export function ReportSectionPreview({ section, holdings, metrics, kpis, totalVa
             <p className="text-xs text-muted-foreground">Total Value</p>
             <p className="text-lg font-semibold">{formatCurrency(totalValue)}</p>
           </div>
-          {kpis.slice(0, 3).map((kpi, i) => (
-            <div key={i} className="p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground">{kpi.label}</p>
-              <p className="text-lg font-semibold">{kpi.value}</p>
-            </div>
-          ))}
+          <div className="p-3 bg-muted/30 rounded-lg">
+            <p className="text-xs text-muted-foreground">IRR</p>
+            <p className="text-lg font-semibold">{performanceMetrics ? formatPercent(performanceMetrics.irr) : '—'}</p>
+          </div>
+          <div className="p-3 bg-muted/30 rounded-lg">
+            <p className="text-xs text-muted-foreground">Total Return</p>
+            <p className="text-lg font-semibold">{performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}</p>
+          </div>
+          <div className="p-3 bg-muted/30 rounded-lg">
+            <p className="text-xs text-muted-foreground">Sharpe Ratio</p>
+            <p className="text-lg font-semibold">{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
+          </div>
         </div>
       );
 
@@ -66,19 +81,19 @@ export function ReportSectionPreview({ section, holdings, metrics, kpis, totalVa
       return (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">YTD Return</p>
+            <p className="text-xs text-muted-foreground">Total Return</p>
             <p className="text-lg font-semibold text-positive">
-              {metrics ? formatPercent(metrics.ytdReturn) : '—'}
+              {performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}
             </p>
           </div>
           <div className="p-3 bg-muted/30 rounded-lg">
             <p className="text-xs text-muted-foreground">Sharpe Ratio</p>
-            <p className="text-lg font-semibold">{metrics?.sharpe.toFixed(2) || '—'}</p>
+            <p className="text-lg font-semibold">{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
           </div>
           <div className="p-3 bg-muted/30 rounded-lg">
             <p className="text-xs text-muted-foreground">Max Drawdown</p>
             <p className="text-lg font-semibold text-negative">
-              {metrics ? formatPercent(metrics.maxDrawdown) : '—'}
+              {performanceMetrics ? formatPercent(-performanceMetrics.maxDrawdown) : '—'}
             </p>
           </div>
         </div>
@@ -136,11 +151,11 @@ export function ReportSectionPreview({ section, holdings, metrics, kpis, totalVa
                 <tr key={h.ticker} className="border-b border-border/50">
                   <td className="py-1.5">
                     <span className="font-medium">{h.ticker}</span>
-                    <span className="text-muted-foreground ml-1">{h.assetName}</span>
+                    <span className="text-muted-foreground ml-1">{h.name}</span>
                   </td>
                   <td className="text-right py-1.5 font-mono">{formatCurrency(h.currentValue)}</td>
                   <td className="text-right py-1.5 font-mono">
-                    {totalValue > 0 ? ((h.currentValue / totalValue) * 100).toFixed(1) : 0}%
+                    {h.weight.toFixed(1)}%
                   </td>
                 </tr>
               ))}
@@ -159,19 +174,19 @@ export function ReportSectionPreview({ section, holdings, metrics, kpis, totalVa
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="p-3 bg-muted/30 rounded-lg">
             <p className="text-xs text-muted-foreground">Volatility</p>
-            <p className="text-lg font-semibold">{metrics ? formatPercent(metrics.volatility) : '—'}</p>
+            <p className="text-lg font-semibold">{riskMetrics ? formatPercent(riskMetrics.volatility) : '—'}</p>
           </div>
           <div className="p-3 bg-muted/30 rounded-lg">
             <p className="text-xs text-muted-foreground">Beta</p>
-            <p className="text-lg font-semibold">{metrics?.beta.toFixed(2) || '—'}</p>
+            <p className="text-lg font-semibold">{riskMetrics?.beta.toFixed(2) || '—'}</p>
           </div>
           <div className="p-3 bg-muted/30 rounded-lg">
             <p className="text-xs text-muted-foreground">VaR (95%)</p>
-            <p className="text-lg font-semibold text-negative">{metrics ? formatPercent(metrics.var95) : '—'}</p>
+            <p className="text-lg font-semibold text-negative">{riskMetrics ? formatPercent(-riskMetrics.var95) : '—'}</p>
           </div>
           <div className="p-3 bg-muted/30 rounded-lg">
             <p className="text-xs text-muted-foreground">Sortino</p>
-            <p className="text-lg font-semibold">{metrics?.sortino?.toFixed(2) || '—'}</p>
+            <p className="text-lg font-semibold">{riskMetrics?.sortinoRatio?.toFixed(2) || '—'}</p>
           </div>
         </div>
       );
