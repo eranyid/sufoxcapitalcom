@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { PortfolioProvider } from "./context/PortfolioContext";
@@ -47,14 +48,15 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PortfolioProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ErrorBoundary>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <PortfolioProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ErrorBoundary>
               <ScrollToTop />
               <Routes>
                 <Route path="/auth" element={
@@ -212,12 +214,13 @@ const App = () => (
                   </Suspense>
                 } />
               </Routes>
-            </ErrorBoundary>
-          </BrowserRouter>
-        </TooltipProvider>
-      </PortfolioProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+              </ErrorBoundary>
+            </BrowserRouter>
+          </TooltipProvider>
+        </PortfolioProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+    </ThemeProvider>
   </HelmetProvider>
 );
 
