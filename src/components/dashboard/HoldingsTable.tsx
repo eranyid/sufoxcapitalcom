@@ -1,6 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Transaction, MonthlyValuation } from '@/types/investment';
 import { calculatePositions, getLatestValuations } from '@/lib/calculations';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Table,
   TableBody,
@@ -10,11 +13,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Building2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface HoldingsTableProps {
   transactions: Transaction[];
   valuations: MonthlyValuation[];
+}
+
+interface LinkedCompany {
+  id: string;
+  company_name: string;
 }
 
 interface Holding {
@@ -26,14 +35,46 @@ interface Holding {
   currentValue: number;
   plPercent: number;
   plAmount: number;
+  linkedCompany: LinkedCompany | null;
 }
 
 type SortKey = 'ticker' | 'currentValue' | 'plPercent' | 'quantity';
 type SortDirection = 'asc' | 'desc';
 
 export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>('currentValue');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [companiesMap, setCompaniesMap] = useState<Record<string, LinkedCompany>>({});
+
+  // Fetch linked companies
+  useEffect(() => {
+    const fetchLinkedCompanies = async () => {
+      if (!user) return;
+      
+      // Get all unique linked_company_ids from transactions
+      const linkedIds = [...new Set(
+        transactions
+          .map((tx: any) => tx.linked_company_id)
+          .filter(Boolean)
+      )];
+      
+      if (linkedIds.length === 0) return;
+
+      const { data } = await supabase
+        .from('crm_companies')
+        .select('id, company_name')
+        .in('id', linkedIds);
+
+      if (data) {
+        const map: Record<string, LinkedCompany> = {};
+        data.forEach(c => { map[c.id] = c; });
+        setCompaniesMap(map);
+      }
+    };
+    fetchLinkedCompanies();
+  }, [user, transactions]);
 
   const positions = calculatePositions(transactions);
   const latestVals = getLatestValuations(valuations);
@@ -54,6 +95,14 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
       const plAmount = currentValue - costBasis;
       const plPercent = costBasis > 0 ? (plAmount / costBasis) * 100 : 0;
 
+      // Find the most recent transaction with a linked company for this ticker
+      const linkedTx = transactions
+        .filter(t => t.ticker === ticker && (t as any).linked_company_id)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+      
+      const linkedCompanyId = linkedTx ? (linkedTx as any).linked_company_id : null;
+      const linkedCompany = linkedCompanyId ? companiesMap[linkedCompanyId] || null : null;
+
       result.push({
         ticker,
         name: tx.assetName,
@@ -63,6 +112,7 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
         currentValue,
         plPercent,
         plAmount,
+        linkedCompany,
       });
     }
 
@@ -78,7 +128,7 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
     });
 
     return result;
-  }, [positions, latestVals, transactions, sortKey, sortDirection]);
+  }, [positions, latestVals, transactions, sortKey, sortDirection, companiesMap]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -133,6 +183,12 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
                 <span className="flex items-center">Ticker<SortIcon columnKey="ticker" /></span>
               </TableHead>
               <TableHead className="terminal-label">Name</TableHead>
+              <TableHead className="terminal-label">
+                <span className="flex items-center gap-1">
+                  <Building2 className="h-3 w-3" />
+                  Analysis
+                </span>
+              </TableHead>
               <TableHead 
                 className="terminal-label text-right cursor-pointer hover:text-primary transition-colors"
                 onClick={() => handleSort('quantity')}
@@ -164,6 +220,28 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {holding.name}
+                </TableCell>
+                <TableCell className="font-mono text-xs">
+                  {holding.linkedCompany ? (
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => navigate(`/backoffice/company/${holding.linkedCompany!.id}`)}
+                            className="flex items-center gap-1 text-primary hover:underline cursor-pointer"
+                          >
+                            <Building2 className="h-3 w-3" />
+                            <span className="truncate max-w-[120px]">{holding.linkedCompany.company_name}</span>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View {holding.linkedCompany.company_name} analysis</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <span className="text-muted-foreground/50">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="font-mono text-xs text-right tabular-nums">
                   {formatQuantity(holding.quantity)}
