@@ -31,7 +31,7 @@ export default function CrmSummaryWidget() {
   }, [user]);
 
   const handleNavigateToBackOffice = () => {
-    navigate('/backoffice');
+    navigate('/backoffice/tasks');
   };
 
   if (loading) {
