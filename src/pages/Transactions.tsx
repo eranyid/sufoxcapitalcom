@@ -1,6 +1,9 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Transaction, AssetType, TransactionType, Geography, Currency } from '@/types/investment';
+import { CrmCompany } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from '@/components/ui/checkbox';
 import { exportToCSV, importTransactionsFromCSV } from '@/lib/storage';
 import { getKnownInceptionYear } from '@/lib/crashScenarios';
-import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle, Pencil, Search, X } from 'lucide-react';
+import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle, Pencil, Search, X, Building2 } from 'lucide-react';
 import { PreTradeCheck } from '@/components/dashboard/PreTradeCheck';
 import { toast } from 'sonner';
 
@@ -43,6 +46,7 @@ interface FormState {
   currency: Currency;
   geography: Geography;
   inceptionYear: string;
+  linkedCompanyId: string;
 }
 
 const emptyForm: FormState = {
@@ -56,11 +60,13 @@ const emptyForm: FormState = {
   fees: '',
   currency: 'USD',
   geography: 'north_america',
-  inceptionYear: ''
+  inceptionYear: '',
+  linkedCompanyId: ''
 };
 
 export default function Transactions() {
   const { transactions, addTransaction, updateTransaction, deleteTransaction, importTransactions } = usePortfolio();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -69,6 +75,7 @@ export default function Transactions() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [companies, setCompanies] = useState<CrmCompany[]>([]);
   
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,6 +85,21 @@ export default function Transactions() {
   
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editForm, setEditForm] = useState<FormState>(emptyForm);
+
+  // Fetch companies for linking
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('crm_companies')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .order('company_name');
+      if (data) setCompanies(data as CrmCompany[]);
+    };
+    fetchCompanies();
+  }, [user]);
 
   // Filter and sort transactions
   const filteredTransactions = useMemo(() => {
@@ -257,7 +279,7 @@ export default function Transactions() {
       }
     }
 
-    await addTransaction({
+    const transactionData: any = {
       assetName: form.assetName,
       ticker: form.ticker.toUpperCase(),
       assetType: form.assetType,
@@ -268,8 +290,11 @@ export default function Transactions() {
       fees: parseFloat(form.fees) || 0,
       currency: form.currency,
       geography: form.geography,
-      inceptionYear: form.inceptionYear ? parseInt(form.inceptionYear) : undefined
-    });
+      inceptionYear: form.inceptionYear ? parseInt(form.inceptionYear) : undefined,
+      linked_company_id: form.linkedCompanyId || null
+    };
+
+    await addTransaction(transactionData);
     setIsOpen(false);
     setSelectedHolding(null);
     setQuantityError(null);
@@ -291,7 +316,8 @@ export default function Transactions() {
       fees: tx.fees.toString(),
       currency: tx.currency,
       geography: tx.geography,
-      inceptionYear: tx.inceptionYear?.toString() || ''
+      inceptionYear: tx.inceptionYear?.toString() || '',
+      linkedCompanyId: (tx as any).linked_company_id || ''
     });
     setIsEditOpen(true);
   };
@@ -311,8 +337,9 @@ export default function Transactions() {
       fees: parseFloat(editForm.fees) || 0,
       currency: editForm.currency,
       geography: editForm.geography,
-      inceptionYear: editForm.inceptionYear ? parseInt(editForm.inceptionYear) : undefined
-    });
+      inceptionYear: editForm.inceptionYear ? parseInt(editForm.inceptionYear) : undefined,
+      linked_company_id: editForm.linkedCompanyId || null
+    } as any);
     setIsEditOpen(false);
     setEditingTransaction(null);
     setEditForm(emptyForm);
@@ -608,6 +635,37 @@ export default function Transactions() {
                             max="2025"
                           />
                         </div>
+                      </div>
+                    )}
+
+                    {/* Link to Analysis */}
+                    {companies.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          Link to Analysis (Optional)
+                        </Label>
+                        <Select 
+                          value={form.linkedCompanyId} 
+                          onValueChange={(v) => setForm({ ...form, linkedCompanyId: v === 'none' ? '' : v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an analysis..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">
+                              <span className="text-muted-foreground">No link</span>
+                            </SelectItem>
+                            {companies.map(c => (
+                              <SelectItem key={c.id} value={c.id}>
+                                <div className="flex items-center gap-2">
+                                  {c.ticker && <span className="font-mono text-xs text-primary">{c.ticker}</span>}
+                                  <span>{c.company_name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
 
@@ -1075,6 +1133,37 @@ export default function Transactions() {
                 />
               </div>
             </div>
+
+            {/* Link to Analysis */}
+            {companies.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  Link to Analysis (Optional)
+                </Label>
+                <Select 
+                  value={editForm.linkedCompanyId} 
+                  onValueChange={(v) => setEditForm({ ...editForm, linkedCompanyId: v === 'none' ? '' : v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an analysis..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">
+                      <span className="text-muted-foreground">No link</span>
+                    </SelectItem>
+                    {companies.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <div className="flex items-center gap-2">
+                          {c.ticker && <span className="font-mono text-xs text-primary">{c.ticker}</span>}
+                          <span>{c.company_name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditOpen(false)}>
