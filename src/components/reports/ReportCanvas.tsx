@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -25,11 +25,13 @@ import {
   GRID_COLUMNS,
 } from '@/types/reportBuilder';
 import { ReportBlockRenderer } from './ReportBlockRenderer';
-import { GripVertical, Trash2, Copy, Settings } from 'lucide-react';
+import { GripVertical, Trash2, Copy, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { PortfolioHolding } from '@/lib/portfolioEngine';
 import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { useBlockResize } from '@/hooks/useBlockResize';
+import { useSwipeGesture } from '@/hooks/useSwipeGesture';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SortableBlockProps {
   block: ReportBlock;
@@ -232,6 +234,8 @@ export function ReportCanvas({
   onOpenProperties,
 }: ReportCanvasProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const isMobile = useIsMobile();
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -241,7 +245,7 @@ export function ReportCanvas({
 
   // Calculate scale to fit canvas in viewport
   const pageDimensions = PAGE_DIMENSIONS[pageSize];
-  const scale = 0.7; // 70% scale for preview
+  const scale = isMobile ? 0.5 : 0.7; // Smaller scale on mobile
   const containerWidth = pageDimensions.width * scale * 3.78 - 48; // Account for padding
 
   // Group blocks by page
@@ -254,6 +258,24 @@ export function ReportCanvas({
     });
     return pages;
   }, [blocks]);
+
+  const pageNumbers = Object.keys(blocksByPage).map(Number).sort((a, b) => a - b);
+  const totalPages = pageNumbers.length || 1;
+
+  const goToNextPage = useCallback(() => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  }, [totalPages]);
+
+  const goToPrevPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  }, []);
+
+  // Swipe gestures for mobile
+  const swipeHandlers = useSwipeGesture({
+    onSwipeLeft: goToNextPage,
+    onSwipeRight: goToPrevPage,
+    threshold: 50,
+  });
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -290,15 +312,61 @@ export function ReportCanvas({
   const activeBlock = activeId ? blocks.find(b => b.id === activeId) : null;
 
   return (
-    <div className="flex-1 overflow-auto bg-muted/30 p-8">
+    <div 
+      className="flex-1 overflow-auto bg-muted/30 p-4 md:p-8"
+      {...(isMobile ? swipeHandlers : {})}
+    >
+      {/* Mobile page navigation indicator */}
+      {isMobile && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mb-4 sticky top-0 z-10 bg-muted/80 backdrop-blur-sm py-2 rounded-lg">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={goToPrevPage}
+            disabled={currentPage <= 1}
+          >
+            <ChevronLeft size={18} />
+          </Button>
+          <div className="flex items-center gap-2">
+            {pageNumbers.map((num) => (
+              <button
+                key={num}
+                onClick={() => setCurrentPage(num)}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all",
+                  currentPage === num 
+                    ? "bg-primary w-4" 
+                    : "bg-muted-foreground/30"
+                )}
+              />
+            ))}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={goToNextPage}
+            disabled={currentPage >= totalPages}
+          >
+            <ChevronRight size={18} />
+          </Button>
+          <span className="text-xs text-muted-foreground ml-2">
+            Swipe to navigate
+          </span>
+        </div>
+      )}
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Pages */}
-        {Object.entries(blocksByPage).map(([pageNum, pageBlocks]) => (
+        {/* Pages - on mobile show only current page */}
+        {Object.entries(blocksByPage)
+          .filter(([pageNum]) => !isMobile || Number(pageNum) === currentPage)
+          .map(([pageNum, pageBlocks]) => (
           <div
             key={pageNum}
             className="mx-auto mb-8 bg-card rounded-lg shadow-xl overflow-hidden"
@@ -316,11 +384,11 @@ export function ReportCanvas({
             
             {/* Page content grid */}
             <div 
-              className="p-6"
+              className="p-4 md:p-6"
               style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${GRID_COLUMNS}, 1fr)`,
-                gap: 8,
+                gap: isMobile ? 4 : 8,
                 minHeight: (pageDimensions.height * scale * 3.78) - 50,
               }}
             >
@@ -352,9 +420,9 @@ export function ReportCanvas({
 
             {/* Page footer */}
             {branding.showPageNumbers && (
-              <div className="border-t border-border px-6 py-3 flex items-center justify-between text-xs text-muted-foreground">
+              <div className="border-t border-border px-4 md:px-6 py-2 md:py-3 flex items-center justify-between text-xs text-muted-foreground">
                 <span>{branding.footerText}</span>
-                <span>Page {pageNum}</span>
+                <span>Page {pageNum}{isMobile && ` of ${totalPages}`}</span>
               </div>
             )}
           </div>
@@ -369,8 +437,10 @@ export function ReportCanvas({
               height: pageDimensions.height * scale * 3.78,
             }}
           >
-            <div className="text-center">
-              <p className="text-muted-foreground">Drag blocks from the library</p>
+            <div className="text-center p-4">
+              <p className="text-muted-foreground text-sm">
+                {isMobile ? 'Tap blocks below to add' : 'Drag blocks from the library'}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">to build your report</p>
             </div>
           </div>
