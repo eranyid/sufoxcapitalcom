@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -29,6 +29,7 @@ import { GripVertical, Trash2, Copy, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { PortfolioHolding } from '@/lib/portfolioEngine';
 import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
+import { useBlockResize } from '@/hooks/useBlockResize';
 
 interface SortableBlockProps {
   block: ReportBlock;
@@ -42,7 +43,9 @@ interface SortableBlockProps {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onOpenProperties: (id: string) => void;
+  onResize: (blockId: string, colSpan: number, height: number) => void;
   scale: number;
+  containerWidth: number;
 }
 
 function SortableBlock({
@@ -57,7 +60,9 @@ function SortableBlock({
   onDelete,
   onDuplicate,
   onOpenProperties,
+  onResize,
   scale,
+  containerWidth,
 }: SortableBlockProps) {
   const {
     attributes,
@@ -68,9 +73,18 @@ function SortableBlock({
     isDragging,
   } = useSortable({ id: block.id });
 
+  const { isResizing, handleMouseDown } = useBlockResize({
+    blockId: block.id,
+    colSpan: block.colSpan,
+    height: block.height,
+    scale,
+    containerWidth,
+    onResize,
+  });
+
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isResizing ? 'none' : transition,
     gridColumn: `span ${block.colSpan} / span ${block.colSpan}`,
     minHeight: block.height * GRID_ROW_HEIGHT * scale,
   };
@@ -82,6 +96,7 @@ function SortableBlock({
       className={cn(
         "relative group rounded-lg border transition-all",
         isDragging && "opacity-50 z-50",
+        isResizing && "z-50 ring-2 ring-primary",
         isSelected 
           ? "border-primary ring-2 ring-primary/20" 
           : "border-border/50 hover:border-border",
@@ -136,7 +151,7 @@ function SortableBlock({
       </div>
 
       {/* Block content */}
-      <div className="p-3 h-full">
+      <div className="p-3 h-full overflow-hidden">
         <ReportBlockRenderer
           block={block}
           holdings={holdings}
@@ -147,10 +162,40 @@ function SortableBlock({
         />
       </div>
 
-      {/* Resize handle */}
-      <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-muted-foreground/50" />
+      {/* Right resize handle */}
+      <div
+        className={cn(
+          "absolute top-0 right-0 w-2 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity",
+          "hover:bg-primary/20"
+        )}
+        onMouseDown={(e) => handleMouseDown(e, 'right')}
+      />
+
+      {/* Bottom resize handle */}
+      <div
+        className={cn(
+          "absolute bottom-0 left-0 w-full h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity",
+          "hover:bg-primary/20"
+        )}
+        onMouseDown={(e) => handleMouseDown(e, 'bottom')}
+      />
+
+      {/* Corner resize handle */}
+      <div
+        className={cn(
+          "absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        )}
+        onMouseDown={(e) => handleMouseDown(e, 'corner')}
+      >
+        <div className="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-primary/50" />
       </div>
+
+      {/* Size indicator while resizing */}
+      {isResizing && (
+        <div className="absolute bottom-2 right-6 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded font-mono">
+          {block.colSpan} × {block.height}
+        </div>
+      )}
     </div>
   );
 }
@@ -197,6 +242,7 @@ export function ReportCanvas({
   // Calculate scale to fit canvas in viewport
   const pageDimensions = PAGE_DIMENSIONS[pageSize];
   const scale = 0.7; // 70% scale for preview
+  const containerWidth = pageDimensions.width * scale * 3.78 - 48; // Account for padding
 
   // Group blocks by page
   const blocksByPage = useMemo(() => {
@@ -231,6 +277,15 @@ export function ReportCanvas({
       }
     }
   };
+
+  const handleBlockResize = useCallback((blockId: string, colSpan: number, height: number) => {
+    const newBlocks = blocks.map(block => 
+      block.id === blockId 
+        ? { ...block, colSpan: colSpan as ReportBlock['colSpan'], height }
+        : block
+    );
+    onBlocksChange(newBlocks);
+  }, [blocks, onBlocksChange]);
 
   const activeBlock = activeId ? blocks.find(b => b.id === activeId) : null;
 
@@ -287,7 +342,9 @@ export function ReportCanvas({
                     onDelete={onDeleteBlock}
                     onDuplicate={onDuplicateBlock}
                     onOpenProperties={onOpenProperties}
+                    onResize={handleBlockResize}
                     scale={scale}
+                    containerWidth={containerWidth}
                   />
                 ))}
               </SortableContext>
