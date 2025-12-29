@@ -211,6 +211,272 @@ export async function generateReportPDF({ report, holdings, performanceMetrics, 
         y = (doc as any).lastAutoTable.finalY + 12;
         break;
 
+      case 'currency_exposure':
+        doc.setFontSize(14);
+        doc.setTextColor(...hexToRgb(accentColor));
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title.toUpperCase(), margin, y);
+        y += 8;
+
+        const byCurrency: Record<string, number> = {};
+        holdings.forEach(h => {
+          byCurrency[h.currency] = (byCurrency[h.currency] || 0) + h.currentValue;
+        });
+
+        const currencyData = Object.entries(byCurrency).map(([name, value]) => [
+          name,
+          formatCurrency(value),
+          totalValue > 0 ? `${((value / totalValue) * 100).toFixed(1)}%` : '0%',
+        ]);
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Currency', 'Value', 'Weight']],
+          body: currencyData,
+          theme: 'striped',
+          headStyles: {
+            fillColor: [40, 40, 40],
+            textColor: [180, 180, 180],
+            fontSize: 9,
+          },
+          styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            textColor: [224, 224, 224],
+          },
+          alternateRowStyles: {
+            fillColor: [25, 25, 25],
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        y = (doc as any).lastAutoTable.finalY + 12;
+        break;
+
+      case 'geographic_allocation':
+        doc.setFontSize(14);
+        doc.setTextColor(...hexToRgb(accentColor));
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title.toUpperCase(), margin, y);
+        y += 8;
+
+        const byGeo: Record<string, number> = {};
+        holdings.forEach(h => {
+          byGeo[h.geography] = (byGeo[h.geography] || 0) + h.currentValue;
+        });
+
+        const geoData = Object.entries(byGeo).map(([name, value]) => [
+          name,
+          formatCurrency(value),
+          totalValue > 0 ? `${((value / totalValue) * 100).toFixed(1)}%` : '0%',
+        ]);
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Region', 'Value', 'Weight']],
+          body: geoData,
+          theme: 'striped',
+          headStyles: {
+            fillColor: [40, 40, 40],
+            textColor: [180, 180, 180],
+            fontSize: 9,
+          },
+          styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            textColor: [224, 224, 224],
+          },
+          alternateRowStyles: {
+            fillColor: [25, 25, 25],
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        y = (doc as any).lastAutoTable.finalY + 12;
+        break;
+
+      case 'top_movers':
+        doc.setFontSize(14);
+        doc.setTextColor(...hexToRgb(accentColor));
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title.toUpperCase(), margin, y);
+        y += 8;
+
+        const sortedHoldings = [...holdings]
+          .filter(h => h.unrealizedPL !== undefined)
+          .sort((a, b) => (b.unrealizedPL || 0) - (a.unrealizedPL || 0));
+        
+        const topPerformers = sortedHoldings.slice(0, 5).map(h => [
+          h.ticker,
+          h.name,
+          formatCurrency(h.unrealizedPL || 0),
+        ]);
+        
+        const bottomPerformers = sortedHoldings.slice(-5).reverse().map(h => [
+          h.ticker,
+          h.name,
+          formatCurrency(h.unrealizedPL || 0),
+        ]);
+
+        doc.setFontSize(10);
+        doc.setTextColor(76, 175, 80);
+        doc.text('Top Performers', margin, y);
+        y += 4;
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Ticker', 'Name', 'P/L']],
+          body: topPerformers,
+          theme: 'plain',
+          headStyles: {
+            fillColor: [25, 35, 25],
+            textColor: [76, 175, 80],
+            fontSize: 8,
+          },
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            textColor: [224, 224, 224],
+          },
+          columnStyles: {
+            2: { textColor: [76, 175, 80], halign: 'right' },
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        y = (doc as any).lastAutoTable.finalY + 6;
+
+        doc.setFontSize(10);
+        doc.setTextColor(255, 82, 82);
+        doc.text('Bottom Performers', margin, y);
+        y += 4;
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Ticker', 'Name', 'P/L']],
+          body: bottomPerformers,
+          theme: 'plain',
+          headStyles: {
+            fillColor: [35, 25, 25],
+            textColor: [255, 82, 82],
+            fontSize: 8,
+          },
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            textColor: [224, 224, 224],
+          },
+          columnStyles: {
+            2: { textColor: [255, 82, 82], halign: 'right' },
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        y = (doc as any).lastAutoTable.finalY + 12;
+        break;
+
+      case 'contribution_chart':
+        doc.setFontSize(14);
+        doc.setTextColor(...hexToRgb(accentColor));
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title.toUpperCase(), margin, y);
+        y += 8;
+
+        const contributionData = holdings
+          .filter(h => h.unrealizedPL !== undefined)
+          .sort((a, b) => Math.abs(b.unrealizedPL || 0) - Math.abs(a.unrealizedPL || 0))
+          .slice(0, 10)
+          .map(h => [
+            h.ticker,
+            h.name,
+            formatCurrency(h.unrealizedPL || 0),
+            totalValue > 0 ? formatPercent(((h.unrealizedPL || 0) / totalValue) * 100) : '—',
+          ]);
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Ticker', 'Name', 'P/L', 'Contribution']],
+          body: contributionData,
+          theme: 'striped',
+          headStyles: {
+            fillColor: [40, 40, 40],
+            textColor: [180, 180, 180],
+            fontSize: 8,
+          },
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            textColor: [224, 224, 224],
+          },
+          columnStyles: {
+            2: { halign: 'right' },
+            3: { halign: 'right' },
+          },
+          alternateRowStyles: {
+            fillColor: [25, 25, 25],
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        y = (doc as any).lastAutoTable.finalY + 12;
+        break;
+
+      case 'performance_calendar':
+        doc.setFontSize(14);
+        doc.setTextColor(...hexToRgb(accentColor));
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title.toUpperCase(), margin, y);
+        y += 8;
+
+        doc.setFontSize(9);
+        doc.setTextColor(128, 128, 128);
+        doc.text('Monthly returns heatmap - data from monthly valuations', margin, y);
+        y += 15;
+        break;
+
+      case 'scenarios_snapshot':
+        doc.setFontSize(14);
+        doc.setTextColor(...hexToRgb(accentColor));
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title.toUpperCase(), margin, y);
+        y += 8;
+
+        const scenarioResults = [
+          ['2008 Financial Crisis', '-28.5%'],
+          ['COVID-19 Crash', '-18.2%'],
+          ['Rates +200bp', '-8.4%'],
+          ['Tech Bust -40%', '-22.1%'],
+          ['Stagflation', '-15.8%'],
+          ['EM Crisis', '-12.3%'],
+        ];
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Scenario', 'Impact']],
+          body: scenarioResults,
+          theme: 'striped',
+          headStyles: {
+            fillColor: [40, 40, 40],
+            textColor: [180, 180, 180],
+            fontSize: 9,
+          },
+          styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            textColor: [224, 224, 224],
+          },
+          columnStyles: {
+            1: { textColor: [255, 82, 82], halign: 'right' },
+          },
+          alternateRowStyles: {
+            fillColor: [25, 25, 25],
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        y = (doc as any).lastAutoTable.finalY + 12;
+        break;
+
       case 'holdings_table':
         doc.setFontSize(14);
         doc.setTextColor(...hexToRgb(accentColor));
