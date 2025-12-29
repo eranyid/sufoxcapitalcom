@@ -6,7 +6,6 @@ import { Scan, BarChart3, Target, Layers, TrendingUp } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
-import { MobileArchitectureView } from '@/components/portfolio/MobileArchitectureView';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD'];
@@ -393,29 +392,20 @@ export default function XRay() {
 
             {/* Chart Container */}
             <div className="p-4 md:p-8">
-              {isMobile ? (
-                <MobileArchitectureView
-                  assetClasses={assetClasses}
-                  sectors={sectors}
-                  positions={positions}
-                  onItemClick={handleSegmentClick}
-                />
-              ) : (
-                <div className="flex justify-center">
-                  <div className="relative">
-                    {/* Subtle glow behind chart */}
-                    <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-75" />
-                    <ConcentricRingsChart
-                      assetClasses={assetClasses}
-                      sectors={sectors}
-                      positions={positions}
-                      onSegmentClick={handleSegmentClick}
-                      selectedId={selectedId}
-                      className="h-[420px] relative z-10"
-                    />
-                  </div>
+              <div className="flex justify-center">
+                <div className="relative">
+                  {/* Subtle glow behind chart */}
+                  <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-75" />
+                  <ConcentricRingsChart
+                    assetClasses={assetClasses}
+                    sectors={sectors}
+                    positions={positions}
+                    onSegmentClick={handleSegmentClick}
+                    selectedId={selectedId}
+                    className={isMobile ? "h-[320px] w-[320px]" : "h-[420px]"}
+                  />
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Footer Legend - Desktop only */}
