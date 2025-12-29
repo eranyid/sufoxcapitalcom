@@ -50,6 +50,7 @@ export interface CrmCompany {
   timeline_end: string | null;
   is_auto_linked: boolean;
   source_transaction_id: string | null;
+  inception_year: number | null;
   created_at: string;
   updated_at: string;
 }

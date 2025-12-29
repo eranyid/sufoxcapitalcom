@@ -488,7 +488,54 @@ export default function Transactions() {
                   </div>
                 )}
 
-                {/* BUY Mode: Manual Entry */}
+                {/* BUY Mode: Link to Analysis First (Optional) */}
+                {!isSellMode && companies.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      Link to Analysis (Optional - will auto-fill details)
+                    </Label>
+                    <Select 
+                      value={form.linkedCompanyId} 
+                      onValueChange={(v) => {
+                        if (v === 'none' || !v) {
+                          setForm({ ...form, linkedCompanyId: '' });
+                        } else {
+                          const company = companies.find(c => c.id === v);
+                          if (company) {
+                            setForm(prev => ({
+                              ...prev,
+                              linkedCompanyId: v,
+                              assetName: company.company_name || prev.assetName,
+                              ticker: company.ticker || prev.ticker,
+                              inceptionYear: company.inception_year?.toString() || prev.inceptionYear,
+                              geography: (company.geography as Geography) || prev.geography,
+                            }));
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an analysis to auto-fill..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">
+                          <span className="text-muted-foreground">No link - manual entry</span>
+                        </SelectItem>
+                        {companies.map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            <div className="flex items-center gap-2">
+                              {c.ticker && <span className="font-mono text-xs text-primary">{c.ticker}</span>}
+                              <span>{c.company_name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* BUY Mode: Asset Details */}
                 {!isSellMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -498,6 +545,8 @@ export default function Transactions() {
                         onChange={(e) => setForm({ ...form, assetName: e.target.value })}
                         placeholder="Apple Inc."
                         required
+                        disabled={!!form.linkedCompanyId}
+                        className={form.linkedCompanyId ? 'bg-muted' : ''}
                       />
                     </div>
                     <div className="space-y-2">
@@ -507,6 +556,8 @@ export default function Transactions() {
                         onChange={(e) => handleTickerChange(e.target.value)}
                         placeholder="AAPL"
                         required
+                        disabled={!!form.linkedCompanyId}
+                        className={form.linkedCompanyId ? 'bg-muted' : ''}
                       />
                     </div>
                   </div>
@@ -633,39 +684,10 @@ export default function Transactions() {
                             placeholder="e.g. 2009"
                             min="1900"
                             max="2025"
+                            disabled={!!form.linkedCompanyId && !!companies.find(c => c.id === form.linkedCompanyId)?.inception_year}
+                            className={form.linkedCompanyId && companies.find(c => c.id === form.linkedCompanyId)?.inception_year ? 'bg-muted' : ''}
                           />
                         </div>
-                      </div>
-                    )}
-
-                    {/* Link to Analysis */}
-                    {companies.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          Link to Analysis (Optional)
-                        </Label>
-                        <Select 
-                          value={form.linkedCompanyId} 
-                          onValueChange={(v) => setForm({ ...form, linkedCompanyId: v === 'none' ? '' : v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select an analysis..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">
-                              <span className="text-muted-foreground">No link</span>
-                            </SelectItem>
-                            {companies.map(c => (
-                              <SelectItem key={c.id} value={c.id}>
-                                <div className="flex items-center gap-2">
-                                  {c.ticker && <span className="font-mono text-xs text-primary">{c.ticker}</span>}
-                                  <span>{c.company_name}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </div>
                     )}
 
