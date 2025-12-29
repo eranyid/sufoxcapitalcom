@@ -10,8 +10,23 @@ import {
   calculatePositions, 
   getLatestValuations, 
   calculateTotalCashInBaseCurrency,
-  calculateAllocations 
+  calculateAllocations,
+  calculateAssetMonthlyReturns,
+  calculateVolatility
 } from './calculations';
+
+// ============================================
+// TYPES
+// ============================================
+
+export interface RiskReturnPoint {
+  ticker: string;
+  name: string;
+  annualizedReturn: number;
+  annualizedVolatility: number;
+  weight: number;
+  sharpeRatio?: number;
+}
 
 // ============================================
 // TYPES
@@ -44,6 +59,15 @@ export interface RingSegment {
   plPercent?: number;
 }
 
+export interface RiskReturnData {
+  holdings: RiskReturnPoint[];
+  portfolio: {
+    annualizedReturn: number;
+    annualizedVolatility: number;
+  };
+  excludedCount: number; // Holdings with insufficient history
+}
+
 export interface ComputedPortfolioData {
   // Core values (FX-normalized to base currency)
   totalPortfolioValue: number;
@@ -64,6 +88,9 @@ export interface ComputedPortfolioData {
   assetClassRings: RingSegment[];
   geographyRings: RingSegment[];
   positionRings: RingSegment[];
+  
+  // Risk/Return scatter data
+  riskReturnData: RiskReturnData;
   
   // Metadata
   lastUpdated: Date;
@@ -178,6 +205,9 @@ export function computePortfolioData(
     totalPortfolioValue
   );
   
+  // Build risk/return data for scatter chart
+  const riskReturnData = buildRiskReturnData(holdings, transactions, valuations);
+  
   return {
     totalPortfolioValue,
     holdingsValue,
@@ -191,6 +221,7 @@ export function computePortfolioData(
     assetClassRings,
     geographyRings,
     positionRings,
+    riskReturnData,
     lastUpdated: new Date()
   };
 }
@@ -261,6 +292,79 @@ function buildRingData(
 }
 
 /**
+ * Build risk/return scatter data for each holding
+ * Returns annualized return and volatility for scatter plot
+ */
+function buildRiskReturnData(
+  holdings: PortfolioHolding[],
+  transactions: Transaction[],
+  valuations: MonthlyValuation[]
+): RiskReturnData {
+  const MIN_PERIODS = 3; // Minimum months of data needed
+  const assetReturns = calculateAssetMonthlyReturns(transactions, valuations);
+  
+  const riskReturnPoints: RiskReturnPoint[] = [];
+  let excludedCount = 0;
+  
+  for (const holding of holdings) {
+    const returns = assetReturns[holding.ticker];
+    
+    // Skip if insufficient history
+    if (!returns || returns.length < MIN_PERIODS) {
+      excludedCount++;
+      continue;
+    }
+    
+    const monthlyReturns = returns.map(r => r.return);
+    
+    // Calculate annualized return (geometric mean)
+    const avgMonthlyReturn = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length;
+    const annualizedReturn = avgMonthlyReturn * 12; // Simple annualization
+    
+    // Calculate annualized volatility
+    const annualizedVolatility = calculateVolatility(monthlyReturns);
+    
+    // Calculate Sharpe-like ratio (assuming 4.5% risk-free rate)
+    const riskFreeRate = 4.5;
+    const sharpeRatio = annualizedVolatility > 0 
+      ? (annualizedReturn - riskFreeRate) / annualizedVolatility 
+      : 0;
+    
+    riskReturnPoints.push({
+      ticker: holding.ticker,
+      name: holding.name,
+      annualizedReturn,
+      annualizedVolatility,
+      weight: holding.weight,
+      sharpeRatio
+    });
+  }
+  
+  // Calculate portfolio-weighted average
+  const totalWeight = riskReturnPoints.reduce((sum, p) => sum + p.weight, 0);
+  
+  let portfolioReturn = 0;
+  let portfolioVol = 0;
+  
+  if (totalWeight > 0) {
+    for (const point of riskReturnPoints) {
+      const normalizedWeight = point.weight / totalWeight;
+      portfolioReturn += normalizedWeight * point.annualizedReturn;
+      portfolioVol += normalizedWeight * point.annualizedVolatility;
+    }
+  }
+  
+  return {
+    holdings: riskReturnPoints,
+    portfolio: {
+      annualizedReturn: portfolioReturn,
+      annualizedVolatility: portfolioVol
+    },
+    excludedCount
+  };
+}
+
+/**
  * Format allocation names for display
  */
 function formatAllocationName(key: string): string {
@@ -286,6 +390,11 @@ function createEmptyPortfolioData(): ComputedPortfolioData {
     assetClassRings: [],
     geographyRings: [],
     positionRings: [],
+    riskReturnData: {
+      holdings: [],
+      portfolio: { annualizedReturn: 0, annualizedVolatility: 0 },
+      excludedCount: 0
+    },
     lastUpdated: new Date()
   };
 }
