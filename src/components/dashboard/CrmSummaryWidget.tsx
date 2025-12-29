@@ -95,23 +95,21 @@ export default function CrmSummaryWidget() {
           Open <ArrowRight className="h-3 w-3 ml-1" />
         </Button>
       </div>
-      <div className="p-3 space-y-3">
-        {/* Stats row */}
+      <div className="p-3 space-y-2">
+        {/* Stats row with battery bar */}
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 border border-primary/30">
+          <div className="p-2 bg-primary/10 border border-primary/30 flex-shrink-0">
             <CheckSquare className="h-4 w-4 text-primary" />
           </div>
-          <div>
-            <p className="text-[9px] text-muted-foreground font-mono uppercase">Open Issues</p>
+          <div className="flex-shrink-0">
+            <p className="text-[9px] text-muted-foreground font-mono uppercase">Open</p>
             <p className="text-lg font-bold font-mono tabular-nums">{openCount}</p>
           </div>
-        </div>
-
-        {/* Mini Battery Bar */}
-        {totalCount > 0 && (
-          <div className="space-y-1.5">
+          
+          {/* Mini Battery Bar - next to count */}
+          {totalCount > 0 && (
             <TooltipProvider delayDuration={100}>
-              <div className="flex h-4 rounded overflow-hidden border border-border/50 bg-muted/30">
+              <div className="flex-1 flex h-5 rounded overflow-hidden border border-border/50 bg-muted/30">
                 {taskCounts.map((item) => {
                   const percentage = (item.count / totalCount) * 100;
                   const config = statusConfig[item.status];
@@ -138,26 +136,28 @@ export default function CrmSummaryWidget() {
                 })}
               </div>
             </TooltipProvider>
-            
-            {/* Mini Legend */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-              {taskCounts.map((item) => {
-                const config = statusConfig[item.status];
-                const label = STATUS_OPTIONS.find(s => s.value === item.status)?.label || item.status;
-                
-                return (
-                  <div key={item.status} className="flex items-center gap-1">
-                    <div
-                      className="w-1.5 h-1.5 rounded-sm"
-                      style={{ backgroundColor: config?.hexColor || '#6b7280' }}
-                    />
-                    <span className="text-[8px] font-mono text-muted-foreground">
-                      {label}: {item.count}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+          )}
+        </div>
+
+        {/* Mini Legend */}
+        {totalCount > 0 && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pl-[52px]">
+            {taskCounts.map((item) => {
+              const config = statusConfig[item.status];
+              const label = STATUS_OPTIONS.find(s => s.value === item.status)?.label || item.status;
+              
+              return (
+                <div key={item.status} className="flex items-center gap-1">
+                  <div
+                    className="w-1.5 h-1.5 rounded-sm"
+                    style={{ backgroundColor: config?.hexColor || '#6b7280' }}
+                  />
+                  <span className="text-[8px] font-mono text-muted-foreground">
+                    {label}: {item.count}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
