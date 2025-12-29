@@ -12,7 +12,9 @@ import {
   LayoutTemplate,
 } from 'lucide-react';
 import { DndContext, DragEndEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { arrayMove } from '@dnd-kit/sortable';
+import { cn } from '@/lib/utils';
 import { useReport } from '@/hooks/useReports';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useReportBuilderHistory } from '@/hooks/useUndoRedo';
@@ -85,6 +87,7 @@ export default function ReportBuilder() {
   const navigate = useNavigate();
   const { report, loading, updateReport } = useReport(id);
   const { computedData, performanceMetrics, riskMetrics } = usePortfolio();
+  const isMobile = useIsMobile();
   
   const holdings = computedData.holdings;
   const totalValue = computedData.totalPortfolioValue;
@@ -485,9 +488,12 @@ export default function ReportBuilder() {
         </div>
 
         {/* Main Content - WYSIWYG Layout */}
-        <div className="flex-1 overflow-hidden flex">
-          {/* Left: Block Library */}
-          <BlockLibraryPanel onAddBlock={addBlock} />
+        <div className={cn(
+          "flex-1 overflow-hidden flex",
+          isMobile ? "flex-col" : "flex-row"
+        )}>
+          {/* Desktop: Left sidebar for Block Library */}
+          {!isMobile && <BlockLibraryPanel onAddBlock={addBlock} />}
           
           {/* Center: Canvas */}
           <ReportCanvas
@@ -506,8 +512,8 @@ export default function ReportBuilder() {
             onOpenProperties={openBlockProperties}
           />
           
-          {/* Right: Properties Panel */}
-          {propertiesPanelOpen && (
+          {/* Right: Properties Panel - Desktop only */}
+          {propertiesPanelOpen && !isMobile && (
             <BlockPropertiesPanel
               block={selectedBlock || null}
               branding={branding}
@@ -516,7 +522,30 @@ export default function ReportBuilder() {
               onClose={() => setPropertiesPanelOpen(false)}
             />
           )}
+
+          {/* Mobile: Bottom horizontal Block Library */}
+          {isMobile && <BlockLibraryPanel onAddBlock={addBlock} />}
         </div>
+
+        {/* Mobile: Properties Panel as Sheet */}
+        {isMobile && propertiesPanelOpen && (
+          <Dialog open={propertiesPanelOpen} onOpenChange={setPropertiesPanelOpen}>
+            <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{selectedBlock ? 'Block Properties' : 'Report Branding'}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                <BlockPropertiesPanel
+                  block={selectedBlock || null}
+                  branding={branding}
+                  onUpdateBlock={updateBlockConfig}
+                  onUpdateBranding={updateBranding}
+                  onClose={() => setPropertiesPanelOpen(false)}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
 
         {/* Full Preview Modal */}
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>

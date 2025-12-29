@@ -1,6 +1,6 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { BLOCK_LIBRARY, BlockLibraryItem, ReportBlockType } from '@/types/reportBuilder';
 import { cn } from '@/lib/utils';
 import { 
@@ -10,6 +10,7 @@ import {
   Maximize2, Box, LucideProps
 } from 'lucide-react';
 import { ForwardRefExoticComponent, RefAttributes } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type LucideIcon = ForwardRefExoticComponent<Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>>;
 
@@ -23,9 +24,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
 interface DraggableBlockProps {
   item: BlockLibraryItem;
   onAdd: (type: ReportBlockType) => void;
+  isMobile?: boolean;
 }
 
-function DraggableBlock({ item, onAdd }: DraggableBlockProps) {
+function DraggableBlock({ item, onAdd, isMobile }: DraggableBlockProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `library-${item.type}`,
     data: { type: item.type, isLibraryItem: true },
@@ -36,6 +38,24 @@ function DraggableBlock({ item, onAdd }: DraggableBlockProps) {
   } : undefined;
 
   const IconComponent = ICON_MAP[item.icon] || Box;
+
+  if (isMobile) {
+    return (
+      <button
+        onClick={() => onAdd(item.type)}
+        className={cn(
+          "flex-shrink-0 flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border border-border",
+          "hover:border-primary/50 hover:bg-muted/50 transition-all",
+          "w-20 h-20"
+        )}
+      >
+        <div className="p-2 rounded bg-muted/50">
+          <IconComponent size={16} className="text-muted-foreground" />
+        </div>
+        <p className="text-[10px] font-medium text-center leading-tight line-clamp-2">{item.label}</p>
+      </button>
+    );
+  }
 
   return (
     <button
@@ -68,6 +88,8 @@ interface BlockLibraryPanelProps {
 }
 
 export function BlockLibraryPanel({ onAddBlock }: BlockLibraryPanelProps) {
+  const isMobile = useIsMobile();
+
   const categories = {
     header: 'Headers',
     content: 'Content',
@@ -81,6 +103,31 @@ export function BlockLibraryPanel({ onAddBlock }: BlockLibraryPanelProps) {
     return acc;
   }, {} as Record<string, BlockLibraryItem[]>);
 
+  // Mobile: horizontal scrollable strip at bottom
+  if (isMobile) {
+    return (
+      <div className="flex-shrink-0 border-t border-border bg-card/80 backdrop-blur-sm">
+        <div className="px-3 py-2 border-b border-border/50">
+          <h3 className="text-xs font-medium text-muted-foreground">Add Block</h3>
+        </div>
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex gap-2 p-3">
+            {BLOCK_LIBRARY.map(item => (
+              <DraggableBlock
+                key={item.type}
+                item={item}
+                onAdd={onAddBlock}
+                isMobile={true}
+              />
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Desktop: vertical sidebar
   return (
     <div className="w-72 border-r border-border bg-card/50 flex flex-col">
       <div className="flex-shrink-0 px-4 py-3 border-b border-border">
