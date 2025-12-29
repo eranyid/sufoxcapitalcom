@@ -9,6 +9,7 @@ import {
   Maximize2,
   Undo2,
   Redo2,
+  LayoutTemplate,
 } from 'lucide-react';
 import { DndContext, DragEndEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -50,6 +51,7 @@ import { ReportCanvas } from '@/components/reports/ReportCanvas';
 import { BlockLibraryPanel } from '@/components/reports/BlockLibraryPanel';
 import { BlockPropertiesPanel } from '@/components/reports/BlockPropertiesPanel';
 import { ReportBlockRenderer } from '@/components/reports/ReportBlockRenderer';
+import { TemplateSelectorDialog, ReportTemplate, useTemplateApplicator } from '@/components/reports/ReportTemplates';
 import { generateWYSIWYGReportPDF } from '@/lib/reportPdfGenerator';
 import type { ReportBranding } from '@/types/reports';
 
@@ -104,10 +106,13 @@ export default function ReportBuilder() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [propertiesPanelOpen, setPropertiesPanelOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  
+  const { applyTemplate } = useTemplateApplicator();
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -282,6 +287,12 @@ export default function ReportBuilder() {
     setPropertiesPanelOpen(true);
   }, []);
 
+  const handleApplyTemplate = useCallback((template: ReportTemplate) => {
+    applyTemplate(template, setBlocks, setBranding);
+    setHasChanges(true);
+    toast.success(`Applied "${template.name}" template`);
+  }, [applyTemplate, setBlocks, setBranding]);
+
   // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -414,6 +425,15 @@ export default function ReportBuilder() {
                 </Tooltip>
               </div>
               
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 h-8"
+                onClick={() => setTemplateDialogOpen(true)}
+              >
+                <LayoutTemplate size={14} />
+                <span className="hidden sm:inline">Templates</span>
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -551,6 +571,13 @@ export default function ReportBuilder() {
             </ScrollArea>
           </DialogContent>
         </Dialog>
+
+        {/* Template Selector Dialog */}
+        <TemplateSelectorDialog
+          open={templateDialogOpen}
+          onOpenChange={setTemplateDialogOpen}
+          onSelectTemplate={handleApplyTemplate}
+        />
       </div>
     </DndContext>
   );
