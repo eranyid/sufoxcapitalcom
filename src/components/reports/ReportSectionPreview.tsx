@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import type { ReportSection, ReportBranding } from '@/types/reports';
 import type { PortfolioHolding } from '@/lib/portfolioEngine';
 import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 // Local formatting helpers
 const formatCurrency = (value: number): string => {
@@ -36,6 +37,51 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
       percent: totalValue > 0 ? (value / totalValue) * 100 : 0,
     }));
   }, [holdings, totalValue]);
+
+  const currencyData = useMemo(() => {
+    const byCurrency: Record<string, number> = {};
+    holdings.forEach(h => {
+      byCurrency[h.currency] = (byCurrency[h.currency] || 0) + h.currentValue;
+    });
+    return Object.entries(byCurrency).map(([name, value]) => ({
+      name,
+      value,
+      percent: totalValue > 0 ? (value / totalValue) * 100 : 0,
+    }));
+  }, [holdings, totalValue]);
+
+  const geographyData = useMemo(() => {
+    const byGeo: Record<string, number> = {};
+    holdings.forEach(h => {
+      byGeo[h.geography] = (byGeo[h.geography] || 0) + h.currentValue;
+    });
+    return Object.entries(byGeo).map(([name, value]) => ({
+      name,
+      value,
+      percent: totalValue > 0 ? (value / totalValue) * 100 : 0,
+    }));
+  }, [holdings, totalValue]);
+
+  const topMovers = useMemo(() => {
+    const sorted = [...holdings]
+      .filter(h => h.unrealizedPL !== undefined)
+      .sort((a, b) => (b.unrealizedPL || 0) - (a.unrealizedPL || 0));
+    return {
+      top: sorted.slice(0, 3),
+      bottom: sorted.slice(-3).reverse(),
+    };
+  }, [holdings]);
+
+  const contributionData = useMemo(() => {
+    return holdings
+      .filter(h => h.unrealizedPL !== undefined)
+      .sort((a, b) => Math.abs(b.unrealizedPL || 0) - Math.abs(a.unrealizedPL || 0))
+      .slice(0, 6)
+      .map(h => ({
+        name: h.ticker,
+        value: h.unrealizedPL || 0,
+      }));
+  }, [holdings]);
 
   switch (section.type) {
     case 'logo_header':
@@ -99,6 +145,82 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
         </div>
       );
 
+    case 'performance_calendar':
+      return (
+        <div className="p-4 bg-muted/20 rounded-lg">
+          <div className="grid grid-cols-12 gap-1 text-[10px] text-center">
+            {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map((m, i) => (
+              <div key={i} className="text-muted-foreground">{m}</div>
+            ))}
+            {Array(12).fill(0).map((_, i) => {
+              const val = Math.random() * 10 - 5;
+              return (
+                <div 
+                  key={i} 
+                  className={`rounded py-1 text-[9px] ${val > 0 ? 'bg-positive/20 text-positive' : 'bg-negative/20 text-negative'}`}
+                >
+                  {val.toFixed(1)}%
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center mt-2">2024 Monthly Returns</p>
+        </div>
+      );
+
+    case 'contribution_chart':
+      return (
+        <div className="h-32">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={contributionData} layout="vertical">
+              <XAxis type="number" tickFormatter={(v) => formatPercent(v)} fontSize={9} />
+              <YAxis type="category" dataKey="name" fontSize={9} width={40} />
+              <Tooltip 
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{ fontSize: 10, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+              />
+              <Bar 
+                dataKey="value" 
+                fill="hsl(var(--primary))"
+                radius={[0, 4, 4, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      );
+
+    case 'top_movers':
+      return (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-xs font-medium text-positive flex items-center gap-1 mb-2">
+              <TrendingUp size={12} /> Top Performers
+            </h4>
+            <div className="space-y-1">
+              {topMovers.top.map((h, i) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span className="font-medium">{h.ticker}</span>
+                  <span className="text-positive">{formatCurrency(h.unrealizedPL || 0)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="text-xs font-medium text-negative flex items-center gap-1 mb-2">
+              <TrendingDown size={12} /> Underperformers
+            </h4>
+            <div className="space-y-1">
+              {topMovers.bottom.map((h, i) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span className="font-medium">{h.ticker}</span>
+                  <span className="text-negative">{formatCurrency(h.unrealizedPL || 0)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
     case 'asset_allocation':
       return (
         <div className="flex flex-col md:flex-row items-center gap-4">
@@ -122,6 +244,78 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
           </div>
           <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
             {allocationData.map((item, i) => (
+              <div key={item.name} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-sm flex-shrink-0" 
+                  style={{ backgroundColor: COLORS[i % COLORS.length] }} 
+                />
+                <span className="truncate">{item.name}</span>
+                <span className="text-muted-foreground ml-auto">{item.percent.toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'currency_exposure':
+      return (
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="w-28 h-28">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={currencyData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={20}
+                  outerRadius={40}
+                  dataKey="value"
+                >
+                  {currencyData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
+            {currencyData.map((item, i) => (
+              <div key={item.name} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-sm flex-shrink-0" 
+                  style={{ backgroundColor: COLORS[i % COLORS.length] }} 
+                />
+                <span className="font-medium">{item.name}</span>
+                <span className="text-muted-foreground ml-auto">{item.percent.toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'geographic_allocation':
+      return (
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="w-28 h-28">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={geographyData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={20}
+                  outerRadius={40}
+                  dataKey="value"
+                >
+                  {geographyData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
+            {geographyData.map((item, i) => (
               <div key={item.name} className="flex items-center gap-2">
                 <div 
                   className="w-3 h-3 rounded-sm flex-shrink-0" 
@@ -191,6 +385,25 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
         </div>
       );
 
+    case 'scenarios_snapshot':
+      return (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {[
+            { name: '2008 Crisis', impact: -28.5 },
+            { name: 'COVID Crash', impact: -18.2 },
+            { name: 'Rates +200bp', impact: -8.4 },
+            { name: 'Tech Bust', impact: -22.1 },
+            { name: 'Stagflation', impact: -15.8 },
+            { name: 'EM Crisis', impact: -12.3 },
+          ].map((s, i) => (
+            <div key={i} className="p-2 bg-muted/30 rounded text-center">
+              <p className="text-[10px] text-muted-foreground truncate">{s.name}</p>
+              <p className="text-sm font-semibold text-negative">{formatPercent(s.impact)}</p>
+            </div>
+          ))}
+        </div>
+      );
+
     case 'custom_text':
       return (
         <div className="p-4 bg-muted/20 rounded-lg min-h-[80px]">
@@ -200,12 +413,10 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
         </div>
       );
 
-    case 'currency_exposure':
     case 'architecture':
     case 'risk_return_scatter':
     case 'drawdown_chart':
     case 'factor_exposure':
-    case 'scenarios_snapshot':
     case 'transactions_summary':
       return (
         <div className="p-6 bg-muted/20 rounded-lg text-center">
