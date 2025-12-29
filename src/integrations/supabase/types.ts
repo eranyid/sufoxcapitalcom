@@ -270,6 +270,7 @@ export type Database = {
       }
       crm_companies: {
         Row: {
+          asset_type: string | null
           business_description: string | null
           company_name: string
           confidence_level: string | null
@@ -300,6 +301,7 @@ export type Database = {
           why_we_own: string | null
         }
         Insert: {
+          asset_type?: string | null
           business_description?: string | null
           company_name: string
           confidence_level?: string | null
@@ -330,6 +332,7 @@ export type Database = {
           why_we_own?: string | null
         }
         Update: {
+          asset_type?: string | null
           business_description?: string | null
           company_name?: string
           confidence_level?: string | null

@@ -522,6 +522,7 @@ export default function Transactions() {
                             
                             setForm(prev => {
                               const mappedGeography = company.geography ? geographyMap[company.geography] || prev.geography : prev.geography;
+                              const mappedAssetType = company.asset_type as AssetType || prev.assetType;
                               return {
                                 ...prev,
                                 linkedCompanyId: v,
@@ -529,6 +530,7 @@ export default function Transactions() {
                                 ticker: company.ticker || prev.ticker,
                                 inceptionYear: company.inception_year?.toString() || prev.inceptionYear,
                                 geography: mappedGeography,
+                                assetType: mappedAssetType,
                               };
                             });
                           }
@@ -589,8 +591,14 @@ export default function Transactions() {
                     {!isSellMode && (
                       <div className="space-y-2">
                         <Label>Asset Type</Label>
-                        <Select value={form.assetType} onValueChange={(v: AssetType) => setForm({ ...form, assetType: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        <Select 
+                          value={form.assetType} 
+                          onValueChange={(v: AssetType) => setForm({ ...form, assetType: v })}
+                          disabled={!!form.linkedCompanyId && !!companies.find(c => c.id === form.linkedCompanyId)?.asset_type}
+                        >
+                          <SelectTrigger className={form.linkedCompanyId && companies.find(c => c.id === form.linkedCompanyId)?.asset_type ? 'bg-muted' : ''}>
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             {ASSET_TYPES.map(t => (
                               <SelectItem key={t} value={t}>{t.replace(/_/g, ' ').toUpperCase()}</SelectItem>

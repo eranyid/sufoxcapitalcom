@@ -51,6 +51,7 @@ export interface CrmCompany {
   is_auto_linked: boolean;
   source_transaction_id: string | null;
   inception_year: number | null;
+  asset_type: string | null;
   created_at: string;
   updated_at: string;
 }

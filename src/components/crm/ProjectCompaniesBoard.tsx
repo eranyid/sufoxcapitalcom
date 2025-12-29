@@ -246,6 +246,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
       is_auto_linked: false,
       source_transaction_id: null,
       inception_year: null,
+      asset_type: 'equity',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
