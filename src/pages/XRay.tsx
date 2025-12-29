@@ -353,13 +353,10 @@ export default function XRay() {
 
           {/* Distribution Sections - Using centralized allocation data */}
           <DistributionSection title="Asset Class Distribution" data={assetTypeAllocation} />
-          
-          {/* Geographic Heat Map - replaces donut chart for geographic distribution */}
-          <GeographicHeatMap data={geographyAllocation} />
-          
           <DistributionSection title="Currency Distribution" data={currencyAllocation} />
-
-          {/* Top Holdings - Using centralized holdings data */}
+          
+          {/* Geographic Heat Map */}
+          <GeographicHeatMap data={geographyAllocation} />
 
           {/* Correlation Matrix */}
           <CorrelationMatrix transactions={transactions} valuations={valuations} />
