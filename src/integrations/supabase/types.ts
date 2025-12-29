@@ -988,6 +988,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          branding: Json
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          page_size: string
+          sections: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          branding?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          page_size?: string
+          sections?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          branding?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          page_size?: string
+          sections?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       research_watchlist: {
         Row: {
           asset_class: string | null
