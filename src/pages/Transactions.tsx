@@ -503,14 +503,34 @@ export default function Transactions() {
                         } else {
                           const company = companies.find(c => c.id === v);
                           if (company) {
-                            setForm(prev => ({
-                              ...prev,
-                              linkedCompanyId: v,
-                              assetName: company.company_name || prev.assetName,
-                              ticker: company.ticker || prev.ticker,
-                              inceptionYear: company.inception_year?.toString() || prev.inceptionYear,
-                              geography: (company.geography as Geography) || prev.geography,
-                            }));
+                            // Map geography to valid Geography type
+                            const geographyMap: Record<string, Geography> = {
+                              'north_america': 'north_america',
+                              'europe': 'europe',
+                              'israel': 'israel',
+                              'emerging_markets': 'emerging_markets',
+                              'global': 'global',
+                              'other': 'other',
+                              'North America': 'north_america',
+                              'Europe': 'europe',
+                              'Israel': 'israel',
+                              'Emerging Markets': 'emerging_markets',
+                              'Global': 'global',
+                              'US': 'north_america',
+                              'USA': 'north_america',
+                            };
+                            
+                            setForm(prev => {
+                              const mappedGeography = company.geography ? geographyMap[company.geography] || prev.geography : prev.geography;
+                              return {
+                                ...prev,
+                                linkedCompanyId: v,
+                                assetName: company.company_name || prev.assetName,
+                                ticker: company.ticker || prev.ticker,
+                                inceptionYear: company.inception_year?.toString() || prev.inceptionYear,
+                                geography: mappedGeography,
+                              };
+                            });
                           }
                         }
                       }}
