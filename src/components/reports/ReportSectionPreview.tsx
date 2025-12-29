@@ -1,9 +1,27 @@
 import { useMemo } from 'react';
-import type { ReportSection, ReportBranding } from '@/types/reports';
+import type { ReportSection } from '@/types/reports';
+import type { ReportBranding } from '@/types/reportBuilder';
 import type { PortfolioHolding } from '@/lib/portfolioEngine';
 import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+
+// Default branding values for fallback
+const FALLBACK_BRANDING = {
+  primaryColor: '#FFC107',
+  secondaryColor: '#1A1A1A',
+  accentColor: '#4A90D9',
+  textColor: '#0A0A0A',
+  mutedTextColor: '#6B7280',
+  chartPrimaryColor: '#FFC107',
+  chartSecondaryColor: '#4CAF50',
+  chartPositiveColor: '#22C55E',
+  chartNegativeColor: '#EF4444',
+  tableHeaderBgColor: '#F3F4F6',
+  tableHeaderTextColor: '#374151',
+  tableRowAltBgColor: '#F9FAFB',
+  tableBorderColor: '#E5E7EB',
+};
 
 // Local formatting helpers
 const formatCurrency = (value: number): string => {
@@ -23,9 +41,24 @@ interface Props {
   branding: ReportBranding;
 }
 
-const COLORS = ['#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#00BCD4', '#E91E63', '#795548'];
+// Generate chart colors array from branding
+const getChartColors = (branding: ReportBranding): string[] => {
+  const primary = branding.chartPrimaryColor || FALLBACK_BRANDING.chartPrimaryColor;
+  const secondary = branding.chartSecondaryColor || FALLBACK_BRANDING.chartSecondaryColor;
+  return [
+    primary,
+    secondary,
+    branding.accentColor || FALLBACK_BRANDING.accentColor,
+    '#9C27B0',
+    '#FF5722',
+    '#00BCD4',
+    '#E91E63',
+    '#795548'
+  ];
+};
 
 export function ReportSectionPreview({ section, holdings, performanceMetrics, riskMetrics, totalValue, branding }: Props) {
+  const chartColors = useMemo(() => getChartColors(branding), [branding]);
   const allocationData = useMemo(() => {
     const byType: Record<string, number> = {};
     holdings.forEach(h => {
@@ -104,21 +137,21 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
     case 'portfolio_overview':
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Total Value</p>
-            <p className="text-lg font-semibold">{formatCurrency(totalValue)}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Total Value</p>
+            <p className="text-lg font-semibold" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{formatCurrency(totalValue)}</p>
           </div>
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">IRR</p>
-            <p className="text-lg font-semibold">{performanceMetrics ? formatPercent(performanceMetrics.irr) : '—'}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>IRR</p>
+            <p className="text-lg font-semibold" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{performanceMetrics ? formatPercent(performanceMetrics.irr) : '—'}</p>
           </div>
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Total Return</p>
-            <p className="text-lg font-semibold">{performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Total Return</p>
+            <p className="text-lg font-semibold" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}</p>
           </div>
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Sharpe Ratio</p>
-            <p className="text-lg font-semibold">{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Sharpe Ratio</p>
+            <p className="text-lg font-semibold" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
           </div>
         </div>
       );
@@ -126,19 +159,19 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
     case 'performance_summary':
       return (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Total Return</p>
-            <p className="text-lg font-semibold text-positive">
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Total Return</p>
+            <p className="text-lg font-semibold" style={{ color: branding.chartPositiveColor || FALLBACK_BRANDING.chartPositiveColor }}>
               {performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}
             </p>
           </div>
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Sharpe Ratio</p>
-            <p className="text-lg font-semibold">{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Sharpe Ratio</p>
+            <p className="text-lg font-semibold" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
           </div>
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Max Drawdown</p>
-            <p className="text-lg font-semibold text-negative">
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Max Drawdown</p>
+            <p className="text-lg font-semibold" style={{ color: branding.chartNegativeColor || FALLBACK_BRANDING.chartNegativeColor }}>
               {performanceMetrics ? formatPercent(-performanceMetrics.maxDrawdown) : '—'}
             </p>
           </div>
@@ -177,11 +210,15 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
               <YAxis type="category" dataKey="name" fontSize={9} width={40} />
               <Tooltip 
                 formatter={(value: number) => formatCurrency(value)}
-                contentStyle={{ fontSize: 10, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                contentStyle={{ 
+                  fontSize: 10, 
+                  background: branding.backgroundColor || '#FFFFFF', 
+                  border: `1px solid ${branding.tableBorderColor || FALLBACK_BRANDING.tableBorderColor}` 
+                }}
               />
               <Bar 
                 dataKey="value" 
-                fill="hsl(var(--primary))"
+                fill={branding.chartPrimaryColor || FALLBACK_BRANDING.chartPrimaryColor}
                 radius={[0, 4, 4, 0]}
               />
             </BarChart>
@@ -193,27 +230,27 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
       return (
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <h4 className="text-xs font-medium text-positive flex items-center gap-1 mb-2">
+            <h4 className="text-xs font-medium flex items-center gap-1 mb-2" style={{ color: branding.chartPositiveColor || FALLBACK_BRANDING.chartPositiveColor }}>
               <TrendingUp size={12} /> Top Performers
             </h4>
             <div className="space-y-1">
               {topMovers.top.map((h, i) => (
                 <div key={i} className="flex justify-between text-xs">
-                  <span className="font-medium">{h.ticker}</span>
-                  <span className="text-positive">{formatCurrency(h.unrealizedPL || 0)}</span>
+                  <span className="font-medium" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{h.ticker}</span>
+                  <span style={{ color: branding.chartPositiveColor || FALLBACK_BRANDING.chartPositiveColor }}>{formatCurrency(h.unrealizedPL || 0)}</span>
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <h4 className="text-xs font-medium text-negative flex items-center gap-1 mb-2">
+            <h4 className="text-xs font-medium flex items-center gap-1 mb-2" style={{ color: branding.chartNegativeColor || FALLBACK_BRANDING.chartNegativeColor }}>
               <TrendingDown size={12} /> Underperformers
             </h4>
             <div className="space-y-1">
               {topMovers.bottom.map((h, i) => (
                 <div key={i} className="flex justify-between text-xs">
-                  <span className="font-medium">{h.ticker}</span>
-                  <span className="text-negative">{formatCurrency(h.unrealizedPL || 0)}</span>
+                  <span className="font-medium" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{h.ticker}</span>
+                  <span style={{ color: branding.chartNegativeColor || FALLBACK_BRANDING.chartNegativeColor }}>{formatCurrency(h.unrealizedPL || 0)}</span>
                 </div>
               ))}
             </div>
@@ -236,7 +273,7 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
                   dataKey="value"
                 >
                   {allocationData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    <Cell key={i} fill={chartColors[i % chartColors.length]} />
                   ))}
                 </Pie>
               </PieChart>
@@ -247,10 +284,10 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
               <div key={item.name} className="flex items-center gap-2">
                 <div 
                   className="w-3 h-3 rounded-sm flex-shrink-0" 
-                  style={{ backgroundColor: COLORS[i % COLORS.length] }} 
+                  style={{ backgroundColor: chartColors[i % chartColors.length] }} 
                 />
-                <span className="truncate">{item.name}</span>
-                <span className="text-muted-foreground ml-auto">{item.percent.toFixed(1)}%</span>
+                <span className="truncate" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{item.name}</span>
+                <span className="ml-auto" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>{item.percent.toFixed(1)}%</span>
               </div>
             ))}
           </div>
@@ -272,7 +309,7 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
                   dataKey="value"
                 >
                   {currencyData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    <Cell key={i} fill={chartColors[i % chartColors.length]} />
                   ))}
                 </Pie>
               </PieChart>
@@ -283,10 +320,10 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
               <div key={item.name} className="flex items-center gap-2">
                 <div 
                   className="w-3 h-3 rounded-sm flex-shrink-0" 
-                  style={{ backgroundColor: COLORS[i % COLORS.length] }} 
+                  style={{ backgroundColor: chartColors[i % chartColors.length] }} 
                 />
-                <span className="font-medium">{item.name}</span>
-                <span className="text-muted-foreground ml-auto">{item.percent.toFixed(1)}%</span>
+                <span className="font-medium" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{item.name}</span>
+                <span className="ml-auto" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>{item.percent.toFixed(1)}%</span>
               </div>
             ))}
           </div>
@@ -308,7 +345,7 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
                   dataKey="value"
                 >
                   {geographyData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    <Cell key={i} fill={chartColors[i % chartColors.length]} />
                   ))}
                 </Pie>
               </PieChart>
@@ -319,10 +356,10 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
               <div key={item.name} className="flex items-center gap-2">
                 <div 
                   className="w-3 h-3 rounded-sm flex-shrink-0" 
-                  style={{ backgroundColor: COLORS[i % COLORS.length] }} 
+                  style={{ backgroundColor: chartColors[i % chartColors.length] }} 
                 />
-                <span className="truncate">{item.name}</span>
-                <span className="text-muted-foreground ml-auto">{item.percent.toFixed(1)}%</span>
+                <span className="truncate" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{item.name}</span>
+                <span className="ml-auto" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>{item.percent.toFixed(1)}%</span>
               </div>
             ))}
           </div>
@@ -332,23 +369,32 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
     case 'holdings_table':
       return (
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs" style={{ borderColor: branding.tableBorderColor || FALLBACK_BRANDING.tableBorderColor }}>
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-2 font-medium text-muted-foreground">Asset</th>
-                <th className="text-right py-2 font-medium text-muted-foreground">Value</th>
-                <th className="text-right py-2 font-medium text-muted-foreground">Weight</th>
+              <tr style={{ 
+                backgroundColor: branding.tableHeaderBgColor || FALLBACK_BRANDING.tableHeaderBgColor,
+                borderBottom: `1px solid ${branding.tableBorderColor || FALLBACK_BRANDING.tableBorderColor}`
+              }}>
+                <th className="text-left py-2 font-medium" style={{ color: branding.tableHeaderTextColor || FALLBACK_BRANDING.tableHeaderTextColor }}>Asset</th>
+                <th className="text-right py-2 font-medium" style={{ color: branding.tableHeaderTextColor || FALLBACK_BRANDING.tableHeaderTextColor }}>Value</th>
+                <th className="text-right py-2 font-medium" style={{ color: branding.tableHeaderTextColor || FALLBACK_BRANDING.tableHeaderTextColor }}>Weight</th>
               </tr>
             </thead>
             <tbody>
-              {holdings.slice(0, 8).map(h => (
-                <tr key={h.ticker} className="border-b border-border/50">
+              {holdings.slice(0, 8).map((h, index) => (
+                <tr 
+                  key={h.ticker} 
+                  style={{ 
+                    backgroundColor: index % 2 === 1 ? (branding.tableRowAltBgColor || FALLBACK_BRANDING.tableRowAltBgColor) : 'transparent',
+                    borderBottom: `1px solid ${branding.tableBorderColor || FALLBACK_BRANDING.tableBorderColor}50`
+                  }}
+                >
                   <td className="py-1.5">
-                    <span className="font-medium">{h.ticker}</span>
-                    <span className="text-muted-foreground ml-1">{h.name}</span>
+                    <span className="font-medium" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{h.ticker}</span>
+                    <span className="ml-1" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>{h.name}</span>
                   </td>
-                  <td className="text-right py-1.5 font-mono">{formatCurrency(h.currentValue)}</td>
-                  <td className="text-right py-1.5 font-mono">
+                  <td className="text-right py-1.5 font-mono" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{formatCurrency(h.currentValue)}</td>
+                  <td className="text-right py-1.5 font-mono" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>
                     {h.weight.toFixed(1)}%
                   </td>
                 </tr>
@@ -356,7 +402,7 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
             </tbody>
           </table>
           {holdings.length > 8 && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
+            <p className="text-xs text-center mt-2" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>
               +{holdings.length - 8} more holdings
             </p>
           )}
@@ -366,21 +412,21 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
     case 'risk_metrics':
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Volatility</p>
-            <p className="text-lg font-semibold">{riskMetrics ? formatPercent(riskMetrics.volatility) : '—'}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Volatility</p>
+            <p className="text-lg font-semibold" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{riskMetrics ? formatPercent(riskMetrics.volatility) : '—'}</p>
           </div>
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Beta</p>
-            <p className="text-lg font-semibold">{riskMetrics?.beta.toFixed(2) || '—'}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Beta</p>
+            <p className="text-lg font-semibold" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{riskMetrics?.beta.toFixed(2) || '—'}</p>
           </div>
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">VaR (95%)</p>
-            <p className="text-lg font-semibold text-negative">{riskMetrics ? formatPercent(-riskMetrics.var95) : '—'}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>VaR (95%)</p>
+            <p className="text-lg font-semibold" style={{ color: branding.chartNegativeColor || FALLBACK_BRANDING.chartNegativeColor }}>{riskMetrics ? formatPercent(-riskMetrics.var95) : '—'}</p>
           </div>
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Sortino</p>
-            <p className="text-lg font-semibold">{riskMetrics?.sortinoRatio?.toFixed(2) || '—'}</p>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+            <p className="text-xs" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>Sortino</p>
+            <p className="text-lg font-semibold" style={{ color: branding.textColor || FALLBACK_BRANDING.textColor }}>{riskMetrics?.sortinoRatio?.toFixed(2) || '—'}</p>
           </div>
         </div>
       );
@@ -396,9 +442,9 @@ export function ReportSectionPreview({ section, holdings, performanceMetrics, ri
             { name: 'Stagflation', impact: -15.8 },
             { name: 'EM Crisis', impact: -12.3 },
           ].map((s, i) => (
-            <div key={i} className="p-2 bg-muted/30 rounded text-center">
-              <p className="text-[10px] text-muted-foreground truncate">{s.name}</p>
-              <p className="text-sm font-semibold text-negative">{formatPercent(s.impact)}</p>
+            <div key={i} className="p-2 rounded text-center" style={{ backgroundColor: `${branding.accentColor || FALLBACK_BRANDING.accentColor}15` }}>
+              <p className="text-[10px] truncate" style={{ color: branding.mutedTextColor || FALLBACK_BRANDING.mutedTextColor }}>{s.name}</p>
+              <p className="text-sm font-semibold" style={{ color: branding.chartNegativeColor || FALLBACK_BRANDING.chartNegativeColor }}>{formatPercent(s.impact)}</p>
             </div>
           ))}
         </div>

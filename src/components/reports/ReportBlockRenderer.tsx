@@ -1,11 +1,9 @@
 import { useMemo } from 'react';
-import { ReportBlock, ReportBranding } from '@/types/reportBuilder';
+import { ReportBlock, ReportBranding, DEFAULT_BRANDING } from '@/types/reportBuilder';
 import { PortfolioHolding } from '@/lib/portfolioEngine';
 import { PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { TrendingUp, TrendingDown, FileImage } from 'lucide-react';
-
-const COLORS = ['#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#FF5722', '#00BCD4', '#E91E63', '#795548'];
 
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
@@ -13,6 +11,23 @@ const formatCurrency = (value: number): string => {
 
 const formatPercent = (value: number): string => {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+};
+
+// Generate chart colors array from branding
+const getChartColors = (branding: ReportBranding): string[] => {
+  const primary = branding.chartPrimaryColor || DEFAULT_BRANDING.chartPrimaryColor;
+  const secondary = branding.chartSecondaryColor || DEFAULT_BRANDING.chartSecondaryColor;
+  // Generate a palette based on primary and secondary with variations
+  return [
+    primary,
+    secondary,
+    branding.accentColor || DEFAULT_BRANDING.accentColor,
+    '#9C27B0',
+    '#FF5722',
+    '#00BCD4',
+    '#E91E63',
+    '#795548'
+  ];
 };
 
 interface Props {
@@ -25,6 +40,7 @@ interface Props {
 }
 
 export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskMetrics, totalValue, branding }: Props) {
+  const chartColors = useMemo(() => getChartColors(branding), [branding]);
   const config = block.config;
 
   const allocationData = useMemo(() => {
@@ -137,21 +153,21 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'portfolio_overview':
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Total Value</p>
-            <p className="text-sm font-semibold">{formatCurrency(totalValue)}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Total Value</p>
+            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{formatCurrency(totalValue)}</p>
           </div>
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">IRR</p>
-            <p className="text-sm font-semibold">{performanceMetrics ? formatPercent(performanceMetrics.irr) : '—'}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>IRR</p>
+            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{performanceMetrics ? formatPercent(performanceMetrics.irr) : '—'}</p>
           </div>
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Total Return</p>
-            <p className="text-sm font-semibold">{performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Total Return</p>
+            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}</p>
           </div>
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Sharpe</p>
-            <p className="text-sm font-semibold">{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Sharpe</p>
+            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
           </div>
         </div>
       );
@@ -159,19 +175,19 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'performance_summary':
       return (
         <div className="grid grid-cols-3 gap-2">
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Total Return</p>
-            <p className="text-sm font-semibold text-positive">
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Total Return</p>
+            <p className="text-sm font-semibold" style={{ color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }}>
               {performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}
             </p>
           </div>
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Sharpe Ratio</p>
-            <p className="text-sm font-semibold">{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Sharpe Ratio</p>
+            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
           </div>
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Max Drawdown</p>
-            <p className="text-sm font-semibold text-negative">
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Max Drawdown</p>
+            <p className="text-sm font-semibold" style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>
               {performanceMetrics ? formatPercent(-performanceMetrics.maxDrawdown) : '—'}
             </p>
           </div>
@@ -198,7 +214,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                     dataKey="value"
                   >
                     {chartData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      <Cell key={i} fill={chartColors[i % chartColors.length]} />
                     ))}
                   </Pie>
                 </PieChart>
@@ -210,10 +226,10 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
               <div key={item.name} className="flex items-center gap-2 text-[10px]">
                 <div 
                   className="w-2 h-2 rounded-sm flex-shrink-0" 
-                  style={{ backgroundColor: COLORS[i % COLORS.length] }} 
+                  style={{ backgroundColor: chartColors[i % chartColors.length] }} 
                 />
-                <span className="truncate flex-1">{item.name}</span>
-                <span className="text-muted-foreground">{item.percent.toFixed(1)}%</span>
+                <span className="truncate flex-1" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{item.name}</span>
+                <span style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>{item.percent.toFixed(1)}%</span>
               </div>
             ))}
           </div>
@@ -224,27 +240,27 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       return (
         <div className="grid grid-cols-2 gap-3 h-full">
           <div>
-            <h4 className="text-[10px] font-medium text-positive flex items-center gap-1 mb-1">
+            <h4 className="text-[10px] font-medium flex items-center gap-1 mb-1" style={{ color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }}>
               <TrendingUp size={10} /> Top
             </h4>
             <div className="space-y-0.5">
               {topMovers.top.map((h, i) => (
                 <div key={i} className="flex justify-between text-[10px]">
-                  <span className="font-medium truncate">{h.ticker}</span>
-                  <span className="text-positive">{formatCurrency(h.unrealizedPL || 0)}</span>
+                  <span className="font-medium truncate" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{h.ticker}</span>
+                  <span style={{ color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }}>{formatCurrency(h.unrealizedPL || 0)}</span>
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <h4 className="text-[10px] font-medium text-negative flex items-center gap-1 mb-1">
+            <h4 className="text-[10px] font-medium flex items-center gap-1 mb-1" style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>
               <TrendingDown size={10} /> Bottom
             </h4>
             <div className="space-y-0.5">
               {topMovers.bottom.map((h, i) => (
                 <div key={i} className="flex justify-between text-[10px]">
-                  <span className="font-medium truncate">{h.ticker}</span>
-                  <span className="text-negative">{formatCurrency(h.unrealizedPL || 0)}</span>
+                  <span className="font-medium truncate" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{h.ticker}</span>
+                  <span style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>{formatCurrency(h.unrealizedPL || 0)}</span>
                 </div>
               ))}
             </div>
@@ -255,21 +271,21 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'risk_metrics':
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Volatility</p>
-            <p className="text-sm font-semibold">{riskMetrics ? formatPercent(riskMetrics.volatility) : '—'}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Volatility</p>
+            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{riskMetrics ? formatPercent(riskMetrics.volatility) : '—'}</p>
           </div>
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Beta</p>
-            <p className="text-sm font-semibold">{riskMetrics?.beta.toFixed(2) || '—'}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Beta</p>
+            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{riskMetrics?.beta.toFixed(2) || '—'}</p>
           </div>
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">VaR 95%</p>
-            <p className="text-sm font-semibold text-negative">{riskMetrics ? formatPercent(-riskMetrics.var95) : '—'}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>VaR 95%</p>
+            <p className="text-sm font-semibold" style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>{riskMetrics ? formatPercent(-riskMetrics.var95) : '—'}</p>
           </div>
-          <div className={`p-2 rounded-lg ${config.showBackground ? 'bg-muted/30' : ''}`}>
-            <p className="text-[10px] text-muted-foreground">Sortino</p>
-            <p className="text-sm font-semibold">{riskMetrics?.sortinoRatio?.toFixed(2) || '—'}</p>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
+            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Sortino</p>
+            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{riskMetrics?.sortinoRatio?.toFixed(2) || '—'}</p>
           </div>
         </div>
       );
@@ -286,9 +302,9 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       return (
         <div className="grid grid-cols-3 gap-1">
           {scenarios.slice(0, config.maxItems || 6).map((s, i) => (
-            <div key={i} className="p-1.5 bg-muted/30 rounded text-center">
-              <p className="text-[8px] text-muted-foreground truncate">{s.name}</p>
-              <p className="text-xs font-semibold text-negative">{formatPercent(s.impact)}</p>
+            <div key={i} className="p-1.5 rounded text-center" style={{ backgroundColor: `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` }}>
+              <p className="text-[8px] truncate" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>{s.name}</p>
+              <p className="text-xs font-semibold" style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>{formatPercent(s.impact)}</p>
             </div>
           ))}
         </div>
@@ -297,28 +313,37 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'holdings_table':
       return (
         <div className="overflow-hidden">
-          <table className="w-full text-[9px]">
+          <table className="w-full text-[9px]" style={{ borderColor: branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor }}>
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-1 font-medium text-muted-foreground">Asset</th>
-                <th className="text-right py-1 font-medium text-muted-foreground">Value</th>
-                <th className="text-right py-1 font-medium text-muted-foreground">Weight</th>
+              <tr style={{ 
+                backgroundColor: branding.tableHeaderBgColor || DEFAULT_BRANDING.tableHeaderBgColor,
+                borderBottom: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`
+              }}>
+                <th className="text-left py-1 font-medium" style={{ color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }}>Asset</th>
+                <th className="text-right py-1 font-medium" style={{ color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }}>Value</th>
+                <th className="text-right py-1 font-medium" style={{ color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }}>Weight</th>
               </tr>
             </thead>
             <tbody>
-              {holdings.slice(0, config.maxItems || 10).map(h => (
-                <tr key={h.ticker} className="border-b border-border/50">
+              {holdings.slice(0, config.maxItems || 10).map((h, index) => (
+                <tr 
+                  key={h.ticker} 
+                  style={{ 
+                    backgroundColor: index % 2 === 1 ? (branding.tableRowAltBgColor || DEFAULT_BRANDING.tableRowAltBgColor) : 'transparent',
+                    borderBottom: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}50`
+                  }}
+                >
                   <td className="py-0.5">
-                    <span className="font-medium">{h.ticker}</span>
+                    <span className="font-medium" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{h.ticker}</span>
                   </td>
-                  <td className="text-right py-0.5 font-mono">{formatCurrency(h.currentValue)}</td>
-                  <td className="text-right py-0.5 font-mono">{h.weight.toFixed(1)}%</td>
+                  <td className="text-right py-0.5 font-mono" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{formatCurrency(h.currentValue)}</td>
+                  <td className="text-right py-0.5 font-mono" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{h.weight.toFixed(1)}%</td>
                 </tr>
               ))}
             </tbody>
           </table>
           {holdings.length > (config.maxItems || 10) && (
-            <p className="text-[8px] text-muted-foreground text-center mt-1">
+            <p className="text-[8px] text-center mt-1" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
               +{holdings.length - (config.maxItems || 10)} more
             </p>
           )}
@@ -327,7 +352,13 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'footer':
       return (
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground border-t border-border pt-2">
+        <div 
+          className="flex items-center justify-between text-[10px] pt-2"
+          style={{ 
+            color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor,
+            borderTop: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`
+          }}
+        >
           <span>{config.footerText || branding.footerText}</span>
           {config.analystName && <span>{config.analystName}</span>}
           {config.showDate && <span>{new Date().toLocaleDateString()}</span>}
