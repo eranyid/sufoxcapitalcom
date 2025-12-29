@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +29,7 @@ import {
   Zap,
   BarChart3,
   PieChart,
-  FileDown,
+  FileText,
   Loader2,
   Cloud,
   Pencil,
@@ -53,7 +54,6 @@ import {
   getHorizonLabel 
 } from '@/data/scenarios';
 import { runScenario, ScenarioResult, formatCurrency, formatPctWithSign } from '@/lib/scenarioEngine';
-import { generateScenarioPDFReport } from '@/lib/pdfReport';
 import { CorrelationSpikeChart } from '@/components/dashboard/CorrelationSpikeChart';
 import { cn } from '@/lib/utils';
 
@@ -83,6 +83,7 @@ interface DbScenario {
 export default function ScenarioLab() {
   const { transactions, valuations } = usePortfolio();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedScenario, setSelectedScenario] = useState<ScenarioDefinition | null>(null);
   const [result, setResult] = useState<ScenarioResult | null>(null);
   const [filterType, setFilterType] = useState<ScenarioType | 'all'>('all');
@@ -757,10 +758,10 @@ export default function ScenarioLab() {
           <Button 
             variant="outline" 
             className="w-full h-11 md:hidden"
-            onClick={() => generateScenarioPDFReport(result)}
+            onClick={() => navigate('/reports')}
           >
-            <FileDown className="h-4 w-4 mr-2" />
-            Export PDF Report
+            <FileText className="h-4 w-4 mr-2" />
+            Create Report
           </Button>
 
           {/* P&L by Asset Type Chart */}
@@ -1180,10 +1181,10 @@ export default function ScenarioLab() {
                     size="sm" 
                     variant="outline" 
                     className="h-7 text-xs"
-                    onClick={() => generateScenarioPDFReport(result)}
+                    onClick={() => navigate('/reports')}
                   >
-                    <FileDown className="h-3 w-3 mr-1" />
-                    EXPORT PDF
+                    <FileText className="h-3 w-3 mr-1" />
+                    REPORT
                   </Button>
                 )}
               </div>

@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Scale, TrendingUp, AlertCircle, Plus, Trash2, RefreshCw, FileText, Loader2, Equal, Calculator, Globe, Info, ArrowRight, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Scale, TrendingUp, AlertCircle, Plus, Trash2, RefreshCw, FileText, Loader2, Equal, Calculator, Globe, Info, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,6 @@ import { useIsraelCPI } from '@/hooks/useIsraelCPI';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { differenceInDays, parseISO, format } from 'date-fns';
-import { generateRebalanceReport } from '@/lib/rebalanceReportPdf';
 
 // Israeli tax rate on REAL capital gains
 const ISRAEL_CGT_RATE = 0.25; // 25% flat rate
@@ -119,6 +119,7 @@ const ASSET_TYPE_TO_CATEGORY: Record<string, 'equity' | 'fixed_income' | 'altern
 export function RebalanceTool() {
   const { transactions, valuations, cashBalances, settings } = usePortfolio();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { logRebalanceActivity } = useActivityLog();
   const { getCPI, getCurrentCPI, getBaseInfo, isLoading: cpiLoading, error: cpiError, source: cpiSource } = useIsraelCPI();
   
@@ -1324,50 +1325,11 @@ export function RebalanceTool() {
 
                 {/* Export PDF Button */}
                 <Button
-                  onClick={async () => {
-                    setIsExportingPdf(true);
-                    try {
-                      // Small delay to show animation
-                      await new Promise(resolve => setTimeout(resolve, 300));
-                      generateRebalanceReport({
-                        analysis,
-                        currentHoldings,
-                        totalPortfolioValue,
-                        minTradeSize,
-                        cpiInfo: {
-                          currentCPI,
-                          source: cpiSource,
-                          firstDate: baseInfo.firstDate,
-                          lastDate: baseInfo.lastDate,
-                          error: cpiError || undefined,
-                        },
-                        policyApplied,
-                        equalWeightApplied,
-                      });
-                      toast({
-                        title: 'PDF Report Generated',
-                        description: 'Rebalance execution report downloaded successfully.',
-                      });
-                    } catch (err) {
-                      console.error('PDF generation error:', err);
-                      toast({
-                        title: 'PDF Generation Failed',
-                        description: 'There was an error generating the report.',
-                        variant: 'destructive',
-                      });
-                    } finally {
-                      setIsExportingPdf(false);
-                    }
-                  }}
-                  disabled={isExportingPdf}
+                  onClick={() => navigate('/reports')}
                   className="w-full h-9 text-xs bg-primary hover:bg-primary/80 text-primary-foreground"
                 >
-                  {isExportingPdf ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4 mr-2 transition-transform group-hover:translate-y-0.5" />
-                  )}
-                  {isExportingPdf ? 'Generating Report...' : 'Export PDF Execution Report'}
+                  <FileText className="h-4 w-4 mr-2" />
+                  Create Report
                 </Button>
               </div>
             )}
