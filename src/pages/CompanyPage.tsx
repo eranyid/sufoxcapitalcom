@@ -64,6 +64,7 @@ interface Company {
   exit_criteria: string | null;
   key_risks: string | null;
   business_description: string | null;
+  inception_year: number | null;
   updated_at: string;
   created_at: string;
 }
@@ -266,21 +267,29 @@ export default function CompanyPage() {
     fetchData();
   }, [companyId, user, navigate]);
 
-  const handleUpdate = async (field: keyof Company, value: string | null) => {
+  const handleUpdate = async (field: keyof Company, value: string | number | null) => {
     if (!company || !user) return;
 
     const oldValue = company[field];
     setSaving(true);
+    
+    // Convert inception_year to number if needed
+    let dbValue: any = value;
+    if (field === 'inception_year' && value !== null) {
+      dbValue = typeof value === 'string' ? parseInt(value, 10) : value;
+      if (isNaN(dbValue)) dbValue = null;
+    }
+    
     const { error } = await supabase
       .from('crm_companies')
-      .update({ [field]: value })
+      .update({ [field]: dbValue })
       .eq('id', company.id);
 
     if (error) {
       toast.error('Failed to update');
       console.error(error);
     } else {
-      setCompany(prev => prev ? { ...prev, [field]: value, updated_at: new Date().toISOString() } : null);
+      setCompany(prev => prev ? { ...prev, [field]: dbValue, updated_at: new Date().toISOString() } : null);
       
       // Log status changes to company_decisions as a special "status_change" type
       if (field === 'status' && oldValue !== value) {
@@ -565,6 +574,35 @@ export default function CompanyPage() {
                     onClick={() => startEdit('ticker', company.ticker)}
                   >
                     {company.ticker || '—'}
+                  </p>
+                )}
+              </div>
+
+              {/* Inception Year */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <Clock size={10} /> Inception Year
+                </label>
+                {editMode === 'inception_year' ? (
+                  <div className="flex gap-1">
+                    <Input
+                      type="number"
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      className="h-7 text-sm font-mono"
+                      min="1900"
+                      max="2025"
+                      autoFocus
+                    />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('inception_year')}><Save size={12} /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
+                  </div>
+                ) : (
+                  <p 
+                    className="text-sm font-mono cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                    onClick={() => startEdit('inception_year', company.inception_year?.toString())}
+                  >
+                    {company.inception_year || '—'}
                   </p>
                 )}
               </div>
