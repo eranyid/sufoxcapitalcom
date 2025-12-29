@@ -470,107 +470,210 @@ export function BlockPropertiesPanel({
               </div>
             </div>
 
-            {/* Color Presets */}
+            {/* Day/Night Mode Toggle */}
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick Presets</h4>
-              <div className="grid grid-cols-3 gap-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mode</h4>
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-[10px]"
+                  className="h-10 text-xs flex flex-col items-center gap-1 bg-slate-900 hover:bg-slate-800 border-slate-700"
+                  onClick={() => onUpdateBranding({
+                    accentColor: branding.accentColor || '#FFC107',
+                    backgroundColor: '#0A0A0A',
+                    textColor: '#E5E5E5',
+                    headingColor: '#FFFFFF',
+                    mutedTextColor: '#888888',
+                    tableHeaderBgColor: '#1A1A1A',
+                    tableHeaderTextColor: branding.accentColor || '#FFC107',
+                    tableRowAltBgColor: '#111111',
+                    tableBorderColor: '#333333',
+                  })}
+                >
+                  <span className="text-white">🌙</span>
+                  <span className="text-slate-300">Night</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 text-xs flex flex-col items-center gap-1 bg-white hover:bg-gray-100 border-gray-300"
+                  onClick={() => onUpdateBranding({
+                    accentColor: branding.accentColor || '#2563EB',
+                    backgroundColor: '#FFFFFF',
+                    textColor: '#1F2937',
+                    headingColor: '#111827',
+                    mutedTextColor: '#6B7280',
+                    tableHeaderBgColor: '#F3F4F6',
+                    tableHeaderTextColor: '#374151',
+                    tableRowAltBgColor: '#F9FAFB',
+                    tableBorderColor: '#E5E7EB',
+                  })}
+                >
+                  <span className="text-gray-800">☀️</span>
+                  <span className="text-gray-700">Day</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Color Presets */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Theme Presets</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-12 text-[10px] flex flex-col gap-0.5 p-1"
                   onClick={() => onUpdateBranding({
                     accentColor: '#FFC107',
                     backgroundColor: '#0A0A0A',
                     textColor: '#E5E5E5',
                     headingColor: '#FFFFFF',
+                    mutedTextColor: '#888888',
                     chartPrimaryColor: '#FFC107',
                     chartSecondaryColor: '#4A90D9',
+                    chartPositiveColor: '#22C55E',
+                    chartNegativeColor: '#EF4444',
+                    tableHeaderBgColor: '#1A1A1A',
+                    tableHeaderTextColor: '#FFC107',
+                    tableRowAltBgColor: '#111111',
+                    tableBorderColor: '#333333',
                   })}
                 >
-                  Dark Gold
+                  <div className="flex gap-0.5">
+                    <div className="w-3 h-3 rounded-sm bg-[#0A0A0A] border border-gray-600" />
+                    <div className="w-3 h-3 rounded-sm bg-[#FFC107]" />
+                  </div>
+                  <span>Gold Dark</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-[10px]"
+                  className="h-12 text-[10px] flex flex-col gap-0.5 p-1"
                   onClick={() => onUpdateBranding({
                     accentColor: '#3B82F6',
                     backgroundColor: '#0F172A',
                     textColor: '#CBD5E1',
                     headingColor: '#F1F5F9',
+                    mutedTextColor: '#64748B',
                     chartPrimaryColor: '#3B82F6',
                     chartSecondaryColor: '#8B5CF6',
+                    chartPositiveColor: '#22C55E',
+                    chartNegativeColor: '#EF4444',
+                    tableHeaderBgColor: '#1E293B',
+                    tableHeaderTextColor: '#93C5FD',
+                    tableRowAltBgColor: '#0F172A',
+                    tableBorderColor: '#334155',
                   })}
                 >
-                  Dark Blue
+                  <div className="flex gap-0.5">
+                    <div className="w-3 h-3 rounded-sm bg-[#0F172A] border border-gray-600" />
+                    <div className="w-3 h-3 rounded-sm bg-[#3B82F6]" />
+                  </div>
+                  <span>Ocean Dark</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-[10px]"
+                  className="h-12 text-[10px] flex flex-col gap-0.5 p-1"
                   onClick={() => onUpdateBranding({
                     accentColor: '#10B981',
                     backgroundColor: '#022C22',
                     textColor: '#D1FAE5',
                     headingColor: '#ECFDF5',
+                    mutedTextColor: '#6EE7B7',
                     chartPrimaryColor: '#10B981',
                     chartSecondaryColor: '#F59E0B',
+                    chartPositiveColor: '#34D399',
+                    chartNegativeColor: '#F87171',
+                    tableHeaderBgColor: '#064E3B',
+                    tableHeaderTextColor: '#A7F3D0',
+                    tableRowAltBgColor: '#022C22',
+                    tableBorderColor: '#047857',
                   })}
                 >
-                  Dark Green
+                  <div className="flex gap-0.5">
+                    <div className="w-3 h-3 rounded-sm bg-[#022C22] border border-gray-600" />
+                    <div className="w-3 h-3 rounded-sm bg-[#10B981]" />
+                  </div>
+                  <span>Forest Dark</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-[10px]"
+                  className="h-12 text-[10px] flex flex-col gap-0.5 p-1"
+                  onClick={() => onUpdateBranding({
+                    accentColor: '#6366F1',
+                    backgroundColor: '#18181B',
+                    textColor: '#D4D4D8',
+                    headingColor: '#FAFAFA',
+                    mutedTextColor: '#71717A',
+                    chartPrimaryColor: '#6366F1',
+                    chartSecondaryColor: '#EC4899',
+                    chartPositiveColor: '#22C55E',
+                    chartNegativeColor: '#EF4444',
+                    tableHeaderBgColor: '#27272A',
+                    tableHeaderTextColor: '#A5B4FC',
+                    tableRowAltBgColor: '#18181B',
+                    tableBorderColor: '#3F3F46',
+                  })}
+                >
+                  <div className="flex gap-0.5">
+                    <div className="w-3 h-3 rounded-sm bg-[#18181B] border border-gray-600" />
+                    <div className="w-3 h-3 rounded-sm bg-[#6366F1]" />
+                  </div>
+                  <span>Purple Dark</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-12 text-[10px] flex flex-col gap-0.5 p-1"
                   onClick={() => onUpdateBranding({
                     accentColor: '#2563EB',
                     backgroundColor: '#FFFFFF',
                     textColor: '#374151',
                     headingColor: '#111827',
+                    mutedTextColor: '#6B7280',
                     chartPrimaryColor: '#2563EB',
                     chartSecondaryColor: '#7C3AED',
+                    chartPositiveColor: '#16A34A',
+                    chartNegativeColor: '#DC2626',
                     tableHeaderBgColor: '#F3F4F6',
-                    tableHeaderTextColor: '#111827',
+                    tableHeaderTextColor: '#1F2937',
                     tableRowAltBgColor: '#F9FAFB',
                     tableBorderColor: '#E5E7EB',
                   })}
                 >
-                  Light Blue
+                  <div className="flex gap-0.5">
+                    <div className="w-3 h-3 rounded-sm bg-[#FFFFFF] border border-gray-300" />
+                    <div className="w-3 h-3 rounded-sm bg-[#2563EB]" />
+                  </div>
+                  <span>Blue Light</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-[10px]"
+                  className="h-12 text-[10px] flex flex-col gap-0.5 p-1"
                   onClick={() => onUpdateBranding({
-                    accentColor: '#DC2626',
-                    backgroundColor: '#FFFBEB',
-                    textColor: '#451A03',
-                    headingColor: '#78350F',
-                    chartPrimaryColor: '#DC2626',
-                    chartSecondaryColor: '#EA580C',
-                    tableHeaderBgColor: '#FEF3C7',
-                    tableHeaderTextColor: '#92400E',
-                    tableRowAltBgColor: '#FFFBEB',
-                    tableBorderColor: '#FDE68A',
+                    accentColor: '#059669',
+                    backgroundColor: '#FFFFFF',
+                    textColor: '#374151',
+                    headingColor: '#111827',
+                    mutedTextColor: '#6B7280',
+                    chartPrimaryColor: '#059669',
+                    chartSecondaryColor: '#0891B2',
+                    chartPositiveColor: '#16A34A',
+                    chartNegativeColor: '#DC2626',
+                    tableHeaderBgColor: '#ECFDF5',
+                    tableHeaderTextColor: '#065F46',
+                    tableRowAltBgColor: '#F0FDF4',
+                    tableBorderColor: '#D1FAE5',
                   })}
                 >
-                  Warm
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-[10px]"
-                  onClick={() => onUpdateBranding({
-                    accentColor: '#6366F1',
-                    backgroundColor: '#18181B',
-                    textColor: '#A1A1AA',
-                    headingColor: '#FAFAFA',
-                    chartPrimaryColor: '#6366F1',
-                    chartSecondaryColor: '#EC4899',
-                  })}
-                >
-                  Purple
+                  <div className="flex gap-0.5">
+                    <div className="w-3 h-3 rounded-sm bg-[#FFFFFF] border border-gray-300" />
+                    <div className="w-3 h-3 rounded-sm bg-[#059669]" />
+                  </div>
+                  <span>Green Light</span>
                 </Button>
               </div>
             </div>
