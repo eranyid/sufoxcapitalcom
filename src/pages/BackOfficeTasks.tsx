@@ -7,6 +7,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { TaskStatusBadge } from '@/components/crm/TaskStatusBadge';
 import { TaskUrgencyBadge } from '@/components/crm/TaskUrgencyBadge';
 import { TaskDetailsPanel } from '@/components/crm/TaskDetailsPanel';
+import { StatusDistributionBattery } from '@/components/crm/StatusDistributionBattery';
 import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -80,6 +81,9 @@ export default function BackOfficeTasks() {
 
   return (
     <div className="space-y-4">
+      {/* Status Distribution Battery */}
+      <StatusDistributionBattery tasks={filteredTasks} />
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <CheckSquare className="h-5 w-5 text-primary" />
