@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,11 +12,9 @@ import { CashManagement } from '@/components/dashboard/CashManagement';
 import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
-import { calculateCorrelationMatrix } from '@/lib/calculations';
-import { generatePDFReport, MonteCarloResultsForPDF, CorrelationMatrixForPDF } from '@/lib/pdfReport';
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
-import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileDown } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileText } from 'lucide-react';
 
 // Monte Carlo helper functions
 function toLogReturns(simpleReturns: number[]): number[] {
@@ -63,6 +62,7 @@ function getPercentile(sortedValues: number[], percentile: number): number {
 export default function Overview() {
   const { transactions, valuations, performanceMetrics, riskMetrics, cashBalances, settings, loading } = usePortfolio();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [rssFeedUrl, setRssFeedUrl] = useState<string | null>(null);
 
   // Load RSS feed URL
@@ -84,71 +84,6 @@ export default function Overview() {
     if (transactions.length === 0 || valuations.length === 0) return null;
     return computeFactorModel(transactions, valuations);
   }, [transactions, valuations]);
-
-  // Compute Monte Carlo results for PDF
-  const monteCarloResults = useMemo((): MonteCarloResultsForPDF | null => {
-    if (!performanceMetrics || performanceMetrics.monthlyReturns.length < 3) return null;
-    
-    const monthlyReturns = performanceMetrics.monthlyReturns.map(r => r.return);
-    const logReturns = toLogReturns(monthlyReturns);
-    const stats = calculateStats(logReturns);
-    const currentValue = performanceMetrics.totalValue;
-    const numSims = 5000;
-    
-    const horizons = [20, 50, 65];
-    const horizonResults = horizons.map(horizon => {
-      const finalValues = runMonteCarloForPDF(logReturns, currentValue, horizon, numSims);
-      const probGain = (finalValues.filter(v => v > currentValue).length / finalValues.length) * 100;
-      const cutoffIndex = Math.floor(0.05 * finalValues.length);
-      const p5Value = finalValues[cutoffIndex];
-      const var95 = ((p5Value - currentValue) / currentValue) * 100;
-      const tailValues = finalValues.slice(0, cutoffIndex + 1);
-      const avgTail = tailValues.reduce((a, b) => a + b, 0) / tailValues.length;
-      const cvar95 = ((avgTail - currentValue) / currentValue) * 100;
-      
-      return {
-        horizon,
-        p5: getPercentile(finalValues, 5),
-        p25: getPercentile(finalValues, 25),
-        p50: getPercentile(finalValues, 50),
-        p75: getPercentile(finalValues, 75),
-        p95: getPercentile(finalValues, 95),
-        probGain,
-        probLoss: 100 - probGain,
-        var95,
-        cvar95,
-        expectedValue: finalValues.reduce((a, b) => a + b, 0) / finalValues.length,
-      };
-    });
-
-    return {
-      horizonResults,
-      currentValue,
-      annualizedReturn: (Math.exp(stats.mean * 12) - 1) * 100,
-      annualizedVol: stats.std * Math.sqrt(12) * 100,
-      numSimulations: numSims,
-    };
-  }, [performanceMetrics]);
-
-  // Compute correlation matrix for PDF
-  const correlationMatrix = useMemo((): CorrelationMatrixForPDF | null => {
-    if (transactions.length === 0 || valuations.length === 0) return null;
-    const result = calculateCorrelationMatrix(transactions, valuations);
-    if (result.tickers.length < 2) return null;
-    return result;
-  }, [transactions, valuations]);
-
-  const handleExportPDF = () => {
-    generatePDFReport({
-      transactions,
-      valuations,
-      performanceMetrics,
-      riskMetrics,
-      factorModel,
-      monteCarlo: monteCarloResults,
-      correlationMatrix,
-    });
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -191,14 +126,14 @@ export default function Overview() {
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
           <Button 
-            onClick={handleExportPDF} 
+            onClick={() => navigate('/reports')} 
             variant="outline" 
             size="sm" 
             className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 sm:h-7 min-w-[44px] px-3 sm:px-2"
           >
-            <FileDown className="h-4 w-4 sm:h-3 sm:w-3" />
-            <span className="hidden sm:inline">Export</span>
-            <span className="sm:hidden">PDF</span>
+            <FileText className="h-4 w-4 sm:h-3 sm:w-3" />
+            <span className="hidden sm:inline">Reports</span>
+            <span className="sm:hidden">Report</span>
           </Button>
           <div className="text-right hidden sm:block">
             <p className="terminal-label">Last Updated</p>
