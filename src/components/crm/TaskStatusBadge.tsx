@@ -38,31 +38,37 @@ export const statusConfig: Record<TaskStatus, {
   icon: React.ComponentType<{ className?: string }>;
   bgColor: string;
   textColor: string;
+  hexColor: string; // For charts/battery bar
 }> = {
   backlog: { 
     icon: BacklogIcon, 
     bgColor: 'bg-amber-500/20', 
-    textColor: 'text-amber-500' 
+    textColor: 'text-amber-500',
+    hexColor: '#f59e0b', // amber-500
   },
   planned: { 
     icon: PlannedIcon, 
-    bgColor: 'bg-muted', 
-    textColor: 'text-muted-foreground' 
+    bgColor: 'bg-red-500/20', 
+    textColor: 'text-red-400',
+    hexColor: '#c94a4a', // muted institutional red
   },
   in_progress: { 
     icon: InProgressIcon, 
-    bgColor: 'bg-amber-500/20', 
-    textColor: 'text-amber-500' 
+    bgColor: 'bg-emerald-500/20', 
+    textColor: 'text-emerald-400',
+    hexColor: '#4caf5f', // crypto-institutional green
   },
   completed: { 
     icon: CheckCircle2, 
     bgColor: 'bg-indigo-500/20', 
-    textColor: 'text-indigo-400' 
+    textColor: 'text-indigo-400',
+    hexColor: '#818cf8', // indigo-400
   },
   canceled: { 
     icon: XCircle, 
     bgColor: 'bg-muted', 
-    textColor: 'text-muted-foreground' 
+    textColor: 'text-muted-foreground',
+    hexColor: '#6b7280', // gray-500
   },
 };
 

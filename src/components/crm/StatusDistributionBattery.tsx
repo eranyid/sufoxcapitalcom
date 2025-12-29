@@ -1,20 +1,12 @@
 import { useMemo, useState, useEffect } from 'react';
 import { CrmTask, TaskStatus, STATUS_OPTIONS } from '@/types/crm';
+import { statusConfig } from '@/components/crm/TaskStatusBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Battery } from 'lucide-react';
 
 interface StatusDistributionBatteryProps {
   tasks: CrmTask[];
 }
-
-// Map status to hex colors for the battery segments
-const statusColors: Record<TaskStatus, string> = {
-  backlog: '#f59e0b',      // amber-500
-  planned: '#6b7280',      // gray-500
-  in_progress: '#f59e0b',  // amber-500
-  completed: '#818cf8',    // indigo-400
-  canceled: '#6b7280',     // gray-500
-};
 
 export function StatusDistributionBattery({ tasks }: StatusDistributionBatteryProps) {
   const [isAnimated, setIsAnimated] = useState(false);
@@ -63,7 +55,7 @@ export function StatusDistributionBattery({ tasks }: StatusDistributionBatteryPr
           label: option.label,
           count,
           percentage: (count / total) * 100,
-          color: statusColors[option.value],
+          color: statusConfig[option.value]?.hexColor || '#6b7280',
         });
       }
     });
