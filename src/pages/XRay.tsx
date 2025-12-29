@@ -408,27 +408,27 @@ export default function XRay() {
               </div>
             </div>
 
-            {/* Footer Legend - Desktop only */}
-            <div className="hidden md:block px-6 py-3 border-t border-border/20 bg-muted/10">
-              <div className="flex items-center justify-center gap-8 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-primary/80 to-primary/40 border border-primary/30" />
+            {/* Footer Legend */}
+            <div className="px-4 md:px-6 py-3 border-t border-border/20 bg-muted/10">
+              <div className="flex items-center justify-center gap-4 md:gap-8 text-[9px] md:text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-gradient-to-br from-primary/80 to-primary/40 border border-primary/30" />
                   <span>Asset Classes</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-muted-foreground/60 to-muted-foreground/30 border border-muted-foreground/20" />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-gradient-to-br from-muted-foreground/60 to-muted-foreground/30 border border-muted-foreground/20" />
                   <span>Geography</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-accent/60 to-accent/30 border border-accent/20" />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-gradient-to-br from-accent/60 to-accent/30 border border-accent/20" />
                   <span>Positions</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Desktop-only sections */}
-          <div className="hidden md:block space-y-4">
+          {/* All sections - visible on all screen sizes */}
+          <div className="space-y-4">
             {/* Section Divider */}
             <div className="flex items-center gap-4 py-2">
               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
