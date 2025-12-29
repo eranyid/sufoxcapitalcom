@@ -98,7 +98,8 @@ export default function Valuations() {
       assetName: form.assetName || asset?.name || form.ticker,
       month: form.month,
       pricePerUnit: parseFloat(form.pricePerUnit),
-      fxRate: form.fxRate ? parseFloat(form.fxRate) : undefined
+      fxRate: form.fxRate ? parseFloat(form.fxRate) : undefined,
+      linkedCompanyId: form.linkedCompanyId || undefined
     });
     setIsOpen(false);
     setForm({ ticker: '', assetName: '', month: '', pricePerUnit: '', fxRate: '', linkedCompanyId: '' });

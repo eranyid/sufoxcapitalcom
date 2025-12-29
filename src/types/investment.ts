@@ -34,6 +34,7 @@ export interface MonthlyValuation {
   month: string; // YYYY-MM format
   pricePerUnit: number;
   fxRate?: number;
+  linkedCompanyId?: string; // Link to CRM company analysis
 }
 
 export interface Asset {

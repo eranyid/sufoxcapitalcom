@@ -1348,6 +1348,7 @@ export type Database = {
           deleted_at: string | null
           fx_rate: number | null
           id: string
+          linked_company_id: string | null
           month: string
           price_per_unit: number
           ticker: string
@@ -1361,6 +1362,7 @@ export type Database = {
           deleted_at?: string | null
           fx_rate?: number | null
           id?: string
+          linked_company_id?: string | null
           month: string
           price_per_unit: number
           ticker: string
@@ -1374,13 +1376,22 @@ export type Database = {
           deleted_at?: string | null
           fx_rate?: number | null
           id?: string
+          linked_company_id?: string | null
           month?: string
           price_per_unit?: number
           ticker?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "valuations_linked_company_id_fkey"
+            columns: ["linked_company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
