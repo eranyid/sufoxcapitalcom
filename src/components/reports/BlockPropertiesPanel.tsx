@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ReportBlock, ReportBlockConfig, ReportBranding } from '@/types/reportBuilder';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,10 +14,75 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { X, Upload, Loader2 } from 'lucide-react';
+import { X, Upload, Loader2, Wand2, Palette } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+
+// Color extraction utilities
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+function getColorBrightness(r: number, g: number, b: number): number {
+  return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
+function extractColorsFromImage(imageUrl: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+
+      // Scale down for performance
+      const maxSize = 100;
+      const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const pixels = imageData.data;
+
+      // Group similar colors
+      const colorCounts: Record<string, { count: number; r: number; g: number; b: number }> = {};
+      
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = Math.round(pixels[i] / 32) * 32;
+        const g = Math.round(pixels[i + 1] / 32) * 32;
+        const b = Math.round(pixels[i + 2] / 32) * 32;
+        const a = pixels[i + 3];
+        
+        // Skip transparent pixels and near-white/near-black
+        if (a < 128) continue;
+        const brightness = getColorBrightness(r, g, b);
+        if (brightness > 240 || brightness < 15) continue;
+        
+        const key = `${r},${g},${b}`;
+        if (!colorCounts[key]) {
+          colorCounts[key] = { count: 0, r, g, b };
+        }
+        colorCounts[key].count++;
+      }
+
+      // Sort by frequency and get top colors
+      const sortedColors = Object.values(colorCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6)
+        .map(c => rgbToHex(c.r, c.g, c.b));
+
+      resolve(sortedColors.length > 0 ? sortedColors : ['#FFC107', '#4A90D9']);
+    };
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = imageUrl;
+  });
+}
 
 interface BlockPropertiesPanelProps {
   block: ReportBlock | null;
@@ -36,7 +101,42 @@ export function BlockPropertiesPanel({
 }: BlockPropertiesPanelProps) {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
+  const [isExtractingColors, setIsExtractingColors] = useState(false);
+  const [extractedColors, setExtractedColors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExtractColors = useCallback(async () => {
+    if (!branding.logoUrl) {
+      toast.error('Please upload a logo first');
+      return;
+    }
+
+    setIsExtractingColors(true);
+    try {
+      const colors = await extractColorsFromImage(branding.logoUrl);
+      setExtractedColors(colors);
+      
+      if (colors.length > 0) {
+        // Auto-apply the primary color as accent
+        onUpdateBranding({ 
+          accentColor: colors[0],
+          chartPrimaryColor: colors[0],
+          tableHeaderTextColor: colors[0],
+        });
+        
+        if (colors.length > 1) {
+          onUpdateBranding({ chartSecondaryColor: colors[1] });
+        }
+        
+        toast.success(`Extracted ${colors.length} colors from logo`);
+      }
+    } catch (error) {
+      console.error('Color extraction error:', error);
+      toast.error('Could not extract colors from logo');
+    } finally {
+      setIsExtractingColors(false);
+    }
+  }, [branding.logoUrl, onUpdateBranding]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -143,6 +243,82 @@ export function BlockPropertiesPanel({
             </div>
           </div>
         </div>
+
+        {/* Extract Colors from Logo Section */}
+        {branding.logoUrl && (
+          <div className="px-4 py-3 border-b border-border">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Extract from Logo</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <img 
+                src={branding.logoUrl} 
+                alt="Logo" 
+                className="w-10 h-10 object-contain rounded border border-border bg-muted/30"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 h-8 text-xs gap-1"
+                onClick={handleExtractColors}
+                disabled={isExtractingColors}
+              >
+                {isExtractingColors ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Wand2 size={12} />
+                )}
+                {isExtractingColors ? 'Extracting...' : 'Extract Colors'}
+              </Button>
+            </div>
+            
+            {/* Extracted colors palette */}
+            {extractedColors.length > 0 && (
+              <div className="mt-3">
+                <Label className="text-[10px] text-muted-foreground mb-2 block">Click to apply:</Label>
+                <div className="flex flex-wrap gap-1">
+                  {extractedColors.map((color, i) => (
+                    <button
+                      key={i}
+                      className="w-7 h-7 rounded-md border border-border hover:scale-110 transition-transform cursor-pointer ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                      style={{ backgroundColor: color }}
+                      onClick={() => {
+                        onUpdateBranding({ 
+                          accentColor: color,
+                          chartPrimaryColor: color,
+                          tableHeaderTextColor: color,
+                        });
+                        toast.success(`Applied ${color} as accent`);
+                      }}
+                      title={`Apply ${color}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-1 mt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] flex-1"
+                    onClick={() => {
+                      if (extractedColors.length >= 2) {
+                        onUpdateBranding({
+                          accentColor: extractedColors[0],
+                          chartPrimaryColor: extractedColors[0],
+                          chartSecondaryColor: extractedColors[1],
+                          tableHeaderTextColor: extractedColors[0],
+                        });
+                        toast.success('Applied extracted colors');
+                      }
+                    }}
+                  >
+                    <Palette size={10} className="mr-1" />
+                    Apply All
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-6">
