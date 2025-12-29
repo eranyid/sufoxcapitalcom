@@ -1224,6 +1224,7 @@ export type Database = {
           geography: string
           id: string
           inception_year: number | null
+          linked_company_id: string | null
           price_per_unit: number
           quantity: number
           ticker: string
@@ -1242,6 +1243,7 @@ export type Database = {
           geography?: string
           id?: string
           inception_year?: number | null
+          linked_company_id?: string | null
           price_per_unit: number
           quantity: number
           ticker: string
@@ -1260,6 +1262,7 @@ export type Database = {
           geography?: string
           id?: string
           inception_year?: number | null
+          linked_company_id?: string | null
           price_per_unit?: number
           quantity?: number
           ticker?: string
@@ -1267,7 +1270,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transactions_linked_company_id_fkey"
+            columns: ["linked_company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_google_tokens: {
         Row: {
