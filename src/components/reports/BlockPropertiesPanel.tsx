@@ -90,6 +90,60 @@ export function BlockPropertiesPanel({
             <X size={14} />
           </Button>
         </div>
+        
+        {/* Live Color Preview Swatch Bar */}
+        <div className="px-4 py-3 border-b border-border">
+          <Label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2 block">Live Preview</Label>
+          <div 
+            className="rounded-lg p-3 transition-colors duration-200"
+            style={{ backgroundColor: branding.backgroundColor }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div 
+                className="w-3 h-3 rounded-full ring-1 ring-white/20" 
+                style={{ backgroundColor: branding.accentColor }}
+                title="Accent"
+              />
+              <span 
+                className="text-xs font-semibold"
+                style={{ color: branding.headingColor || '#FFFFFF' }}
+              >
+                Heading
+              </span>
+            </div>
+            <p 
+              className="text-[10px] mb-2"
+              style={{ color: branding.textColor || '#E5E5E5' }}
+            >
+              Body text preview
+            </p>
+            <div className="flex gap-1 mb-2">
+              {[
+                branding.chartPrimaryColor || '#FFC107',
+                branding.chartSecondaryColor || '#4A90D9',
+                branding.chartPositiveColor || '#22C55E',
+                branding.chartNegativeColor || '#EF4444',
+              ].map((color, i) => (
+                <div 
+                  key={i}
+                  className="flex-1 h-2 rounded-sm transition-colors duration-200"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+            <div 
+              className="rounded text-[8px] p-1 transition-colors duration-200"
+              style={{ 
+                backgroundColor: branding.tableHeaderBgColor || '#1A1A1A',
+                color: branding.tableHeaderTextColor || '#FFC107',
+                borderBottom: `1px solid ${branding.tableBorderColor || '#333333'}`
+              }}
+            >
+              Table Header
+            </div>
+          </div>
+        </div>
+
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-6">
             {/* Primary Colors Section */}
