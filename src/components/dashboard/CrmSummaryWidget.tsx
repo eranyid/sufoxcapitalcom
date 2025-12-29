@@ -109,34 +109,56 @@ export default function CrmSummaryWidget() {
 
         {/* Mini Battery Bar */}
         {totalCount > 0 && (
-          <TooltipProvider delayDuration={100}>
-            <div className="flex h-4 rounded overflow-hidden border border-border/50 bg-muted/30">
-              {taskCounts.map((item, index) => {
-                const percentage = (item.count / totalCount) * 100;
+          <div className="space-y-1.5">
+            <TooltipProvider delayDuration={100}>
+              <div className="flex h-4 rounded overflow-hidden border border-border/50 bg-muted/30">
+                {taskCounts.map((item) => {
+                  const percentage = (item.count / totalCount) * 100;
+                  const config = statusConfig[item.status];
+                  const label = STATUS_OPTIONS.find(s => s.value === item.status)?.label || item.status;
+                  
+                  return (
+                    <Tooltip key={item.status}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="h-full cursor-pointer hover:brightness-110 transition-all"
+                          style={{
+                            width: `${percentage}%`,
+                            backgroundColor: config?.hexColor || '#6b7280',
+                            minWidth: percentage > 0 ? '4px' : '0',
+                          }}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="bg-card border-border text-xs">
+                        <p className="font-semibold">{label}</p>
+                        <p className="text-muted-foreground">{item.count} ({percentage.toFixed(0)}%)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
+            
+            {/* Mini Legend */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+              {taskCounts.map((item) => {
                 const config = statusConfig[item.status];
                 const label = STATUS_OPTIONS.find(s => s.value === item.status)?.label || item.status;
                 
                 return (
-                  <Tooltip key={item.status}>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="h-full cursor-pointer hover:brightness-110 transition-all"
-                        style={{
-                          width: `${percentage}%`,
-                          backgroundColor: config?.hexColor || '#6b7280',
-                          minWidth: percentage > 0 ? '4px' : '0',
-                        }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-card border-border text-xs">
-                      <p className="font-semibold">{label}</p>
-                      <p className="text-muted-foreground">{item.count} ({percentage.toFixed(0)}%)</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <div key={item.status} className="flex items-center gap-1">
+                    <div
+                      className="w-1.5 h-1.5 rounded-sm"
+                      style={{ backgroundColor: config?.hexColor || '#6b7280' }}
+                    />
+                    <span className="text-[8px] font-mono text-muted-foreground">
+                      {label}: {item.count}
+                    </span>
+                  </div>
                 );
               })}
             </div>
-          </TooltipProvider>
+          </div>
         )}
       </div>
     </div>
