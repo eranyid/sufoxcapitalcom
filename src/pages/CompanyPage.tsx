@@ -65,6 +65,7 @@ interface Company {
   key_risks: string | null;
   business_description: string | null;
   inception_year: number | null;
+  asset_type: string | null;
   updated_at: string;
   created_at: string;
 }
@@ -603,6 +604,43 @@ export default function CompanyPage() {
                     onClick={() => startEdit('inception_year', company.inception_year?.toString())}
                   >
                     {company.inception_year || '—'}
+                  </p>
+                )}
+              </div>
+
+              {/* Asset Type */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <Briefcase size={10} /> Asset Type
+                </label>
+                {editMode === 'asset_type' ? (
+                  <div className="flex gap-1">
+                    <Select value={editValue} onValueChange={setEditValue}>
+                      <SelectTrigger className="h-7 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="equity">Equity</SelectItem>
+                        <SelectItem value="etf">ETF</SelectItem>
+                        <SelectItem value="bond">Bond</SelectItem>
+                        <SelectItem value="mutual_fund">Mutual Fund</SelectItem>
+                        <SelectItem value="private_equity">Private Equity</SelectItem>
+                        <SelectItem value="hedge_fund">Hedge Fund</SelectItem>
+                        <SelectItem value="real_estate">Real Estate</SelectItem>
+                        <SelectItem value="commodity">Commodity</SelectItem>
+                        <SelectItem value="crypto">Crypto</SelectItem>
+                        <SelectItem value="alternative">Alternative</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('asset_type')}><Save size={12} /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
+                  </div>
+                ) : (
+                  <p 
+                    className="text-sm cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1 uppercase"
+                    onClick={() => startEdit('asset_type', company.asset_type)}
+                  >
+                    {company.asset_type?.replace(/_/g, ' ') || 'Equity'}
                   </p>
                 )}
               </div>
