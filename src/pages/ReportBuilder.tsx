@@ -51,7 +51,10 @@ export default function ReportBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { report, loading, updateReport } = useReport(id);
-  const { holdings, metrics, kpis, totalValue } = usePortfolio();
+  const { computedData, performanceMetrics, riskMetrics } = usePortfolio();
+  
+  const holdings = computedData.holdings;
+  const totalValue = computedData.totalPortfolioValue;
   
   const [sections, setSections] = useState<ReportSection[]>([]);
   const [branding, setBranding] = useState<ReportBranding>({});
@@ -93,8 +96,8 @@ export default function ReportBuilder() {
       await generateReportPDF({
         report: { ...report!, sections, branding, page_size: pageSize },
         holdings,
-        metrics,
-        kpis,
+        performanceMetrics,
+        riskMetrics,
         totalValue,
       });
       toast.success('PDF exported successfully');
@@ -415,8 +418,8 @@ export default function ReportBuilder() {
                             <ReportSectionPreview 
                               section={section}
                               holdings={holdings}
-                              metrics={metrics}
-                              kpis={kpis}
+                              performanceMetrics={performanceMetrics}
+                              riskMetrics={riskMetrics}
                               totalValue={totalValue}
                               branding={branding}
                             />

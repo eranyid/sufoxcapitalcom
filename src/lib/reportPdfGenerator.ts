@@ -1,14 +1,23 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Report, ReportSection, ReportBranding } from '@/types/reports';
-import type { Holding, PortfolioMetrics } from '@/types/investment';
-import { formatCurrency, formatPercent } from '@/lib/calculations';
+import type { Report } from '@/types/reports';
+import type { PortfolioHolding } from '@/lib/portfolioEngine';
+import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
+
+// Local formatting helpers
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+};
+
+const formatPercent = (value: number): string => {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+};
 
 interface GeneratePDFOptions {
   report: Report;
-  holdings: Holding[];
-  metrics: PortfolioMetrics | null;
-  kpis: { label: string; value: string | number; change?: number }[];
+  holdings: PortfolioHolding[];
+  performanceMetrics: PerformanceMetrics | null;
+  riskMetrics: RiskMetrics | null;
   totalValue: number;
 }
 
@@ -24,7 +33,7 @@ const COLORS = {
   negative: '#FF5252',
 };
 
-export async function generateReportPDF({ report, holdings, metrics, kpis, totalValue }: GeneratePDFOptions): Promise<void> {
+export async function generateReportPDF({ report, holdings, performanceMetrics, riskMetrics, totalValue }: GeneratePDFOptions): Promise<void> {
   const pageFormat = report.page_size === 'Letter' ? 'letter' : 'a4';
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -35,7 +44,6 @@ export async function generateReportPDF({ report, holdings, metrics, kpis, total
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
-  const contentWidth = pageWidth - margin * 2;
   let y = margin;
 
   const branding = report.branding;
@@ -101,7 +109,10 @@ export async function generateReportPDF({ report, holdings, metrics, kpis, total
 
         const overviewData = [
           ['Total Value', formatCurrency(totalValue)],
-          ...kpis.slice(0, 5).map(k => [k.label, String(k.value)]),
+          ['IRR', performanceMetrics ? formatPercent(performanceMetrics.irr) : '—'],
+          ['Total Return', performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'],
+          ['Sharpe Ratio', performanceMetrics?.sharpeRatio.toFixed(2) || '—'],
+          ['Max Drawdown', performanceMetrics ? formatPercent(-performanceMetrics.maxDrawdown) : '—'],
         ];
 
         autoTable(doc, {
@@ -132,10 +143,10 @@ export async function generateReportPDF({ report, holdings, metrics, kpis, total
         y += 8;
 
         const perfData = [
-          ['YTD Return', metrics ? formatPercent(metrics.ytdReturn) : '—'],
-          ['Sharpe Ratio', metrics?.sharpe.toFixed(2) || '—'],
-          ['Max Drawdown', metrics ? formatPercent(metrics.maxDrawdown) : '—'],
-          ['Volatility', metrics ? formatPercent(metrics.volatility) : '—'],
+          ['Total Return', performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'],
+          ['Sharpe Ratio', performanceMetrics?.sharpeRatio.toFixed(2) || '—'],
+          ['Max Drawdown', performanceMetrics ? formatPercent(-performanceMetrics.maxDrawdown) : '—'],
+          ['Volatility', performanceMetrics ? formatPercent(performanceMetrics.volatility) : '—'],
         ];
 
         autoTable(doc, {
@@ -209,10 +220,10 @@ export async function generateReportPDF({ report, holdings, metrics, kpis, total
 
         const holdingsData = holdings.map(h => [
           h.ticker,
-          h.assetName,
+          h.name,
           h.assetType,
           formatCurrency(h.currentValue),
-          totalValue > 0 ? `${((h.currentValue / totalValue) * 100).toFixed(1)}%` : '0%',
+          `${h.weight.toFixed(1)}%`,
         ]);
 
         autoTable(doc, {
@@ -253,12 +264,12 @@ export async function generateReportPDF({ report, holdings, metrics, kpis, total
         y += 8;
 
         const riskData = [
-          ['Volatility (Ann.)', metrics ? formatPercent(metrics.volatility) : '—'],
-          ['Beta', metrics?.beta.toFixed(2) || '—'],
-          ['VaR 95%', metrics ? formatPercent(metrics.var95) : '—'],
-          ['Sharpe Ratio', metrics?.sharpe.toFixed(2) || '—'],
-          ['Sortino Ratio', metrics?.sortino?.toFixed(2) || '—'],
-          ['Max Drawdown', metrics ? formatPercent(metrics.maxDrawdown) : '—'],
+          ['Volatility (Ann.)', riskMetrics ? formatPercent(riskMetrics.volatility) : '—'],
+          ['Beta', riskMetrics?.beta.toFixed(2) || '—'],
+          ['VaR 95%', riskMetrics ? formatPercent(-riskMetrics.var95) : '—'],
+          ['Sharpe Ratio', riskMetrics?.sharpeRatio.toFixed(2) || '—'],
+          ['Sortino Ratio', riskMetrics?.sortinoRatio?.toFixed(2) || '—'],
+          ['Max Drawdown', riskMetrics ? formatPercent(-riskMetrics.maxDrawdown) : '—'],
         ];
 
         autoTable(doc, {
