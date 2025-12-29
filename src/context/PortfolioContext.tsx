@@ -123,7 +123,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
             assetName: val.asset_name,
             month: val.month,
             pricePerUnit: Number(val.price_per_unit),
-            fxRate: val.fx_rate ? Number(val.fx_rate) : undefined
+            fxRate: val.fx_rate ? Number(val.fx_rate) : undefined,
+            linkedCompanyId: val.linked_company_id ?? undefined
           })));
         }
 
@@ -332,7 +333,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         asset_name: val.assetName,
         month: val.month,
         price_per_unit: val.pricePerUnit,
-        fx_rate: val.fxRate
+        fx_rate: val.fxRate,
+        linked_company_id: val.linkedCompanyId || null
       })
       .select()
       .single();
@@ -349,7 +351,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       assetName: data.asset_name,
       month: data.month,
       pricePerUnit: Number(data.price_per_unit),
-      fxRate: data.fx_rate ? Number(data.fx_rate) : undefined
+      fxRate: data.fx_rate ? Number(data.fx_rate) : undefined,
+      linkedCompanyId: data.linked_company_id ?? undefined
     };
     
     setUserValuations(prev => [...prev, newVal]);
