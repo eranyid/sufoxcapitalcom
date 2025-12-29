@@ -91,84 +91,434 @@ export function BlockPropertiesPanel({
           </Button>
         </div>
         <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Accent Color</Label>
-              <div className="flex gap-2">
+          <div className="space-y-6">
+            {/* Primary Colors Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Primary Colors</h4>
+              
+              <div className="space-y-2">
+                <Label className="text-xs">Accent Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={branding.accentColor}
+                    onChange={(e) => onUpdateBranding({ accentColor: e.target.value })}
+                    className="w-10 h-8 p-1 cursor-pointer"
+                  />
+                  <Input
+                    value={branding.accentColor}
+                    onChange={(e) => onUpdateBranding({ accentColor: e.target.value })}
+                    className="flex-1 h-8 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Background Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={branding.backgroundColor}
+                    onChange={(e) => onUpdateBranding({ backgroundColor: e.target.value })}
+                    className="w-10 h-8 p-1 cursor-pointer"
+                  />
+                  <Input
+                    value={branding.backgroundColor}
+                    onChange={(e) => onUpdateBranding({ backgroundColor: e.target.value })}
+                    className="flex-1 h-8 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Text Colors Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Text Colors</h4>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Body Text</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.textColor || '#E5E5E5'}
+                      onChange={(e) => onUpdateBranding({ textColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.textColor || '#E5E5E5'}
+                      onChange={(e) => onUpdateBranding({ textColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Headings</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.headingColor || '#FFFFFF'}
+                      onChange={(e) => onUpdateBranding({ headingColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.headingColor || '#FFFFFF'}
+                      onChange={(e) => onUpdateBranding({ headingColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Muted Text</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.mutedTextColor || '#888888'}
+                      onChange={(e) => onUpdateBranding({ mutedTextColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.mutedTextColor || '#888888'}
+                      onChange={(e) => onUpdateBranding({ mutedTextColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Chart Colors Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chart Colors</h4>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Primary</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.chartPrimaryColor || '#FFC107'}
+                      onChange={(e) => onUpdateBranding({ chartPrimaryColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.chartPrimaryColor || '#FFC107'}
+                      onChange={(e) => onUpdateBranding({ chartPrimaryColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Secondary</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.chartSecondaryColor || '#4A90D9'}
+                      onChange={(e) => onUpdateBranding({ chartSecondaryColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.chartSecondaryColor || '#4A90D9'}
+                      onChange={(e) => onUpdateBranding({ chartSecondaryColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Positive</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.chartPositiveColor || '#22C55E'}
+                      onChange={(e) => onUpdateBranding({ chartPositiveColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.chartPositiveColor || '#22C55E'}
+                      onChange={(e) => onUpdateBranding({ chartPositiveColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Negative</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.chartNegativeColor || '#EF4444'}
+                      onChange={(e) => onUpdateBranding({ chartNegativeColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.chartNegativeColor || '#EF4444'}
+                      onChange={(e) => onUpdateBranding({ chartNegativeColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Table Colors Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Table Colors</h4>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Header BG</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.tableHeaderBgColor || '#1A1A1A'}
+                      onChange={(e) => onUpdateBranding({ tableHeaderBgColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.tableHeaderBgColor || '#1A1A1A'}
+                      onChange={(e) => onUpdateBranding({ tableHeaderBgColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Header Text</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.tableHeaderTextColor || '#FFC107'}
+                      onChange={(e) => onUpdateBranding({ tableHeaderTextColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.tableHeaderTextColor || '#FFC107'}
+                      onChange={(e) => onUpdateBranding({ tableHeaderTextColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Alt Row BG</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.tableRowAltBgColor || '#111111'}
+                      onChange={(e) => onUpdateBranding({ tableRowAltBgColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.tableRowAltBgColor || '#111111'}
+                      onChange={(e) => onUpdateBranding({ tableRowAltBgColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Border</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="color"
+                      value={branding.tableBorderColor || '#333333'}
+                      onChange={(e) => onUpdateBranding({ tableBorderColor: e.target.value })}
+                      className="w-8 h-7 p-0.5 cursor-pointer"
+                    />
+                    <Input
+                      value={branding.tableBorderColor || '#333333'}
+                      onChange={(e) => onUpdateBranding({ tableBorderColor: e.target.value })}
+                      className="flex-1 h-7 text-[10px] px-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Content</h4>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Header Title</Label>
                 <Input
-                  type="color"
-                  value={branding.accentColor}
-                  onChange={(e) => onUpdateBranding({ accentColor: e.target.value })}
-                  className="w-12 h-10 p-1 cursor-pointer"
+                  placeholder="Portfolio Report"
+                  value={branding.headerTitle || ''}
+                  onChange={(e) => onUpdateBranding({ headerTitle: e.target.value })}
+                  className="h-8 text-xs"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Header Subtitle</Label>
                 <Input
-                  value={branding.accentColor}
-                  onChange={(e) => onUpdateBranding({ accentColor: e.target.value })}
-                  className="flex-1"
+                  placeholder="Q4 2024"
+                  value={branding.headerSubtitle || ''}
+                  onChange={(e) => onUpdateBranding({ headerSubtitle: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Footer Text</Label>
+                <Textarea
+                  placeholder="Confidential - For Internal Use Only"
+                  value={branding.footerText || ''}
+                  onChange={(e) => onUpdateBranding({ footerText: e.target.value })}
+                  rows={2}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Analyst Name</Label>
+                <Input
+                  placeholder="John Smith, CFA"
+                  value={branding.analystName || ''}
+                  onChange={(e) => onUpdateBranding({ analystName: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Client Name</Label>
+                <Input
+                  placeholder="Client Name"
+                  value={branding.clientName || ''}
+                  onChange={(e) => onUpdateBranding({ clientName: e.target.value })}
+                  className="h-8 text-xs"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Header Title</Label>
-              <Input
-                placeholder="Portfolio Report"
-                value={branding.headerTitle || ''}
-                onChange={(e) => onUpdateBranding({ headerTitle: e.target.value })}
-              />
+            {/* Options Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Options</h4>
+
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Show Page Numbers</Label>
+                <Switch
+                  checked={branding.showPageNumbers}
+                  onCheckedChange={(v) => onUpdateBranding({ showPageNumbers: v })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Confidential Watermark</Label>
+                <Switch
+                  checked={branding.showConfidentialWatermark}
+                  onCheckedChange={(v) => onUpdateBranding({ showConfidentialWatermark: v })}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Header Subtitle</Label>
-              <Input
-                placeholder="Q4 2024"
-                value={branding.headerSubtitle || ''}
-                onChange={(e) => onUpdateBranding({ headerSubtitle: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Footer Text</Label>
-              <Textarea
-                placeholder="Confidential - For Internal Use Only"
-                value={branding.footerText || ''}
-                onChange={(e) => onUpdateBranding({ footerText: e.target.value })}
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Analyst Name</Label>
-              <Input
-                placeholder="John Smith, CFA"
-                value={branding.analystName || ''}
-                onChange={(e) => onUpdateBranding({ analystName: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Client Name</Label>
-              <Input
-                placeholder="Client Name"
-                value={branding.clientName || ''}
-                onChange={(e) => onUpdateBranding({ clientName: e.target.value })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label>Show Page Numbers</Label>
-              <Switch
-                checked={branding.showPageNumbers}
-                onCheckedChange={(v) => onUpdateBranding({ showPageNumbers: v })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label>Confidential Watermark</Label>
-              <Switch
-                checked={branding.showConfidentialWatermark}
-                onCheckedChange={(v) => onUpdateBranding({ showConfidentialWatermark: v })}
-              />
+            {/* Color Presets */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick Presets</h4>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[10px]"
+                  onClick={() => onUpdateBranding({
+                    accentColor: '#FFC107',
+                    backgroundColor: '#0A0A0A',
+                    textColor: '#E5E5E5',
+                    headingColor: '#FFFFFF',
+                    chartPrimaryColor: '#FFC107',
+                    chartSecondaryColor: '#4A90D9',
+                  })}
+                >
+                  Dark Gold
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[10px]"
+                  onClick={() => onUpdateBranding({
+                    accentColor: '#3B82F6',
+                    backgroundColor: '#0F172A',
+                    textColor: '#CBD5E1',
+                    headingColor: '#F1F5F9',
+                    chartPrimaryColor: '#3B82F6',
+                    chartSecondaryColor: '#8B5CF6',
+                  })}
+                >
+                  Dark Blue
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[10px]"
+                  onClick={() => onUpdateBranding({
+                    accentColor: '#10B981',
+                    backgroundColor: '#022C22',
+                    textColor: '#D1FAE5',
+                    headingColor: '#ECFDF5',
+                    chartPrimaryColor: '#10B981',
+                    chartSecondaryColor: '#F59E0B',
+                  })}
+                >
+                  Dark Green
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[10px]"
+                  onClick={() => onUpdateBranding({
+                    accentColor: '#2563EB',
+                    backgroundColor: '#FFFFFF',
+                    textColor: '#374151',
+                    headingColor: '#111827',
+                    chartPrimaryColor: '#2563EB',
+                    chartSecondaryColor: '#7C3AED',
+                    tableHeaderBgColor: '#F3F4F6',
+                    tableHeaderTextColor: '#111827',
+                    tableRowAltBgColor: '#F9FAFB',
+                    tableBorderColor: '#E5E7EB',
+                  })}
+                >
+                  Light Blue
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[10px]"
+                  onClick={() => onUpdateBranding({
+                    accentColor: '#DC2626',
+                    backgroundColor: '#FFFBEB',
+                    textColor: '#451A03',
+                    headingColor: '#78350F',
+                    chartPrimaryColor: '#DC2626',
+                    chartSecondaryColor: '#EA580C',
+                    tableHeaderBgColor: '#FEF3C7',
+                    tableHeaderTextColor: '#92400E',
+                    tableRowAltBgColor: '#FFFBEB',
+                    tableBorderColor: '#FDE68A',
+                  })}
+                >
+                  Warm
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[10px]"
+                  onClick={() => onUpdateBranding({
+                    accentColor: '#6366F1',
+                    backgroundColor: '#18181B',
+                    textColor: '#A1A1AA',
+                    headingColor: '#FAFAFA',
+                    chartPrimaryColor: '#6366F1',
+                    chartSecondaryColor: '#EC4899',
+                  })}
+                >
+                  Purple
+                </Button>
+              </div>
             </div>
           </div>
         </ScrollArea>

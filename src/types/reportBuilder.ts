@@ -99,8 +99,24 @@ export interface ReportLayout {
 
 export interface ReportBranding {
   logoUrl?: string;
+  // Primary colors
   accentColor: string;
   backgroundColor: string;
+  // Text colors
+  textColor?: string;
+  headingColor?: string;
+  mutedTextColor?: string;
+  // Chart colors
+  chartPrimaryColor?: string;
+  chartSecondaryColor?: string;
+  chartPositiveColor?: string;
+  chartNegativeColor?: string;
+  // Table colors
+  tableHeaderBgColor?: string;
+  tableHeaderTextColor?: string;
+  tableRowAltBgColor?: string;
+  tableBorderColor?: string;
+  // Content
   headerTitle?: string;
   headerSubtitle?: string;
   footerText?: string;
@@ -347,6 +363,17 @@ export const BLOCK_LIBRARY: BlockLibraryItem[] = [
 export const DEFAULT_BRANDING: ReportBranding = {
   accentColor: '#FFC107',
   backgroundColor: '#0A0A0A',
+  textColor: '#E5E5E5',
+  headingColor: '#FFFFFF',
+  mutedTextColor: '#888888',
+  chartPrimaryColor: '#FFC107',
+  chartSecondaryColor: '#4A90D9',
+  chartPositiveColor: '#22C55E',
+  chartNegativeColor: '#EF4444',
+  tableHeaderBgColor: '#1A1A1A',
+  tableHeaderTextColor: '#FFC107',
+  tableRowAltBgColor: '#111111',
+  tableBorderColor: '#333333',
   headerTitle: 'Portfolio Report',
   footerText: 'Confidential - For Internal Use Only',
   showPageNumbers: true,
