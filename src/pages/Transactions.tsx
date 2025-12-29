@@ -686,8 +686,14 @@ export default function Transactions() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Geography</Label>
-                          <Select value={form.geography} onValueChange={(v: Geography) => setForm({ ...form, geography: v })}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                          <Select 
+                            value={form.geography} 
+                            onValueChange={(v: Geography) => setForm({ ...form, geography: v })}
+                            disabled={!!form.linkedCompanyId && !!companies.find(c => c.id === form.linkedCompanyId)?.geography}
+                          >
+                            <SelectTrigger className={form.linkedCompanyId && companies.find(c => c.id === form.linkedCompanyId)?.geography ? 'bg-muted' : ''}>
+                              <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                               {GEOGRAPHIES.map(g => (
                                 <SelectItem key={g} value={g}>{g.replace(/_/g, ' ').toUpperCase()}</SelectItem>
