@@ -32,8 +32,9 @@ const primaryNavItems = [
 
 const moreNavItems = [
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
-  { path: '/scenarios', icon: Layers, label: 'Scenarios' },
+  { path: '/scenarios', icon: FlaskConical, label: 'Scenarios' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
+  { path: '/portfolio/architecture', icon: Layers, label: 'Architecture' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },

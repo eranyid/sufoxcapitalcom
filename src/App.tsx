@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { PortfolioProvider } from "./context/PortfolioContext";
 import { AuthProvider } from "./hooks/useAuth";
@@ -19,6 +20,7 @@ const Performance = lazy(() => import("./pages/Performance"));
 const Risk = lazy(() => import("./pages/Risk"));
 const ScenarioLab = lazy(() => import("./pages/ScenarioLab"));
 const XRay = lazy(() => import("./pages/XRay"));
+const PortfolioArchitecture = lazy(() => import("./pages/PortfolioArchitecture"));
 const Research = lazy(() => import("./pages/Research"));
 const Transactions = lazy(() => import("./pages/Transactions"));
 const Valuations = lazy(() => import("./pages/Valuations"));
@@ -43,14 +45,15 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <PortfolioProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ErrorBoundary>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <PortfolioProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ErrorBoundary>
               <ScrollToTop />
               <Routes>
                 <Route path="/auth" element={
@@ -86,6 +89,11 @@ const App = () => (
                   <Route path="/xray" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <XRay />
+                    </Suspense>
+                  } />
+                  <Route path="/portfolio/architecture" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <PortfolioArchitecture />
                     </Suspense>
                   } />
                   <Route path="/research" element={
@@ -203,6 +211,7 @@ const App = () => (
       </PortfolioProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
