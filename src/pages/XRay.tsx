@@ -199,9 +199,8 @@ export default function XRay() {
 
   const hasData = transactions.length > 0 && valuations.length > 0;
 
-  const handleSegmentClick = (segment: RingSegment | { type: string; name: string; weight: number; value: number; ticker?: string; plPercent?: number }) => {
-    const id = 'id' in segment ? segment.id : segment.name;
-    setSelectedId(prev => prev === id ? null : id);
+  const handleSegmentClick = (segment: RingSegment, _type: 'asset-class' | 'sector' | 'position') => {
+    setSelectedId(prev => prev === segment.id ? null : segment.id);
   };
 
   return (
