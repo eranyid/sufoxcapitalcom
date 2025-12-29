@@ -143,44 +143,48 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
   }
   
   return (
-    <div className="bg-card/50 border border-border/40 rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border/30 bg-muted/20">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              Risk / Return Map – Holdings
-            </h3>
-            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-              Mapping each holding by risk (volatility) and return. The orange point represents the overall portfolio.
-            </p>
-          </div>
-        </div>
+    <div className="bg-card/50 border border-border/40 rounded-lg overflow-hidden flex flex-col">
+      {/* Header - compact */}
+      <div className="px-3 py-2 border-b border-border/30 bg-muted/20 flex-shrink-0">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Risk / Return Map
+        </h3>
+        <p className="text-[9px] text-muted-foreground font-mono mt-0.5 leading-tight">
+          {isMobile ? 'Holdings by risk & return' : 'Mapping each holding by risk (volatility) and return. Orange = portfolio.'}
+        </p>
       </div>
       
-      {/* Chart */}
-      <div className="p-4">
-        <div className={`w-full ${isMobile ? 'h-[280px]' : 'h-[350px]'}`}>
+      {/* Chart - takes most space */}
+      <div className={`flex-1 min-h-0 ${isMobile ? 'px-1 pt-1 pb-0' : 'px-2 pt-2 pb-0'}`}>
+        <div className={`w-full ${isMobile ? 'h-[260px]' : 'h-[320px]'}`}>
           <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: isMobile ? 40 : 50 }}>
+            <ScatterChart 
+              margin={{ 
+                top: isMobile ? 8 : 12, 
+                right: isMobile ? 8 : 15, 
+                bottom: isMobile ? 28 : 32, 
+                left: isMobile ? 28 : 38 
+              }}
+            >
               <CartesianGrid 
                 strokeDasharray="3 3" 
                 stroke="hsl(var(--border))" 
-                opacity={0.3}
+                opacity={0.25}
               />
               <XAxis 
                 type="number" 
                 dataKey="annualizedVolatility" 
                 name="Volatility"
                 domain={xDomain}
-                tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fontSize: isMobile ? 8 : 9, fontFamily: 'JetBrains Mono', fill: 'hsl(var(--muted-foreground))' }}
                 tickFormatter={(v) => `${v.toFixed(0)}%`}
+                tickCount={isMobile ? 5 : 7}
                 label={{ 
-                  value: isMobile ? 'Volatility' : 'Volatility (Annualized)', 
+                  value: isMobile ? 'Vol %' : 'Volatility (Ann.)', 
                   position: 'bottom', 
-                  offset: 20,
-                  fontSize: 11,
+                  offset: isMobile ? 12 : 16,
+                  fontSize: isMobile ? 8 : 10,
                   fontFamily: 'JetBrains Mono',
                   fill: 'hsl(var(--muted-foreground))'
                 }}
@@ -191,18 +195,20 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
                 dataKey="annualizedReturn" 
                 name="Return"
                 domain={yDomain}
-                tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fontSize: isMobile ? 8 : 9, fontFamily: 'JetBrains Mono', fill: 'hsl(var(--muted-foreground))' }}
                 tickFormatter={(v) => `${v.toFixed(0)}%`}
+                tickCount={isMobile ? 5 : 7}
                 label={{ 
-                  value: isMobile ? 'Return' : 'Return (Annualized CAGR)', 
+                  value: isMobile ? 'Ret %' : 'Return (CAGR)', 
                   angle: -90, 
                   position: 'insideLeft',
-                  offset: isMobile ? -5 : 0,
-                  fontSize: 11,
+                  offset: isMobile ? 8 : 5,
+                  fontSize: isMobile ? 8 : 10,
                   fontFamily: 'JetBrains Mono',
                   fill: 'hsl(var(--muted-foreground))'
                 }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
+                width={isMobile ? 28 : 35}
               />
               <Tooltip content={<CustomTooltip />} />
               
@@ -211,7 +217,7 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
                 y={0} 
                 stroke="hsl(var(--muted-foreground))" 
                 strokeDasharray="3 3" 
-                opacity={0.5}
+                opacity={0.4}
               />
               
               {/* Holdings scatter */}
@@ -227,7 +233,7 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
                     fillOpacity={0.8}
                     stroke={HOLDING_COLOR}
                     strokeWidth={1}
-                    r={Math.max(4, Math.min(12, entry.weight * 0.8))}
+                    r={Math.max(isMobile ? 3 : 4, Math.min(isMobile ? 9 : 12, entry.weight * (isMobile ? 0.6 : 0.8)))}
                   />
                 ))}
               </Scatter>
@@ -241,38 +247,36 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
                 <Cell 
                   fill={PORTFOLIO_COLOR}
                   stroke="#fff"
-                  strokeWidth={2}
-                  r={10}
+                  strokeWidth={isMobile ? 1.5 : 2}
+                  r={isMobile ? 7 : 10}
                 />
               </Scatter>
             </ScatterChart>
           </ResponsiveContainer>
         </div>
-        
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-border/30">
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: HOLDING_COLOR }}
-            />
-            <span className="text-[11px] font-mono text-muted-foreground">Holdings</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full border-2 border-white" 
-              style={{ backgroundColor: PORTFOLIO_COLOR }}
-            />
-            <span className="text-[11px] font-mono text-muted-foreground">Portfolio</span>
-          </div>
+      </div>
+      
+      {/* Legend - compact, at bottom */}
+      <div className={`flex items-center justify-center gap-4 ${isMobile ? 'py-1.5 px-2' : 'py-2 px-3'} border-t border-border/30 flex-shrink-0`}>
+        <div className="flex items-center gap-1.5">
+          <div 
+            className={`${isMobile ? 'w-2 h-2' : 'w-2.5 h-2.5'} rounded-full`} 
+            style={{ backgroundColor: HOLDING_COLOR }}
+          />
+          <span className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} font-mono text-muted-foreground`}>Holdings</span>
         </div>
-        
-        {/* Excluded holdings note */}
+        <div className="flex items-center gap-1.5">
+          <div 
+            className={`${isMobile ? 'w-2 h-2' : 'w-2.5 h-2.5'} rounded-full border border-white/80`} 
+            style={{ backgroundColor: PORTFOLIO_COLOR }}
+          />
+          <span className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} font-mono text-muted-foreground`}>Portfolio</span>
+        </div>
         {excludedCount > 0 && (
-          <div className="flex items-center gap-2 mt-3 p-2 bg-muted/30 rounded text-[10px] text-muted-foreground">
-            <AlertTriangle className="h-3 w-3 flex-shrink-0" />
-            <span>
-              {excludedCount} holding{excludedCount > 1 ? 's' : ''} excluded due to insufficient price history.
+          <div className="flex items-center gap-1 text-muted-foreground/70">
+            <AlertTriangle className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3'}`} />
+            <span className={`${isMobile ? 'text-[8px]' : 'text-[9px]'} font-mono`}>
+              {excludedCount} excl.
             </span>
           </div>
         )}
