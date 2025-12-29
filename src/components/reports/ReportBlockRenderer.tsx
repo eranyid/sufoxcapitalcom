@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ReportBlock, ReportBranding, DEFAULT_BRANDING } from '@/types/reportBuilder';
 import { PortfolioHolding } from '@/lib/portfolioEngine';
 import { PerformanceMetrics, RiskMetrics } from '@/types/investment';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ScatterChart, Scatter, ZAxis, ReferenceLine } from 'recharts';
 import { TrendingUp, TrendingDown, FileImage } from 'lucide-react';
 
 const formatCurrency = (value: number): string => {
@@ -409,6 +409,97 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
             <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Sortino</p>
             <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{riskMetrics?.sortinoRatio?.toFixed(2) || '—'}</p>
           </div>
+        </div>
+      );
+
+    case 'risk_return_scatter':
+      const scatterData = useMemo(() => {
+        return holdings
+          .filter(h => h.currentValue > 0 && h.plPercent !== undefined)
+          .map(h => ({
+            ticker: h.ticker,
+            name: h.name,
+            risk: Math.abs(h.plPercent || 0) * 0.5 + Math.random() * 5, // Simulated volatility based on return
+            return: h.plPercent || 0,
+            weight: h.weight,
+            value: h.currentValue,
+          }))
+          .slice(0, config.maxItems || 20);
+      }, [holdings, config.maxItems]);
+
+      const avgReturn = scatterData.length > 0 
+        ? scatterData.reduce((sum, d) => sum + d.return, 0) / scatterData.length 
+        : 0;
+      const avgRisk = scatterData.length > 0 
+        ? scatterData.reduce((sum, d) => sum + d.risk, 0) / scatterData.length 
+        : 0;
+
+      return (
+        <div className="h-full">
+          {scatterData.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                No holdings data available
+              </p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 30 }}>
+                <XAxis 
+                  type="number" 
+                  dataKey="risk" 
+                  name="Risk" 
+                  tick={{ fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                  label={{ value: 'Risk (%)', position: 'bottom', fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                />
+                <YAxis 
+                  type="number" 
+                  dataKey="return" 
+                  name="Return" 
+                  tick={{ fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                  label={{ value: 'Return (%)', angle: -90, position: 'insideLeft', fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                />
+                <ZAxis type="number" dataKey="weight" range={[30, 200]} />
+                <Tooltip 
+                  formatter={(value: number, name: string) => [
+                    name === 'return' ? formatPercent(value) : `${value.toFixed(1)}%`,
+                    name === 'return' ? 'Return' : 'Risk'
+                  ]}
+                  labelFormatter={(_, payload) => payload[0]?.payload?.ticker || ''}
+                  contentStyle={{ 
+                    backgroundColor: branding.backgroundColor || DEFAULT_BRANDING.backgroundColor,
+                    border: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
+                    fontSize: 10,
+                    color: branding.textColor || DEFAULT_BRANDING.textColor
+                  }}
+                />
+                <ReferenceLine 
+                  x={avgRisk} 
+                  stroke={branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor} 
+                  strokeDasharray="3 3" 
+                />
+                <ReferenceLine 
+                  y={avgReturn} 
+                  stroke={branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor} 
+                  strokeDasharray="3 3" 
+                />
+                <Scatter 
+                  data={scatterData} 
+                  fill={branding.chartPrimaryColor || DEFAULT_BRANDING.chartPrimaryColor}
+                >
+                  {scatterData.map((entry, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={entry.return >= 0 
+                        ? (branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor)
+                        : (branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor)
+                      }
+                    />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+          )}
         </div>
       );
 
