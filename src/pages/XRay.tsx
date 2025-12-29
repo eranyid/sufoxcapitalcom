@@ -5,7 +5,7 @@ import { Scan, BarChart3, Target, Layers, TrendingUp } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
-
+import { RiskReturnScatter } from '@/components/dashboard/RiskReturnScatter';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RingSegment } from '@/lib/portfolioEngine';
 
@@ -194,6 +194,7 @@ export default function XRay() {
     assetClassRings,
     geographyRings,
     positionRings,
+    riskReturnData
   } = computedData;
 
   const hasData = transactions.length > 0 && valuations.length > 0;
@@ -309,8 +310,12 @@ export default function XRay() {
             </div>
           </div>
 
-          {/* Geographic Heat Map */}
-          <GeographicHeatMap data={geographyAllocation} />
+          {/* Risk / Return Scatter Plot */}
+          <RiskReturnScatter 
+            holdings={riskReturnData.holdings}
+            portfolio={riskReturnData.portfolio}
+            excludedCount={riskReturnData.excludedCount}
+          />
 
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
@@ -356,6 +361,9 @@ export default function XRay() {
 
           {/* Correlation Matrix */}
           <CorrelationMatrix transactions={transactions} valuations={valuations} />
+
+          {/* Geographic Heat Map */}
+          <GeographicHeatMap data={geographyAllocation} />
         </>
       ) : (
         <div className="bloomberg-panel p-8 text-center">
