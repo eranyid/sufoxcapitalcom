@@ -11,7 +11,9 @@ import {
   Eye,
   EyeOff,
   ChevronRight,
-  FileText
+  FileText,
+  Maximize2,
+  X
 } from 'lucide-react';
 import { useReport } from '@/hooks/useReports';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -37,6 +39,12 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -60,6 +68,7 @@ export default function ReportBuilder() {
   const [branding, setBranding] = useState<ReportBranding>({});
   const [pageSize, setPageSize] = useState<'A4' | 'Letter'>('A4');
   const [brandingOpen, setBrandingOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -207,6 +216,15 @@ export default function ReportBuilder() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 h-8"
+              onClick={() => setPreviewOpen(true)}
+            >
+              <Maximize2 size={14} />
+              <span className="hidden sm:inline">Preview</span>
+            </Button>
             <Select value={pageSize} onValueChange={(v) => { setPageSize(v as 'A4' | 'Letter'); setHasChanges(true); }}>
               <SelectTrigger className="w-[90px] h-8 text-xs">
                 <SelectValue />
@@ -434,6 +452,66 @@ export default function ReportBuilder() {
           </ScrollArea>
         </div>
       </div>
+
+      {/* Full Preview Modal */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
+          <DialogHeader className="flex-shrink-0 px-6 py-4 border-b border-border flex flex-row items-center justify-between">
+            <DialogTitle className="text-lg font-semibold">
+              {branding.headerTitle || 'Report Preview'}
+            </DialogTitle>
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="gap-1.5"
+              onClick={handleExportPDF}
+              disabled={isExporting}
+            >
+              <Download size={14} />
+              {isExporting ? 'Exporting...' : 'Export PDF'}
+            </Button>
+          </DialogHeader>
+          <ScrollArea className="flex-1 px-6 py-4">
+            <div 
+              className="mx-auto bg-card rounded-lg border border-border shadow-lg overflow-hidden"
+              style={{ maxWidth: pageSize === 'A4' ? '210mm' : '8.5in' }}
+            >
+              {/* Report Header */}
+              <div 
+                className="h-1" 
+                style={{ backgroundColor: branding.accentColor || '#FFC107' }}
+              />
+              <div className="p-8 space-y-8">
+                {sections.filter(s => s.enabled).map((section) => (
+                  <div key={section.id} className="space-y-3">
+                    {section.type !== 'logo_header' && (
+                      <h3 
+                        className="text-sm font-bold uppercase tracking-wider"
+                        style={{ color: branding.accentColor || '#FFC107' }}
+                      >
+                        {section.title}
+                      </h3>
+                    )}
+                    <ReportSectionPreview 
+                      section={section}
+                      holdings={holdings}
+                      performanceMetrics={performanceMetrics}
+                      riskMetrics={riskMetrics}
+                      totalValue={totalValue}
+                      branding={branding}
+                    />
+                  </div>
+                ))}
+              </div>
+              {/* Report Footer */}
+              <div className="border-t border-border px-8 py-4 flex items-center justify-between text-xs text-muted-foreground">
+                <span>{branding.footerText || 'Confidential'}</span>
+                {branding.analystName && <span>{branding.analystName}</span>}
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
