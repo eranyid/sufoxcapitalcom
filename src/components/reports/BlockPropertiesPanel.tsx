@@ -14,10 +14,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { X, Upload, Loader2, Wand2, Palette } from 'lucide-react';
+import { X, Upload, Loader2, Wand2, Palette, Pipette } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+
+// Extend Window interface for EyeDropper API
+declare global {
+  interface Window {
+    EyeDropper?: new () => {
+      open: () => Promise<{ sRGBHex: string }>;
+    };
+  }
+}
 
 // Color extraction utilities
 function rgbToHex(r: number, g: number, b: number): string {
@@ -103,7 +112,36 @@ export function BlockPropertiesPanel({
   const [isUploading, setIsUploading] = useState(false);
   const [isExtractingColors, setIsExtractingColors] = useState(false);
   const [extractedColors, setExtractedColors] = useState<string[]>([]);
+  const [pickedColor, setPickedColor] = useState<string | null>(null);
+  const [isEyedropperSupported] = useState(() => typeof window !== 'undefined' && 'EyeDropper' in window);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleEyedropper = useCallback(async () => {
+    if (!window.EyeDropper) {
+      toast.error('Eyedropper is not supported in this browser');
+      return;
+    }
+
+    try {
+      const eyeDropper = new window.EyeDropper();
+      const result = await eyeDropper.open();
+      const color = result.sRGBHex;
+      
+      setPickedColor(color);
+      onUpdateBranding({ 
+        accentColor: color,
+        chartPrimaryColor: color,
+        tableHeaderTextColor: color,
+      });
+      
+      toast.success(`Picked color: ${color}`);
+    } catch (error) {
+      // User cancelled or error occurred
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Eyedropper error:', error);
+      }
+    }
+  }, [onUpdateBranding]);
 
   const handleExtractColors = useCallback(async () => {
     if (!branding.logoUrl) {
@@ -322,6 +360,34 @@ export function BlockPropertiesPanel({
 
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-6">
+            {/* Eyedropper Tool */}
+            {isEyedropperSupported && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pick Color</h4>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-9 text-xs gap-2"
+                    onClick={handleEyedropper}
+                  >
+                    <Pipette size={14} />
+                    Pick from Screen
+                  </Button>
+                  {pickedColor && (
+                    <div 
+                      className="w-9 h-9 rounded-md border border-border flex-shrink-0"
+                      style={{ backgroundColor: pickedColor }}
+                      title={pickedColor}
+                    />
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Click anywhere on the report to pick a color
+                </p>
+              </div>
+            )}
+
             {/* Primary Colors Section */}
             <div className="space-y-3">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Primary Colors</h4>
