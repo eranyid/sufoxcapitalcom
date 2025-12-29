@@ -350,12 +350,13 @@ export default function Transactions() {
 
   return (
     <div className="section-spacing animate-fade-in">
-      <div className="flex items-center justify-between border-b border-border pb-4">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col gap-4 border-b border-border pb-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Transactions</h1>
-          <p className="text-muted-foreground text-sm mt-1 font-mono">Record buy and sell transactions</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-primary uppercase tracking-wide">Transactions</h1>
+          <p className="text-muted-foreground text-xs md:text-sm mt-1 font-mono">Record buy and sell transactions</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <PreTradeCheck />
           <input
             type="file"
@@ -364,11 +365,13 @@ export default function Transactions() {
             accept=".csv"
             className="hidden"
           />
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="h-4 w-4 mr-2" /> Import CSV
+          <Button variant="outline" size="sm" className="text-xs md:text-sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Import CSV</span>
           </Button>
-          <Button variant="outline" onClick={handleExport} disabled={transactions.length === 0}>
-            <Download className="h-4 w-4 mr-2" /> Export CSV
+          <Button variant="outline" size="sm" className="text-xs md:text-sm" onClick={handleExport} disabled={transactions.length === 0}>
+            <Download className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Export CSV</span>
           </Button>
           <Dialog open={isOpen} onOpenChange={(open) => {
             setIsOpen(open);
@@ -379,11 +382,13 @@ export default function Transactions() {
             }
           }}>
             <DialogTrigger asChild>
-              <Button className="gradient-gold text-primary-foreground">
-                <Plus className="h-4 w-4 mr-2" /> Add Transaction
+              <Button size="sm" className="gradient-gold text-primary-foreground text-xs md:text-sm">
+                <Plus className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Add Transaction</span>
+                <span className="md:hidden">Add</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4">
               <DialogHeader>
                 <DialogTitle>Add New Transaction</DialogTitle>
               </DialogHeader>
@@ -423,13 +428,9 @@ export default function Transactions() {
                           <SelectContent>
                             {holdings.map(h => (
                               <SelectItem key={h.ticker} value={h.ticker}>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 text-sm">
                                   <span className="font-mono font-bold text-primary">{h.ticker}</span>
-                                  <span className="text-muted-foreground">•</span>
-                                  <span className="truncate max-w-[120px]">{h.assetName}</span>
-                                  <span className="text-muted-foreground">•</span>
                                   <span className="text-success font-mono">{h.quantity.toLocaleString()}</span>
-                                  <span className="text-xs text-muted-foreground uppercase">{h.assetType}</span>
                                 </div>
                               </SelectItem>
                             ))}
@@ -440,32 +441,20 @@ export default function Transactions() {
 
                     {/* Selected Holding Details Card */}
                     {selectedHolding && (
-                      <div className="p-4 rounded-lg border border-primary/30 bg-primary/5">
-                        <div className="flex items-center gap-2 mb-3">
+                      <div className="p-3 rounded-lg border border-primary/30 bg-primary/5">
+                        <div className="flex items-center gap-2 mb-2">
                           <Package className="h-4 w-4 text-primary" />
                           <span className="text-sm font-medium text-primary">Selected Position</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
                           <div>
                             <span className="text-muted-foreground">Ticker:</span>
-                            <span className="ml-2 font-mono font-bold text-primary">{selectedHolding.ticker}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Type:</span>
-                            <span className="ml-2 uppercase">{selectedHolding.assetType.replace(/_/g, ' ')}</span>
+                            <span className="ml-1 font-mono font-bold text-primary">{selectedHolding.ticker}</span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Available:</span>
-                            <span className="ml-2 font-mono text-success font-bold">{selectedHolding.quantity.toLocaleString()}</span>
+                            <span className="ml-1 font-mono text-success font-bold">{selectedHolding.quantity.toLocaleString()}</span>
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">Currency:</span>
-                            <span className="ml-2">{selectedHolding.currency}</span>
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm">
-                          <span className="text-muted-foreground">Asset:</span>
-                          <span className="ml-2">{selectedHolding.assetName}</span>
                         </div>
                       </div>
                     )}
@@ -474,7 +463,7 @@ export default function Transactions() {
 
                 {/* BUY Mode: Manual Entry */}
                 {!isSellMode && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Asset Name</Label>
                       <Input 
@@ -513,7 +502,7 @@ export default function Transactions() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Date</Label>
                         <Input 
@@ -548,7 +537,7 @@ export default function Transactions() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>
                           Quantity
@@ -596,7 +585,7 @@ export default function Transactions() {
                     </div>
 
                     {!isSellMode && (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Geography</Label>
                           <Select value={form.geography} onValueChange={(v: Geography) => setForm({ ...form, geography: v })}>
@@ -609,12 +598,12 @@ export default function Transactions() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Inception Year (IPO/Launch)</Label>
+                          <Label>Inception Year</Label>
                           <Input 
                             type="number"
                             value={form.inceptionYear}
                             onChange={(e) => setForm({ ...form, inceptionYear: e.target.value })}
-                            placeholder="e.g. 2009 for BTC"
+                            placeholder="e.g. 2009"
                             min="1900"
                             max="2025"
                           />
@@ -644,89 +633,95 @@ export default function Transactions() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - Mobile Optimized */}
       {transactions.length > 0 && (
         <Card className="glass-card">
           <CardContent className="pt-4">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex-1 min-w-[200px]">
+            <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:gap-4">
+              <div className="w-full md:flex-1 md:min-w-[200px]">
                 <Label className="text-xs text-muted-foreground mb-1 block">Search</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
-                    placeholder="Search ticker or asset name..."
+                    placeholder="Search ticker or asset..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 text-sm"
                   />
                 </div>
               </div>
-              <div className="w-[140px]">
-                <Label className="text-xs text-muted-foreground mb-1 block">From Date</Label>
-                <Input 
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                />
+              <div className="grid grid-cols-2 gap-2 md:flex md:gap-4">
+                <div className="md:w-[140px]">
+                  <Label className="text-xs text-muted-foreground mb-1 block">From</Label>
+                  <Input 
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+                <div className="md:w-[140px]">
+                  <Label className="text-xs text-muted-foreground mb-1 block">To</Label>
+                  <Input 
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
               </div>
-              <div className="w-[140px]">
-                <Label className="text-xs text-muted-foreground mb-1 block">To Date</Label>
-                <Input 
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                />
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 md:w-[120px]">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Type</Label>
+                  <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as 'all' | TransactionType)}>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="buy">
+                        <span className="text-success">BUY</span>
+                      </SelectItem>
+                      <SelectItem value="sell">
+                        <span className="text-destructive">SELL</span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 shrink-0">
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              <div className="w-[120px]">
-                <Label className="text-xs text-muted-foreground mb-1 block">Type</Label>
-                <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as 'all' | TransactionType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="buy">
-                      <span className="text-success">BUY</span>
-                    </SelectItem>
-                    <SelectItem value="sell">
-                      <span className="text-destructive">SELL</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
-                  <X className="h-4 w-4 mr-1" />
-                  Clear
-                </Button>
-              )}
             </div>
             {hasActiveFilters && (
-              <p className="text-sm text-muted-foreground mt-3">
-                Showing {sortedTransactions.length} of {transactions.length} transactions
+              <p className="text-xs text-muted-foreground mt-3">
+                Showing {sortedTransactions.length} of {transactions.length}
               </p>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Transactions Table */}
+      {/* Transactions - Desktop Table / Mobile Cards */}
       <Card className="glass-card">
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-medium">Transaction History</CardTitle>
+          <CardTitle className="text-base md:text-lg font-medium">Transaction History</CardTitle>
           {selectedIds.size > 0 && (
             <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete {selectedIds.size} selected
+                <Button variant="destructive" size="sm" className="text-xs">
+                  <Trash2 className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Delete {selectedIds.size} selected</span>
+                  <span className="md:hidden">{selectedIds.size}</span>
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="mx-4">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Multiple Transactions</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete {selectedIds.size} transactions? This action cannot be undone.
+                    Are you sure you want to delete {selectedIds.size} transactions?
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -746,108 +741,196 @@ export default function Transactions() {
           {transactions.length === 0 ? (
             <div className="py-12 text-center">
               <ArrowRightLeft className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium mb-2">No Transactions Yet</h3>
-              <p className="text-muted-foreground">Add your first transaction to get started.</p>
+              <h3 className="text-lg md:text-xl font-medium mb-2">No Transactions Yet</h3>
+              <p className="text-muted-foreground text-sm">Add your first transaction to get started.</p>
             </div>
           ) : sortedTransactions.length === 0 ? (
             <div className="py-12 text-center">
               <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium mb-2">No Matching Transactions</h3>
-              <p className="text-muted-foreground">Try adjusting your filters.</p>
+              <h3 className="text-lg md:text-xl font-medium mb-2">No Matching Transactions</h3>
+              <p className="text-muted-foreground text-sm">Try adjusting your filters.</p>
               <Button variant="outline" onClick={clearFilters} className="mt-4">
                 Clear Filters
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox 
-                        checked={sortedTransactions.length > 0 && sortedTransactions.every(tx => selectedIds.has(tx.id))}
-                        onCheckedChange={toggleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Ticker</TableHead>
-                    <TableHead>Asset Name</TableHead>
-                    <TableHead>Asset Type</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-right">Fees</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedTransactions.map((tx) => (
-                    <TableRow key={tx.id} className={selectedIds.has(tx.id) ? 'bg-muted/30' : ''}>
-                      <TableCell>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox 
+                          checked={sortedTransactions.length > 0 && sortedTransactions.every(tx => selectedIds.has(tx.id))}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Ticker</TableHead>
+                      <TableHead>Asset Name</TableHead>
+                      <TableHead>Asset Type</TableHead>
+                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Fees</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedTransactions.map((tx) => (
+                      <TableRow key={tx.id} className={selectedIds.has(tx.id) ? 'bg-muted/30' : ''}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedIds.has(tx.id)}
+                            onCheckedChange={() => toggleSelect(tx.id)}
+                          />
+                        </TableCell>
+                        <TableCell>{tx.date}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            tx.transactionType === 'buy' 
+                              ? 'bg-success/20 text-success' 
+                              : 'bg-destructive/20 text-destructive'
+                          }`}>
+                            {tx.transactionType.toUpperCase()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-medium text-primary">{tx.ticker}</TableCell>
+                        <TableCell>{tx.assetName}</TableCell>
+                        <TableCell className="text-muted-foreground">{tx.assetType}</TableCell>
+                        <TableCell className="text-right">{tx.quantity.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(tx.pricePerUnit)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(tx.fees)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(tx.quantity * tx.pricePerUnit + tx.fees)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditOpen(tx)}>
+                              <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Delete {tx.transactionType.toUpperCase()} for {tx.ticker}?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={async () => {
+                                      await deleteTransaction(tx.id);
+                                      toast.success('Transaction deleted');
+                                    }}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-border">
+                  <Checkbox 
+                    checked={sortedTransactions.length > 0 && sortedTransactions.every(tx => selectedIds.has(tx.id))}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  <span className="text-xs text-muted-foreground">Select All</span>
+                </div>
+                {sortedTransactions.map((tx) => (
+                  <div 
+                    key={tx.id} 
+                    className={`p-3 rounded-lg border border-border ${selectedIds.has(tx.id) ? 'bg-muted/30 border-primary/50' : 'bg-card'}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
                         <Checkbox 
                           checked={selectedIds.has(tx.id)}
                           onCheckedChange={() => toggleSelect(tx.id)}
                         />
-                      </TableCell>
-                      <TableCell>{tx.date}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          tx.transactionType === 'buy' 
-                            ? 'bg-success/20 text-success' 
-                            : 'bg-destructive/20 text-destructive'
-                        }`}>
-                          {tx.transactionType.toUpperCase()}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-medium text-primary">{tx.ticker}</TableCell>
-                      <TableCell>{tx.assetName}</TableCell>
-                      <TableCell className="text-muted-foreground">{tx.assetType}</TableCell>
-                      <TableCell className="text-right">{tx.quantity.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tx.pricePerUnit)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(tx.fees)}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(tx.quantity * tx.pricePerUnit + tx.fees)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleEditOpen(tx)}>
-                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this {tx.transactionType.toUpperCase()} transaction for {tx.ticker}? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  onClick={async () => {
-                                    await deleteTransaction(tx.id);
-                                    toast.success('Transaction deleted');
-                                  }}
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-primary">{tx.ticker}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                              tx.transactionType === 'buy' 
+                                ? 'bg-success/20 text-success' 
+                                : 'bg-destructive/20 text-destructive'
+                            }`}>
+                              {tx.transactionType.toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{tx.assetName}</p>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditOpen(tx)}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="mx-4">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Delete {tx.transactionType.toUpperCase()} for {tx.ticker}?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={async () => {
+                                  await deleteTransaction(tx.id);
+                                  toast.success('Transaction deleted');
+                                }}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Date</span>
+                        <p className="font-mono">{tx.date}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Qty</span>
+                        <p className="font-mono">{tx.quantity.toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-muted-foreground">Total</span>
+                        <p className="font-mono font-medium">{formatCurrency(tx.quantity * tx.pricePerUnit + tx.fees)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -128,12 +128,13 @@ export default function Valuations() {
 
   return (
     <div className="section-spacing animate-fade-in">
-      <div className="flex items-center justify-between border-b border-border pb-4">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col gap-4 border-b border-border pb-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Monthly Valuations</h1>
-          <p className="text-muted-foreground text-sm mt-1 font-mono">Record monthly NAV/prices for each asset</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-primary uppercase tracking-wide">Monthly Valuations</h1>
+          <p className="text-muted-foreground text-xs md:text-sm mt-1 font-mono">Record monthly NAV/prices</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -141,19 +142,23 @@ export default function Valuations() {
             accept=".csv"
             className="hidden"
           />
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="h-4 w-4 mr-2" /> Import CSV
+          <Button variant="outline" size="sm" className="text-xs md:text-sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Import CSV</span>
           </Button>
-          <Button variant="outline" onClick={handleExport} disabled={valuations.length === 0}>
-            <Download className="h-4 w-4 mr-2" /> Export CSV
+          <Button variant="outline" size="sm" className="text-xs md:text-sm" onClick={handleExport} disabled={valuations.length === 0}>
+            <Download className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Export CSV</span>
           </Button>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button className="gradient-gold text-primary-foreground" disabled={uniqueAssets.length === 0}>
-                <Plus className="h-4 w-4 mr-2" /> Add Valuation
+              <Button size="sm" className="gradient-gold text-primary-foreground text-xs md:text-sm" disabled={uniqueAssets.length === 0}>
+                <Plus className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Add Valuation</span>
+                <span className="md:hidden">Add</span>
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="mx-4">
               <DialogHeader>
                 <DialogTitle>Add Monthly Valuation</DialogTitle>
               </DialogHeader>
@@ -182,7 +187,7 @@ export default function Valuations() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Price per Unit / NAV</Label>
+                    <Label>Price/NAV</Label>
                     <Input 
                       type="number"
                       step="0.01"
@@ -192,7 +197,7 @@ export default function Valuations() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>FX Rate (optional)</Label>
+                    <Label>FX Rate</Label>
                     <Input 
                       type="number"
                       step="0.0001"
@@ -211,9 +216,9 @@ export default function Valuations() {
         </div>
       </div>
 
-      {/* Quick Add Panel */}
+      {/* Quick Add Panel - Hidden on Mobile */}
       {uniqueAssets.length > 0 && (
-        <Card size="sm">
+        <Card size="sm" className="hidden md:block">
           <CardHeader className="pb-2">
             <CardTitle>Quick Add for Current Month</CardTitle>
           </CardHeader>
@@ -226,16 +231,16 @@ export default function Valuations() {
       {/* Valuations by Month */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>Valuation History</CardTitle>
+          <CardTitle className="text-base md:text-lg">Valuation History</CardTitle>
         </CardHeader>
         <CardContent>
           {valuations.length === 0 ? (
             <div className="py-12 text-center">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium mb-2">No Valuations Yet</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-lg md:text-xl font-medium mb-2">No Valuations Yet</h3>
+              <p className="text-muted-foreground text-sm">
                 {uniqueAssets.length === 0 
-                  ? 'Add transactions first, then record monthly valuations.' 
+                  ? 'Add transactions first.' 
                   : 'Add your first monthly valuation.'}
               </p>
             </div>
@@ -244,73 +249,128 @@ export default function Valuations() {
               {groupedByMonth.map(([month, vals]) => (
                 <div key={month} className="border border-border rounded-lg overflow-hidden">
                   <button
-                    className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
+                    className="w-full px-3 md:px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
                     onClick={() => setExpandedMonth(expandedMonth === month ? null : month)}
                   >
-                    <span className="font-medium">{month}</span>
-                    <div className="flex items-center gap-4">
-                      <span className="text-muted-foreground">{vals.length} assets</span>
-                      {expandedMonth === month ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    <span className="font-medium text-sm md:text-base">{month}</span>
+                    <div className="flex items-center gap-2 md:gap-4">
+                      <span className="text-muted-foreground text-xs md:text-sm">{vals.length} assets</span>
+                      {expandedMonth === month ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </div>
                   </button>
                   {expandedMonth === month && (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Ticker</TableHead>
-                          <TableHead>Asset Name</TableHead>
-                          <TableHead className="text-right">Price/NAV</TableHead>
-                          <TableHead className="text-right">FX Rate</TableHead>
-                          <TableHead></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {vals.map((v) => (
-                          <TableRow key={v.id}>
-                            <TableCell className="font-medium text-primary">{v.ticker}</TableCell>
-                            <TableCell>{v.assetName}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(v.pricePerUnit)}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">
-                              {v.fxRate?.toFixed(4) || '1.0000'}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="sm" onClick={() => handleEditOpen(v)}>
-                                  <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <Trash2 className="h-4 w-4 text-destructive" />
+                    <>
+                      {/* Desktop Table */}
+                      <div className="hidden md:block">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Ticker</TableHead>
+                              <TableHead>Asset Name</TableHead>
+                              <TableHead className="text-right">Price/NAV</TableHead>
+                              <TableHead className="text-right">FX Rate</TableHead>
+                              <TableHead></TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {vals.map((v) => (
+                              <TableRow key={v.id}>
+                                <TableCell className="font-medium text-primary">{v.ticker}</TableCell>
+                                <TableCell>{v.assetName}</TableCell>
+                                <TableCell className="text-right">{formatCurrency(v.pricePerUnit)}</TableCell>
+                                <TableCell className="text-right text-muted-foreground">
+                                  {v.fxRate?.toFixed(4) || '1.0000'}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="sm" onClick={() => handleEditOpen(v)}>
+                                      <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
                                     </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Valuation</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete the {v.month} valuation for {v.ticker}? This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                        onClick={async () => {
-                                          await deleteValuation(v.id);
-                                          toast.success('Valuation deleted');
-                                        }}
-                                      >
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="sm">
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Valuation</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Delete {v.month} valuation for {v.ticker}?
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                            onClick={async () => {
+                                              await deleteValuation(v.id);
+                                              toast.success('Valuation deleted');
+                                            }}
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      {/* Mobile Cards */}
+                      <div className="md:hidden divide-y divide-border">
+                        {vals.map((v) => (
+                          <div key={v.id} className="p-3 flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-primary text-sm">{v.ticker}</span>
                               </div>
-                            </TableCell>
-                          </TableRow>
+                              <p className="text-xs text-muted-foreground mt-0.5">{v.assetName}</p>
+                              <div className="flex items-center gap-3 mt-1 text-xs">
+                                <span className="font-mono">{formatCurrency(v.pricePerUnit)}</span>
+                                <span className="text-muted-foreground">FX: {v.fxRate?.toFixed(4) || '1.0000'}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditOpen(v)}>
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="mx-4">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Valuation</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Delete {v.month} valuation for {v.ticker}?
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={async () => {
+                                        await deleteValuation(v.id);
+                                        toast.success('Valuation deleted');
+                                      }}
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </div>
                         ))}
-                      </TableBody>
-                    </Table>
+                      </div>
+                    </>
                   )}
                 </div>
               ))}
