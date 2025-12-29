@@ -353,17 +353,16 @@ export default function XRay() {
 
           {/* Distribution Sections - Using centralized allocation data */}
           <DistributionSection title="Asset Class Distribution" data={assetTypeAllocation} />
-          <DistributionSection title="Geographic Distribution" data={geographyAllocation} />
+          
+          {/* Geographic Heat Map - replaces donut chart for geographic distribution */}
+          <GeographicHeatMap data={geographyAllocation} />
+          
           <DistributionSection title="Currency Distribution" data={currencyAllocation} />
 
           {/* Top Holdings - Using centralized holdings data */}
-          <TopHoldingsSection holdings={holdings} />
 
           {/* Correlation Matrix */}
           <CorrelationMatrix transactions={transactions} valuations={valuations} />
-
-          {/* Geographic Heat Map */}
-          <GeographicHeatMap data={geographyAllocation} />
         </>
       ) : (
         <div className="bloomberg-panel p-8 text-center">
