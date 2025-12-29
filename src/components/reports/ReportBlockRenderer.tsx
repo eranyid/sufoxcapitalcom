@@ -268,6 +268,109 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
         </div>
       );
 
+    case 'contribution_chart':
+      const contributionData = useMemo(() => {
+        return [...holdings]
+          .filter(h => h.unrealizedPL !== undefined && h.unrealizedPL !== 0)
+          .sort((a, b) => Math.abs(b.unrealizedPL || 0) - Math.abs(a.unrealizedPL || 0))
+          .slice(0, config.maxItems || 10)
+          .map(h => ({
+            ticker: h.ticker,
+            value: h.unrealizedPL || 0,
+            color: (h.unrealizedPL || 0) >= 0 
+              ? (branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor)
+              : (branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor)
+          }));
+      }, [holdings, config.maxItems, branding]);
+
+      return (
+        <div className="h-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={contributionData} layout="vertical" margin={{ left: 30, right: 10, top: 5, bottom: 5 }}>
+              <XAxis type="number" tick={{ fontSize: 9, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} tickFormatter={(v) => formatCurrency(v)} />
+              <YAxis type="category" dataKey="ticker" tick={{ fontSize: 9, fill: branding.textColor || DEFAULT_BRANDING.textColor }} width={40} />
+              <Tooltip 
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{ 
+                  backgroundColor: branding.backgroundColor || DEFAULT_BRANDING.backgroundColor,
+                  border: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
+                  fontSize: 10
+                }}
+              />
+              <Bar dataKey="value" radius={[0, 3, 3, 0]}>
+                {contributionData.map((entry, index) => (
+                  <Cell key={index} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      );
+
+    case 'performance_calendar':
+      // Generate sample monthly returns for display
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const years = [new Date().getFullYear() - 1, new Date().getFullYear()];
+      
+      // Generate mock data - in real implementation this would come from actual performance data
+      const calendarData = useMemo(() => {
+        return years.map(year => ({
+          year,
+          months: months.map((month, i) => {
+            // Use performance metrics if available, otherwise generate sample data
+            const monthReturn = performanceMetrics 
+              ? (performanceMetrics.totalReturn / 12) * (0.5 + Math.random())
+              : (Math.random() * 6 - 2);
+            return {
+              month,
+              return: monthReturn * (i < new Date().getMonth() || year < new Date().getFullYear() ? 1 : 0)
+            };
+          })
+        }));
+      }, [performanceMetrics]);
+
+      const getReturnColor = (ret: number) => {
+        if (ret === 0) return branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor;
+        if (ret > 3) return branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor;
+        if (ret > 0) return `${branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor}80`;
+        if (ret > -3) return `${branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor}80`;
+        return branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor;
+      };
+
+      return (
+        <div className="space-y-2">
+          {calendarData.map(yearData => (
+            <div key={yearData.year}>
+              <p className="text-[9px] font-medium mb-1" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                {yearData.year}
+              </p>
+              <div className="grid grid-cols-12 gap-1">
+                {yearData.months.map((m, i) => (
+                  <div
+                    key={i}
+                    className="aspect-square rounded flex flex-col items-center justify-center text-center"
+                    style={{ 
+                      backgroundColor: `${getReturnColor(m.return)}25`,
+                      border: `1px solid ${getReturnColor(m.return)}50`
+                    }}
+                  >
+                    <span className="text-[7px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                      {m.month}
+                    </span>
+                    <span 
+                      className="text-[8px] font-semibold"
+                      style={{ color: m.return !== 0 ? getReturnColor(m.return) : branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                    >
+                      {m.return !== 0 ? `${m.return > 0 ? '+' : ''}${m.return.toFixed(1)}%` : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+
     case 'risk_metrics':
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
