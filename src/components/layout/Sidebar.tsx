@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, ChevronLeft, ChevronRight, Scan, LogOut, Activity, FileCheck, Users, Search, Building2, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, ChevronLeft, ChevronRight, Scan, LogOut, Activity, FileCheck, Users, FlaskConical, Building2, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,7 +27,7 @@ const navItems = [{
   label: 'X-RAY'
 }, {
   path: '/research',
-  icon: Search,
+  icon: FlaskConical,
   label: 'RESEARCH'
 }, {
   path: '/transactions',
