@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -30,8 +30,6 @@ export function ConcentricRingsChart({
   selectedId,
   className
 }: ConcentricRingsChartProps) {
-  const [hoveredSegment, setHoveredSegment] = useState<{ segment: RingSegment; type: string } | null>(null);
-
   const size = 500;
   const center = size / 2;
   const coreRadius = 60;
@@ -69,19 +67,31 @@ export function ConcentricRingsChart({
   const calculateSegments = (items: RingSegment[], innerR: number, outerR: number) => {
     const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
     let currentAngle = 0;
+    const midRadius = (innerR + outerR) / 2;
 
     return items.map(item => {
       const angleSpan = (item.weight / totalWeight) * 360;
       const startAngle = currentAngle;
       const endAngle = currentAngle + angleSpan;
+      const midAngle = (startAngle + endAngle) / 2;
+      const midAngleRad = (midAngle - 90) * (Math.PI / 180);
       currentAngle = endAngle;
 
       return {
         ...item,
         path: createArcPath(startAngle, endAngle, innerR, outerR),
-        midAngle: (startAngle + endAngle) / 2
+        midAngle,
+        labelX: center + midRadius * Math.cos(midAngleRad),
+        labelY: center + midRadius * Math.sin(midAngleRad),
+        angleSpan
       };
     });
+  };
+
+  const getShortLabel = (segment: RingSegment, maxChars: number = 6) => {
+    const label = segment.ticker || segment.name;
+    if (label.length <= maxChars) return label;
+    return label.substring(0, maxChars);
   };
 
   const innerSegments = useMemo(
@@ -152,8 +162,6 @@ export function ConcentricRingsChart({
                   selectedId === segment.id ? "opacity-100" : "opacity-70 hover:opacity-100"
                 )}
                 onClick={() => onSegmentClick(segment, 'position')}
-                onMouseEnter={() => setHoveredSegment({ segment, type: 'position' })}
-                onMouseLeave={() => setHoveredSegment(null)}
                 filter={selectedId === segment.id ? "url(#glow)" : undefined}
               />
             </TooltipTrigger>
@@ -170,6 +178,22 @@ export function ConcentricRingsChart({
             </TooltipContent>
           </Tooltip>
         ))}
+        {/* Position labels */}
+        {outerSegments.map((segment) => (
+          segment.angleSpan > 12 && (
+            <text
+              key={`label-${segment.id}`}
+              x={segment.labelX}
+              y={segment.labelY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="fill-white text-[7px] font-mono font-bold pointer-events-none select-none"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
+            >
+              {getShortLabel(segment, 5)}
+            </text>
+          )
+        ))}
 
         {/* Middle ring - Sectors */}
         {middleSegments.map((segment) => (
@@ -185,8 +209,6 @@ export function ConcentricRingsChart({
                   selectedId === segment.id ? "opacity-100" : "opacity-80 hover:opacity-100"
                 )}
                 onClick={() => onSegmentClick(segment, 'sector')}
-                onMouseEnter={() => setHoveredSegment({ segment, type: 'sector' })}
-                onMouseLeave={() => setHoveredSegment(null)}
                 filter={selectedId === segment.id ? "url(#glow)" : undefined}
               />
             </TooltipTrigger>
@@ -197,6 +219,22 @@ export function ConcentricRingsChart({
               </div>
             </TooltipContent>
           </Tooltip>
+        ))}
+        {/* Sector labels */}
+        {middleSegments.map((segment) => (
+          segment.angleSpan > 18 && (
+            <text
+              key={`label-${segment.id}`}
+              x={segment.labelX}
+              y={segment.labelY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="fill-white text-[8px] font-mono font-bold pointer-events-none select-none"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
+            >
+              {getShortLabel(segment, 6)}
+            </text>
+          )
         ))}
 
         {/* Inner ring - Asset Classes */}
@@ -213,8 +251,6 @@ export function ConcentricRingsChart({
                   selectedId === segment.id ? "opacity-100" : "opacity-90 hover:opacity-100"
                 )}
                 onClick={() => onSegmentClick(segment, 'asset-class')}
-                onMouseEnter={() => setHoveredSegment({ segment, type: 'asset-class' })}
-                onMouseLeave={() => setHoveredSegment(null)}
                 filter={selectedId === segment.id ? "url(#glow)" : undefined}
               />
             </TooltipTrigger>
@@ -225,6 +261,22 @@ export function ConcentricRingsChart({
               </div>
             </TooltipContent>
           </Tooltip>
+        ))}
+        {/* Asset class labels */}
+        {innerSegments.map((segment) => (
+          segment.angleSpan > 25 && (
+            <text
+              key={`label-${segment.id}`}
+              x={segment.labelX}
+              y={segment.labelY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="fill-white text-[9px] font-mono font-bold pointer-events-none select-none"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
+            >
+              {getShortLabel(segment, 8)}
+            </text>
+          )
         ))}
 
         {/* Core circle */}

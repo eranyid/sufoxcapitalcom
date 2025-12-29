@@ -2,7 +2,15 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { DetailsData } from './ArchitectureDetailsPanel';
+
+interface DetailsData {
+  type: 'asset-class' | 'sector' | 'position';
+  name: string;
+  weight: number;
+  value: number;
+  ticker?: string;
+  plPercent?: number;
+}
 
 interface RingSegment {
   id: string;

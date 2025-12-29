@@ -1,9 +1,14 @@
+import { useState, useMemo } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { calculateAllocations, calculatePositions, getLatestValuations } from '@/lib/calculations';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Scan, BarChart3 } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
+import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
+import { MobileArchitectureView } from '@/components/portfolio/MobileArchitectureView';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 const COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD'];
 
 interface DistributionSectionProps {
@@ -180,14 +185,134 @@ function TopHoldingsSection({ transactions, valuations }: { transactions: any[];
   );
 }
 
+interface RingSegment {
+  id: string;
+  name: string;
+  value: number;
+  weight: number;
+  color: string;
+  ticker?: string;
+  plPercent?: number;
+}
+
 export default function XRay() {
-  const { transactions, valuations } = usePortfolio();
+  const { transactions, valuations, cashBalances } = usePortfolio();
+  const isMobile = useIsMobile();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const assetTypeAllocation = calculateAllocations(transactions, valuations, 'assetType');
   const geographyAllocation = calculateAllocations(transactions, valuations, 'geography');
   const currencyAllocation = calculateAllocations(transactions, valuations, 'currency');
 
   const hasData = transactions.length > 0 && valuations.length > 0;
+
+  // Calculate ring data for concentric chart
+  const { assetClasses, sectors, positions } = useMemo(() => {
+    if (!hasData) {
+      return { assetClasses: [], sectors: [], positions: [] };
+    }
+
+    const positionsData = calculatePositions(transactions);
+    const latestVals = getLatestValuations(valuations);
+    
+    // Calculate total portfolio value including cash
+    let totalPortfolioValue = 0;
+    const holdingsData: RingSegment[] = [];
+    
+    for (const [ticker, pos] of Object.entries(positionsData)) {
+      if (pos.quantity <= 0) continue;
+      const val = latestVals[ticker];
+      if (!val) continue;
+      
+      const tx = transactions.find(t => t.ticker === ticker);
+      if (!tx) continue;
+      
+      const currentValue = pos.quantity * val.pricePerUnit * (val.fxRate || 1);
+      const costBasis = pos.totalCost;
+      const plPercent = costBasis > 0 ? ((currentValue - costBasis) / costBasis) * 100 : 0;
+      
+      totalPortfolioValue += currentValue;
+      holdingsData.push({
+        id: ticker,
+        name: tx.assetName,
+        ticker: ticker,
+        value: currentValue,
+        weight: 0,
+        color: '',
+        plPercent
+      });
+    }
+
+    // Add cash to total
+    const cashTotal = (cashBalances?.USD || 0) + (cashBalances?.EUR || 0) + (cashBalances?.ILS || 0);
+    totalPortfolioValue += cashTotal;
+
+    // Calculate weights and assign colors
+    const positionColors = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98', '#FFA07A', '#B0C4DE', '#FFDAB9', '#E6E6FA', '#F5DEB3', '#D8BFD8', '#FFFACD', '#E0FFFF'];
+    
+    holdingsData.forEach((h, idx) => {
+      h.weight = (h.value / totalPortfolioValue) * 100;
+      h.color = positionColors[idx % positionColors.length];
+    });
+
+    // Sort by weight
+    holdingsData.sort((a, b) => b.weight - a.weight);
+
+    // Group by asset type for asset classes ring
+    const assetTypeMap = new Map<string, { value: number; items: typeof holdingsData }>();
+    for (const holding of holdingsData) {
+      const tx = transactions.find(t => t.ticker === holding.ticker);
+      const assetType = tx?.assetType || 'Other';
+      if (!assetTypeMap.has(assetType)) {
+        assetTypeMap.set(assetType, { value: 0, items: [] });
+      }
+      const group = assetTypeMap.get(assetType)!;
+      group.value += holding.value;
+      group.items.push(holding);
+    }
+
+    // Add cash as asset class
+    if (cashTotal > 0) {
+      assetTypeMap.set('Cash', { value: cashTotal, items: [] });
+    }
+
+    const assetClassColors = ['#FF8C00', '#4A90D9', '#50C878', '#9370DB', '#FFD700', '#FF6B6B'];
+    const assetClassesData: RingSegment[] = Array.from(assetTypeMap.entries()).map(([name, data], idx) => ({
+      id: `asset-${name}`,
+      name,
+      value: data.value,
+      weight: (data.value / totalPortfolioValue) * 100,
+      color: assetClassColors[idx % assetClassColors.length]
+    }));
+
+    // Group by geography for sectors ring
+    const geoMap = new Map<string, number>();
+    for (const holding of holdingsData) {
+      const tx = transactions.find(t => t.ticker === holding.ticker);
+      const geo = tx?.geography || 'Other';
+      geoMap.set(geo, (geoMap.get(geo) || 0) + holding.value);
+    }
+
+    const sectorColors = ['#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98'];
+    const sectorsData: RingSegment[] = Array.from(geoMap.entries()).map(([name, value], idx) => ({
+      id: `sector-${name}`,
+      name,
+      value,
+      weight: (value / totalPortfolioValue) * 100,
+      color: sectorColors[idx % sectorColors.length]
+    }));
+
+    return {
+      assetClasses: assetClassesData,
+      sectors: sectorsData,
+      positions: holdingsData
+    };
+  }, [transactions, valuations, cashBalances, hasData]);
+
+  const handleSegmentClick = (segment: RingSegment | { type: string; name: string; weight: number; value: number; ticker?: string; plPercent?: number }) => {
+    const id = 'id' in segment ? segment.id : segment.name;
+    setSelectedId(prev => prev === id ? null : id);
+  };
 
   return (
     <div className="section-spacing animate-fade-in">
@@ -210,6 +335,34 @@ export default function XRay() {
 
       {hasData ? (
         <div className="section-spacing">
+          {/* Portfolio Architecture Chart - First */}
+          <div className="bloomberg-panel">
+            <div className="bloomberg-header">
+              <span className="text-primary">■</span> Portfolio Architecture
+            </div>
+            <div className="p-4">
+              {isMobile ? (
+                <MobileArchitectureView
+                  assetClasses={assetClasses}
+                  sectors={sectors}
+                  positions={positions}
+                  onItemClick={handleSegmentClick}
+                />
+              ) : (
+                <div className="flex justify-center py-4">
+                  <ConcentricRingsChart
+                    assetClasses={assetClasses}
+                    sectors={sectors}
+                    positions={positions}
+                    onSegmentClick={handleSegmentClick}
+                    selectedId={selectedId}
+                    className="h-[400px]"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Distribution Sections - 2 column grid on large screens */}
           <div className="chart-grid">
             <DistributionSection 
