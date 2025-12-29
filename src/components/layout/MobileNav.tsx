@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  Activity,
+  Layers,
   Contact,
   Settings,
   MoreHorizontal,
@@ -32,7 +32,7 @@ const primaryNavItems = [
 
 const moreNavItems = [
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
-  { path: '/scenarios', icon: Activity, label: 'Scenarios' },
+  { path: '/scenarios', icon: Layers, label: 'Scenarios' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
