@@ -279,6 +279,7 @@ export type Database = {
           geography: string | null
           group_name: string
           id: string
+          inception_year: number | null
           investment_thesis: string | null
           is_auto_linked: boolean | null
           key_risks: string | null
@@ -308,6 +309,7 @@ export type Database = {
           geography?: string | null
           group_name?: string
           id?: string
+          inception_year?: number | null
           investment_thesis?: string | null
           is_auto_linked?: boolean | null
           key_risks?: string | null
@@ -337,6 +339,7 @@ export type Database = {
           geography?: string | null
           group_name?: string
           id?: string
+          inception_year?: number | null
           investment_thesis?: string | null
           is_auto_linked?: boolean | null
           key_risks?: string | null

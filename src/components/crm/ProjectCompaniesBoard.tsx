@@ -245,6 +245,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
       timeline_end: null,
       is_auto_linked: false,
       source_transaction_id: null,
+      inception_year: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
