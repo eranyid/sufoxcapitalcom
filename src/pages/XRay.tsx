@@ -5,6 +5,7 @@ import { Scan, BarChart3, Target, Layers, TrendingUp } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
+import { RiskReturnScatter } from '@/components/dashboard/RiskReturnScatter';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RingSegment } from '@/lib/portfolioEngine';
 
@@ -192,7 +193,8 @@ export default function XRay() {
     currencyAllocation,
     assetClassRings,
     geographyRings,
-    positionRings
+    positionRings,
+    riskReturnData
   } = computedData;
 
   const hasData = transactions.length > 0 && valuations.length > 0;
@@ -307,6 +309,13 @@ export default function XRay() {
               </div>
             </div>
           </div>
+
+          {/* Risk / Return Scatter Plot */}
+          <RiskReturnScatter 
+            holdings={riskReturnData.holdings}
+            portfolio={riskReturnData.portfolio}
+            excludedCount={riskReturnData.excludedCount}
+          />
 
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
