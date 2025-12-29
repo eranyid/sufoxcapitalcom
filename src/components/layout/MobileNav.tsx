@@ -11,7 +11,8 @@ import {
   ArrowRightLeft,
   Calendar,
   FileCheck,
-  Users
+  Users,
+  Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -26,7 +27,7 @@ const primaryNavItems = [
   { path: '/', icon: LayoutDashboard, label: 'Overview' },
   { path: '/performance', icon: TrendingUp, label: 'Performance' },
   { path: '/risk', icon: Shield, label: 'Risk' },
-  { path: '/research', icon: FlaskConical, label: 'Research' },
+  { path: '/research', icon: Search, label: 'Research' },
 ];
 
 const moreNavItems = [
