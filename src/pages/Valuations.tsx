@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { MonthlyValuation } from '@/types/investment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { exportToCSV, importValuationsFromCSV } from '@/lib/storage';
-import { Plus, Upload, Download, Trash2, Calendar, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { Plus, Upload, Download, Trash2, Calendar, ChevronDown, ChevronUp, Pencil, Link } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { CrmCompany } from '@/types/crm';
 
 interface EditFormState {
   ticker: string;
@@ -23,6 +26,7 @@ interface EditFormState {
 const emptyEditForm: EditFormState = { ticker: '', month: '', pricePerUnit: '', fxRate: '' };
 
 export default function Valuations() {
+  const { user } = useAuth();
   const { transactions, valuations, addValuation, updateValuation, deleteValuation, importValuations } = usePortfolio();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -30,6 +34,22 @@ export default function Valuations() {
   const [editForm, setEditForm] = useState<EditFormState>(emptyEditForm);
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [companies, setCompanies] = useState<CrmCompany[]>([]);
+
+  // Fetch companies for linking
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('crm_companies')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .order('company_name');
+      if (data) setCompanies(data as CrmCompany[]);
+    };
+    fetchCompanies();
+  }, [user]);
 
   // Get unique assets from transactions
   const uniqueAssets = useMemo(() => {
@@ -44,10 +64,30 @@ export default function Valuations() {
 
   const [form, setForm] = useState({
     ticker: '',
+    assetName: '',
     month: '',
     pricePerUnit: '',
-    fxRate: ''
+    fxRate: '',
+    linkedCompanyId: ''
   });
+
+  // Handle company selection - auto-fill fields
+  const handleCompanySelect = (companyId: string) => {
+    const company = companies.find(c => c.id === companyId);
+    if (company) {
+      setForm(prev => ({
+        ...prev,
+        linkedCompanyId: companyId,
+        ticker: company.ticker || prev.ticker,
+        assetName: company.company_name || prev.assetName,
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        linkedCompanyId: '',
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,13 +95,13 @@ export default function Valuations() {
     await addValuation({
       assetId: form.ticker,
       ticker: form.ticker,
-      assetName: asset?.name || form.ticker,
+      assetName: form.assetName || asset?.name || form.ticker,
       month: form.month,
       pricePerUnit: parseFloat(form.pricePerUnit),
       fxRate: form.fxRate ? parseFloat(form.fxRate) : undefined
     });
     setIsOpen(false);
-    setForm({ ticker: '', month: '', pricePerUnit: '', fxRate: '' });
+    setForm({ ticker: '', assetName: '', month: '', pricePerUnit: '', fxRate: '', linkedCompanyId: '' });
     toast.success('Valuation added successfully');
   };
 
@@ -152,7 +192,7 @@ export default function Valuations() {
           </Button>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gradient-gold text-primary-foreground text-xs md:text-sm" disabled={uniqueAssets.length === 0}>
+              <Button size="sm" className="gradient-gold text-primary-foreground text-xs md:text-sm">
                 <Plus className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Add Valuation</span>
                 <span className="md:hidden">Add</span>
@@ -163,19 +203,50 @@ export default function Valuations() {
                 <DialogTitle>Add Monthly Valuation</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Link to Analysis */}
                 <div className="space-y-2">
-                  <Label>Asset</Label>
-                  <Select value={form.ticker} onValueChange={(v) => setForm({ ...form, ticker: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select asset" /></SelectTrigger>
+                  <Label className="flex items-center gap-2">
+                    <Link className="h-4 w-4 text-primary" />
+                    Link to Analysis (Optional)
+                  </Label>
+                  <Select value={form.linkedCompanyId} onValueChange={handleCompanySelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select analysis to auto-fill" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {uniqueAssets.map(a => (
-                        <SelectItem key={a.ticker} value={a.ticker}>
-                          {a.ticker} - {a.name}
+                      <SelectItem value="">None</SelectItem>
+                      {companies.map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.ticker ? `${c.ticker} - ` : ''}{c.company_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Ticker</Label>
+                    <Input 
+                      value={form.ticker}
+                      onChange={(e) => setForm({ ...form, ticker: e.target.value })}
+                      placeholder="e.g. AAPL"
+                      required
+                      disabled={!!form.linkedCompanyId && !!companies.find(c => c.id === form.linkedCompanyId)?.ticker}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Asset Name</Label>
+                    <Input 
+                      value={form.assetName}
+                      onChange={(e) => setForm({ ...form, assetName: e.target.value })}
+                      placeholder="e.g. Apple Inc"
+                      required
+                      disabled={!!form.linkedCompanyId && !!companies.find(c => c.id === form.linkedCompanyId)?.company_name}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Month</Label>
                   <Input 
@@ -207,7 +278,7 @@ export default function Valuations() {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full gradient-gold text-primary-foreground">
+                <Button type="submit" className="w-full gradient-gold text-primary-foreground" disabled={!form.ticker || !form.month || !form.pricePerUnit}>
                   Add Valuation
                 </Button>
               </form>
