@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { CrmTask, TaskStatus, STATUS_OPTIONS } from '@/types/crm';
-import { statusConfig } from '@/components/crm/TaskStatusBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Battery } from 'lucide-react';
 
@@ -18,6 +17,14 @@ const statusColors: Record<TaskStatus, string> = {
 };
 
 export function StatusDistributionBattery({ tasks }: StatusDistributionBatteryProps) {
+  const [isAnimated, setIsAnimated] = useState(false);
+
+  // Trigger animation after mount
+  useEffect(() => {
+    const timer = setTimeout(() => setIsAnimated(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   const distribution = useMemo(() => {
     const total = tasks.length;
     if (total === 0) return [];
@@ -69,7 +76,7 @@ export function StatusDistributionBattery({ tasks }: StatusDistributionBatteryPr
   }
 
   return (
-    <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4">
+    <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <Battery className="h-4 w-4 text-primary" />
@@ -90,16 +97,23 @@ export function StatusDistributionBattery({ tasks }: StatusDistributionBatteryPr
               <Tooltip key={segment.status}>
                 <TooltipTrigger asChild>
                   <div
-                    className="relative flex items-center justify-center transition-all hover:brightness-110 cursor-pointer"
+                    className="relative flex items-center justify-center hover:brightness-110 cursor-pointer overflow-hidden"
                     style={{
-                      width: `${segment.percentage}%`,
+                      width: isAnimated ? `${segment.percentage}%` : '0%',
                       backgroundColor: segment.color,
-                      minWidth: segment.percentage > 0 ? '8px' : '0',
+                      minWidth: isAnimated && segment.percentage > 0 ? '8px' : '0',
+                      transition: `width 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s, min-width 0.3s ease ${index * 0.1}s`,
                     }}
                   >
                     {/* Show label if segment is wide enough */}
                     {segment.percentage >= 12 && (
-                      <span className="text-[10px] md:text-xs font-mono font-medium text-white/90 truncate px-1">
+                      <span 
+                        className="text-[10px] md:text-xs font-mono font-medium text-white/90 truncate px-1"
+                        style={{
+                          opacity: isAnimated ? 1 : 0,
+                          transition: `opacity 0.3s ease ${0.4 + index * 0.1}s`,
+                        }}
+                      >
                         {segment.percentage >= 20 ? segment.label : `${Math.round(segment.percentage)}%`}
                       </span>
                     )}
@@ -129,8 +143,16 @@ export function StatusDistributionBattery({ tasks }: StatusDistributionBatteryPr
 
       {/* Legend - compact */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5">
-        {distribution.map(segment => (
-          <div key={segment.status} className="flex items-center gap-1.5">
+        {distribution.map((segment, index) => (
+          <div 
+            key={segment.status} 
+            className="flex items-center gap-1.5"
+            style={{
+              opacity: isAnimated ? 1 : 0,
+              transform: isAnimated ? 'translateY(0)' : 'translateY(4px)',
+              transition: `opacity 0.3s ease ${0.3 + index * 0.05}s, transform 0.3s ease ${0.3 + index * 0.05}s`,
+            }}
+          >
             <div
               className="w-2 h-2 rounded-sm"
               style={{ backgroundColor: segment.color }}
