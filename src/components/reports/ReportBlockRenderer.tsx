@@ -43,7 +43,7 @@ const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep
 
 export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskMetrics, totalValue, branding }: Props) {
   const chartColors = useMemo(() => getChartColors(branding), [branding]);
-  const config = block.config;
+  const config = block.config || {};
 
   const allocationData = useMemo(() => {
     const byType: Record<string, number> = {};
