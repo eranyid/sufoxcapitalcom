@@ -39,6 +39,8 @@ interface Props {
   branding: ReportBranding;
 }
 
+const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskMetrics, totalValue, branding }: Props) {
   const chartColors = useMemo(() => getChartColors(branding), [branding]);
   const config = block.config;
@@ -89,6 +91,107 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       bottom: sorted.slice(-max).reverse(),
     };
   }, [holdings, config.maxItems]);
+
+  // Architecture data for xray_architecture block
+  const architectureData = useMemo(() => {
+    const byAssetType: Record<string, { name: string; value: number; holdings: { ticker: string; value: number; weight: number }[] }> = {};
+    
+    holdings.forEach(h => {
+      if (!byAssetType[h.assetType]) {
+        byAssetType[h.assetType] = { name: h.assetType, value: 0, holdings: [] };
+      }
+      byAssetType[h.assetType].value += h.currentValue;
+      byAssetType[h.assetType].holdings.push({
+        ticker: h.ticker,
+        value: h.currentValue,
+        weight: h.weight
+      });
+    });
+    
+    return Object.values(byAssetType)
+      .sort((a, b) => b.value - a.value)
+      .map((group, i) => ({
+        ...group,
+        percent: totalValue > 0 ? (group.value / totalValue) * 100 : 0,
+        color: chartColors[i % chartColors.length],
+        holdings: group.holdings.sort((a, b) => b.value - a.value).slice(0, 5)
+      }));
+  }, [holdings, totalValue, chartColors]);
+
+  // Contribution data for contribution_chart block
+  const contributionData = useMemo(() => {
+    return [...holdings]
+      .filter(h => h.unrealizedPL !== undefined && h.unrealizedPL !== 0)
+      .sort((a, b) => Math.abs(b.unrealizedPL || 0) - Math.abs(a.unrealizedPL || 0))
+      .slice(0, config.maxItems || 10)
+      .map(h => ({
+        ticker: h.ticker,
+        value: h.unrealizedPL || 0,
+        color: (h.unrealizedPL || 0) >= 0 
+          ? (branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor)
+          : (branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor)
+      }));
+  }, [holdings, config.maxItems, branding]);
+
+  // Calendar data for performance_calendar block
+  const calendarData = useMemo(() => {
+    const actualReturns = performanceMetrics?.monthlyReturns || [];
+    
+    // Create a map for quick lookup: "YYYY-MM" -> return value
+    const returnsByMonth = new Map<string, number>();
+    actualReturns.forEach(({ month, return: ret }) => {
+      returnsByMonth.set(month, ret);
+    });
+    
+    // Get unique years from the data, or use current year if no data
+    const uniqueYears = [...new Set(actualReturns.map(r => r.month.split('-')[0]))];
+    const displayYears = uniqueYears.length > 0 
+      ? uniqueYears.sort().slice(-2) // Show last 2 years
+      : [new Date().getFullYear().toString()];
+    
+    return displayYears.map(year => ({
+      year: parseInt(year),
+      months: monthNames.map((monthName, i) => {
+        const monthKey = `${year}-${String(i + 1).padStart(2, '0')}`;
+        const monthReturn = returnsByMonth.get(monthKey);
+        return {
+          month: monthName,
+          return: monthReturn ?? null // null means no data, 0 means actual 0% return
+        };
+      })
+    }));
+  }, [performanceMetrics]);
+
+  // Scatter data for risk_return_scatter block
+  const scatterData = useMemo(() => {
+    return holdings
+      .filter(h => h.currentValue > 0 && h.plPercent !== undefined)
+      .map(h => ({
+        ticker: h.ticker,
+        name: h.name,
+        risk: Math.abs(h.plPercent || 0) * 0.5 + Math.random() * 5, // Simulated volatility based on return
+        return: h.plPercent || 0,
+        weight: h.weight,
+        value: h.currentValue,
+      }))
+      .slice(0, config.maxItems || 20);
+  }, [holdings, config.maxItems]);
+
+  const avgReturn = scatterData.length > 0 
+    ? scatterData.reduce((sum, d) => sum + d.return, 0) / scatterData.length 
+    : 0;
+  const avgRisk = scatterData.length > 0 
+    ? scatterData.reduce((sum, d) => sum + d.risk, 0) / scatterData.length 
+    : 0;
+
+  const getReturnColor = (ret: number | null) => {
+    if (ret === null) return branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor;
+    if (ret === 0) return branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor;
+    if (ret > 3) return branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor;
+    if (ret > 0) return `${branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor}80`;
+    if (ret > -3) return `${branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor}80`;
+    return branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor;
+  };
 
   switch (block.type) {
     case 'logo_header':
@@ -237,32 +340,6 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       );
 
     case 'xray_architecture':
-      // Group holdings by asset type and geography for architecture view
-      const architectureData = useMemo(() => {
-        const byAssetType: Record<string, { name: string; value: number; holdings: { ticker: string; value: number; weight: number }[] }> = {};
-        
-        holdings.forEach(h => {
-          if (!byAssetType[h.assetType]) {
-            byAssetType[h.assetType] = { name: h.assetType, value: 0, holdings: [] };
-          }
-          byAssetType[h.assetType].value += h.currentValue;
-          byAssetType[h.assetType].holdings.push({
-            ticker: h.ticker,
-            value: h.currentValue,
-            weight: h.weight
-          });
-        });
-        
-        return Object.values(byAssetType)
-          .sort((a, b) => b.value - a.value)
-          .map((group, i) => ({
-            ...group,
-            percent: totalValue > 0 ? (group.value / totalValue) * 100 : 0,
-            color: chartColors[i % chartColors.length],
-            holdings: group.holdings.sort((a, b) => b.value - a.value).slice(0, 5)
-          }));
-      }, [holdings, totalValue, chartColors]);
-
       return (
         <div className="h-full">
           {architectureData.length === 0 ? (
@@ -360,20 +437,6 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       );
 
     case 'contribution_chart':
-      const contributionData = useMemo(() => {
-        return [...holdings]
-          .filter(h => h.unrealizedPL !== undefined && h.unrealizedPL !== 0)
-          .sort((a, b) => Math.abs(b.unrealizedPL || 0) - Math.abs(a.unrealizedPL || 0))
-          .slice(0, config.maxItems || 10)
-          .map(h => ({
-            ticker: h.ticker,
-            value: h.unrealizedPL || 0,
-            color: (h.unrealizedPL || 0) >= 0 
-              ? (branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor)
-              : (branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor)
-          }));
-      }, [holdings, config.maxItems, branding]);
-
       return (
         <div className="h-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -399,46 +462,6 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       );
 
     case 'performance_calendar':
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-      // Use actual monthly returns from performanceMetrics
-      const calendarData = useMemo(() => {
-        const actualReturns = performanceMetrics?.monthlyReturns || [];
-        
-        // Create a map for quick lookup: "YYYY-MM" -> return value
-        const returnsByMonth = new Map<string, number>();
-        actualReturns.forEach(({ month, return: ret }) => {
-          returnsByMonth.set(month, ret);
-        });
-        
-        // Get unique years from the data, or use current year if no data
-        const uniqueYears = [...new Set(actualReturns.map(r => r.month.split('-')[0]))];
-        const displayYears = uniqueYears.length > 0 
-          ? uniqueYears.sort().slice(-2) // Show last 2 years
-          : [new Date().getFullYear().toString()];
-        
-        return displayYears.map(year => ({
-          year: parseInt(year),
-          months: monthNames.map((monthName, i) => {
-            const monthKey = `${year}-${String(i + 1).padStart(2, '0')}`;
-            const monthReturn = returnsByMonth.get(monthKey);
-            return {
-              month: monthName,
-              return: monthReturn ?? null // null means no data, 0 means actual 0% return
-            };
-          })
-        }));
-      }, [performanceMetrics]);
-
-      const getReturnColor = (ret: number | null) => {
-        if (ret === null) return branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor;
-        if (ret === 0) return branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor;
-        if (ret > 3) return branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor;
-        if (ret > 0) return `${branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor}80`;
-        if (ret > -3) return `${branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor}80`;
-        return branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor;
-      };
-
       return (
         <div className="space-y-2">
           {calendarData.length === 0 ? (
@@ -504,27 +527,6 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       );
 
     case 'risk_return_scatter':
-      const scatterData = useMemo(() => {
-        return holdings
-          .filter(h => h.currentValue > 0 && h.plPercent !== undefined)
-          .map(h => ({
-            ticker: h.ticker,
-            name: h.name,
-            risk: Math.abs(h.plPercent || 0) * 0.5 + Math.random() * 5, // Simulated volatility based on return
-            return: h.plPercent || 0,
-            weight: h.weight,
-            value: h.currentValue,
-          }))
-          .slice(0, config.maxItems || 20);
-      }, [holdings, config.maxItems]);
-
-      const avgReturn = scatterData.length > 0 
-        ? scatterData.reduce((sum, d) => sum + d.return, 0) / scatterData.length 
-        : 0;
-      const avgRisk = scatterData.length > 0 
-        ? scatterData.reduce((sum, d) => sum + d.risk, 0) / scatterData.length 
-        : 0;
-
       return (
         <div className="h-full">
           {scatterData.length === 0 ? (
