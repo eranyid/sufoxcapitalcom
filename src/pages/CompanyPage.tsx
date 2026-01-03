@@ -94,7 +94,6 @@ const STATUS_OPTIONS = [
   { value: 'working_on_it', label: 'Active' },
   { value: 'monitoring', label: 'Monitoring' },
   { value: 'done', label: 'Exited' },
-  { value: 'stuck', label: 'Stuck' },
   { value: 'on_hold', label: 'On Hold' },
 ];
 

@@ -1,4 +1,4 @@
-import { Eye, AlertCircle, FlaskConical, TrendingUp, LogOut, Pause } from 'lucide-react';
+import { Eye, FlaskConical, TrendingUp, LogOut, Pause } from 'lucide-react';
 
 interface Props {
   status: string;
@@ -30,12 +30,6 @@ export function BoardStatusBadge({ status }: Props) {
           style: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
           label: 'exited',
           icon: LogOut
-        };
-      case 'stuck':
-        return {
-          style: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-          label: 'stuck',
-          icon: AlertCircle
         };
       case 'on_hold':
         return {
