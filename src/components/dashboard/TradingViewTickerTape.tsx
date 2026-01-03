@@ -59,6 +59,17 @@ const TradingViewTickerTape = () => {
         .tradingview-widget-copyright {
           display: none !important;
         }
+        .tradingview-widget-container,
+        .tradingview-widget-container__widget {
+          background: #131722 !important;
+        }
+        .tradingview-widget-container__widget::before,
+        .tradingview-widget-container__widget::after {
+          display: none !important;
+        }
+        .tv-ticker-tape__wrapper {
+          background: #131722 !important;
+        }
       `}</style>
       <div 
         ref={containerRef}
