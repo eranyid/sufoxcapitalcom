@@ -171,15 +171,41 @@ serve(async (req) => {
 
     console.log(`Fetching RSS from allowed source: ${rssUrl}`);
     
-    const response = await fetch(rssUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; SUFOX Terminal/1.0)",
-        "Accept": "application/rss+xml, application/xml, text/xml, */*",
-      },
-    });
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    let response: Response;
+    try {
+      response = await fetch(rssUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; SUFOX Terminal/1.0)",
+          "Accept": "application/rss+xml, application/xml, text/xml, */*",
+        },
+        signal: controller.signal,
+      });
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        // Return empty items on timeout instead of error
+        console.log('RSS fetch timed out, returning empty items');
+        return new Response(
+          JSON.stringify({ items: [], timeout: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      throw fetchError;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch RSS: ${response.status} ${response.statusText}`);
+      // Return empty items instead of error for non-critical failures
+      console.log(`RSS fetch failed with status ${response.status}, returning empty items`);
+      return new Response(
+        JSON.stringify({ items: [], error: `HTTP ${response.status}` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const xmlText = await response.text();
