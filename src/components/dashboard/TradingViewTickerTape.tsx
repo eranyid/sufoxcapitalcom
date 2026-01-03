@@ -78,10 +78,10 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
       className="w-full rounded-lg overflow-hidden relative"
       style={{ 
         backgroundColor: '#131722',
-        height: '46px'
+        height: '56px'
       }}
     >
-      {/* Hide TradingView branding and corner dots */}
+      {/* Hide TradingView branding, corner dots and copyright */}
       <style>{`
         .tradingview-widget-container__widget {
           pointer-events: none;
@@ -89,14 +89,23 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
         .tradingview-widget-copyright {
           display: none !important;
         }
+        /* Hide corner resize handles/dots */
+        .tradingview-widget-container iframe {
+          border-radius: 8px;
+        }
+        /* Clip any overflow content including corner elements */
+        .tv-ticker-tape-wrapper {
+          border-radius: 8px !important;
+        }
       `}</style>
       <div 
         ref={containerRef} 
         className="w-full overflow-hidden"
         style={{ 
-          height: '46px',
+          height: '56px',
           backgroundColor: '#131722',
-          marginBottom: '-20px'
+          marginBottom: '-24px',
+          clipPath: 'inset(0 4px 0 4px round 8px)'
         }}
       />
     </div>
