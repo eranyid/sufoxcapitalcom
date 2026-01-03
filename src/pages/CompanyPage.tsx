@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { CompanyValueChart } from '@/components/crm/CompanyValueChart';
 import { DecisionLogSection, Decision, DECISION_TYPE_OPTIONS } from '@/components/crm/DecisionLogSection';
+import { BoardStatusBadge } from '@/components/crm/BoardStatusBadge';
 import { CompanyFilesSection } from '@/components/crm/CompanyFilesSection';
 import { CompanyActivityLog } from '@/components/crm/CompanyActivityLog';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,7 +94,8 @@ const STATUS_OPTIONS = [
   { value: 'working_on_it', label: 'Active' },
   { value: 'monitoring', label: 'Monitoring' },
   { value: 'done', label: 'Exited' },
-  { value: 'stuck', label: 'On Hold' },
+  { value: 'stuck', label: 'Stuck' },
+  { value: 'on_hold', label: 'On Hold' },
 ];
 
 // DECISION_TYPES imported from DecisionLogSection as DECISION_TYPE_OPTIONS
@@ -433,8 +435,8 @@ export default function CompanyPage() {
             value={company.status}
             onValueChange={v => handleUpdate('status', v)}
           >
-            <SelectTrigger className="w-[130px]">
-              <SelectValue />
+            <SelectTrigger className="w-[140px] h-9 border-transparent hover:border-border bg-transparent">
+              <BoardStatusBadge status={company.status} />
             </SelectTrigger>
             <SelectContent>
               {STATUS_OPTIONS.map(opt => (

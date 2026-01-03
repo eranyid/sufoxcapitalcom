@@ -1,6 +1,6 @@
 export type TaskStatus = 'backlog' | 'planned' | 'in_progress' | 'completed' | 'canceled';
 export type TaskUrgency = 'none' | 'urgent' | 'high' | 'medium' | 'low';
-export type BoardStatus = 'working_on_it' | 'done' | 'stuck';
+export type BoardStatus = 'research' | 'working_on_it' | 'monitoring' | 'done' | 'stuck' | 'on_hold';
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type ProjectStatus = 'active' | 'monitoring' | 'archived';
 export type GroupName = 'ongoing_holding' | 'potential' | 'old_exits';
@@ -93,9 +93,12 @@ export const URGENCY_OPTIONS: { value: TaskUrgency; label: string }[] = [
 ];
 
 export const BOARD_STATUS_OPTIONS: { value: BoardStatus; label: string }[] = [
-  { value: 'working_on_it', label: 'Working on it' },
-  { value: 'done', label: 'Done' },
+  { value: 'research', label: 'Research' },
+  { value: 'working_on_it', label: 'Active' },
+  { value: 'monitoring', label: 'Monitoring' },
+  { value: 'done', label: 'Exited' },
   { value: 'stuck', label: 'Stuck' },
+  { value: 'on_hold', label: 'On Hold' },
 ];
 
 export const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [

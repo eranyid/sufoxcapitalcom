@@ -1,39 +1,64 @@
-import { BoardStatus } from '@/types/crm';
+import { Eye, AlertCircle, FlaskConical, TrendingUp, LogOut, Pause } from 'lucide-react';
 
 interface Props {
   status: string;
 }
 
 export function BoardStatusBadge({ status }: Props) {
-  const getStatusStyle = () => {
+  const getStatusConfig = () => {
     switch (status) {
+      case 'research':
+        return {
+          style: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+          label: 'research',
+          icon: FlaskConical
+        };
       case 'working_on_it':
-        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+        return {
+          style: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+          label: 'active',
+          icon: TrendingUp
+        };
+      case 'monitoring':
+        return {
+          style: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+          label: 'monitoring',
+          icon: Eye
+        };
       case 'done':
-        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+        return {
+          style: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+          label: 'exited',
+          icon: LogOut
+        };
       case 'stuck':
-        return 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+        return {
+          style: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+          label: 'stuck',
+          icon: AlertCircle
+        };
+      case 'on_hold':
+        return {
+          style: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+          label: 'on hold',
+          icon: Pause
+        };
       default:
-        return 'bg-muted text-muted-foreground border-border';
+        return {
+          style: 'bg-muted text-muted-foreground border-border',
+          label: status,
+          icon: null
+        };
     }
   };
 
-  const getLabel = () => {
-    switch (status) {
-      case 'working_on_it':
-        return 'Working on it';
-      case 'done':
-        return 'Done';
-      case 'stuck':
-        return 'Stuck';
-      default:
-        return status;
-    }
-  };
+  const config = getStatusConfig();
+  const Icon = config.icon;
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getStatusStyle()}`}>
-      {getLabel()}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border ${config.style}`}>
+      {Icon && <Icon size={12} />}
+      {config.label}
     </span>
   );
 }
