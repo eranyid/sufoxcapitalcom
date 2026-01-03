@@ -1,20 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { Activity } from 'lucide-react';
 
-interface TradingViewTickerTapeProps {
-  label?: string;
-}
-
-const TradingViewTickerTape = ({ label = "LIVE MARKETS" }: TradingViewTickerTapeProps) => {
+const TradingViewTickerTape = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clear any existing content
+    // Clear existing content
     containerRef.current.innerHTML = '';
 
-    // Create the widget container
+    // Create widget container
     const widgetContainer = document.createElement('div');
     widgetContainer.className = 'tradingview-widget-container';
     
@@ -22,13 +17,12 @@ const TradingViewTickerTape = ({ label = "LIVE MARKETS" }: TradingViewTickerTape
     widgetDiv.className = 'tradingview-widget-container__widget';
     widgetContainer.appendChild(widgetDiv);
 
-    // Create and configure the script
+    // Create script
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
     script.async = true;
     script.type = 'text/javascript';
     
-    // TradingView Ticker Tape configuration
     script.innerHTML = JSON.stringify({
       symbols: [
         { proName: "AMEX:SPY", title: "SPY" },
@@ -46,8 +40,7 @@ const TradingViewTickerTape = ({ label = "LIVE MARKETS" }: TradingViewTickerTape
       isTransparent: false,
       displayMode: "adaptive",
       colorTheme: "dark",
-      locale: "en",
-      largeChartUrl: ""
+      locale: "en"
     });
 
     widgetContainer.appendChild(script);
@@ -61,34 +54,22 @@ const TradingViewTickerTape = ({ label = "LIVE MARKETS" }: TradingViewTickerTape
   }, []);
 
   return (
-    <div className="w-full bg-card border border-border overflow-hidden">
-      {/* Header - matching EconomicIndicators style */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border">
-        <Activity className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
-          {label}
-        </span>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-[9px] text-muted-foreground">
-            Source: TradingView
-          </span>
-        </div>
-      </div>
-
-      {/* Widget Container */}
-      <div 
-        ref={containerRef} 
-        className="w-full overflow-hidden bg-card"
-        style={{ minHeight: '48px' }}
-      />
-      
-      {/* Hide TradingView copyright */}
+    <>
       <style>{`
         .tradingview-widget-copyright {
           display: none !important;
         }
       `}</style>
-    </div>
+      <div 
+        ref={containerRef}
+        style={{ 
+          width: '100%',
+          height: '46px',
+          overflow: 'hidden',
+          backgroundColor: '#131722'
+        }}
+      />
+    </>
   );
 };
 
