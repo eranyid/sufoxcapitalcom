@@ -22,6 +22,7 @@ const CURRENCY_NAMES: Record<CashCurrency, string> = {
 export function CashManagement() {
   const { cashBalances, updateCashBalance, addCash } = usePortfolio();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [transactionType, setTransactionType] = useState<'deposit' | 'withdraw'>('deposit');
   const [addCurrency, setAddCurrency] = useState<CashCurrency>('USD');
   const [addAmount, setAddAmount] = useState<string>('');
   const [editMode, setEditMode] = useState<CashCurrency | null>(null);
@@ -29,8 +30,9 @@ export function CashManagement() {
 
   const handleAddCash = async () => {
     const amount = parseFloat(addAmount);
-    if (!isNaN(amount) && amount !== 0) {
-      await addCash(addCurrency, amount);
+    if (!isNaN(amount) && amount > 0) {
+      const finalAmount = transactionType === 'withdraw' ? -amount : amount;
+      await addCash(addCurrency, finalAmount);
       setAddAmount('');
       setIsAddOpen(false);
     }
@@ -67,6 +69,18 @@ export function CashManagement() {
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div>
+                <label className="terminal-label mb-1 block">Transaction Type</label>
+                <Select value={transactionType} onValueChange={(v) => setTransactionType(v as 'deposit' | 'withdraw')}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deposit">Deposit (הפקדה)</SelectItem>
+                    <SelectItem value="withdraw">Withdraw (משיכה)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <label className="terminal-label mb-1 block">Currency</label>
                 <Select value={addCurrency} onValueChange={(v) => setAddCurrency(v as CashCurrency)}>
                   <SelectTrigger className="h-8">
@@ -80,17 +94,18 @@ export function CashManagement() {
                 </Select>
               </div>
               <div>
-                <label className="terminal-label mb-1 block">Amount (use negative to withdraw)</label>
+                <label className="terminal-label mb-1 block">Amount</label>
                 <Input
                   type="number"
+                  min="0"
                   value={addAmount}
                   onChange={(e) => setAddAmount(e.target.value)}
-                  placeholder="e.g. 10000 or -500"
+                  placeholder="e.g. 10000"
                   className="h-8"
                 />
               </div>
               <Button onClick={handleAddCash} className="w-full h-8 text-xs">
-                {parseFloat(addAmount) >= 0 ? 'Add Cash' : 'Withdraw Cash'}
+                {transactionType === 'deposit' ? 'Add Cash' : 'Withdraw Cash'}
               </Button>
             </div>
           </DialogContent>
