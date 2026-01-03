@@ -60,7 +60,7 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
   }, []);
 
   return (
-    <div className="w-full bg-card border border-border rounded-md overflow-hidden">
+    <div className="w-full bg-black border border-border rounded-md overflow-hidden">
       <div 
         ref={containerRef} 
         className="w-full overflow-hidden"
