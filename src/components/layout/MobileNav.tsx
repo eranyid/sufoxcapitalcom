@@ -12,14 +12,11 @@ import {
   Calendar,
   FileCheck,
   Users,
-  FlaskConical,
-  Sun,
-  Moon
+  FlaskConical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from 'next-themes';
 import {
   Sheet,
   SheetContent,
@@ -46,12 +43,7 @@ const moreNavItems = [
 export function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const { isAdmin } = useAuth();
-  const { theme, setTheme } = useTheme();
   const location = useLocation();
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
 
   const handleNavClick = (path: string, e: React.MouseEvent) => {
     if (location.pathname === path) {
@@ -143,19 +135,6 @@ export function MobileNav() {
                     <span>Admin</span>
                   </NavLink>
                 )}
-
-                {/* Theme Toggle */}
-                <button
-                  onClick={toggleTheme}
-                  className="flex items-center gap-4 py-3.5 px-4 rounded-xl text-sm font-medium transition-colors mt-2 border-t border-sidebar-border pt-4 w-full text-foreground hover:bg-sidebar-accent"
-                >
-                  {theme === 'dark' ? (
-                    <Sun size={20} strokeWidth={1.5} className="text-muted-foreground" />
-                  ) : (
-                    <Moon size={20} strokeWidth={1.5} className="text-muted-foreground" />
-                  )}
-                  <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-                </button>
               </div>
             </SheetContent>
           </Sheet>

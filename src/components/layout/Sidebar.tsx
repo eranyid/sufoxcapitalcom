@@ -3,7 +3,6 @@ import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import sufoxLogo from '@/assets/sufox-logo.png';
 
 const navItems = [{
@@ -105,9 +104,8 @@ export function Sidebar() {
           </NavLink>}
       </nav>
 
-      {/* Theme Toggle & User & Sign Out */}
+      {/* User & Sign Out */}
       <div className="border-t border-sidebar-border p-2 space-y-1">
-        <ThemeToggle collapsed={collapsed} />
         {!collapsed && user && <div className="px-2 py-1">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Signed in as</p>
             <p className="text-xs text-foreground truncate font-mono">{user.email}</p>
