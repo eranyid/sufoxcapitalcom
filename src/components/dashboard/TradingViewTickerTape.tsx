@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { TrendingUp } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 interface TradingViewTickerTapeProps {
   label?: string;
 }
 
-const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTickerTapeProps) => {
+const TradingViewTickerTape = ({ label = "LIVE MARKETS" }: TradingViewTickerTapeProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,11 +17,9 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
     // Create the widget container
     const widgetContainer = document.createElement('div');
     widgetContainer.className = 'tradingview-widget-container';
-    widgetContainer.style.backgroundColor = '#000000';
     
     const widgetDiv = document.createElement('div');
     widgetDiv.className = 'tradingview-widget-container__widget';
-    widgetDiv.style.backgroundColor = '#000000';
     widgetContainer.appendChild(widgetDiv);
 
     // Create and configure the script
@@ -45,28 +43,17 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
         { proName: "TVC:GOLD", title: "XAUUSD" }
       ],
       showSymbolLogo: false,
-      isTransparent: false,
+      isTransparent: true,
       displayMode: "adaptive",
       colorTheme: "dark",
       locale: "en",
       largeChartUrl: ""
     });
-    
-    // Force dark background on iframe when it loads
-    const observer = new MutationObserver(() => {
-      const iframe = containerRef.current?.querySelector('iframe');
-      if (iframe) {
-        iframe.style.backgroundColor = '#1a1a1a';
-      }
-    });
-    
-    observer.observe(widgetContainer, { childList: true, subtree: true });
 
     widgetContainer.appendChild(script);
     containerRef.current.appendChild(widgetContainer);
 
     return () => {
-      observer.disconnect();
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
@@ -74,40 +61,33 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
   }, []);
 
   return (
-    <div 
-      className="w-full rounded-lg overflow-hidden relative"
-      style={{ 
-        backgroundColor: '#131722',
-        height: '56px'
-      }}
-    >
-      {/* Hide TradingView branding, corner dots and copyright */}
+    <div className="w-full bg-card border border-border overflow-hidden">
+      {/* Header - matching EconomicIndicators style */}
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border">
+        <Activity className="h-3.5 w-3.5 text-primary" />
+        <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
+          {label}
+        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[9px] text-muted-foreground">
+            Source: TradingView
+          </span>
+        </div>
+      </div>
+
+      {/* Widget Container */}
+      <div 
+        ref={containerRef} 
+        className="w-full overflow-hidden bg-card"
+        style={{ minHeight: '48px' }}
+      />
+      
+      {/* Hide TradingView copyright */}
       <style>{`
-        .tradingview-widget-container__widget {
-          pointer-events: none;
-        }
         .tradingview-widget-copyright {
           display: none !important;
         }
-        /* Hide corner resize handles/dots */
-        .tradingview-widget-container iframe {
-          border-radius: 8px;
-        }
-        /* Clip any overflow content including corner elements */
-        .tv-ticker-tape-wrapper {
-          border-radius: 8px !important;
-        }
       `}</style>
-      <div 
-        ref={containerRef} 
-        className="w-full overflow-hidden"
-        style={{ 
-          height: '56px',
-          backgroundColor: '#131722',
-          marginBottom: '-24px',
-          clipPath: 'inset(0 4px 0 4px round 8px)'
-        }}
-      />
     </div>
   );
 };
