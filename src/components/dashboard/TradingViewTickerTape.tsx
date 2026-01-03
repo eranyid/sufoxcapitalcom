@@ -45,16 +45,28 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
         { proName: "TVC:GOLD", title: "XAUUSD" }
       ],
       showSymbolLogo: false,
-      isTransparent: true,
+      isTransparent: false,
       displayMode: "adaptive",
       colorTheme: "dark",
-      locale: "en"
+      locale: "en",
+      largeChartUrl: ""
     });
+    
+    // Force dark background on iframe when it loads
+    const observer = new MutationObserver(() => {
+      const iframe = containerRef.current?.querySelector('iframe');
+      if (iframe) {
+        iframe.style.backgroundColor = '#1a1a1a';
+      }
+    });
+    
+    observer.observe(widgetContainer, { childList: true, subtree: true });
 
     widgetContainer.appendChild(script);
     containerRef.current.appendChild(widgetContainer);
 
     return () => {
+      observer.disconnect();
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
@@ -62,11 +74,11 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
   }, []);
 
   return (
-    <div className="w-full border border-border rounded-md overflow-hidden" style={{ backgroundColor: '#000000' }}>
+    <div className="w-full border border-border rounded-md overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
       <div 
         ref={containerRef} 
         className="w-full overflow-hidden"
-        style={{ minHeight: '48px', backgroundColor: '#000000' }}
+        style={{ minHeight: '48px', backgroundColor: '#1a1a1a' }}
       />
     </div>
   );
