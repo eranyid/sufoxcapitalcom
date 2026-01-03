@@ -43,7 +43,7 @@ const TradingViewTickerTape = ({ label = "LIVE MARKETS" }: TradingViewTickerTape
         { proName: "TVC:GOLD", title: "XAUUSD" }
       ],
       showSymbolLogo: false,
-      isTransparent: true,
+      isTransparent: false,
       displayMode: "adaptive",
       colorTheme: "dark",
       locale: "en",
