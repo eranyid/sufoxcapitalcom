@@ -74,11 +74,30 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
   }, []);
 
   return (
-    <div className="w-full border border-border rounded-md overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
+    <div 
+      className="w-full rounded-lg overflow-hidden relative"
+      style={{ 
+        backgroundColor: '#131722',
+        height: '46px'
+      }}
+    >
+      {/* Hide TradingView branding and corner dots */}
+      <style>{`
+        .tradingview-widget-container__widget {
+          pointer-events: none;
+        }
+        .tradingview-widget-copyright {
+          display: none !important;
+        }
+      `}</style>
       <div 
         ref={containerRef} 
         className="w-full overflow-hidden"
-        style={{ minHeight: '48px', backgroundColor: '#1a1a1a' }}
+        style={{ 
+          height: '46px',
+          backgroundColor: '#131722',
+          marginBottom: '-20px'
+        }}
       />
     </div>
   );
