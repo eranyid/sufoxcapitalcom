@@ -80,15 +80,16 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
       isPortfolio: false
     }));
     
-    // Add portfolio point
+    // Add portfolio point - Sharpe already computed by central engine
     const portfolioPoint = {
       ticker: 'Portfolio',
       name: 'Portfolio',
       annualizedReturn: portfolio.annualizedReturn,
       annualizedVolatility: portfolio.annualizedVolatility,
       weight: 100,
-      sharpeRatio: portfolio.annualizedVolatility > 0 
-        ? (portfolio.annualizedReturn - 4.5) / portfolio.annualizedVolatility 
+      // Use pre-computed Sharpe from holdings if available, otherwise calculate
+      sharpeRatio: holdings.length > 0 && holdings[0].sharpeRatio !== undefined
+        ? holdings.reduce((sum, h) => sum + (h.sharpeRatio || 0) * h.weight, 0) / 100
         : 0,
       isPortfolio: true
     };
