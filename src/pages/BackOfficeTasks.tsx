@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckSquare, Search, Filter } from 'lucide-react';
+import { CheckSquare, Search, Filter, Plus } from 'lucide-react';
 import { useCrmTasks } from '@/hooks/useCrmTasks';
 import { useCrmCompanies } from '@/hooks/useCrmCompanies';
 import { useProjects } from '@/hooks/useProjects';
@@ -13,10 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 
 export default function BackOfficeTasks() {
-  const { tasks, loading: tasksLoading, updateTask, deleteTask } = useCrmTasks();
+  const { tasks, loading: tasksLoading, updateTask, deleteTask, createTask } = useCrmTasks();
   const { companies, loading: companiesLoading } = useCrmCompanies();
   const { projects, loading: projectsLoading } = useProjects();
   
@@ -25,6 +26,8 @@ export default function BackOfficeTasks() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
+  const [newTaskName, setNewTaskName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
   // Create company lookup map
   const companyMap = useMemo(() => {
@@ -79,20 +82,54 @@ export default function BackOfficeTasks() {
 
   const loading = tasksLoading || companiesLoading || projectsLoading;
 
+  const handleCreateTask = async () => {
+    if (!newTaskName.trim()) return;
+    setIsCreating(true);
+    const newTask = await createTask({ task_name: newTaskName.trim() });
+    if (newTask) {
+      setNewTaskName('');
+    }
+    setIsCreating(false);
+  };
+
   return (
     <div className="space-y-4">
       {/* Status Distribution Battery */}
       <StatusDistributionBattery tasks={filteredTasks} />
 
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <CheckSquare className="h-5 w-5 text-primary" />
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">All Issues</h2>
-          <p className="text-xs text-muted-foreground">
-            {filteredTasks.length} issue{filteredTasks.length !== 1 ? 's' : ''} across all companies
-          </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <CheckSquare className="h-5 w-5 text-primary" />
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">All Issues</h2>
+            <p className="text-xs text-muted-foreground">
+              {filteredTasks.length} issue{filteredTasks.length !== 1 ? 's' : ''} across all companies
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Add New Task */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="Add new issue..."
+          value={newTaskName}
+          onChange={(e) => setNewTaskName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleCreateTask();
+          }}
+          className="flex-1 bg-card border-border"
+          disabled={isCreating}
+        />
+        <Button 
+          onClick={handleCreateTask} 
+          disabled={!newTaskName.trim() || isCreating}
+          size="sm"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add
+        </Button>
       </div>
 
       {/* Filters */}
