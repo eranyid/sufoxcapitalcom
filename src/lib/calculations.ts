@@ -1,5 +1,37 @@
-import { Transaction, MonthlyValuation, PerformanceMetrics, RiskMetrics, Allocation, ContributionToReturn } from '@/types/investment';
+/**
+ * SUFOX Capital Terminal - Unified Calculation Engine
+ * ===================================================
+ * 
+ * This is the SINGLE SOURCE OF TRUTH for all portfolio analytics.
+ * All formulas comply with the SUFOX Capital Terminal Formula Specification.
+ * 
+ * RISK METRICS:
+ * - Volatility: StdDev(Monthly Returns) × √12
+ * - Sharpe Ratio: (Portfolio Return - Risk-Free Rate) / Standard Deviation
+ * - Sortino Ratio: (Portfolio Return - Risk-Free Rate) / Downside Deviation
+ * - VaR 95%: z(0.95) × StdDev (z=1.645)
+ * - VaR 99%: z(0.99) × StdDev (z=2.326)
+ * - Beta: Covariance(Portfolio, Benchmark) / Variance(Benchmark)
+ * - Tracking Error: StdDev(Portfolio Return - Benchmark Return) × √12
+ * - Max Drawdown: (Trough Value - Peak Value) / Peak Value
+ * 
+ * PERFORMANCE METRICS:
+ * - Total Return: (Ending Value - Beginning Value + Dividends) / Beginning Value
+ * - YTD Return: (Value at Current Date - Value on Jan 1st) / Value on Jan 1st
+ * - Cumulative Return: (Current Value / Initial Value) - 1
+ * - TWR: Π(1 + Period Return) - 1 (product-based)
+ * - IRR: Numerical solve: Σ(CF/(1+IRR)^t) = 0
+ * - Win/Loss Ratio: Number of Winning Trades / Number of Losing Trades
+ * 
+ * NAV METRICS:
+ * - Fund NAV: Total Assets - Total Liabilities
+ * - Monthly Return: (Ending - Beginning) / Beginning
+ * - Annualized Return: (1 + Total Return)^(1/Years) - 1
+ * 
+ * IMPORTANT: All modules MUST use this engine. No local calculations allowed.
+ */
 
+import { Transaction, MonthlyValuation, PerformanceMetrics, RiskMetrics, Allocation, ContributionToReturn } from '@/types/investment';
 // Helper function to group transactions by ticker
 export function groupTransactionsByTicker(transactions: Transaction[]) {
   return transactions.reduce((acc, tx) => {
@@ -120,64 +152,112 @@ export function calculateMonthlyReturns(
   return returns;
 }
 
-// Calculate cumulative returns
+/**
+ * Calculate Cumulative Returns (SUFOX Formula Spec)
+ * Formula: Cumulative Return = (Current Value / Initial Value) - 1
+ * Uses geometric linking (product of period returns)
+ */
 export function calculateCumulativeReturns(monthlyReturns: { month: string; return: number }[]) {
-  let cumulative = 0;
+  let cumulativeProduct = 1;
+  
   return monthlyReturns.map(({ month, return: ret }) => {
-    cumulative = (1 + cumulative / 100) * (1 + ret / 100) - 1;
-    return { month, return: cumulative * 100 };
+    // Geometric linking: (1 + r1) × (1 + r2) × ... - 1
+    cumulativeProduct *= (1 + ret / 100);
+    return { month, return: (cumulativeProduct - 1) * 100 };
   });
 }
 
-// Calculate volatility (annualized)
+/**
+ * Calculate annualized volatility (SUFOX Formula Spec)
+ * Formula: Volatility = StdDev(Monthly Returns) × √12
+ * Uses sample standard deviation (n-1 denominator)
+ */
 export function calculateVolatility(monthlyReturns: number[]): number {
   if (monthlyReturns.length < 2) return 0;
   
-  const mean = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length;
-  const variance = monthlyReturns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (monthlyReturns.length - 1);
-  const monthlyVol = Math.sqrt(variance);
+  const n = monthlyReturns.length;
+  const mean = monthlyReturns.reduce((a, b) => a + b, 0) / n;
   
-  return monthlyVol * Math.sqrt(12); // Annualize
+  // Sample variance (n-1 denominator per spec)
+  const variance = monthlyReturns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (n - 1);
+  const monthlyStdDev = Math.sqrt(variance);
+  
+  // Annualize: Monthly × √12 (SUFOX spec)
+  return monthlyStdDev * Math.sqrt(12);
 }
 
-// Calculate Sharpe ratio
+/**
+ * Calculate Sharpe Ratio (SUFOX Formula Spec)
+ * Formula: Sharpe = (Portfolio Return - Risk-Free Rate) / Standard Deviation
+ * Returns annualized Sharpe ratio
+ */
 export function calculateSharpeRatio(
   monthlyReturns: number[],
   riskFreeRate: number
 ): number {
   if (monthlyReturns.length < 2) return 0;
   
-  const annualReturn = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length * 12;
+  // Annualized return from monthly returns
+  const avgMonthlyReturn = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length;
+  const annualReturn = avgMonthlyReturn * 12;
+  
+  // Annualized volatility
   const volatility = calculateVolatility(monthlyReturns);
   
   if (volatility === 0) return 0;
+  
+  // Sharpe = (Return - Rf) / Vol (SUFOX spec)
   return (annualReturn - riskFreeRate) / volatility;
 }
 
-// Calculate Sortino ratio (uses downside deviation instead of total volatility)
+/**
+ * Calculate Sortino Ratio (SUFOX Formula Spec)
+ * Formula: Sortino = (Portfolio Return - Risk-Free Rate) / Downside Deviation
+ * Only uses negative returns for downside deviation calculation
+ */
 export function calculateSortinoRatio(
   monthlyReturns: number[],
   riskFreeRate: number
 ): number {
   if (monthlyReturns.length < 2) return 0;
   
+  // Monthly risk-free rate for threshold
   const monthlyRf = riskFreeRate / 12;
-  const excessReturns = monthlyReturns.map(r => r - monthlyRf);
-  const negativeReturns = excessReturns.filter(r => r < 0);
   
-  if (negativeReturns.length === 0) return 0;
+  // Calculate downside returns (below risk-free rate)
+  const downsideReturns = monthlyReturns
+    .map(r => Math.min(0, r - monthlyRf))
+    .filter(r => r < 0);
   
-  // Downside deviation
-  const downsideVariance = negativeReturns.reduce((sum, r) => sum + r * r, 0) / negativeReturns.length;
-  const downsideDeviation = Math.sqrt(downsideVariance) * Math.sqrt(12); // Annualize
+  if (downsideReturns.length === 0) {
+    // No downside - return high positive value
+    const avgMonthlyReturn = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length;
+    const annualReturn = avgMonthlyReturn * 12;
+    return annualReturn > riskFreeRate ? 10 : 0; // Cap at 10
+  }
   
-  const annualReturn = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length * 12;
+  // Downside deviation: sqrt of mean of squared negative deviations
+  const downsideVariance = downsideReturns.reduce((sum, r) => sum + r * r, 0) / downsideReturns.length;
+  const monthlyDownsideDev = Math.sqrt(downsideVariance);
   
-  if (downsideDeviation === 0) return 0;
-  return (annualReturn - riskFreeRate) / downsideDeviation;
+  // Annualize downside deviation: Monthly × √12
+  const annualDownsideDev = monthlyDownsideDev * Math.sqrt(12);
+  
+  // Annualized return
+  const avgMonthlyReturn = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length;
+  const annualReturn = avgMonthlyReturn * 12;
+  
+  if (annualDownsideDev === 0) return 0;
+  
+  // Sortino = (Return - Rf) / Downside Dev (SUFOX spec)
+  return (annualReturn - riskFreeRate) / annualDownsideDev;
 }
 
-// Calculate maximum drawdown
+/**
+ * Calculate Maximum Drawdown (SUFOX Formula Spec)
+ * Formula: Max Drawdown = (Trough Value - Peak Value) / Peak Value
+ * Measures the largest peak-to-trough decline
+ */
 export function calculateDrawdown(cumulativeReturns: { month: string; return: number }[]) {
   let peak = 0;
   let maxDrawdown = 0;
@@ -186,9 +266,12 @@ export function calculateDrawdown(cumulativeReturns: { month: string; return: nu
   for (const { month, return: cumRet } of cumulativeReturns) {
     const value = 100 * (1 + cumRet / 100);
     peak = Math.max(peak, value);
-    const drawdown = peak > 0 ? ((peak - value) / peak) * 100 : 0;
-    maxDrawdown = Math.max(maxDrawdown, drawdown);
-    drawdownSeries.push({ month, drawdown: -drawdown });
+    
+    // Drawdown = (Trough - Peak) / Peak (SUFOX spec)
+    // Note: Result is negative (or zero), maxDrawdown stores positive magnitude
+    const drawdown = peak > 0 ? ((value - peak) / peak) * 100 : 0;
+    maxDrawdown = Math.max(maxDrawdown, Math.abs(drawdown));
+    drawdownSeries.push({ month, drawdown });
   }
   
   return { maxDrawdown, drawdownSeries };
@@ -215,21 +298,35 @@ export function calculateRollingMetrics(
   return { rollingVolatility, rollingSharpe };
 }
 
-// Calculate VaR (Variance-Covariance method)
+/**
+ * Calculate Value at Risk (SUFOX Formula Spec)
+ * Formula: VaR = z(confidence) × StdDev × Portfolio Value
+ * Returns VaR as a percentage of portfolio value
+ * z(95%) = 1.645, z(99%) = 2.326
+ */
 export function calculateVaR(monthlyReturns: number[], confidence: number = 0.95): number {
   if (monthlyReturns.length < 2) return 0;
   
-  const mean = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length;
-  const variance = monthlyReturns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (monthlyReturns.length - 1);
+  const n = monthlyReturns.length;
+  const mean = monthlyReturns.reduce((a, b) => a + b, 0) / n;
+  
+  // Sample variance (n-1 denominator)
+  const variance = monthlyReturns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (n - 1);
   const stdDev = Math.sqrt(variance);
   
-  // Z-score for confidence level
+  // Z-score for confidence level (SUFOX spec)
   const zScore = confidence === 0.99 ? 2.326 : 1.645;
   
-  return -(mean - zScore * stdDev);
+  // VaR = z × StdDev (as percentage, SUFOX spec)
+  // Returns positive value representing potential loss
+  return zScore * stdDev;
 }
 
-// Calculate Beta
+/**
+ * Calculate Beta (SUFOX Formula Spec)
+ * Formula: Beta = Covariance(Portfolio, Benchmark) / Variance(Benchmark)
+ * Measures portfolio sensitivity to benchmark movements
+ */
 export function calculateBeta(portfolioReturns: number[], benchmarkReturns: number[]): number {
   if (portfolioReturns.length < 2 || benchmarkReturns.length < 2) return 1;
   
@@ -240,6 +337,7 @@ export function calculateBeta(portfolioReturns: number[], benchmarkReturns: numb
   const portMean = portRets.reduce((a, b) => a + b, 0) / n;
   const benchMean = benchRets.reduce((a, b) => a + b, 0) / n;
   
+  // Covariance(Portfolio, Benchmark) - sample covariance
   let covariance = 0;
   let benchVariance = 0;
   
@@ -248,28 +346,35 @@ export function calculateBeta(portfolioReturns: number[], benchmarkReturns: numb
     benchVariance += Math.pow(benchRets[i] - benchMean, 2);
   }
   
+  // Use sample covariance/variance (n-1 denominator)
   covariance /= (n - 1);
   benchVariance /= (n - 1);
   
+  // Beta = Cov(P,B) / Var(B) (SUFOX spec)
   return benchVariance !== 0 ? covariance / benchVariance : 1;
 }
 
-// Calculate win/loss ratio
+/**
+ * Calculate Win/Loss Ratio (SUFOX Formula Spec)
+ * Formula: Win/Loss Ratio = Number of Winning Trades / Number of Losing Trades
+ * Count-based ratio, not dollar-weighted
+ */
 export function calculateWinLossRatio(transactions: Transaction[]): number {
   const sells = transactions.filter(tx => tx.transactionType === 'sell');
   if (sells.length === 0) return 0;
   
-  // Simplified: count profitable sells vs losing sells
+  // Calculate realized P/L for each closed position
   const positions = calculatePositions(transactions);
-  let wins = 0;
-  let losses = 0;
+  let winningTrades = 0;
+  let losingTrades = 0;
   
   for (const pos of Object.values(positions)) {
-    if (pos.realizedPL > 0) wins++;
-    else if (pos.realizedPL < 0) losses++;
+    if (pos.realizedPL > 0) winningTrades++;
+    else if (pos.realizedPL < 0) losingTrades++;
   }
   
-  return losses > 0 ? wins / losses : wins;
+  // Win/Loss = Winning / Losing (count-based, SUFOX spec)
+  return losingTrades > 0 ? winningTrades / losingTrades : winningTrades;
 }
 
 // Calculate allocations
@@ -354,7 +459,11 @@ export function calculateContributions(
   return contributions.sort((a, b) => b.contribution - a.contribution);
 }
 
-// Calculate IRR (simplified Newton-Raphson)
+/**
+ * Calculate IRR - Internal Rate of Return (SUFOX Formula Spec)
+ * Formula: IRR solves 0 = Σ(Net Cash Flow_t / (1 + IRR)^t) for all periods t
+ * Uses Newton-Raphson numerical method
+ */
 export function calculateIRR(cashFlows: { date: string; amount: number }[]): number {
   if (cashFlows.length < 2) return 0;
   
@@ -362,21 +471,56 @@ export function calculateIRR(cashFlows: { date: string; amount: number }[]): num
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
   
-  // Simple approximation
-  const totalInvested = sortedFlows
-    .filter(cf => cf.amount > 0)
-    .reduce((sum, cf) => sum + cf.amount, 0);
+  const baseDate = new Date(sortedFlows[0].date).getTime();
   
-  const totalReturned = sortedFlows
-    .filter(cf => cf.amount < 0)
-    .reduce((sum, cf) => sum + Math.abs(cf.amount), 0);
+  // Convert cash flows to time-adjusted format
+  const flows = sortedFlows.map(cf => ({
+    amount: cf.amount,
+    years: (new Date(cf.date).getTime() - baseDate) / (365.25 * 24 * 60 * 60 * 1000)
+  }));
   
-  const years = (new Date(sortedFlows[sortedFlows.length - 1].date).getTime() - 
-                 new Date(sortedFlows[0].date).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+  // NPV function: Σ(CF_t / (1 + r)^t)
+  const npv = (rate: number): number => {
+    return flows.reduce((sum, cf) => {
+      return sum + cf.amount / Math.pow(1 + rate, cf.years);
+    }, 0);
+  };
   
-  if (years <= 0 || totalInvested <= 0) return 0;
+  // NPV derivative for Newton-Raphson
+  const npvDerivative = (rate: number): number => {
+    return flows.reduce((sum, cf) => {
+      if (cf.years === 0) return sum;
+      return sum - cf.years * cf.amount / Math.pow(1 + rate, cf.years + 1);
+    }, 0);
+  };
   
-  return (Math.pow(totalReturned / totalInvested, 1 / years) - 1) * 100;
+  // Newton-Raphson iteration (SUFOX spec: numerical solve)
+  let rate = 0.1; // Initial guess: 10%
+  const maxIterations = 100;
+  const tolerance = 1e-8;
+  
+  for (let i = 0; i < maxIterations; i++) {
+    const currentNpv = npv(rate);
+    const derivative = npvDerivative(rate);
+    
+    if (Math.abs(derivative) < 1e-12) break;
+    
+    const newRate = rate - currentNpv / derivative;
+    
+    // Bound the rate to reasonable values
+    if (newRate < -0.99) {
+      rate = -0.99;
+    } else if (newRate > 10) {
+      rate = 10;
+    } else {
+      rate = newRate;
+    }
+    
+    if (Math.abs(currentNpv) < tolerance) break;
+  }
+  
+  // Return as percentage
+  return rate * 100;
 }
 
 // Cash balance type for calculations
@@ -465,10 +609,12 @@ export function calculatePerformanceMetrics(
   
   const irr = calculateIRR(cashFlows);
   
-  // TWR is approximately the cumulative return
-  const twr = cumulativeReturns.length > 0 
-    ? cumulativeReturns[cumulativeReturns.length - 1].return 
-    : 0;
+  /**
+   * Time-Weighted Return (SUFOX Formula Spec)
+   * Formula: TWR = Π(1 + Period Return) - 1 for each sub-period
+   * Product-based calculation, not average
+   */
+  const twr = calculateTWR(monthlyReturns);
   
   return {
     totalValue,       // NAV = Holdings + Cash
@@ -649,7 +795,11 @@ export function calculateRiskContribution(
   return results.sort((a, b) => b.riskPct - a.riskPct);
 }
 
-// Calculate tracking error
+/**
+ * Calculate Tracking Error (SUFOX Formula Spec)
+ * Formula: Tracking Error = StdDev(Portfolio Return - Benchmark Return)
+ * Annualized using √12
+ */
 export function calculateTrackingError(
   portfolioReturns: number[],
   benchmarkReturns: number[]
@@ -660,14 +810,33 @@ export function calculateTrackingError(
   const portRets = portfolioReturns.slice(-n);
   const benchRets = benchmarkReturns.slice(-n);
   
-  // Active returns (difference)
+  // Active returns (Portfolio - Benchmark)
   const activeReturns = portRets.map((r, i) => r - benchRets[i]);
   
-  // Tracking error = std dev of active returns, annualized
+  // Tracking Error = StdDev of active returns (SUFOX spec)
   const mean = activeReturns.reduce((a, b) => a + b, 0) / n;
   const variance = activeReturns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (n - 1);
   
-  return Math.sqrt(variance) * Math.sqrt(12); // Annualize
+  // Annualize: Monthly × √12
+  return Math.sqrt(variance) * Math.sqrt(12);
+}
+
+/**
+ * Calculate Time-Weighted Return (SUFOX Formula Spec)
+ * Formula: TWR = Π(1 + Period Return) - 1 for each sub-period
+ * Uses geometric linking (product), not average
+ */
+export function calculateTWR(monthlyReturns: { month: string; return: number }[]): number {
+  if (monthlyReturns.length === 0) return 0;
+  
+  // TWR = Product of (1 + each period return) - 1 (SUFOX spec)
+  let cumulativeProduct = 1;
+  
+  for (const { return: periodReturn } of monthlyReturns) {
+    cumulativeProduct *= (1 + periodReturn / 100);
+  }
+  
+  return (cumulativeProduct - 1) * 100;
 }
 
 // Full risk metrics calculation

@@ -12,7 +12,8 @@ import {
   calculateTotalCashInBaseCurrency,
   calculateAllocations,
   calculateAssetMonthlyReturns,
-  calculateVolatility
+  calculateVolatility,
+  calculateSharpeRatio
 } from './calculations';
 
 // ============================================
@@ -294,11 +295,13 @@ function buildRingData(
 /**
  * Build risk/return scatter data for each holding
  * Returns annualized return and volatility for scatter plot
+ * Uses central calculation engine (SUFOX spec compliance)
  */
 function buildRiskReturnData(
   holdings: PortfolioHolding[],
   transactions: Transaction[],
-  valuations: MonthlyValuation[]
+  valuations: MonthlyValuation[],
+  riskFreeRate: number = 4.5
 ): RiskReturnData {
   const MIN_PERIODS = 3; // Minimum months of data needed
   const assetReturns = calculateAssetMonthlyReturns(transactions, valuations);
@@ -317,18 +320,15 @@ function buildRiskReturnData(
     
     const monthlyReturns = returns.map(r => r.return);
     
-    // Calculate annualized return (geometric mean)
+    // Use central engine for calculations (SUFOX spec)
     const avgMonthlyReturn = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length;
-    const annualizedReturn = avgMonthlyReturn * 12; // Simple annualization
+    const annualizedReturn = avgMonthlyReturn * 12;
     
-    // Calculate annualized volatility
+    // Use central volatility calculation
     const annualizedVolatility = calculateVolatility(monthlyReturns);
     
-    // Calculate Sharpe-like ratio (assuming 4.5% risk-free rate)
-    const riskFreeRate = 4.5;
-    const sharpeRatio = annualizedVolatility > 0 
-      ? (annualizedReturn - riskFreeRate) / annualizedVolatility 
-      : 0;
+    // Use central Sharpe calculation
+    const sharpeRatio = calculateSharpeRatio(monthlyReturns, riskFreeRate);
     
     riskReturnPoints.push({
       ticker: holding.ticker,

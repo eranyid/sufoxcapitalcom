@@ -279,12 +279,17 @@ export function computeFactorModel(
   const factorCovariance = calculateFactorCovariance(factorReturns);
   const factorCorrelation = calculateFactorCorrelation(factorReturns);
   
-  // Calculate systematic vs specific risk
+  /**
+   * Risk Decomposition (SUFOX Formula Spec)
+   * R² = Explained Variance / Total Variance
+   * Residual Volatility = √(Total Variance - Systematic Variance)
+   */
+  
   // Total Variance = β * Cov(Factors) * βᵀ + Specific Variance
   const factorKeys = Object.keys(factorReturns);
   const betaVector = factorKeys.map(k => allBetas[k] || 0);
   
-  // β * Cov(Factors) * βᵀ
+  // Systematic Variance: β * Cov(Factors) * βᵀ
   let systematicVariance = 0;
   for (let i = 0; i < factorKeys.length; i++) {
     for (let j = 0; j < factorKeys.length; j++) {
@@ -292,19 +297,22 @@ export function computeFactorModel(
     }
   }
   
-  // Total portfolio variance
-  const portfolioVol = calculateVolatility(portfolioReturns);
-  const totalVariance = (portfolioVol / Math.sqrt(12)) ** 2; // Monthly variance
+  // Calculate monthly variance directly from returns
+  const n = portfolioReturns.length;
+  const meanReturn = portfolioReturns.reduce((a, b) => a + b, 0) / n;
+  const monthlyVariance = portfolioReturns.reduce((sum, r) => sum + Math.pow(r - meanReturn, 2), 0) / (n - 1);
+  const totalVariance = monthlyVariance;
   
-  // Specific variance = Total - Systematic
+  // Specific (Residual) Variance = Total - Systematic (SUFOX spec)
   const specificVariance = Math.max(0, totalVariance - systematicVariance);
   
-  // Percentages
+  // R² = Explained / Total (SUFOX spec)
   const systematicPct = totalVariance > 0 ? (systematicVariance / totalVariance) * 100 : 0;
   const specificPct = totalVariance > 0 ? (specificVariance / totalVariance) * 100 : 0;
   
-  // Residual volatility (annualized)
-  const residualVolatility = Math.sqrt(specificVariance * 12) * 100;
+  // Residual Volatility = √(Specific Variance) annualized (SUFOX spec)
+  // Formula: Residual Vol = √(Total Variance - Systematic Variance) × √12
+  const residualVolatility = Math.sqrt(specificVariance) * Math.sqrt(12);
   
   // Risk contribution per factor
   const risk: FactorRiskBreakdown[] = [];
