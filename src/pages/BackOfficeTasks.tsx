@@ -113,19 +113,20 @@ export default function BackOfficeTasks() {
       {/* Add New Task */}
       <div className="flex gap-2">
         <Input
-          placeholder="Add new issue..."
+          placeholder="Type issue name and press Enter..."
           value={newTaskName}
           onChange={(e) => setNewTaskName(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleCreateTask();
+            if (e.key === 'Enter' && newTaskName.trim()) handleCreateTask();
           }}
           className="flex-1 bg-card border-border"
           disabled={isCreating}
         />
         <Button 
           onClick={handleCreateTask} 
-          disabled={!newTaskName.trim() || isCreating}
+          disabled={isCreating}
           size="sm"
+          variant={newTaskName.trim() ? "default" : "secondary"}
         >
           <Plus className="h-4 w-4 mr-1" />
           Add
