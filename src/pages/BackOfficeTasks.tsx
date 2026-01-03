@@ -134,7 +134,7 @@ export default function BackOfficeTasks() {
         {/* Add Task Button */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm">
+            <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-black">
               <Plus className="h-4 w-4 mr-1" />
               New Issue
             </Button>
