@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function BackOfficeTasks() {
   const { tasks, loading: tasksLoading, updateTask, deleteTask, createTask } = useCrmTasks();
@@ -83,7 +84,10 @@ export default function BackOfficeTasks() {
   const loading = tasksLoading || companiesLoading || projectsLoading;
 
   const handleCreateTask = async () => {
-    if (!newTaskName.trim()) return;
+    if (!newTaskName.trim()) {
+      toast.error('Please enter an issue name');
+      return;
+    }
     setIsCreating(true);
     const newTask = await createTask({ task_name: newTaskName.trim() });
     if (newTask) {
