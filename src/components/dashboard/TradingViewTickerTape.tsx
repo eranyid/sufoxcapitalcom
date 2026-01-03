@@ -17,9 +17,11 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
     // Create the widget container
     const widgetContainer = document.createElement('div');
     widgetContainer.className = 'tradingview-widget-container';
+    widgetContainer.style.backgroundColor = '#000000';
     
     const widgetDiv = document.createElement('div');
     widgetDiv.className = 'tradingview-widget-container__widget';
+    widgetDiv.style.backgroundColor = '#000000';
     widgetContainer.appendChild(widgetDiv);
 
     // Create and configure the script
@@ -60,11 +62,11 @@ const TradingViewTickerTape = ({ label = "RESEARCH MARKETS" }: TradingViewTicker
   }, []);
 
   return (
-    <div className="w-full bg-black border border-border rounded-md overflow-hidden">
+    <div className="w-full border border-border rounded-md overflow-hidden" style={{ backgroundColor: '#000000' }}>
       <div 
         ref={containerRef} 
         className="w-full overflow-hidden"
-        style={{ minHeight: '48px' }}
+        style={{ minHeight: '48px', backgroundColor: '#000000' }}
       />
     </div>
   );
