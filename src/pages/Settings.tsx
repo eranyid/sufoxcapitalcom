@@ -36,7 +36,7 @@ export default function Settings() {
   );
 
   // RSS Feed state
-  const [rssFeedUrl, setRssFeedUrl] = useState('');
+  const [rssFeedUrl, setRssFeedUrl] = useState('https://feeds.bloomberg.com/markets/news.rss');
   const [isSavingRss, setIsSavingRss] = useState(false);
 
   // Account preferences state
