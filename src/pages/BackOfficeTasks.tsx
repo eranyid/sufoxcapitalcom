@@ -10,10 +10,13 @@ import { TaskDetailsPanel } from '@/components/crm/TaskDetailsPanel';
 import { StatusDistributionBattery } from '@/components/crm/StatusDistributionBattery';
 import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -27,7 +30,13 @@ export default function BackOfficeTasks() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
+  
+  // Create task dialog state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskUrgency, setNewTaskUrgency] = useState<string>('none');
+  const [newTaskProject, setNewTaskProject] = useState<string>('none');
   const [isCreating, setIsCreating] = useState(false);
 
   // Create company lookup map
@@ -89,9 +98,18 @@ export default function BackOfficeTasks() {
       return;
     }
     setIsCreating(true);
-    const newTask = await createTask({ task_name: newTaskName.trim() });
+    const newTask = await createTask({ 
+      task_name: newTaskName.trim(),
+      description: newTaskDescription.trim() || undefined,
+      urgency: newTaskUrgency as TaskUrgency,
+      linked_project_id: newTaskProject !== 'none' ? newTaskProject : undefined,
+    });
     if (newTask) {
       setNewTaskName('');
+      setNewTaskDescription('');
+      setNewTaskUrgency('none');
+      setNewTaskProject('none');
+      setCreateDialogOpen(false);
     }
     setIsCreating(false);
   };
@@ -112,29 +130,89 @@ export default function BackOfficeTasks() {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Add New Task */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="Type issue name and press Enter..."
-          value={newTaskName}
-          onChange={(e) => setNewTaskName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && newTaskName.trim()) handleCreateTask();
-          }}
-          className="flex-1 bg-card border-border"
-          disabled={isCreating}
-        />
-        <Button 
-          onClick={handleCreateTask} 
-          disabled={isCreating}
-          size="sm"
-          variant={newTaskName.trim() ? "default" : "secondary"}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Add
-        </Button>
+        
+        {/* Add Task Button */}
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              New Issue
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Issue</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="task-name">Issue Name *</Label>
+                <Input
+                  id="task-name"
+                  placeholder="Enter issue name..."
+                  value={newTaskName}
+                  onChange={(e) => setNewTaskName(e.target.value)}
+                  disabled={isCreating}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="task-description">Description</Label>
+                <Textarea
+                  id="task-description"
+                  placeholder="Optional description..."
+                  value={newTaskDescription}
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
+                  disabled={isCreating}
+                  rows={3}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Urgency</Label>
+                  <Select value={newTaskUrgency} onValueChange={setNewTaskUrgency} disabled={isCreating}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select urgency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {URGENCY_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Project</Label>
+                  <Select value={newTaskProject} onValueChange={setNewTaskProject} disabled={isCreating}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Project</SelectItem>
+                      {projects.map(project => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={isCreating}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateTask} disabled={isCreating || !newTaskName.trim()}>
+                  {isCreating ? 'Creating...' : 'Create Issue'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}
