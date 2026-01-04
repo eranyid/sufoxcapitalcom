@@ -12,7 +12,8 @@ import {
   Calendar,
   FileCheck,
   Users,
-  FlaskConical
+  FlaskConical,
+  HelpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -38,6 +39,7 @@ const moreNavItems = [
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },
   { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/help', icon: HelpCircle, label: 'Help' },
 ];
 
 export function MobileNav() {
