@@ -276,6 +276,7 @@ export type Database = {
           confidence_level: string | null
           created_at: string
           deleted_at: string | null
+          employee_count: number | null
           exit_criteria: string | null
           geography: string | null
           group_name: string
@@ -307,6 +308,7 @@ export type Database = {
           confidence_level?: string | null
           created_at?: string
           deleted_at?: string | null
+          employee_count?: number | null
           exit_criteria?: string | null
           geography?: string | null
           group_name?: string
@@ -338,6 +340,7 @@ export type Database = {
           confidence_level?: string | null
           created_at?: string
           deleted_at?: string | null
+          employee_count?: number | null
           exit_criteria?: string | null
           geography?: string | null
           group_name?: string

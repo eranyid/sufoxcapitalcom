@@ -4,7 +4,7 @@ import {
   ArrowLeft, Building2, Edit2, Plus, Trash2, 
   TrendingUp, AlertTriangle, Target, Clock, DollarSign,
   MapPin, Briefcase, FileText, CheckSquare, Save, X,
-  LineChart, Receipt, BarChart3
+  LineChart, Receipt, BarChart3, Users
 } from 'lucide-react';
 import { CompanyValueChart } from '@/components/crm/CompanyValueChart';
 import { DecisionLogSection, Decision, DECISION_TYPE_OPTIONS } from '@/components/crm/DecisionLogSection';
@@ -67,6 +67,7 @@ interface Company {
   business_description: string | null;
   inception_year: number | null;
   asset_type: string | null;
+  employee_count: number | null;
   updated_at: string;
   created_at: string;
 }
@@ -642,6 +643,34 @@ export default function CompanyPage() {
                     onClick={() => startEdit('asset_type', company.asset_type)}
                   >
                     {company.asset_type?.replace(/_/g, ' ') || 'Equity'}
+                  </p>
+                )}
+              </div>
+
+              {/* Employee Count */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <Users size={10} /> Employees
+                </label>
+                {editMode === 'employee_count' ? (
+                  <div className="flex gap-1">
+                    <Input
+                      type="number"
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      className="h-7 text-sm font-mono"
+                      placeholder="e.g., 50000"
+                      autoFocus
+                    />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('employee_count')}><Save size={12} /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
+                  </div>
+                ) : (
+                  <p 
+                    className="text-sm font-mono cursor-pointer hover:bg-muted/50 p-1 rounded -mx-1"
+                    onClick={() => startEdit('employee_count', company.employee_count?.toString())}
+                  >
+                    {company.employee_count?.toLocaleString() || '—'}
                   </p>
                 )}
               </div>
