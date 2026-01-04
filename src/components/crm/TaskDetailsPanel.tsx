@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, MessageSquare, Paperclip, Activity, FolderKanban, Trash2 } from 'lucide-react';
+import { X, MessageSquare, Paperclip, Activity, FolderKanban, Building2, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CrmTask, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
 import { useProjects } from '@/hooks/useProjects';
+import { useCrmCompanies } from '@/hooks/useCrmCompanies';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -39,6 +40,7 @@ interface Props {
 
 export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: Props) {
   const { projects } = useProjects();
+  const { companies } = useCrmCompanies();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Handle ESC key to close
@@ -66,6 +68,10 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
 
   const linkedProject = task.linked_project_id 
     ? projects.find(p => p.id === task.linked_project_id) 
+    : null;
+
+  const linkedCompany = task.company_id 
+    ? companies.find(c => c.id === task.company_id) 
     : null;
 
   return (
@@ -198,6 +204,40 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
             {linkedProject && (
               <Link 
                 to={`/backoffice/projects/${linkedProject.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs text-primary hover:underline whitespace-nowrap"
+              >
+                View
+              </Link>
+            )}
+          </div>
+
+          {/* Company Link */}
+          <div className="mt-3 sm:mt-4 flex items-center gap-2">
+            <Building2 size={14} className="text-muted-foreground flex-shrink-0" />
+            <Select
+              value={task.company_id || 'none'}
+              onValueChange={v => onUpdate(task.id, 'company_id', v === 'none' ? null : v, task.company_id)}
+            >
+              <SelectTrigger className="h-7 sm:h-8 flex-1 gap-1.5 sm:gap-2 border-border bg-muted/30 text-xs sm:text-sm">
+                {linkedCompany ? (
+                  <span className="truncate">{linkedCompany.company_name}</span>
+                ) : (
+                  <span className="text-muted-foreground">No company</span>
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No company</SelectItem>
+                {companies.map(company => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.company_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {linkedCompany && (
+              <Link 
+                to={`/backoffice/company/${linkedCompany.id}`}
                 onClick={(e) => e.stopPropagation()}
                 className="text-xs text-primary hover:underline whitespace-nowrap"
               >

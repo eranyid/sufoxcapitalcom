@@ -37,6 +37,7 @@ export default function BackOfficeTasks() {
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [newTaskUrgency, setNewTaskUrgency] = useState<string>('none');
   const [newTaskProject, setNewTaskProject] = useState<string>('none');
+  const [newTaskCompany, setNewTaskCompany] = useState<string>('none');
   const [isCreating, setIsCreating] = useState(false);
 
   // Create company lookup map
@@ -103,12 +104,14 @@ export default function BackOfficeTasks() {
       description: newTaskDescription.trim() || undefined,
       urgency: newTaskUrgency as TaskUrgency,
       linked_project_id: newTaskProject !== 'none' ? newTaskProject : undefined,
+      company_id: newTaskCompany !== 'none' ? newTaskCompany : undefined,
     });
     if (newTask) {
       setNewTaskName('');
       setNewTaskDescription('');
       setNewTaskUrgency('none');
       setNewTaskProject('none');
+      setNewTaskCompany('none');
       setCreateDialogOpen(false);
     }
     setIsCreating(false);
@@ -195,6 +198,23 @@ export default function BackOfficeTasks() {
                       {projects.map(project => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Company</Label>
+                  <Select value={newTaskCompany} onValueChange={setNewTaskCompany} disabled={isCreating}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Company</SelectItem>
+                      {companies.map(company => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.company_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
