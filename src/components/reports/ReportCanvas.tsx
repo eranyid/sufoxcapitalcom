@@ -8,6 +8,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
+  useDndMonitor,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -25,7 +27,7 @@ import {
   GRID_COLUMNS,
 } from '@/types/reportBuilder';
 import { ReportBlockRenderer } from './ReportBlockRenderer';
-import { GripVertical, Trash2, Copy, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { GripVertical, Trash2, Copy, Settings, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { PortfolioHolding } from '@/lib/portfolioEngine';
 import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
@@ -245,6 +247,7 @@ export function ReportCanvas({
 }: ReportCanvasProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLibraryDragging, setIsLibraryDragging] = useState(false);
   const isMobile = useIsMobile();
   
   const sensors = useSensors(
@@ -252,6 +255,21 @@ export function ReportCanvas({
       activationConstraint: { distance: 8 },
     })
   );
+
+  // Monitor for library drags from parent DndContext
+  useDndMonitor({
+    onDragStart(event) {
+      if (event.active.id.toString().startsWith('library-')) {
+        setIsLibraryDragging(true);
+      }
+    },
+    onDragEnd() {
+      setIsLibraryDragging(false);
+    },
+    onDragCancel() {
+      setIsLibraryDragging(false);
+    },
+  });
 
   // Calculate scale to fit canvas in viewport
   const pageDimensions = PAGE_DIMENSIONS[pageSize];
@@ -379,7 +397,10 @@ export function ReportCanvas({
           .map(([pageNum, pageBlocks]) => (
           <div
             key={pageNum}
-            className="mx-auto mb-8 bg-card rounded-lg shadow-xl overflow-hidden"
+            className={cn(
+              "mx-auto mb-8 bg-card rounded-lg shadow-xl overflow-hidden transition-all duration-300",
+              isLibraryDragging && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background shadow-2xl shadow-primary/20"
+            )}
             style={{
               width: pageDimensions.width * scale * 3.78, // mm to px
               minHeight: pageDimensions.height * scale * 3.78,
@@ -388,13 +409,19 @@ export function ReportCanvas({
           >
             {/* Page header accent */}
             <div 
-              className="h-1" 
+              className={cn(
+                "h-1 transition-all duration-300",
+                isLibraryDragging && "h-2"
+              )}
               style={{ backgroundColor: branding.accentColor }}
             />
             
             {/* Page content grid */}
             <div 
-              className="p-4 md:p-6"
+              className={cn(
+                "p-4 md:p-6 transition-all duration-300",
+                isLibraryDragging && "bg-primary/5"
+              )}
               style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${GRID_COLUMNS}, 1fr)`,
@@ -426,6 +453,16 @@ export function ReportCanvas({
                   />
                 ))}
               </SortableContext>
+
+              {/* Drop zone indicator when dragging from library */}
+              {isLibraryDragging && (
+                <div 
+                  className="col-span-full min-h-[80px] border-2 border-dashed border-primary/50 rounded-lg flex items-center justify-center gap-2 bg-primary/5 animate-pulse"
+                >
+                  <Plus size={20} className="text-primary/70" />
+                  <span className="text-sm text-primary/70 font-medium">Drop here to add block</span>
+                </div>
+              )}
             </div>
 
             {/* Page footer */}
@@ -441,17 +478,37 @@ export function ReportCanvas({
         {/* Empty state */}
         {blocks.length === 0 && (
           <div
-            className="mx-auto bg-card rounded-lg shadow-xl flex items-center justify-center border-2 border-dashed border-border"
+            className={cn(
+              "mx-auto bg-card rounded-lg shadow-xl flex items-center justify-center border-2 border-dashed transition-all duration-300",
+              isLibraryDragging 
+                ? "border-primary ring-2 ring-primary/50 ring-offset-2 ring-offset-background bg-primary/5 shadow-2xl shadow-primary/20" 
+                : "border-border"
+            )}
             style={{
               width: pageDimensions.width * scale * 3.78,
               height: pageDimensions.height * scale * 3.78,
             }}
           >
-            <div className="text-center p-4">
-              <p className="text-muted-foreground text-sm">
-                {isMobile ? 'Tap blocks below to add' : 'Drag blocks from the library'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">to build your report</p>
+            <div className={cn(
+              "text-center p-4 transition-all duration-300",
+              isLibraryDragging && "scale-110"
+            )}>
+              {isLibraryDragging ? (
+                <>
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+                    <Plus size={32} className="text-primary" />
+                  </div>
+                  <p className="text-primary text-sm font-medium">Drop here to add block</p>
+                  <p className="text-xs text-primary/70 mt-1">Release to place the block</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    {isMobile ? 'Tap blocks below to add' : 'Drag blocks from the library'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">to build your report</p>
+                </>
+              )}
             </div>
           </div>
         )}

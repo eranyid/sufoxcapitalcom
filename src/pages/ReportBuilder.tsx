@@ -10,8 +10,9 @@ import {
   Undo2,
   Redo2,
   LayoutTemplate,
+  Plus,
 } from 'lucide-react';
-import { DndContext, DragEndEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { arrayMove } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,7 @@ import { ReportBlockRenderer } from '@/components/reports/ReportBlockRenderer';
 import { TemplateSelectorDialog, ReportTemplate, useTemplateApplicator } from '@/components/reports/ReportTemplates';
 import { generateWYSIWYGReportPDF } from '@/lib/reportPdfGenerator';
 import type { ReportBranding } from '@/types/reports';
+import { BLOCK_LIBRARY as BLOCK_LIBRARY_ITEMS } from '@/types/reportBuilder';
 
 // Helper to convert old branding to new format
 const convertBrandingToWYSIWYG = (branding: ReportBranding): WYSIWYGBranding => ({
@@ -303,8 +305,30 @@ export default function ReportBuilder() {
     })
   );
 
+  // Track what's being dragged for DragOverlay
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [activeDragType, setActiveDragType] = useState<string | null>(null);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveDragId(active.id.toString());
+    
+    // Check if it's a library item
+    if (active.id.toString().startsWith('library-')) {
+      setActiveDragType(active.data.current?.type || null);
+    } else {
+      // It's an existing block
+      const block = blocks.find(b => b.id === active.id);
+      setActiveDragType(block?.type || null);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    
+    // Reset drag state
+    setActiveDragId(null);
+    setActiveDragType(null);
     
     // Check if dragging from library
     if (active.id.toString().startsWith('library-')) {
@@ -333,6 +357,11 @@ export default function ReportBuilder() {
       setHasChanges(true);
     }
   };
+
+  // Get the library item info for drag overlay
+  const activeDragLibraryItem = activeDragType 
+    ? BLOCK_LIBRARY_ITEMS.find(item => item.type === activeDragType)
+    : null;
 
   const selectedBlock = selectedBlockId ? blocks.find(b => b.id === selectedBlockId) : null;
 
@@ -365,6 +394,7 @@ export default function ReportBuilder() {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <div className="h-full flex flex-col">
@@ -526,6 +556,36 @@ export default function ReportBuilder() {
           {/* Mobile: Bottom horizontal Block Library */}
           {isMobile && <BlockLibraryPanel onAddBlock={addBlock} />}
         </div>
+
+        {/* Global Drag Overlay - shows preview for both library and existing blocks */}
+        <DragOverlay dropAnimation={{
+          duration: 250,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+        }}>
+          {activeDragId && activeDragLibraryItem && (
+            <div 
+              className="bg-card border-2 border-primary rounded-lg shadow-2xl shadow-primary/30 p-4 backdrop-blur-sm"
+              style={{ 
+                width: 220,
+                background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)/0.95) 100%)',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center">
+                  <Plus size={16} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-foreground block truncate">
+                    {activeDragLibraryItem.label}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {activeDragId.startsWith('library-') ? 'Drop to add' : 'Drop to reposition'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DragOverlay>
 
         {/* Mobile: Properties Panel as Sheet */}
         {isMobile && propertiesPanelOpen && (
