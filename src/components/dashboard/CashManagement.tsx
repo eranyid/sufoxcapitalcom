@@ -11,20 +11,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const CURRENCY_SYMBOLS: Record<CashCurrency, string> = {
   USD: '$',
   EUR: '€',
-  ILS: '₪'
+  ILS: '₪',
+  GBP: '£',
+  CHF: 'Fr',
+  JPY: '¥'
 };
 
 const CURRENCY_NAMES: Record<CashCurrency, string> = {
   USD: 'US Dollar',
   EUR: 'Euro',
-  ILS: 'Israeli Shekel'
+  ILS: 'Israeli Shekel',
+  GBP: 'British Pound',
+  CHF: 'Swiss Franc',
+  JPY: 'Japanese Yen'
 };
 
 // Approximate exchange rates (in real app, fetch from API)
 const EXCHANGE_RATES: Record<CashCurrency, Record<CashCurrency, number>> = {
-  USD: { USD: 1, EUR: 0.92, ILS: 3.7 },
-  EUR: { USD: 1.08, EUR: 1, ILS: 4.0 },
-  ILS: { USD: 0.27, EUR: 0.25, ILS: 1 }
+  USD: { USD: 1, EUR: 0.92, ILS: 3.7, GBP: 0.79, CHF: 0.88, JPY: 149 },
+  EUR: { USD: 1.08, EUR: 1, ILS: 4.0, GBP: 0.86, CHF: 0.96, JPY: 162 },
+  ILS: { USD: 0.27, EUR: 0.25, ILS: 1, GBP: 0.21, CHF: 0.24, JPY: 40 },
+  GBP: { USD: 1.27, EUR: 1.16, ILS: 4.7, GBP: 1, CHF: 1.12, JPY: 189 },
+  CHF: { USD: 1.14, EUR: 1.04, ILS: 4.2, GBP: 0.89, CHF: 1, JPY: 169 },
+  JPY: { USD: 0.0067, EUR: 0.0062, ILS: 0.025, GBP: 0.0053, CHF: 0.0059, JPY: 1 }
 };
 
 export function CashManagement() {

@@ -3,12 +3,15 @@ export type TransactionType = 'buy' | 'sell';
 export type Geography = 'north_america' | 'europe' | 'israel' | 'emerging_markets' | 'global' | 'other';
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CHF' | 'CAD' | 'AUD' | 'ZAR' | 'ILS' | 'OTHER';
 
-export type CashCurrency = 'USD' | 'EUR' | 'ILS';
+export type CashCurrency = 'USD' | 'EUR' | 'ILS' | 'GBP' | 'CHF' | 'JPY';
 
 export interface CashBalances {
   USD: number;
   EUR: number;
   ILS: number;
+  GBP: number;
+  CHF: number;
+  JPY: number;
 }
 
 export interface Transaction {
