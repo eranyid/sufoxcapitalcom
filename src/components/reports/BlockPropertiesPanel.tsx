@@ -712,6 +712,98 @@ export function BlockPropertiesPanel({
               </CollapsibleSection>
             )}
 
+            {/* Appearance section - border, shadow, padding */}
+            <CollapsibleSection title="Appearance" icon={<PaintBucket size={14} className="text-muted-foreground" />} defaultOpen={false}>
+              {/* Border Radius */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <div className="grid grid-cols-3 gap-1">
+                  {(['none', 'sm', 'md', 'lg', 'xl', '2xl'] as const).map((radius) => (
+                    <Button
+                      key={radius}
+                      variant={block.config.borderRadius === radius ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => onUpdateBlock(block.id, { borderRadius: radius })}
+                    >
+                      {radius === 'none' ? 'None' : radius.toUpperCase()}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Shadow */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Shadow</Label>
+                <div className="grid grid-cols-3 gap-1">
+                  {(['none', 'sm', 'md', 'lg', 'xl', '2xl'] as const).map((shadow) => (
+                    <Button
+                      key={shadow}
+                      variant={block.config.shadow === shadow ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => onUpdateBlock(block.id, { shadow: shadow })}
+                    >
+                      {shadow === 'none' ? 'None' : shadow.toUpperCase()}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Border */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Border</Label>
+                <div className="grid grid-cols-4 gap-1">
+                  {(['none', 'thin', 'medium', 'thick'] as const).map((border) => (
+                    <Button
+                      key={border}
+                      variant={block.config.borderWidth === border ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-8 text-xs capitalize"
+                      onClick={() => onUpdateBlock(block.id, { borderWidth: border })}
+                    >
+                      {border}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Border Color - only show if border is not none */}
+              {block.config.borderWidth && block.config.borderWidth !== 'none' && (
+                <ColorPicker
+                  label="Border Color"
+                  value={block.config.borderColor || '#333333'}
+                  onChange={(v) => onUpdateBlock(block.id, { borderColor: v })}
+                  showQuickPicks={false}
+                />
+              )}
+
+              {/* Padding */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <div className="grid grid-cols-5 gap-1">
+                  {(['none', 'sm', 'md', 'lg', 'xl'] as const).map((padding) => (
+                    <Button
+                      key={padding}
+                      variant={block.config.padding === padding ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => onUpdateBlock(block.id, { padding: padding })}
+                    >
+                      {padding === 'none' ? '0' : padding.toUpperCase()}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Background Color */}
+              <ColorPicker
+                label="Background Color"
+                value={block.config.backgroundColor || 'transparent'}
+                onChange={(v) => onUpdateBlock(block.id, { backgroundColor: v })}
+              />
+            </CollapsibleSection>
+
             {/* Layout section - always show */}
             <CollapsibleSection title="Layout" icon={<LayoutGrid size={14} className="text-muted-foreground" />} defaultOpen={false}>
               <div className="space-y-1.5">

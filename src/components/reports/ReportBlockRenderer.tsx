@@ -42,11 +42,75 @@ interface Props {
   branding: ReportBranding;
 }
 
+// Helper to get block styling from config
+const getBlockStyles = (config: ReportBlock['config'], branding: ReportBranding): React.CSSProperties => {
+  const styles: React.CSSProperties = {};
+
+  // Border radius
+  const radiusMap: Record<string, string> = {
+    'none': '0',
+    'sm': '0.125rem',
+    'md': '0.375rem',
+    'lg': '0.5rem',
+    'xl': '0.75rem',
+    '2xl': '1rem',
+  };
+  if (config.borderRadius && config.borderRadius !== 'none') {
+    styles.borderRadius = radiusMap[config.borderRadius] || '0';
+  }
+
+  // Shadow
+  const shadowMap: Record<string, string> = {
+    'none': 'none',
+    'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+    'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+    'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+    '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  };
+  if (config.shadow && config.shadow !== 'none') {
+    styles.boxShadow = shadowMap[config.shadow] || 'none';
+  }
+
+  // Border
+  const borderWidthMap: Record<string, string> = {
+    'none': '0',
+    'thin': '1px',
+    'medium': '2px',
+    'thick': '3px',
+  };
+  if (config.borderWidth && config.borderWidth !== 'none') {
+    styles.borderWidth = borderWidthMap[config.borderWidth] || '0';
+    styles.borderStyle = 'solid';
+    styles.borderColor = config.borderColor || branding.tableBorderColor || '#333333';
+  }
+
+  // Padding
+  const paddingMap: Record<string, string> = {
+    'none': '0',
+    'sm': '0.5rem',
+    'md': '1rem',
+    'lg': '1.5rem',
+    'xl': '2rem',
+  };
+  if (config.padding && config.padding !== 'none') {
+    styles.padding = paddingMap[config.padding] || '0';
+  }
+
+  // Background color
+  if (config.backgroundColor && config.backgroundColor !== 'transparent') {
+    styles.backgroundColor = config.backgroundColor;
+  }
+
+  return styles;
+};
+
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskMetrics, totalValue, branding }: Props) {
   const chartColors = useMemo(() => getChartColors(branding), [branding]);
   const config = block.config || {};
+  const blockStyles = useMemo(() => getBlockStyles(config, branding), [config, branding]);
 
   const allocationData = useMemo(() => {
     const byType: Record<string, number> = {};
@@ -196,7 +260,23 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     return branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor;
   };
 
-  switch (block.type) {
+  // Check if block has any custom styling applied
+  const hasCustomStyles = config.borderRadius || config.shadow || config.borderWidth || config.padding || config.backgroundColor;
+
+  // Wrapper component to apply custom styles
+  const BlockWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (!hasCustomStyles) {
+      return <>{children}</>;
+    }
+    return (
+      <div style={blockStyles} className="h-full">
+        {children}
+      </div>
+    );
+  };
+
+  const renderContent = () => {
+    switch (block.type) {
     case 'logo_header':
       return (
         <div className={`text-${config.logoAlignment || 'center'} py-2`}>
@@ -690,5 +770,8 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
           <p className="text-xs text-muted-foreground">{block.type}</p>
         </div>
       );
-  }
+    }
+  };
+
+  return <BlockWrapper>{renderContent()}</BlockWrapper>;
 }
