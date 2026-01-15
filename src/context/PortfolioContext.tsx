@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { syncCrmFromTransaction } from '@/hooks/useCrmSync';
 import { createLedgerEntry, LedgerEntryType } from '@/lib/capitalLedger';
+import { getFxRate } from '@/lib/fxService';
 interface PortfolioContextType {
   transactions: Transaction[];
   valuations: MonthlyValuation[];
@@ -104,7 +105,11 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
             fees: Number(tx.fees),
             currency: tx.currency as Transaction['currency'],
             geography: tx.geography as Transaction['geography'],
-            inceptionYear: tx.inception_year ?? undefined
+            inceptionYear: tx.inception_year ?? undefined,
+            // FX tracking fields
+            fxRateAtEntry: tx.fx_rate_at_entry ? Number(tx.fx_rate_at_entry) : undefined,
+            costLocal: tx.cost_local ? Number(tx.cost_local) : undefined,
+            costBase: tx.cost_base ? Number(tx.cost_base) : undefined
           })));
         }
 
@@ -214,6 +219,16 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const addTransaction = async (tx: Omit<Transaction, 'id'>) => {
     if (!user) return;
     
+    // Get FX rate at transaction date for accurate P/L tracking
+    const baseCurrency = settings.baseCurrency;
+    const fxRateAtEntry = tx.currency === baseCurrency 
+      ? 1 
+      : await getFxRate(user.id, tx.currency, baseCurrency, tx.date);
+    
+    // Calculate cost in local and base currency
+    const costLocal = tx.quantity * tx.pricePerUnit + tx.fees;
+    const costBase = costLocal * fxRateAtEntry;
+    
     const { data, error } = await supabase
       .from('transactions')
       .insert({
@@ -228,7 +243,12 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         fees: tx.fees,
         currency: tx.currency,
         geography: tx.geography,
-        inception_year: tx.inceptionYear
+        inception_year: tx.inceptionYear,
+        // FX tracking fields for accurate P/L calculation
+        base_currency: baseCurrency,
+        fx_rate_at_entry: fxRateAtEntry,
+        cost_local: costLocal,
+        cost_base: costBase
       })
       .select()
       .single();
@@ -250,7 +270,10 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       fees: Number(data.fees),
       currency: data.currency as Transaction['currency'],
       geography: data.geography as Transaction['geography'],
-      inceptionYear: data.inception_year ?? undefined
+      inceptionYear: data.inception_year ?? undefined,
+      fxRateAtEntry: data.fx_rate_at_entry ? Number(data.fx_rate_at_entry) : undefined,
+      costLocal: data.cost_local ? Number(data.cost_local) : undefined,
+      costBase: data.cost_base ? Number(data.cost_base) : undefined
     };
     
     setUserTransactions(prev => [...prev, newTx]);

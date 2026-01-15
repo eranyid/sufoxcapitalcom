@@ -4,6 +4,7 @@ import { Transaction, MonthlyValuation } from '@/types/investment';
 import { calculatePositions, getLatestValuations } from '@/lib/calculations';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { usePortfolio } from '@/context/PortfolioContext';
 import {
   Table,
   TableBody,
@@ -45,6 +46,7 @@ type SortDirection = 'asc' | 'desc';
 
 export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) {
   const { user } = useAuth();
+  const { settings } = usePortfolio();
   const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>('currentValue');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -99,9 +101,30 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
       const plAmount = currentValue - costBasis;
       const plPercent = costBasis > 0 ? (plAmount / costBasis) * 100 : 0;
 
-      // Calculate separated P/L components
-      // Assume entry FX = current FX for same currency, else estimate
-      const entryFxRate = tx.currency === 'USD' ? 1 : currentFxRate; // Approximate
+      // Calculate separated P/L components using stored entry FX rate if available
+      let entryFxRate: number;
+      if (tx.currency === settings.baseCurrency) {
+        entryFxRate = 1;
+      } else if (tx.fxRateAtEntry !== undefined) {
+        entryFxRate = tx.fxRateAtEntry;
+      } else {
+        // Weighted average from all buy transactions for this ticker
+        const tickerBuys = transactions.filter(t => 
+          t.ticker === ticker && 
+          t.transactionType === 'buy' &&
+          t.fxRateAtEntry !== undefined
+        );
+        if (tickerBuys.length > 0) {
+          const totalCostLocal = tickerBuys.reduce((sum, t) => sum + (t.costLocal || t.quantity * t.pricePerUnit + t.fees), 0);
+          const weightedFxSum = tickerBuys.reduce((sum, t) => {
+            const costLocal = t.costLocal || (t.quantity * t.pricePerUnit + t.fees);
+            return sum + (t.fxRateAtEntry! * costLocal);
+          }, 0);
+          entryFxRate = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : currentFxRate;
+        } else {
+          entryFxRate = currentFxRate; // Fallback approximation
+        }
+      }
       const valueAtEntryFx = pos.quantity * localPrice * entryFxRate;
       const marketPL = valueAtEntryFx - costBasis;
       const fxPL = pos.quantity * localPrice * (currentFxRate - entryFxRate);

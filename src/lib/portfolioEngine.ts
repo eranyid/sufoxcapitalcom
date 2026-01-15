@@ -162,11 +162,37 @@ export function computePortfolioData(
     const unrealizedPL = currentValue - costBasis;
     const plPercent = costBasis > 0 ? (unrealizedPL / costBasis) * 100 : 0;
     
-    // Estimate entry FX rate (if position currency different from base, use cost basis)
-    // Entry FX = totalCost / (quantity * avg cost in local currency)
-    const entryFxRate = tx.currency === baseCurrency ? 1 : currentFxRate; // Approximate
+    // Use stored entry FX rate if available, otherwise calculate weighted average
+    // from transactions with stored rates, or fall back to approximation
+    let entryFxRate: number;
+    if (tx.currency === baseCurrency) {
+      entryFxRate = 1;
+    } else {
+      // Calculate weighted average entry FX rate from all buy transactions for this ticker
+      const tickerBuys = transactions.filter(t => 
+        t.ticker === ticker && 
+        t.transactionType === 'buy' &&
+        t.fxRateAtEntry !== undefined
+      );
+      
+      if (tickerBuys.length > 0) {
+        // Weighted average by cost
+        const totalCostLocal = tickerBuys.reduce((sum, t) => sum + (t.costLocal || t.quantity * t.pricePerUnit + t.fees), 0);
+        const weightedFxSum = tickerBuys.reduce((sum, t) => {
+          const costLocal = t.costLocal || (t.quantity * t.pricePerUnit + t.fees);
+          return sum + (t.fxRateAtEntry! * costLocal);
+        }, 0);
+        entryFxRate = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : currentFxRate;
+      } else if (tx.fxRateAtEntry !== undefined) {
+        // Single transaction has stored rate
+        entryFxRate = tx.fxRateAtEntry;
+      } else {
+        // Fallback: approximate from cost basis
+        entryFxRate = currentFxRate; // Last resort approximation
+      }
+    }
     
-    // Separate Market P/L from FX P/L
+    // Separate Market P/L from FX P/L using accurate entry FX rate
     // Market P/L: price change at constant FX
     const valueAtEntryFx = pos.quantity * currentPrice * entryFxRate;
     const marketPL = valueAtEntryFx - costBasis;
