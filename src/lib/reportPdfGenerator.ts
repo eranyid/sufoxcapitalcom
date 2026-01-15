@@ -690,7 +690,18 @@ export async function generateWYSIWYGReportPDF({
   const borderColor = branding.tableBorderColor || COLORS.border;
   const positiveColor = branding.chartPositiveColor || COLORS.positive;
   const negativeColor = branding.chartNegativeColor || COLORS.negative;
-
+  
+  // Chart colors for pie charts and color dots
+  const chartColors = [
+    branding.chartPrimaryColor || '#D4A853',
+    branding.chartSecondaryColor || '#6B8CAE',
+    branding.accentColor || '#D4A853',
+    '#7B9E87',
+    '#A67B8A',
+    '#8B7355',
+    '#6B7B8A',
+    '#9B8B6B',
+  ];
   // Helper functions
   const hexToRgb = (hex: string): [number, number, number] => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -924,7 +935,8 @@ export async function generateWYSIWYGReportPDF({
         addNewPageIfNeeded(55);
         
         // Draw section card background
-        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 50);
+        const allocCardHeight = 50;
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), allocCardHeight);
         drawAccentBar(y);
         y += 4;
         
@@ -939,16 +951,19 @@ export async function generateWYSIWYGReportPDF({
           byType[h.assetType] = (byType[h.assetType] || 0) + h.currentValue;
         });
 
-        const allocData = Object.entries(byType).map(([name, value]) => [
+        const allocEntries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
+        const allocDataWithDots = allocEntries.map(([name, value]) => [
+          '',  // Empty for color dot column
           name,
           formatCurrency(value),
           totalValue > 0 ? `${((value / totalValue) * 100).toFixed(1)}%` : '0%',
         ]);
 
+        const allocStartY = y;
         autoTable(doc, {
           startY: y,
-          head: [['Asset Class', 'Value', 'Weight']],
-          body: allocData,
+          head: [['', 'Asset Class', 'Value', 'Weight']],
+          body: allocDataWithDots,
           theme: 'plain',
           headStyles: { 
             fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
@@ -964,6 +979,16 @@ export async function generateWYSIWYGReportPDF({
           },
           alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
           margin: { left: margin + 4, right: margin + 4 },
+          columnStyles: {
+            0: { cellWidth: 8 },
+          },
+          didDrawCell: (data: any) => {
+            if (data.section === 'body' && data.column.index === 0) {
+              const colorIndex = data.row.index % chartColors.length;
+              doc.setFillColor(...hexToRgb(chartColors[colorIndex]));
+              doc.circle(data.cell.x + 4, data.cell.y + data.cell.height / 2, 2, 'F');
+            }
+          },
         });
         y = (doc as any).lastAutoTable.finalY + 14;
         break;
@@ -986,7 +1011,9 @@ export async function generateWYSIWYGReportPDF({
           byCurrency[h.currency] = (byCurrency[h.currency] || 0) + h.currentValue;
         });
 
-        const currencyData = Object.entries(byCurrency).map(([name, value]) => [
+        const currencyEntries = Object.entries(byCurrency).sort((a, b) => b[1] - a[1]);
+        const currencyDataWithDots = currencyEntries.map(([name, value]) => [
+          '',
           name,
           formatCurrency(value),
           totalValue > 0 ? `${((value / totalValue) * 100).toFixed(1)}%` : '0%',
@@ -994,8 +1021,8 @@ export async function generateWYSIWYGReportPDF({
 
         autoTable(doc, {
           startY: y,
-          head: [['Currency', 'Value', 'Weight']],
-          body: currencyData,
+          head: [['', 'Currency', 'Value', 'Weight']],
+          body: currencyDataWithDots,
           theme: 'plain',
           headStyles: { 
             fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
@@ -1011,6 +1038,16 @@ export async function generateWYSIWYGReportPDF({
           },
           alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
           margin: { left: margin + 4, right: margin + 4 },
+          columnStyles: {
+            0: { cellWidth: 8 },
+          },
+          didDrawCell: (data: any) => {
+            if (data.section === 'body' && data.column.index === 0) {
+              const colorIndex = data.row.index % chartColors.length;
+              doc.setFillColor(...hexToRgb(chartColors[colorIndex]));
+              doc.circle(data.cell.x + 4, data.cell.y + data.cell.height / 2, 2, 'F');
+            }
+          },
         });
         y = (doc as any).lastAutoTable.finalY + 14;
         break;
@@ -1033,7 +1070,9 @@ export async function generateWYSIWYGReportPDF({
           byGeo[h.geography] = (byGeo[h.geography] || 0) + h.currentValue;
         });
 
-        const geoData = Object.entries(byGeo).map(([name, value]) => [
+        const geoEntries = Object.entries(byGeo).sort((a, b) => b[1] - a[1]);
+        const geoDataWithDots = geoEntries.map(([name, value]) => [
+          '',
           name,
           formatCurrency(value),
           totalValue > 0 ? `${((value / totalValue) * 100).toFixed(1)}%` : '0%',
@@ -1041,8 +1080,8 @@ export async function generateWYSIWYGReportPDF({
 
         autoTable(doc, {
           startY: y,
-          head: [['Region', 'Value', 'Weight']],
-          body: geoData,
+          head: [['', 'Region', 'Value', 'Weight']],
+          body: geoDataWithDots,
           theme: 'plain',
           headStyles: { 
             fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
@@ -1058,6 +1097,16 @@ export async function generateWYSIWYGReportPDF({
           },
           alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
           margin: { left: margin + 4, right: margin + 4 },
+          columnStyles: {
+            0: { cellWidth: 8 },
+          },
+          didDrawCell: (data: any) => {
+            if (data.section === 'body' && data.column.index === 0) {
+              const colorIndex = data.row.index % chartColors.length;
+              doc.setFillColor(...hexToRgb(chartColors[colorIndex]));
+              doc.circle(data.cell.x + 4, data.cell.y + data.cell.height / 2, 2, 'F');
+            }
+          },
         });
         y = (doc as any).lastAutoTable.finalY + 14;
         break;
