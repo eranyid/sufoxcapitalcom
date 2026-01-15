@@ -563,12 +563,32 @@ export function calculatePerformanceMetrics(
   let holdingsValue = 0;
   let totalCost = 0;
   let realizedPL = 0;
+  let marketPL = 0;  // P/L from price changes only
+  let fxPL = 0;      // P/L from FX rate changes only
   
   for (const [ticker, pos] of Object.entries(positions)) {
     const val = latestVals[ticker];
-    if (val && pos.quantity > 0) {
-      const currentValue = pos.quantity * val.pricePerUnit * (val.fxRate || 1);
+    const tx = transactions.find(t => t.ticker === ticker);
+    
+    if (val && pos.quantity > 0 && tx) {
+      const currentFxRate = val.fxRate || 1;
+      const entryFxRate = tx.currency === baseCurrency ? 1 : currentFxRate; // Approximate entry FX
+      const currentPriceLocal = val.pricePerUnit;
+      
+      // Current value in base currency
+      const currentValue = pos.quantity * currentPriceLocal * currentFxRate;
       holdingsValue += currentValue;
+      
+      // Calculate separated P/L components
+      // Market P/L: what would be the P/L if FX stayed the same (use entry FX)
+      const valueAtEntryFx = pos.quantity * currentPriceLocal * entryFxRate;
+      const posMarketPL = valueAtEntryFx - pos.totalCost;
+      
+      // FX P/L: difference from FX rate change
+      const posFxPL = pos.quantity * currentPriceLocal * (currentFxRate - entryFxRate);
+      
+      marketPL += posMarketPL;
+      fxPL += posFxPL;
     }
     totalCost += pos.totalCost;
     realizedPL += pos.realizedPL;
@@ -623,6 +643,8 @@ export function calculatePerformanceMetrics(
     totalCost,
     realizedPL,
     unrealizedPL,
+    marketPL,         // P/L from market price changes
+    fxPL,             // P/L from FX rate changes
     totalPL,
     totalReturn,
     monthlyReturns,

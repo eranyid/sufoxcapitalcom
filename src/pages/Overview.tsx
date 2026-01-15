@@ -203,6 +203,19 @@ export default function Overview() {
           title="Unrealized P/L"
           value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
           trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
+          subtitle={hasData && performanceMetrics.marketPL !== performanceMetrics.unrealizedPL ? `Market: ${formatCurrency(performanceMetrics.marketPL)} | FX: ${formatCurrency(performanceMetrics.fxPL)}` : undefined}
+        />
+        <KPICard
+          title="Market P/L"
+          value={hasData ? formatCurrency(performanceMetrics.marketPL) : '$0'}
+          trend={hasData && performanceMetrics.marketPL >= 0 ? 'up' : 'down'}
+          subtitle="Price changes"
+        />
+        <KPICard
+          title="FX P/L"
+          value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
+          trend={hasData && performanceMetrics.fxPL >= 0 ? 'up' : 'down'}
+          subtitle="Currency changes"
         />
         <KPICard
           title="Volatility"

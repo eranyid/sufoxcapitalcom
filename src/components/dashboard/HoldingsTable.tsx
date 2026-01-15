@@ -35,6 +35,8 @@ interface Holding {
   currentValue: number;
   plPercent: number;
   plAmount: number;
+  marketPL: number;       // P/L from price changes
+  fxPL: number;           // P/L from FX changes
   linkedCompany: LinkedCompany | null;
 }
 
@@ -89,11 +91,20 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
       const tx = transactions.find(t => t.ticker === ticker);
       if (!val || !tx) continue;
 
-      const currentPrice = val.pricePerUnit * (val.fxRate || 1);
+      const currentFxRate = val.fxRate || 1;
+      const localPrice = val.pricePerUnit;
+      const currentPrice = localPrice * currentFxRate;
       const currentValue = pos.quantity * currentPrice;
       const costBasis = pos.quantity * pos.avgCost;
       const plAmount = currentValue - costBasis;
       const plPercent = costBasis > 0 ? (plAmount / costBasis) * 100 : 0;
+
+      // Calculate separated P/L components
+      // Assume entry FX = current FX for same currency, else estimate
+      const entryFxRate = tx.currency === 'USD' ? 1 : currentFxRate; // Approximate
+      const valueAtEntryFx = pos.quantity * localPrice * entryFxRate;
+      const marketPL = valueAtEntryFx - costBasis;
+      const fxPL = pos.quantity * localPrice * (currentFxRate - entryFxRate);
 
       // Find the most recent transaction with a linked company for this ticker
       const linkedTx = transactions
@@ -112,6 +123,8 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
         currentValue,
         plPercent,
         plAmount,
+        marketPL,
+        fxPL,
         linkedCompany,
       });
     }
@@ -265,7 +278,31 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
                   "font-mono text-xs text-right tabular-nums font-medium",
                   holding.plAmount >= 0 ? "text-success" : "text-destructive"
                 )}>
-                  {formatCurrency(holding.plAmount)}
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help">
+                          {formatCurrency(holding.plAmount)}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="font-mono text-xs">
+                        <div className="space-y-1">
+                          <div className="flex justify-between gap-4">
+                            <span className="text-muted-foreground">Market P/L:</span>
+                            <span className={holding.marketPL >= 0 ? "text-success" : "text-destructive"}>
+                              {formatCurrency(holding.marketPL)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-muted-foreground">FX P/L:</span>
+                            <span className={holding.fxPL >= 0 ? "text-success" : "text-destructive"}>
+                              {formatCurrency(holding.fxPL)}
+                            </span>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </TableCell>
               </TableRow>
             ))}

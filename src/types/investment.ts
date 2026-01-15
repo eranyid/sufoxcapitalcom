@@ -46,6 +46,15 @@ export interface MonthlyValuation {
   maturityDate?: string; // Bond maturity date (YYYY-MM-DD)
 }
 
+export interface PortfolioHoldingPL {
+  unrealizedPL: number;        // Total P/L = Market + FX
+  marketPL: number;            // P/L from price changes only
+  fxPL: number;                // P/L from currency changes only
+  plPercent: number;           // Total P/L percentage
+  marketPLPercent: number;     // Market P/L percentage
+  fxPLPercent: number;         // FX P/L percentage
+}
+
 export interface Asset {
   id: string;
   name: string;
@@ -68,6 +77,9 @@ export interface PerformanceMetrics {
   totalCost: number;
   realizedPL: number;
   unrealizedPL: number;
+  // NEW: Separated P/L components
+  marketPL: number;          // P/L from market price changes
+  fxPL: number;              // P/L from FX rate changes
   totalPL: number;
   totalReturn: number;
   monthlyReturns: { month: string; return: number }[];
