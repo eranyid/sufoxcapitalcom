@@ -6,7 +6,7 @@ import { sampleTransactions, sampleValuations } from '@/lib/sampleData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { syncCrmFromTransaction } from '@/hooks/useCrmSync';
-
+import { createLedgerEntry, LedgerEntryType } from '@/lib/capitalLedger';
 interface PortfolioContextType {
   transactions: Transaction[];
   valuations: MonthlyValuation[];
@@ -27,7 +27,7 @@ interface PortfolioContextType {
   deleteValuation: (id: string) => Promise<void>;
   updateSettings: (settings: Partial<PortfolioSettings>) => Promise<void>;
   updateCashBalance: (currency: CashCurrency, amount: number) => Promise<void>;
-  addCash: (currency: CashCurrency, amount: number) => Promise<void>;
+  addCash: (currency: CashCurrency, amount: number, description?: string) => Promise<void>;
   importTransactions: (txs: Transaction[]) => Promise<void>;
   importValuations: (vals: MonthlyValuation[]) => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -49,7 +49,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     benchmarkReturns: [],
     baseCurrency: 'USD'
   });
-  const [cashBalances, setCashBalances] = useState<CashBalances>({ USD: 0, EUR: 0, ILS: 0 });
+  const [cashBalances, setCashBalances] = useState<CashBalances>({ USD: 0, EUR: 0, ILS: 0, GBP: 0, CHF: 0, JPY: 0 });
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +76,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       setUserTransactions([]);
       setUserValuations([]);
       setSettings({ riskFreeRate: 4.5, benchmarkReturns: [], baseCurrency: 'USD' });
-      setCashBalances({ USD: 0, EUR: 0, ILS: 0 });
+      setCashBalances({ USD: 0, EUR: 0, ILS: 0, GBP: 0, CHF: 0, JPY: 0 });
       setLoading(false);
       return;
     }
@@ -152,9 +152,12 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         
         if (cashData) {
           setCashBalances({
-            USD: Number(cashData.usd),
-            EUR: Number(cashData.eur),
-            ILS: Number(cashData.ils)
+            USD: Number(cashData.usd ?? 0),
+            EUR: Number(cashData.eur ?? 0),
+            ILS: Number(cashData.ils ?? 0),
+            GBP: Number(cashData.gbp ?? 0),
+            CHF: Number(cashData.chf ?? 0),
+            JPY: Number(cashData.jpy ?? 0)
           });
         }
       } catch (error) {
@@ -252,14 +255,36 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     setUserTransactions(prev => [...prev, newTx]);
     
-    // Update cash balance
+    // Update cash balance for ALL supported currencies
+    const SUPPORTED_CASH_CURRENCIES: CashCurrency[] = ['USD', 'EUR', 'ILS', 'GBP', 'CHF', 'JPY'];
     const txCurrency = tx.currency as CashCurrency;
-    if (txCurrency === 'USD' || txCurrency === 'EUR' || txCurrency === 'ILS') {
+    
+    if (SUPPORTED_CASH_CURRENCIES.includes(txCurrency)) {
       const totalCost = tx.quantity * tx.pricePerUnit + tx.fees;
-      const newAmount = tx.transactionType === 'buy' 
-        ? cashBalances[txCurrency] - totalCost
-        : cashBalances[txCurrency] + (tx.quantity * tx.pricePerUnit - tx.fees);
+      const cashImpact = tx.transactionType === 'buy' 
+        ? -totalCost  // BUY = deduct cash
+        : (tx.quantity * tx.pricePerUnit - tx.fees);  // SELL = add cash
+      
+      const newAmount = cashBalances[txCurrency] + cashImpact;
       await updateCashBalance(txCurrency, newAmount);
+      
+      // Record in Capital Ledger for audit trail
+      const entryType: LedgerEntryType = tx.transactionType === 'buy' ? 'BUY' : 'SELL';
+      await createLedgerEntry({
+        userId: user.id,
+        transactionId: data.id,
+        entryType,
+        currency: txCurrency,
+        amount: cashImpact,
+        description: `${tx.transactionType.toUpperCase()} ${tx.quantity} ${tx.ticker} @ ${tx.pricePerUnit} ${tx.currency}`,
+        metadata: {
+          ticker: tx.ticker,
+          quantity: tx.quantity,
+          pricePerUnit: tx.pricePerUnit,
+          fees: tx.fees,
+          assetType: tx.assetType
+        }
+      });
     }
     
     // Sync CRM Companies board based on transaction (only for equity asset types)
@@ -519,7 +544,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     setUserTransactions([]);
     setUserValuations([]);
-    setCashBalances({ USD: 0, EUR: 0, ILS: 0 });
+    setCashBalances({ USD: 0, EUR: 0, ILS: 0, GBP: 0, CHF: 0, JPY: 0 });
   };
 
   // Cash balance operations
@@ -534,7 +559,10 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         user_id: user.id,
         usd: newBalances.USD,
         eur: newBalances.EUR,
-        ils: newBalances.ILS
+        ils: newBalances.ILS,
+        gbp: newBalances.GBP,
+        chf: newBalances.CHF,
+        jpy: newBalances.JPY
       }, { onConflict: 'user_id' });
     
     if (error) {
@@ -545,8 +573,21 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     setCashBalances(newBalances);
   };
 
-  const addCash = async (currency: CashCurrency, amount: number) => {
-    await updateCashBalance(currency, cashBalances[currency] + amount);
+  const addCash = async (currency: CashCurrency, amount: number, description?: string) => {
+    if (!user) return;
+    
+    const newAmount = cashBalances[currency] + amount;
+    await updateCashBalance(currency, newAmount);
+    
+    // Record in Capital Ledger
+    const entryType: LedgerEntryType = amount > 0 ? 'DEPOSIT' : 'WITHDRAWAL';
+    await createLedgerEntry({
+      userId: user.id,
+      entryType,
+      currency,
+      amount,
+      description: description || (amount > 0 ? 'Manual deposit' : 'Manual withdrawal')
+    });
   };
 
   return (

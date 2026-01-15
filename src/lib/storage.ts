@@ -46,7 +46,7 @@ export function saveCashBalances(balances: CashBalances) {
 
 export function loadCashBalances(): CashBalances {
   const data = localStorage.getItem(STORAGE_KEYS.CASH_BALANCES);
-  return data ? JSON.parse(data) : { USD: 0, EUR: 0, ILS: 0 };
+  return data ? JSON.parse(data) : { USD: 0, EUR: 0, ILS: 0, GBP: 0, CHF: 0, JPY: 0 };
 }
 
 // CSV Export
