@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Plus, Search, Copy, Trash2, Edit3, Calendar } from 'lucide-react';
+import { FileText, Plus, Search, Copy, Trash2, Edit3, Calendar, Mail, Send, Loader2 } from 'lucide-react';
 import { useReports } from '@/hooks/useReports';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -33,6 +34,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { generateWYSIWYGReportPDF } from '@/lib/reportPdfGenerator';
+import type { Report, ReportBranding as OldReportBranding } from '@/types/reports';
+import { DEFAULT_BRANDING as WYSIWYG_DEFAULT_BRANDING } from '@/types/reportBuilder';
+import type { ReportBranding as WYSIWYGBranding } from '@/types/reportBuilder';
 
 export default function Reports() {
   const navigate = useNavigate();
@@ -42,6 +49,12 @@ export default function Reports() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
+  
+  // Email dialog state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailReport, setEmailReport] = useState<Report | null>(null);
+  const [emailTo, setEmailTo] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const reportToDelete = deleteId ? reports.find(r => r.id === deleteId) : null;
 
@@ -71,6 +84,74 @@ export default function Reports() {
   const handleDuplicate = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     await duplicateReport(id);
+  };
+
+  const openEmailDialog = (report: Report, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEmailReport(report);
+    setEmailTo('');
+    setEmailDialogOpen(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailReport || !emailTo.trim()) return;
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTo)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setSendingEmail(true);
+    
+    try {
+      // Merge old branding format with WYSIWYG defaults
+      const mergedBranding: WYSIWYGBranding = {
+        ...WYSIWYG_DEFAULT_BRANDING,
+        logoUrl: emailReport.branding.logoUrl,
+        accentColor: emailReport.branding.accentColor || WYSIWYG_DEFAULT_BRANDING.accentColor,
+        headerTitle: emailReport.branding.headerTitle || emailReport.name,
+        headerSubtitle: emailReport.branding.headerSubtitle,
+        footerText: emailReport.branding.footerText,
+        analystName: emailReport.branding.analystName,
+        showPageNumbers: emailReport.branding.showPageNumbers ?? true,
+      };
+      
+      // Generate PDF as base64 with minimal blocks for simple report
+      const pdfBase64 = await generateWYSIWYGReportPDF({
+        blocks: [], // Empty blocks - the function will handle it
+        branding: mergedBranding,
+        pageSize: emailReport.page_size,
+        reportName: emailReport.name,
+        returnAsBase64: true,
+      });
+
+      if (!pdfBase64 || typeof pdfBase64 !== 'string') {
+        throw new Error('Failed to generate PDF');
+      }
+
+      // Send via edge function
+      const { data, error } = await supabase.functions.invoke('send-report-email', {
+        body: {
+          to: emailTo.trim(),
+          reportName: emailReport.name,
+          pdfBase64: pdfBase64,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Report sent to ${emailTo}`);
+      setEmailDialogOpen(false);
+      setEmailReport(null);
+      setEmailTo('');
+    } catch (error: any) {
+      console.error('Error sending email:', error);
+      toast.error(error.message || 'Failed to send email');
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   if (loading) {
@@ -136,7 +217,7 @@ export default function Reports() {
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground">Name</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[140px]">Last Updated</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[100px]">Page Size</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
+                <TableHead className="w-[140px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -186,6 +267,7 @@ export default function Reports() {
                           e.stopPropagation();
                           navigate(`/reports/${report.id}`);
                         }}
+                        title="Edit"
                       >
                         <Edit3 size={14} />
                       </Button>
@@ -193,7 +275,17 @@ export default function Reports() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => openEmailDialog(report, e)}
+                        title="Send via Email"
+                      >
+                        <Mail size={14} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
                         onClick={(e) => handleDuplicate(report.id, e)}
+                        title="Duplicate"
                       >
                         <Copy size={14} />
                       </Button>
@@ -205,6 +297,7 @@ export default function Reports() {
                           e.stopPropagation();
                           setDeleteId(report.id);
                         }}
+                        title="Delete"
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -247,6 +340,52 @@ export default function Reports() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button onClick={handleCreate} disabled={!newName.trim()}>Create Report</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail size={18} />
+              Send Report via Email
+            </DialogTitle>
+            <DialogDescription>
+              Send "{emailReport?.name}" as a PDF attachment
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email-to">Recipient Email</Label>
+              <Input
+                id="email-to"
+                type="email"
+                placeholder="recipient@example.com"
+                value={emailTo}
+                onChange={e => setEmailTo(e.target.value)}
+                disabled={sendingEmail}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialogOpen(false)} disabled={sendingEmail}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendEmail} disabled={!emailTo.trim() || sendingEmail} className="gap-2">
+              {sendingEmail ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send size={16} />
+                  Send Email
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
