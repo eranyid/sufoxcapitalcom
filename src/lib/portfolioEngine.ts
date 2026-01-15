@@ -43,10 +43,15 @@ export interface PortfolioHolding {
   avgCost: number;
   currentPrice: number;
   fxRate: number;
+  entryFxRate: number;     // FX rate at entry
   currentValue: number;
   costBasis: number;
   unrealizedPL: number;
+  marketPL: number;        // P/L from price changes only
+  fxPL: number;            // P/L from FX rate changes only
   plPercent: number;
+  marketPLPercent: number;
+  fxPLPercent: number;
   weight: number;
 }
 
@@ -150,12 +155,26 @@ export function computePortfolioData(
     const tx = transactions.find(t => t.ticker === ticker);
     if (!val || !tx) continue;
     
-    const fxRate = val.fxRate || 1;
+    const currentFxRate = val.fxRate || 1;
     const currentPrice = val.pricePerUnit;
-    const currentValue = pos.quantity * currentPrice * fxRate;
+    const currentValue = pos.quantity * currentPrice * currentFxRate;
     const costBasis = pos.totalCost;
     const unrealizedPL = currentValue - costBasis;
     const plPercent = costBasis > 0 ? (unrealizedPL / costBasis) * 100 : 0;
+    
+    // Estimate entry FX rate (if position currency different from base, use cost basis)
+    // Entry FX = totalCost / (quantity * avg cost in local currency)
+    const entryFxRate = tx.currency === baseCurrency ? 1 : currentFxRate; // Approximate
+    
+    // Separate Market P/L from FX P/L
+    // Market P/L: price change at constant FX
+    const valueAtEntryFx = pos.quantity * currentPrice * entryFxRate;
+    const marketPL = valueAtEntryFx - costBasis;
+    const marketPLPercent = costBasis > 0 ? (marketPL / costBasis) * 100 : 0;
+    
+    // FX P/L: FX change at current price
+    const fxPL = pos.quantity * currentPrice * (currentFxRate - entryFxRate);
+    const fxPLPercent = costBasis > 0 ? (fxPL / costBasis) * 100 : 0;
     
     holdingsValue += currentValue;
     
@@ -168,11 +187,16 @@ export function computePortfolioData(
       quantity: pos.quantity,
       avgCost: pos.avgCost,
       currentPrice,
-      fxRate,
+      fxRate: currentFxRate,
+      entryFxRate,
       currentValue,
       costBasis,
       unrealizedPL,
+      marketPL,
+      fxPL,
       plPercent,
+      marketPLPercent,
+      fxPLPercent,
       weight: 0 // Will be calculated after total is known
     });
   }
