@@ -26,11 +26,12 @@ interface GenerateWYSIWYGPDFOptions {
   blocks: ReportBlock[];
   branding: WYSIWYGBranding;
   pageSize: 'A4' | 'Letter';
-  holdings: PortfolioHolding[];
-  performanceMetrics: PerformanceMetrics | null;
-  riskMetrics: RiskMetrics | null;
-  totalValue: number;
-  reportName: string;
+  holdings?: PortfolioHolding[];
+  performanceMetrics?: PerformanceMetrics | null;
+  riskMetrics?: RiskMetrics | null;
+  totalValue?: number;
+  reportName?: string;
+  returnAsBase64?: boolean;
 }
 
 // Theme colors
@@ -636,12 +637,13 @@ export async function generateWYSIWYGReportPDF({
   blocks, 
   branding, 
   pageSize, 
-  holdings, 
+  holdings = [], 
   performanceMetrics, 
   riskMetrics, 
-  totalValue,
-  reportName,
-}: GenerateWYSIWYGPDFOptions): Promise<void> {
+  totalValue = 0,
+  reportName = 'Report',
+  returnAsBase64 = false,
+}: GenerateWYSIWYGPDFOptions): Promise<void | string> {
   const pageFormat = pageSize === 'Letter' ? 'letter' : 'a4';
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -1086,7 +1088,14 @@ export async function generateWYSIWYGReportPDF({
     }
   }
 
-  // Save the PDF
+  // Return base64 or save the PDF
+  if (returnAsBase64) {
+    // Return base64 string without the data URI prefix
+    const base64 = doc.output('datauristring');
+    // Remove the "data:application/pdf;filename=generated.pdf;base64," prefix
+    return base64.split(',')[1];
+  }
+  
   const fileName = `${reportName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
 }

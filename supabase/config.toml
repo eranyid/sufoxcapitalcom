@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.fetch-israel-cpi]
 verify_jwt = true
+
+[functions.send-report-email]
+verify_jwt = false
