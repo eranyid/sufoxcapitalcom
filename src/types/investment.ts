@@ -27,6 +27,10 @@ export interface Transaction {
   currency: Currency;
   geography: Geography;
   inceptionYear?: number; // Year the asset was first listed/launched
+  // FX tracking for accurate P/L calculation
+  fxRateAtEntry?: number; // FX rate at time of transaction
+  costLocal?: number;     // Total cost in asset currency
+  costBase?: number;      // Total cost in base currency
 }
 
 export interface MonthlyValuation {

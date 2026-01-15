@@ -572,14 +572,39 @@ export function calculatePerformanceMetrics(
     
     if (val && pos.quantity > 0 && tx) {
       const currentFxRate = val.fxRate || 1;
-      const entryFxRate = tx.currency === baseCurrency ? 1 : currentFxRate; // Approximate entry FX
+      
+      // Use stored entry FX rate if available
+      let entryFxRate: number;
+      if (tx.currency === baseCurrency) {
+        entryFxRate = 1;
+      } else if (tx.fxRateAtEntry !== undefined) {
+        entryFxRate = tx.fxRateAtEntry;
+      } else {
+        // Weighted average from all buy transactions for this ticker
+        const tickerBuys = transactions.filter(t => 
+          t.ticker === ticker && 
+          t.transactionType === 'buy' &&
+          t.fxRateAtEntry !== undefined
+        );
+        if (tickerBuys.length > 0) {
+          const totalCostLocal = tickerBuys.reduce((sum, t) => sum + (t.costLocal || t.quantity * t.pricePerUnit + t.fees), 0);
+          const weightedFxSum = tickerBuys.reduce((sum, t) => {
+            const costLocal = t.costLocal || (t.quantity * t.pricePerUnit + t.fees);
+            return sum + (t.fxRateAtEntry! * costLocal);
+          }, 0);
+          entryFxRate = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : currentFxRate;
+        } else {
+          entryFxRate = currentFxRate; // Fallback approximation
+        }
+      }
+      
       const currentPriceLocal = val.pricePerUnit;
       
       // Current value in base currency
       const currentValue = pos.quantity * currentPriceLocal * currentFxRate;
       holdingsValue += currentValue;
       
-      // Calculate separated P/L components
+      // Calculate separated P/L components with accurate entry FX
       // Market P/L: what would be the P/L if FX stayed the same (use entry FX)
       const valueAtEntryFx = pos.quantity * currentPriceLocal * entryFxRate;
       const posMarketPL = valueAtEntryFx - pos.totalCost;
