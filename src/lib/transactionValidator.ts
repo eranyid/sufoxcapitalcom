@@ -231,7 +231,7 @@ export function validateNavConsistency(
  */
 function getCashCurrency(assetCurrency: string, cashBalances: CashBalances): string {
   // Check if we have this currency in our cash balances
-  const availableCurrencies = ['USD', 'EUR', 'ILS'] as const;
+  const availableCurrencies = ['USD', 'EUR', 'ILS', 'GBP', 'CHF', 'JPY'] as const;
   
   if (availableCurrencies.includes(assetCurrency as any)) {
     return assetCurrency;

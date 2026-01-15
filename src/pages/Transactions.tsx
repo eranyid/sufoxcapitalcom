@@ -17,6 +17,8 @@ import { exportToCSV, importTransactionsFromCSV } from '@/lib/storage';
 import { getKnownInceptionYear } from '@/lib/crashScenarios';
 import { Plus, Upload, Download, Trash2, ArrowRightLeft, Package, AlertCircle, Pencil, Search, X, Building2 } from 'lucide-react';
 import { PreTradeCheck } from '@/components/dashboard/PreTradeCheck';
+import { TradeValidationPanel } from '@/components/transactions/TradeValidationPanel';
+import { calculateHoldingsFromTransactions } from '@/lib/transactionValidator';
 import { toast } from 'sonner';
 
 const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund', 'private_equity', 'private_debt', 'hedge_fund'];
@@ -65,7 +67,7 @@ const emptyForm: FormState = {
 };
 
 export default function Transactions() {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, importTransactions } = usePortfolio();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, importTransactions, cashBalances, settings } = usePortfolio();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -200,6 +202,11 @@ export default function Transactions() {
     return Array.from(holdingsMap.values()).filter(h => h.quantity > 0);
   }, [transactions]);
 
+  // Holdings map for validation (ticker -> quantity)
+  const holdingsMap = useMemo(() => {
+    return calculateHoldingsFromTransactions(transactions);
+  }, [transactions]);
+
   // Auto-fill inception year when ticker changes (for BUY only)
   const handleTickerChange = (ticker: string) => {
     setForm(prev => {
@@ -277,6 +284,31 @@ export default function Transactions() {
         toast.error(`Cannot sell more than ${selectedHolding.quantity.toLocaleString()} units`);
         return;
       }
+    }
+
+    // Validate BUY has sufficient cash (using sync validation for immediate feedback)
+    if (form.transactionType === 'buy' && user) {
+      const { validateTradeSync } = await import('@/lib/transactionValidator');
+      const validation = validateTradeSync({
+        userId: user.id,
+        ticker: form.ticker.toUpperCase(),
+        transactionType: 'buy',
+        quantity: parseFloat(form.quantity) || 0,
+        pricePerUnit: parseFloat(form.pricePerUnit) || 0,
+        fees: parseFloat(form.fees) || 0,
+        assetCurrency: form.currency,
+        baseCurrency: settings.baseCurrency,
+        cashBalances,
+        existingHoldings: holdingsMap
+      });
+
+      if (!validation.isValid) {
+        validation.errors.forEach(err => toast.error(err));
+        return;
+      }
+
+      // Show warnings but allow trade to proceed
+      validation.warnings.forEach(warn => toast.warning(warn));
     }
 
     const transactionData: any = {
@@ -723,6 +755,22 @@ export default function Transactions() {
                           />
                         </div>
                       </div>
+                    )}
+
+                    {/* Real-time Trade Validation Panel */}
+                    {user && form.ticker && parseFloat(form.quantity) > 0 && parseFloat(form.pricePerUnit) > 0 && (
+                      <TradeValidationPanel
+                        userId={user.id}
+                        ticker={form.ticker.toUpperCase()}
+                        transactionType={form.transactionType}
+                        quantity={parseFloat(form.quantity) || 0}
+                        pricePerUnit={parseFloat(form.pricePerUnit) || 0}
+                        fees={parseFloat(form.fees) || 0}
+                        assetCurrency={form.currency}
+                        baseCurrency={settings.baseCurrency}
+                        cashBalances={cashBalances}
+                        existingHoldings={holdingsMap}
+                      />
                     )}
 
                     <Button 
