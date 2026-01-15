@@ -228,15 +228,6 @@ export default function Auth() {
             </div>
           </div>
           
-          <div className="flex items-start gap-4 group">
-            <div className="p-2.5 bg-secondary/80 rounded border border-border/50 group-hover:border-primary/30 transition-colors">
-              <Database className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-medium text-foreground">Cloud Sync</h3>
-              <p className="text-sm text-muted-foreground">Secure data storage across all your devices</p>
-            </div>
-          </div>
         </div>
         
         <div className="relative z-10 flex items-center justify-between">
