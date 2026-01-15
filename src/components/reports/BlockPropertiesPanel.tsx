@@ -19,7 +19,8 @@ import {
 import { 
   X, Upload, Loader2, Wand2, Palette, Pipette, ChevronDown, 
   Type, LayoutGrid, PaintBucket, Table2, BarChart3, Settings2, 
-  Sun, Moon, Sparkles, Copy, RotateCcw, Image
+  Sun, Moon, Sparkles, Copy, RotateCcw, Image, Paintbrush,
+  Blend, Layers, MousePointerClick, Zap, BookOpen, FileText
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -222,6 +223,77 @@ const THEME_PRESETS = [
       tableBorderColor: '#D1FAE5',
     }
   },
+  {
+    name: 'Rose Light',
+    emoji: '🌸',
+    colors: {
+      accentColor: '#EC4899',
+      backgroundColor: '#FFFBEB',
+      textColor: '#374151',
+      headingColor: '#111827',
+      mutedTextColor: '#6B7280',
+      chartPrimaryColor: '#EC4899',
+      chartSecondaryColor: '#8B5CF6',
+      chartPositiveColor: '#16A34A',
+      chartNegativeColor: '#DC2626',
+      tableHeaderBgColor: '#FDF2F8',
+      tableHeaderTextColor: '#BE185D',
+      tableRowAltBgColor: '#FFF1F2',
+      tableBorderColor: '#FBCFE8',
+    }
+  },
+  {
+    name: 'Midnight',
+    emoji: '🌙',
+    colors: {
+      accentColor: '#6366F1',
+      backgroundColor: '#030712',
+      textColor: '#9CA3AF',
+      headingColor: '#F9FAFB',
+      mutedTextColor: '#6B7280',
+      chartPrimaryColor: '#6366F1',
+      chartSecondaryColor: '#14B8A6',
+      chartPositiveColor: '#22C55E',
+      chartNegativeColor: '#EF4444',
+      tableHeaderBgColor: '#111827',
+      tableHeaderTextColor: '#A5B4FC',
+      tableRowAltBgColor: '#0F172A',
+      tableBorderColor: '#1F2937',
+    }
+  },
+];
+
+// Font presets
+const FONT_PRESETS = [
+  { name: 'System', value: 'system-ui, -apple-system, sans-serif', label: 'System Default' },
+  { name: 'Inter', value: 'Inter, sans-serif', label: 'Inter' },
+  { name: 'Helvetica', value: 'Helvetica Neue, Helvetica, Arial, sans-serif', label: 'Helvetica' },
+  { name: 'Georgia', value: 'Georgia, serif', label: 'Georgia' },
+  { name: 'Playfair', value: 'Playfair Display, serif', label: 'Playfair' },
+  { name: 'Roboto', value: 'Roboto, sans-serif', label: 'Roboto' },
+  { name: 'Mono', value: 'SF Mono, Consolas, monospace', label: 'Monospace' },
+];
+
+// Gradient presets
+const GRADIENT_PRESETS = [
+  { name: 'Sunset', value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', preview: ['#f093fb', '#f5576c'] },
+  { name: 'Ocean', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', preview: ['#667eea', '#764ba2'] },
+  { name: 'Forest', value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', preview: ['#11998e', '#38ef7d'] },
+  { name: 'Fire', value: 'linear-gradient(135deg, #f12711 0%, #f5af19 100%)', preview: ['#f12711', '#f5af19'] },
+  { name: 'Purple', value: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)', preview: ['#8E2DE2', '#4A00E0'] },
+  { name: 'Gold', value: 'linear-gradient(135deg, #D4A853 0%, #B8860B 100%)', preview: ['#D4A853', '#B8860B'] },
+  { name: 'Blue', value: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)', preview: ['#2193b0', '#6dd5ed'] },
+  { name: 'Dark', value: 'linear-gradient(135deg, #434343 0%, #000000 100%)', preview: ['#434343', '#000000'] },
+];
+
+// Block style presets
+const BLOCK_STYLE_PRESETS = [
+  { name: 'Clean', borderRadius: 'md', shadow: 'none', borderWidth: 'none', padding: 'md' },
+  { name: 'Card', borderRadius: 'lg', shadow: 'md', borderWidth: 'thin', padding: 'lg' },
+  { name: 'Modern', borderRadius: 'xl', shadow: 'lg', borderWidth: 'none', padding: 'lg' },
+  { name: 'Minimal', borderRadius: 'none', shadow: 'none', borderWidth: 'thin', padding: 'md' },
+  { name: 'Glass', borderRadius: '2xl', shadow: 'xl', borderWidth: 'thin', padding: 'xl' },
+  { name: 'Sharp', borderRadius: 'none', shadow: 'md', borderWidth: 'medium', padding: 'md' },
 ];
 
 interface ColorPickerProps {
@@ -910,31 +982,164 @@ export function BlockPropertiesPanel({
         </div>
       </div>
 
-      <Tabs defaultValue="colors" className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-2 grid grid-cols-5 h-9">
-          <TabsTrigger value="colors" className="text-xs gap-1 px-1.5">
-            <PaintBucket size={11} />
-            Colors
-          </TabsTrigger>
-          <TabsTrigger value="themes" className="text-xs gap-1 px-1.5">
+      <Tabs defaultValue="themes" className="flex-1 flex flex-col">
+        <TabsList className="mx-4 mt-2 grid grid-cols-6 h-9">
+          <TabsTrigger value="themes" className="text-xs gap-1 px-1">
             <Sparkles size={11} />
-            Themes
+            <span className="hidden sm:inline">Themes</span>
           </TabsTrigger>
-          <TabsTrigger value="layout" className="text-xs gap-1 px-1.5">
-            <LayoutGrid size={11} />
-            Layout
+          <TabsTrigger value="colors" className="text-xs gap-1 px-1">
+            <PaintBucket size={11} />
+            <span className="hidden sm:inline">Colors</span>
           </TabsTrigger>
-          <TabsTrigger value="content" className="text-xs gap-1 px-1.5">
+          <TabsTrigger value="fonts" className="text-xs gap-1 px-1">
             <Type size={11} />
-            Content
+            <span className="hidden sm:inline">Fonts</span>
           </TabsTrigger>
-          <TabsTrigger value="options" className="text-xs gap-1 px-1.5">
+          <TabsTrigger value="effects" className="text-xs gap-1 px-1">
+            <Blend size={11} />
+            <span className="hidden sm:inline">Effects</span>
+          </TabsTrigger>
+          <TabsTrigger value="content" className="text-xs gap-1 px-1">
+            <FileText size={11} />
+            <span className="hidden sm:inline">Content</span>
+          </TabsTrigger>
+          <TabsTrigger value="options" className="text-xs gap-1 px-1">
             <Settings2 size={11} />
-            More
+            <span className="hidden sm:inline">More</span>
           </TabsTrigger>
         </TabsList>
 
         <ScrollArea className="flex-1">
+          {/* Themes Tab - FIRST */}
+          <TabsContent value="themes" className="p-4 space-y-4 mt-0">
+            {/* Mode Toggle */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="h-14 flex-col gap-1.5 bg-slate-900 hover:bg-slate-800 border-slate-700"
+                onClick={() => onUpdateBranding({
+                  accentColor: branding.accentColor || '#FFC107',
+                  backgroundColor: '#0A0A0A',
+                  textColor: '#E5E5E5',
+                  headingColor: '#FFFFFF',
+                  mutedTextColor: '#888888',
+                  tableHeaderBgColor: '#1A1A1A',
+                  tableHeaderTextColor: branding.accentColor || '#FFC107',
+                  tableRowAltBgColor: '#111111',
+                  tableBorderColor: '#333333',
+                })}
+              >
+                <Moon size={18} className="text-white" />
+                <span className="text-xs text-slate-300">Dark Mode</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-14 flex-col gap-1.5 bg-white hover:bg-gray-100 border-gray-300"
+                onClick={() => onUpdateBranding({
+                  accentColor: branding.accentColor || '#2563EB',
+                  backgroundColor: '#FFFFFF',
+                  textColor: '#1F2937',
+                  headingColor: '#111827',
+                  mutedTextColor: '#6B7280',
+                  tableHeaderBgColor: '#F3F4F6',
+                  tableHeaderTextColor: '#374151',
+                  tableRowAltBgColor: '#F9FAFB',
+                  tableBorderColor: '#E5E7EB',
+                })}
+              >
+                <Sun size={18} className="text-gray-800" />
+                <span className="text-xs text-gray-700">Light Mode</span>
+              </Button>
+            </div>
+
+            {/* Theme Presets */}
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Theme Presets</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {THEME_PRESETS.map((preset) => (
+                <Button
+                  key={preset.name}
+                  variant="outline"
+                  className="h-16 flex-col gap-1.5 p-2 hover:ring-2 hover:ring-primary/50"
+                  onClick={() => {
+                    onUpdateBranding(preset.colors);
+                    toast.success(`Applied ${preset.name} theme`);
+                  }}
+                >
+                  <div className="flex gap-1">
+                    <div 
+                      className="w-5 h-5 rounded-md border border-white/10 shadow-sm"
+                      style={{ backgroundColor: preset.colors.backgroundColor }}
+                    />
+                    <div 
+                      className="w-5 h-5 rounded-md shadow-sm"
+                      style={{ backgroundColor: preset.colors.accentColor }}
+                    />
+                  </div>
+                  <span className="text-[10px] flex items-center gap-1">
+                    <span>{preset.emoji}</span>
+                    {preset.name}
+                  </span>
+                </Button>
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="pt-2 border-t border-border">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Quick Actions</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 text-xs gap-2"
+                  onClick={() => {
+                    // Randomize theme
+                    const randomTheme = THEME_PRESETS[Math.floor(Math.random() * THEME_PRESETS.length)];
+                    onUpdateBranding(randomTheme.colors);
+                    toast.success(`Applied ${randomTheme.name} theme`);
+                  }}
+                >
+                  <Zap size={14} />
+                  Surprise Me
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 text-xs gap-2"
+                  onClick={() => {
+                    // Invert colors
+                    const isDark = (branding.backgroundColor || '#000000').toLowerCase().includes('0') || 
+                                   (branding.backgroundColor || '#000000').toLowerCase() === '#000000';
+                    if (isDark) {
+                      onUpdateBranding({
+                        backgroundColor: '#FFFFFF',
+                        textColor: '#1F2937',
+                        headingColor: '#111827',
+                        mutedTextColor: '#6B7280',
+                        tableHeaderBgColor: '#F3F4F6',
+                        tableRowAltBgColor: '#F9FAFB',
+                        tableBorderColor: '#E5E7EB',
+                      });
+                    } else {
+                      onUpdateBranding({
+                        backgroundColor: '#0A0A0A',
+                        textColor: '#E5E5E5',
+                        headingColor: '#FFFFFF',
+                        mutedTextColor: '#888888',
+                        tableHeaderBgColor: '#1A1A1A',
+                        tableRowAltBgColor: '#111111',
+                        tableBorderColor: '#333333',
+                      });
+                    }
+                    toast.success('Colors inverted');
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  Invert
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
           {/* Colors Tab */}
           <TabsContent value="colors" className="p-4 space-y-4 mt-0">
             {/* Quick Tools */}
@@ -1088,140 +1293,241 @@ export function BlockPropertiesPanel({
             </CollapsibleSection>
           </TabsContent>
 
-          {/* Themes Tab */}
-          <TabsContent value="themes" className="p-4 space-y-4 mt-0">
-            {/* Mode Toggle */}
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                className="h-14 flex-col gap-1.5 bg-slate-900 hover:bg-slate-800 border-slate-700"
-                onClick={() => onUpdateBranding({
-                  accentColor: branding.accentColor || '#FFC107',
-                  backgroundColor: '#0A0A0A',
-                  textColor: '#E5E5E5',
-                  headingColor: '#FFFFFF',
-                  mutedTextColor: '#888888',
-                  tableHeaderBgColor: '#1A1A1A',
-                  tableHeaderTextColor: branding.accentColor || '#FFC107',
-                  tableRowAltBgColor: '#111111',
-                  tableBorderColor: '#333333',
-                })}
-              >
-                <Moon size={18} className="text-white" />
-                <span className="text-xs text-slate-300">Dark Mode</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-14 flex-col gap-1.5 bg-white hover:bg-gray-100 border-gray-300"
-                onClick={() => onUpdateBranding({
-                  accentColor: branding.accentColor || '#2563EB',
-                  backgroundColor: '#FFFFFF',
-                  textColor: '#1F2937',
-                  headingColor: '#111827',
-                  mutedTextColor: '#6B7280',
-                  tableHeaderBgColor: '#F3F4F6',
-                  tableHeaderTextColor: '#374151',
-                  tableRowAltBgColor: '#F9FAFB',
-                  tableBorderColor: '#E5E7EB',
-                })}
-              >
-                <Sun size={18} className="text-gray-800" />
-                <span className="text-xs text-gray-700">Light Mode</span>
-              </Button>
-            </div>
-
-            {/* Theme Presets */}
-            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Theme Presets</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {THEME_PRESETS.map((preset) => (
-                <Button
-                  key={preset.name}
-                  variant="outline"
-                  className="h-16 flex-col gap-1.5 p-2 hover:ring-2 hover:ring-primary/50"
-                  onClick={() => onUpdateBranding(preset.colors)}
-                >
-                  <div className="flex gap-1">
-                    <div 
-                      className="w-5 h-5 rounded-md border border-white/10 shadow-sm"
-                      style={{ backgroundColor: preset.colors.backgroundColor }}
-                    />
-                    <div 
-                      className="w-5 h-5 rounded-md shadow-sm"
-                      style={{ backgroundColor: preset.colors.accentColor }}
-                    />
-                  </div>
-                  <span className="text-[10px] flex items-center gap-1">
-                    <span>{preset.emoji}</span>
-                    {preset.name}
-                  </span>
-                </Button>
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* Layout Tab - NEW */}
-          <TabsContent value="layout" className="p-4 space-y-4 mt-0">
-            <CollapsibleSection title="Page Layout" icon={<LayoutGrid size={14} className="text-muted-foreground" />}>
+          {/* Fonts Tab - NEW */}
+          <TabsContent value="fonts" className="p-4 space-y-4 mt-0">
+            <CollapsibleSection title="Typography" icon={<Type size={14} className="text-muted-foreground" />}>
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Page Size</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-10 flex-col gap-0.5"
-                    >
-                      <span className="text-xs font-medium">A4</span>
-                      <span className="text-[9px] text-muted-foreground">210 × 297mm</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-10 flex-col gap-0.5"
-                    >
-                      <span className="text-xs font-medium">Letter</span>
-                      <span className="text-[9px] text-muted-foreground">8.5 × 11in</span>
-                    </Button>
-                  </div>
+                  <Label className="text-xs text-muted-foreground">Heading Font</Label>
+                  <Select defaultValue="system-ui, -apple-system, sans-serif">
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_PRESETS.map((font) => (
+                        <SelectItem key={font.name} value={font.value}>
+                          <span style={{ fontFamily: font.value }}>{font.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Orientation</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 text-xs gap-1.5"
-                    >
-                      <div className="w-3 h-4 border border-current rounded-sm" />
-                      Portrait
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 text-xs gap-1.5"
-                    >
-                      <div className="w-4 h-3 border border-current rounded-sm" />
-                      Landscape
-                    </Button>
-                  </div>
+                  <Label className="text-xs text-muted-foreground">Body Font</Label>
+                  <Select defaultValue="system-ui, -apple-system, sans-serif">
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_PRESETS.map((font) => (
+                        <SelectItem key={font.name} value={font.value}>
+                          <span style={{ fontFamily: font.value }}>{font.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Margins" icon={<LayoutGrid size={14} className="text-muted-foreground" />}>
+            <CollapsibleSection title="Font Sizes" icon={<Type size={14} className="text-muted-foreground" />}>
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Margin Preset</Label>
-                  <div className="grid grid-cols-3 gap-1">
-                    {['Narrow', 'Normal', 'Wide'].map((margin) => (
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Base Size</Label>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">14px</span>
+                  </div>
+                  <Slider
+                    defaultValue={[14]}
+                    min={10}
+                    max={20}
+                    step={1}
+                    className="py-2"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Heading Scale</Label>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">1.25x</span>
+                  </div>
+                  <Slider
+                    defaultValue={[1.25]}
+                    min={1}
+                    max={2}
+                    step={0.05}
+                    className="py-2"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Line Height</Label>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">1.5</span>
+                  </div>
+                  <Slider
+                    defaultValue={[1.5]}
+                    min={1}
+                    max={2.5}
+                    step={0.1}
+                    className="py-2"
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Text Options" icon={<Type size={14} className="text-muted-foreground" />}>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Uppercase Headings</Label>
+                    <p className="text-[10px] text-muted-foreground">Transform headings to uppercase</p>
+                  </div>
+                  <Switch />
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Bold Numbers</Label>
+                    <p className="text-[10px] text-muted-foreground">Emphasize numeric values</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Letter Spacing</Label>
+                  <div className="grid grid-cols-4 gap-1">
+                    {['Tight', 'Normal', 'Wide', 'Wider'].map((spacing) => (
                       <Button
-                        key={margin}
+                        key={spacing}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-[10px]"
+                      >
+                        {spacing}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CollapsibleSection>
+          </TabsContent>
+
+          {/* Effects Tab - NEW */}
+          <TabsContent value="effects" className="p-4 space-y-4 mt-0">
+            <CollapsibleSection title="Block Style Presets" icon={<Layers size={14} className="text-muted-foreground" />}>
+              <div className="grid grid-cols-3 gap-2">
+                {BLOCK_STYLE_PRESETS.map((preset) => (
+                  <Button
+                    key={preset.name}
+                    variant="outline"
+                    size="sm"
+                    className="h-14 flex-col gap-1.5"
+                    onClick={() => toast.success(`${preset.name} style applied`)}
+                  >
+                    <div 
+                      className={cn(
+                        "w-8 h-6 bg-muted border border-border",
+                        preset.borderRadius === 'none' ? 'rounded-none' : 
+                        preset.borderRadius === 'md' ? 'rounded-md' : 
+                        preset.borderRadius === 'lg' ? 'rounded-lg' : 
+                        preset.borderRadius === 'xl' ? 'rounded-xl' : 
+                        preset.borderRadius === '2xl' ? 'rounded-2xl' : 'rounded',
+                        preset.shadow === 'none' ? '' : 
+                        preset.shadow === 'md' ? 'shadow-md' : 
+                        preset.shadow === 'lg' ? 'shadow-lg' : 
+                        preset.shadow === 'xl' ? 'shadow-xl' : 'shadow',
+                      )}
+                    />
+                    <span className="text-[10px]">{preset.name}</span>
+                  </Button>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Gradients" icon={<Blend size={14} className="text-muted-foreground" />}>
+              <Label className="text-[10px] text-muted-foreground mb-2 block">Header Gradient Presets</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {GRADIENT_PRESETS.map((gradient) => (
+                  <button
+                    key={gradient.name}
+                    onClick={() => toast.success(`${gradient.name} gradient applied`)}
+                    className="group relative h-10 rounded-lg overflow-hidden border border-border hover:ring-2 hover:ring-primary/50"
+                    style={{ background: gradient.value }}
+                    title={gradient.name}
+                  >
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-white font-medium">
+                      {gradient.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Shadows & Depth" icon={<Layers size={14} className="text-muted-foreground" />}>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Global Shadow</Label>
+                  <div className="grid grid-cols-4 gap-1">
+                    {['None', 'Subtle', 'Medium', 'Strong'].map((shadow) => (
+                      <Button
+                        key={shadow}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-[10px]"
+                      >
+                        {shadow}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Blur Amount</Label>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">0px</span>
+                  </div>
+                  <Slider
+                    defaultValue={[0]}
+                    min={0}
+                    max={20}
+                    step={2}
+                    className="py-2"
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Borders" icon={<Paintbrush size={14} className="text-muted-foreground" />}>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Border Style</Label>
+                  <div className="grid grid-cols-4 gap-1">
+                    {['None', 'Solid', 'Dashed', 'Dotted'].map((style) => (
+                      <Button
+                        key={style}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-[10px]"
+                      >
+                        {style}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Corner Style</Label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {['Square', 'Rounded', 'Pill'].map((corner) => (
+                      <Button
+                        key={corner}
                         variant="outline"
                         size="sm"
                         className="h-8 text-xs"
                       >
-                        {margin}
+                        {corner}
                       </Button>
                     ))}
                   </div>
@@ -1229,36 +1535,44 @@ export function BlockPropertiesPanel({
               </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Grid Settings" icon={<LayoutGrid size={14} className="text-muted-foreground" />}>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Block Spacing</Label>
-                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">16px</span>
-                  </div>
-                  <Slider
-                    defaultValue={[16]}
-                    min={0}
-                    max={32}
-                    step={4}
-                    className="py-2"
-                  />
-                </div>
-
+            <CollapsibleSection title="Special Effects" icon={<Sparkles size={14} className="text-muted-foreground" />}>
+              <div className="space-y-2">
                 <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
                   <div>
-                    <Label className="text-xs">Show Grid Lines</Label>
-                    <p className="text-[10px] text-muted-foreground">Visual guide while editing</p>
+                    <Label className="text-xs">Glassmorphism</Label>
+                    <p className="text-[10px] text-muted-foreground">Frosted glass effect</p>
                   </div>
                   <Switch />
                 </div>
 
                 <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
                   <div>
-                    <Label className="text-xs">Snap to Grid</Label>
-                    <p className="text-[10px] text-muted-foreground">Align blocks automatically</p>
+                    <Label className="text-xs">Subtle Patterns</Label>
+                    <p className="text-[10px] text-muted-foreground">Add texture to backgrounds</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch />
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Accent Borders</Label>
+                    <p className="text-[10px] text-muted-foreground">Add accent color to block borders</p>
+                  </div>
+                  <Switch />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Opacity</Label>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">100%</span>
+                  </div>
+                  <Slider
+                    defaultValue={[100]}
+                    min={50}
+                    max={100}
+                    step={5}
+                    className="py-2"
+                  />
                 </div>
               </div>
             </CollapsibleSection>
