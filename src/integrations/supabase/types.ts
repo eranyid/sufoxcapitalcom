@@ -14,30 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      capital_ledger: {
+        Row: {
+          amount: number
+          amount_base: number | null
+          base_currency: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          entry_type: string
+          fx_rate_used: number | null
+          id: string
+          metadata: Json | null
+          running_balance: number | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          amount_base?: number | null
+          base_currency?: string | null
+          created_at?: string
+          currency: string
+          description?: string | null
+          entry_type: string
+          fx_rate_used?: number | null
+          id?: string
+          metadata?: Json | null
+          running_balance?: number | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          amount_base?: number | null
+          base_currency?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          entry_type?: string
+          fx_rate_used?: number | null
+          id?: string
+          metadata?: Json | null
+          running_balance?: number | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capital_ledger_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_balances: {
         Row: {
+          chf: number | null
           created_at: string
           eur: number | null
+          gbp: number | null
           id: string
           ils: number | null
+          jpy: number | null
           updated_at: string
           usd: number | null
           user_id: string
         }
         Insert: {
+          chf?: number | null
           created_at?: string
           eur?: number | null
+          gbp?: number | null
           id?: string
           ils?: number | null
+          jpy?: number | null
           updated_at?: string
           usd?: number | null
           user_id: string
         }
         Update: {
+          chf?: number | null
           created_at?: string
           eur?: number | null
+          gbp?: number | null
           id?: string
           ils?: number | null
+          jpy?: number | null
           updated_at?: string
           usd?: number | null
           user_id?: string
@@ -584,6 +649,87 @@ export type Database = {
           shocks?: Json
           type?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fx_rates: {
+        Row: {
+          created_at: string
+          from_currency: string
+          id: string
+          rate: number
+          rate_date: string
+          source: string | null
+          to_currency: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_currency: string
+          id?: string
+          rate: number
+          rate_date: string
+          source?: string | null
+          to_currency: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_currency?: string
+          id?: string
+          rate?: number
+          rate_date?: string
+          source?: string | null
+          to_currency?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      holdings_snapshot: {
+        Row: {
+          asset_currency: string
+          asset_name: string
+          avg_cost_base: number
+          avg_cost_local: number
+          base_currency: string
+          created_at: string
+          fx_rate_at_entry: number | null
+          id: string
+          last_updated: string
+          quantity: number
+          ticker: string
+          total_cost_base: number
+          user_id: string
+        }
+        Insert: {
+          asset_currency: string
+          asset_name: string
+          avg_cost_base: number
+          avg_cost_local: number
+          base_currency?: string
+          created_at?: string
+          fx_rate_at_entry?: number | null
+          id?: string
+          last_updated?: string
+          quantity: number
+          ticker: string
+          total_cost_base: number
+          user_id: string
+        }
+        Update: {
+          asset_currency?: string
+          asset_name?: string
+          avg_cost_base?: number
+          avg_cost_local?: number
+          base_currency?: string
+          created_at?: string
+          fx_rate_at_entry?: number | null
+          id?: string
+          last_updated?: string
+          quantity?: number
+          ticker?: string
+          total_cost_base?: number
           user_id?: string
         }
         Relationships: []
@@ -1261,17 +1407,25 @@ export type Database = {
         Row: {
           asset_name: string
           asset_type: string
+          base_currency: string | null
+          cash_impact_amount: number | null
+          cash_impact_currency: string | null
+          cost_base: number | null
+          cost_local: number | null
           created_at: string
           currency: string
           date: string
           deleted_at: string | null
           fees: number | null
+          fx_rate_at_entry: number | null
           geography: string
           id: string
           inception_year: number | null
           linked_company_id: string | null
           price_per_unit: number
           quantity: number
+          realized_fx_pl: number | null
+          realized_pl_base: number | null
           ticker: string
           transaction_type: string
           updated_at: string
@@ -1280,17 +1434,25 @@ export type Database = {
         Insert: {
           asset_name: string
           asset_type?: string
+          base_currency?: string | null
+          cash_impact_amount?: number | null
+          cash_impact_currency?: string | null
+          cost_base?: number | null
+          cost_local?: number | null
           created_at?: string
           currency?: string
           date: string
           deleted_at?: string | null
           fees?: number | null
+          fx_rate_at_entry?: number | null
           geography?: string
           id?: string
           inception_year?: number | null
           linked_company_id?: string | null
           price_per_unit: number
           quantity: number
+          realized_fx_pl?: number | null
+          realized_pl_base?: number | null
           ticker: string
           transaction_type?: string
           updated_at?: string
@@ -1299,17 +1461,25 @@ export type Database = {
         Update: {
           asset_name?: string
           asset_type?: string
+          base_currency?: string | null
+          cash_impact_amount?: number | null
+          cash_impact_currency?: string | null
+          cost_base?: number | null
+          cost_local?: number | null
           created_at?: string
           currency?: string
           date?: string
           deleted_at?: string | null
           fees?: number | null
+          fx_rate_at_entry?: number | null
           geography?: string
           id?: string
           inception_year?: number | null
           linked_company_id?: string | null
           price_per_unit?: number
           quantity?: number
+          realized_fx_pl?: number | null
+          realized_pl_base?: number | null
           ticker?: string
           transaction_type?: string
           updated_at?: string
@@ -1449,7 +1619,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      portfolio_nav_view: {
+        Row: {
+          asset_currency: string | null
+          avg_cost_base: number | null
+          base_currency: string | null
+          current_fx_rate: number | null
+          current_price: number | null
+          market_value_base: number | null
+          quantity: number | null
+          ticker: string | null
+          total_cost_base: number | null
+          unrealized_pl: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
