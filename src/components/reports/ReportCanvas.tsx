@@ -86,9 +86,12 @@ function SortableBlock({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isResizing ? 'none' : transition,
+    transition: isResizing ? 'none' : isDragging 
+      ? 'none' 
+      : 'transform 200ms cubic-bezier(0.25, 1, 0.5, 1), box-shadow 200ms ease, opacity 200ms ease',
     gridColumn: `span ${block.colSpan} / span ${block.colSpan}`,
     minHeight: block.height * GRID_ROW_HEIGHT * scale,
+    zIndex: isDragging ? 50 : undefined,
   };
 
   return (
@@ -96,12 +99,12 @@ function SortableBlock({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative group rounded-lg border transition-all",
-        isDragging && "opacity-50 z-50",
+        "relative group rounded-lg border transition-all duration-200",
+        isDragging && "opacity-60 scale-[1.02] shadow-2xl shadow-primary/20 ring-2 ring-primary/50",
         isResizing && "z-50 ring-2 ring-primary",
         isSelected 
           ? "border-primary ring-2 ring-primary/20" 
-          : "border-border/50 hover:border-border",
+          : "border-border/50 hover:border-border hover:shadow-lg hover:shadow-black/5",
         !block.enabled && "opacity-40"
       )}
       onClick={(e) => {
@@ -109,26 +112,33 @@ function SortableBlock({
         onSelect(block.id);
       }}
     >
-      {/* Block toolbar */}
+      {/* Block toolbar - enhanced with smooth animations */}
       <div className={cn(
-        "absolute -top-8 left-0 right-0 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity z-10",
-        isSelected && "opacity-100"
+        "absolute -top-9 left-0 right-0 flex items-center justify-between transition-all duration-200",
+        "opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0",
+        isSelected && "opacity-100 translate-y-0",
+        "z-10"
       )}>
         <div 
           {...attributes} 
           {...listeners}
-          className="flex items-center gap-1 bg-card border border-border rounded px-2 py-1 cursor-grab active:cursor-grabbing"
+          className={cn(
+            "flex items-center gap-1.5 bg-card/95 backdrop-blur-sm border border-border rounded-md px-2.5 py-1.5",
+            "cursor-grab active:cursor-grabbing transition-all duration-150",
+            "hover:border-primary/50 hover:shadow-md hover:shadow-primary/10",
+            "active:scale-95"
+          )}
         >
           <GripVertical size={12} className="text-muted-foreground" />
-          <span className="text-[10px] font-medium text-muted-foreground uppercase">
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
             {block.type.replace(/_/g, ' ')}
           </span>
         </div>
-        <div className="flex items-center gap-1 bg-card border border-border rounded p-0.5">
+        <div className="flex items-center gap-0.5 bg-card/95 backdrop-blur-sm border border-border rounded-md p-0.5">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-6 w-6 hover:bg-primary/10 hover:text-primary transition-colors"
             onClick={(e) => { e.stopPropagation(); onOpenProperties(block.id); }}
           >
             <Settings size={12} />
@@ -136,7 +146,7 @@ function SortableBlock({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-6 w-6 hover:bg-primary/10 hover:text-primary transition-colors"
             onClick={(e) => { e.stopPropagation(); onDuplicate(block.id); }}
           >
             <Copy size={12} />
@@ -144,7 +154,7 @@ function SortableBlock({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 hover:text-destructive"
+            className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive transition-colors"
             onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
           >
             <Trash2 size={12} />
@@ -152,8 +162,8 @@ function SortableBlock({
         </div>
       </div>
 
-      {/* Block content */}
-      <div className="p-3 h-full overflow-hidden">
+      {/* Block content with smooth transition */}
+      <div className="p-3 h-full overflow-hidden transition-opacity duration-200">
         <ReportBlockRenderer
           block={block}
           holdings={holdings}
@@ -446,16 +456,26 @@ export function ReportCanvas({
           </div>
         )}
 
-        {/* Drag overlay */}
-        <DragOverlay>
+        {/* Drag overlay - shows a preview of the dragged block */}
+        <DragOverlay dropAnimation={{
+          duration: 250,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+        }}>
           {activeBlock && (
             <div 
-              className="bg-card border border-primary rounded-lg shadow-lg p-3 opacity-80"
-              style={{ width: 200 }}
+              className="bg-card border-2 border-primary rounded-lg shadow-2xl shadow-primary/30 p-4 opacity-95 backdrop-blur-sm animate-scale-in"
+              style={{ 
+                width: 220,
+                background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)/0.95) 100%)',
+              }}
             >
-              <span className="text-xs font-medium">
-                {activeBlock.type.replace(/_/g, ' ')}
-              </span>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-sm font-medium text-foreground">
+                  {activeBlock.type.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Drop to reposition</p>
             </div>
           )}
         </DragOverlay>
