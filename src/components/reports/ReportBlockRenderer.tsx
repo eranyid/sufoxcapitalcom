@@ -13,20 +13,23 @@ const formatPercent = (value: number): string => {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 };
 
-// Generate chart colors array from branding
+// Generate harmonized chart colors array from branding
+// Uses a cohesive palette derived from the primary colors
 const getChartColors = (branding: ReportBranding): string[] => {
   const primary = branding.chartPrimaryColor || DEFAULT_BRANDING.chartPrimaryColor;
   const secondary = branding.chartSecondaryColor || DEFAULT_BRANDING.chartSecondaryColor;
-  // Generate a palette based on primary and secondary with variations
+  const accent = branding.accentColor || DEFAULT_BRANDING.accentColor;
+  
+  // Harmonized palette with consistent saturation and value levels
   return [
-    primary,
-    secondary,
-    branding.accentColor || DEFAULT_BRANDING.accentColor,
-    '#9C27B0',
-    '#FF5722',
-    '#00BCD4',
-    '#E91E63',
-    '#795548'
+    primary,                     // Gold / Primary
+    secondary,                   // Steel blue / Secondary
+    accent,                      // Accent (usually matches primary)
+    '#7B9E87',                   // Sage - muted green
+    '#A67B8A',                   // Dusty rose - muted pink
+    '#8B7355',                   // Taupe - warm brown
+    '#6B7B8A',                   // Slate - cool gray-blue
+    '#9B8B6B',                   // Khaki - warm neutral
   ];
 };
 
