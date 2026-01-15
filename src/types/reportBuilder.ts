@@ -359,21 +359,22 @@ export const BLOCK_LIBRARY: BlockLibraryItem[] = [
   },
 ];
 
-// Default branding
+// Default branding - Harmonized color palette
+// Base: Warm gold accent (#D4A853) with complementary muted tones
 export const DEFAULT_BRANDING: ReportBranding = {
-  accentColor: '#FFC107',
-  backgroundColor: '#0A0A0A',
-  textColor: '#E5E5E5',
-  headingColor: '#FFFFFF',
-  mutedTextColor: '#888888',
-  chartPrimaryColor: '#FFC107',
-  chartSecondaryColor: '#4A90D9',
-  chartPositiveColor: '#22C55E',
-  chartNegativeColor: '#EF4444',
-  tableHeaderBgColor: '#1A1A1A',
-  tableHeaderTextColor: '#FFC107',
-  tableRowAltBgColor: '#111111',
-  tableBorderColor: '#333333',
+  accentColor: '#D4A853',           // Warm gold - primary accent
+  backgroundColor: '#0C0C0E',       // Deep charcoal - slightly warmer than pure black
+  textColor: '#E8E6E3',             // Warm off-white
+  headingColor: '#FAFAF9',          // Warm white
+  mutedTextColor: '#8A8A8A',        // Neutral gray
+  chartPrimaryColor: '#D4A853',     // Warm gold - matches accent
+  chartSecondaryColor: '#6B8CAE',   // Muted steel blue - complementary
+  chartPositiveColor: '#4CAF7C',    // Muted sage green - softer than pure green
+  chartNegativeColor: '#C75B5B',    // Muted terracotta - softer than pure red
+  tableHeaderBgColor: '#161618',    // Slightly elevated dark
+  tableHeaderTextColor: '#D4A853',  // Accent gold
+  tableRowAltBgColor: '#111113',    // Subtle row alternation
+  tableBorderColor: '#2A2A2E',      // Subtle border
   headerTitle: 'Portfolio Report',
   footerText: 'Confidential - For Internal Use Only',
   showPageNumbers: true,
