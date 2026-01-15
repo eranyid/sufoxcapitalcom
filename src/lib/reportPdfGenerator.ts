@@ -91,7 +91,31 @@ export async function generateReportPDF({ report, holdings, performanceMetrics, 
         doc.setFillColor(...hexToRgb(accentColor));
         doc.rect(0, 0, pageWidth, 3, 'F');
         
-        y = 20;
+        y = 10;
+        
+        // Render logo if available
+        if (branding.logoUrl) {
+          try {
+            const logoResponse = await fetch(branding.logoUrl);
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            const logoHeight = 15;
+            const logoWidth = logoHeight * 2;
+            const logoX = pageWidth / 2 - logoWidth / 2;
+            
+            doc.addImage(logoBase64, 'PNG', logoX, y, logoWidth, logoHeight);
+            y += logoHeight + 5;
+          } catch (logoError) {
+            console.warn('Failed to embed logo in PDF:', logoError);
+          }
+        }
+        
+        y += 5;
         doc.setFontSize(24);
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
@@ -723,7 +747,41 @@ export async function generateWYSIWYGReportPDF({
         doc.setFillColor(...hexToRgb(accentColor));
         doc.rect(0, 0, pageWidth, 3, 'F');
         
-        y = 20;
+        y = 10;
+        
+        // Render logo if available
+        const logoUrl = config.logoUrl || branding.logoUrl;
+        if (logoUrl) {
+          try {
+            // Fetch and embed the logo image
+            const logoResponse = await fetch(logoUrl);
+            const logoBlob = await logoResponse.blob();
+            const logoBase64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(logoBlob);
+            });
+            
+            // Determine logo size based on config
+            const logoSize = config.logoSize || 'medium';
+            const logoHeight = logoSize === 'small' ? 10 : logoSize === 'large' ? 20 : 15;
+            const logoWidth = logoHeight * 2; // Assume 2:1 aspect ratio, will be constrained
+            
+            // Determine logo alignment
+            const logoAlignment = config.logoAlignment || 'center';
+            let logoX = pageWidth / 2 - logoWidth / 2; // center default
+            if (logoAlignment === 'left') logoX = margin;
+            if (logoAlignment === 'right') logoX = pageWidth - margin - logoWidth;
+            
+            doc.addImage(logoBase64, 'PNG', logoX, y, logoWidth, logoHeight);
+            y += logoHeight + 5;
+          } catch (logoError) {
+            console.warn('Failed to embed logo in PDF:', logoError);
+            // Continue without logo
+          }
+        }
+        
+        y += 5;
         doc.setFontSize(24);
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
