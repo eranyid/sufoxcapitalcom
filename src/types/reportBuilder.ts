@@ -132,6 +132,45 @@ export interface ReportBranding {
   showPageNumbers: boolean;
   showConfidentialWatermark: boolean;
   dateFormat: 'short' | 'medium' | 'long';
+  
+  // Typography settings
+  headingFont?: string;
+  bodyFont?: string;
+  baseFontSize?: number;
+  headingScale?: number;
+  lineHeight?: number;
+  uppercaseHeadings?: boolean;
+  boldNumbers?: boolean;
+  letterSpacing?: 'tight' | 'normal' | 'wide' | 'wider';
+  
+  // Effects settings
+  globalBorderRadius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  globalShadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  globalBlur?: number;
+  headerGradient?: string;
+  borderStyle?: 'none' | 'solid' | 'dashed' | 'dotted';
+  cornerStyle?: 'square' | 'rounded' | 'pill';
+  glassmorphism?: boolean;
+  subtlePatterns?: boolean;
+  accentBorders?: boolean;
+  effectsOpacity?: number;
+  
+  // Page options
+  showDateInHeader?: boolean;
+  showTableOfContents?: boolean;
+  
+  // Export options
+  exportQuality?: 'draft' | 'standard' | 'high';
+  embedFonts?: boolean;
+  compressImages?: boolean;
+  
+  // Data settings
+  numberFormat?: 'us' | 'eu' | 'ch';
+  currencyDisplay?: 'symbol' | 'code' | 'none';
+  
+  // Accessibility
+  highContrastMode?: boolean;
+  screenReaderTags?: boolean;
 }
 
 // Block library metadata
@@ -387,6 +426,38 @@ export const DEFAULT_BRANDING: ReportBranding = {
   showPageNumbers: true,
   showConfidentialWatermark: false,
   dateFormat: 'medium',
+  // Typography defaults
+  headingFont: 'system-ui, -apple-system, sans-serif',
+  bodyFont: 'system-ui, -apple-system, sans-serif',
+  baseFontSize: 14,
+  headingScale: 1.25,
+  lineHeight: 1.5,
+  uppercaseHeadings: false,
+  boldNumbers: true,
+  letterSpacing: 'normal',
+  // Effects defaults
+  globalBorderRadius: 'md',
+  globalShadow: 'none',
+  globalBlur: 0,
+  borderStyle: 'solid',
+  cornerStyle: 'rounded',
+  glassmorphism: false,
+  subtlePatterns: false,
+  accentBorders: false,
+  effectsOpacity: 100,
+  // Page options defaults
+  showDateInHeader: true,
+  showTableOfContents: false,
+  // Export defaults
+  exportQuality: 'standard',
+  embedFonts: true,
+  compressImages: true,
+  // Data settings defaults
+  numberFormat: 'us',
+  currencyDisplay: 'symbol',
+  // Accessibility defaults
+  highContrastMode: false,
+  screenReaderTags: true,
 };
 
 // Page dimensions in mm

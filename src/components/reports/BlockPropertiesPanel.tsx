@@ -1299,7 +1299,13 @@ export function BlockPropertiesPanel({
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Heading Font</Label>
-                  <Select defaultValue="system-ui, -apple-system, sans-serif">
+                  <Select 
+                    value={branding.headingFont || 'system-ui, -apple-system, sans-serif'}
+                    onValueChange={(v) => {
+                      onUpdateBranding({ headingFont: v });
+                      toast.success('Heading font updated');
+                    }}
+                  >
                     <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
@@ -1315,7 +1321,13 @@ export function BlockPropertiesPanel({
 
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Body Font</Label>
-                  <Select defaultValue="system-ui, -apple-system, sans-serif">
+                  <Select 
+                    value={branding.bodyFont || 'system-ui, -apple-system, sans-serif'}
+                    onValueChange={(v) => {
+                      onUpdateBranding({ bodyFont: v });
+                      toast.success('Body font updated');
+                    }}
+                  >
                     <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
@@ -1336,13 +1348,14 @@ export function BlockPropertiesPanel({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs text-muted-foreground">Base Size</Label>
-                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">14px</span>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{branding.baseFontSize || 14}px</span>
                   </div>
                   <Slider
-                    defaultValue={[14]}
+                    value={[branding.baseFontSize || 14]}
                     min={10}
                     max={20}
                     step={1}
+                    onValueChange={([v]) => onUpdateBranding({ baseFontSize: v })}
                     className="py-2"
                   />
                 </div>
@@ -1350,13 +1363,14 @@ export function BlockPropertiesPanel({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs text-muted-foreground">Heading Scale</Label>
-                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">1.25x</span>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{(branding.headingScale || 1.25).toFixed(2)}x</span>
                   </div>
                   <Slider
-                    defaultValue={[1.25]}
+                    value={[branding.headingScale || 1.25]}
                     min={1}
                     max={2}
                     step={0.05}
+                    onValueChange={([v]) => onUpdateBranding({ headingScale: v })}
                     className="py-2"
                   />
                 </div>
@@ -1364,13 +1378,14 @@ export function BlockPropertiesPanel({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs text-muted-foreground">Line Height</Label>
-                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">1.5</span>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{(branding.lineHeight || 1.5).toFixed(1)}</span>
                   </div>
                   <Slider
-                    defaultValue={[1.5]}
+                    value={[branding.lineHeight || 1.5]}
                     min={1}
                     max={2.5}
                     step={0.1}
+                    onValueChange={([v]) => onUpdateBranding({ lineHeight: v })}
                     className="py-2"
                   />
                 </div>
@@ -1384,7 +1399,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Uppercase Headings</Label>
                     <p className="text-[10px] text-muted-foreground">Transform headings to uppercase</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={branding.uppercaseHeadings || false}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ uppercaseHeadings: v });
+                      toast.success(v ? 'Uppercase headings enabled' : 'Uppercase headings disabled');
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
@@ -1392,18 +1413,28 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Bold Numbers</Label>
                     <p className="text-[10px] text-muted-foreground">Emphasize numeric values</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={branding.boldNumbers ?? true}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ boldNumbers: v });
+                      toast.success(v ? 'Bold numbers enabled' : 'Bold numbers disabled');
+                    }}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Letter Spacing</Label>
                   <div className="grid grid-cols-4 gap-1">
-                    {['Tight', 'Normal', 'Wide', 'Wider'].map((spacing) => (
+                    {(['tight', 'normal', 'wide', 'wider'] as const).map((spacing) => (
                       <Button
                         key={spacing}
-                        variant="outline"
+                        variant={(branding.letterSpacing || 'normal') === spacing ? 'default' : 'outline'}
                         size="sm"
-                        className="h-8 text-[10px]"
+                        className="h-8 text-[10px] capitalize"
+                        onClick={() => {
+                          onUpdateBranding({ letterSpacing: spacing });
+                          toast.success(`Letter spacing: ${spacing}`);
+                        }}
                       >
                         {spacing}
                       </Button>
@@ -1424,7 +1455,13 @@ export function BlockPropertiesPanel({
                     variant="outline"
                     size="sm"
                     className="h-14 flex-col gap-1.5"
-                    onClick={() => toast.success(`${preset.name} style applied`)}
+                    onClick={() => {
+                      onUpdateBranding({ 
+                        globalBorderRadius: preset.borderRadius as any,
+                        globalShadow: preset.shadow as any,
+                      });
+                      toast.success(`${preset.name} style applied`);
+                    }}
                   >
                     <div 
                       className={cn(
@@ -1452,8 +1489,14 @@ export function BlockPropertiesPanel({
                 {GRADIENT_PRESETS.map((gradient) => (
                   <button
                     key={gradient.name}
-                    onClick={() => toast.success(`${gradient.name} gradient applied`)}
-                    className="group relative h-10 rounded-lg overflow-hidden border border-border hover:ring-2 hover:ring-primary/50"
+                    onClick={() => {
+                      onUpdateBranding({ headerGradient: gradient.value });
+                      toast.success(`${gradient.name} gradient applied`);
+                    }}
+                    className={cn(
+                      "group relative h-10 rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary/50",
+                      branding.headerGradient === gradient.value ? "ring-2 ring-primary border-primary" : "border-border"
+                    )}
                     style={{ background: gradient.value }}
                     title={gradient.name}
                   >
@@ -1463,6 +1506,19 @@ export function BlockPropertiesPanel({
                   </button>
                 ))}
               </div>
+              {branding.headerGradient && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full h-8 text-xs mt-2"
+                  onClick={() => {
+                    onUpdateBranding({ headerGradient: undefined });
+                    toast.success('Gradient removed');
+                  }}
+                >
+                  Remove Gradient
+                </Button>
+              )}
             </CollapsibleSection>
 
             <CollapsibleSection title="Shadows & Depth" icon={<Layers size={14} className="text-muted-foreground" />}>
@@ -1470,14 +1526,18 @@ export function BlockPropertiesPanel({
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Global Shadow</Label>
                   <div className="grid grid-cols-4 gap-1">
-                    {['None', 'Subtle', 'Medium', 'Strong'].map((shadow) => (
+                    {(['none', 'sm', 'md', 'lg'] as const).map((shadow) => (
                       <Button
                         key={shadow}
-                        variant="outline"
+                        variant={(branding.globalShadow || 'none') === shadow ? 'default' : 'outline'}
                         size="sm"
-                        className="h-8 text-[10px]"
+                        className="h-8 text-[10px] capitalize"
+                        onClick={() => {
+                          onUpdateBranding({ globalShadow: shadow });
+                          toast.success(`Shadow: ${shadow}`);
+                        }}
                       >
-                        {shadow}
+                        {shadow === 'none' ? 'None' : shadow === 'sm' ? 'Subtle' : shadow === 'md' ? 'Medium' : 'Strong'}
                       </Button>
                     ))}
                   </div>
@@ -1486,13 +1546,14 @@ export function BlockPropertiesPanel({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs text-muted-foreground">Blur Amount</Label>
-                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">0px</span>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{branding.globalBlur || 0}px</span>
                   </div>
                   <Slider
-                    defaultValue={[0]}
+                    value={[branding.globalBlur || 0]}
                     min={0}
                     max={20}
                     step={2}
+                    onValueChange={([v]) => onUpdateBranding({ globalBlur: v })}
                     className="py-2"
                   />
                 </div>
@@ -1504,12 +1565,16 @@ export function BlockPropertiesPanel({
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Border Style</Label>
                   <div className="grid grid-cols-4 gap-1">
-                    {['None', 'Solid', 'Dashed', 'Dotted'].map((style) => (
+                    {(['none', 'solid', 'dashed', 'dotted'] as const).map((style) => (
                       <Button
                         key={style}
-                        variant="outline"
+                        variant={(branding.borderStyle || 'solid') === style ? 'default' : 'outline'}
                         size="sm"
-                        className="h-8 text-[10px]"
+                        className="h-8 text-[10px] capitalize"
+                        onClick={() => {
+                          onUpdateBranding({ borderStyle: style });
+                          toast.success(`Border style: ${style}`);
+                        }}
                       >
                         {style}
                       </Button>
@@ -1520,12 +1585,16 @@ export function BlockPropertiesPanel({
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Corner Style</Label>
                   <div className="grid grid-cols-3 gap-1">
-                    {['Square', 'Rounded', 'Pill'].map((corner) => (
+                    {(['square', 'rounded', 'pill'] as const).map((corner) => (
                       <Button
                         key={corner}
-                        variant="outline"
+                        variant={(branding.cornerStyle || 'rounded') === corner ? 'default' : 'outline'}
                         size="sm"
-                        className="h-8 text-xs"
+                        className="h-8 text-xs capitalize"
+                        onClick={() => {
+                          onUpdateBranding({ cornerStyle: corner });
+                          toast.success(`Corner style: ${corner}`);
+                        }}
                       >
                         {corner}
                       </Button>
@@ -1542,7 +1611,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Glassmorphism</Label>
                     <p className="text-[10px] text-muted-foreground">Frosted glass effect</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={branding.glassmorphism || false}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ glassmorphism: v });
+                      toast.success(v ? 'Glassmorphism enabled' : 'Glassmorphism disabled');
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
@@ -1550,7 +1625,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Subtle Patterns</Label>
                     <p className="text-[10px] text-muted-foreground">Add texture to backgrounds</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={branding.subtlePatterns || false}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ subtlePatterns: v });
+                      toast.success(v ? 'Patterns enabled' : 'Patterns disabled');
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
@@ -1558,19 +1639,26 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Accent Borders</Label>
                     <p className="text-[10px] text-muted-foreground">Add accent color to block borders</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={branding.accentBorders || false}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ accentBorders: v });
+                      toast.success(v ? 'Accent borders enabled' : 'Accent borders disabled');
+                    }}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs text-muted-foreground">Opacity</Label>
-                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">100%</span>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{branding.effectsOpacity || 100}%</span>
                   </div>
                   <Slider
-                    defaultValue={[100]}
+                    value={[branding.effectsOpacity || 100]}
                     min={50}
                     max={100}
                     step={5}
+                    onValueChange={([v]) => onUpdateBranding({ effectsOpacity: v })}
                     className="py-2"
                   />
                 </div>
@@ -1700,7 +1788,10 @@ export function BlockPropertiesPanel({
                   </div>
                   <Switch
                     checked={branding.showPageNumbers}
-                    onCheckedChange={(v) => onUpdateBranding({ showPageNumbers: v })}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ showPageNumbers: v });
+                      toast.success(v ? 'Page numbers enabled' : 'Page numbers disabled');
+                    }}
                   />
                 </div>
 
@@ -1711,7 +1802,10 @@ export function BlockPropertiesPanel({
                   </div>
                   <Switch
                     checked={branding.showConfidentialWatermark}
-                    onCheckedChange={(v) => onUpdateBranding({ showConfidentialWatermark: v })}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ showConfidentialWatermark: v });
+                      toast.success(v ? 'Watermark enabled' : 'Watermark disabled');
+                    }}
                   />
                 </div>
 
@@ -1720,7 +1814,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Date in Header</Label>
                     <p className="text-[10px] text-muted-foreground">Show current date</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={branding.showDateInHeader ?? true}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ showDateInHeader: v });
+                      toast.success(v ? 'Date in header enabled' : 'Date in header disabled');
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
@@ -1728,7 +1828,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Table of Contents</Label>
                     <p className="text-[10px] text-muted-foreground">Auto-generate TOC</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={branding.showTableOfContents || false}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ showTableOfContents: v });
+                      toast.success(v ? 'Table of contents enabled' : 'Table of contents disabled');
+                    }}
+                  />
                 </div>
               </div>
             </CollapsibleSection>
@@ -1738,12 +1844,16 @@ export function BlockPropertiesPanel({
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Export Quality</Label>
                   <div className="grid grid-cols-3 gap-1">
-                    {['Draft', 'Standard', 'High'].map((quality) => (
+                    {(['draft', 'standard', 'high'] as const).map((quality) => (
                       <Button
                         key={quality}
-                        variant="outline"
+                        variant={(branding.exportQuality || 'standard') === quality ? 'default' : 'outline'}
                         size="sm"
-                        className="h-8 text-xs"
+                        className="h-8 text-xs capitalize"
+                        onClick={() => {
+                          onUpdateBranding({ exportQuality: quality });
+                          toast.success(`Export quality: ${quality}`);
+                        }}
                       >
                         {quality}
                       </Button>
@@ -1756,7 +1866,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Embed Fonts</Label>
                     <p className="text-[10px] text-muted-foreground">Include fonts in PDF</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={branding.embedFonts ?? true}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ embedFonts: v });
+                      toast.success(v ? 'Embed fonts enabled' : 'Embed fonts disabled');
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
@@ -1764,7 +1880,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Compress Images</Label>
                     <p className="text-[10px] text-muted-foreground">Reduce file size</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={branding.compressImages ?? true}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ compressImages: v });
+                      toast.success(v ? 'Image compression enabled' : 'Image compression disabled');
+                    }}
+                  />
                 </div>
               </div>
             </CollapsibleSection>
@@ -1773,7 +1895,13 @@ export function BlockPropertiesPanel({
               <div className="space-y-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Number Format</Label>
-                  <Select defaultValue="us">
+                  <Select 
+                    value={branding.numberFormat || 'us'}
+                    onValueChange={(v: 'us' | 'eu' | 'ch') => {
+                      onUpdateBranding({ numberFormat: v });
+                      toast.success(`Number format: ${v.toUpperCase()}`);
+                    }}
+                  >
                     <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
@@ -1787,21 +1915,33 @@ export function BlockPropertiesPanel({
 
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Date Format</Label>
-                  <Select defaultValue="mdy">
+                  <Select 
+                    value={branding.dateFormat || 'medium'}
+                    onValueChange={(v: 'short' | 'medium' | 'long') => {
+                      onUpdateBranding({ dateFormat: v });
+                      toast.success(`Date format: ${v}`);
+                    }}
+                  >
                     <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
-                      <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
-                      <SelectItem value="ymd">YYYY-MM-DD</SelectItem>
+                      <SelectItem value="short">MM/DD/YY</SelectItem>
+                      <SelectItem value="medium">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="long">Month DD, YYYY</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Currency Display</Label>
-                  <Select defaultValue="symbol">
+                  <Select 
+                    value={branding.currencyDisplay || 'symbol'}
+                    onValueChange={(v: 'symbol' | 'code' | 'none') => {
+                      onUpdateBranding({ currencyDisplay: v });
+                      toast.success(`Currency display: ${v}`);
+                    }}
+                  >
                     <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
@@ -1822,7 +1962,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">High Contrast Mode</Label>
                     <p className="text-[10px] text-muted-foreground">Improve readability</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={branding.highContrastMode || false}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ highContrastMode: v });
+                      toast.success(v ? 'High contrast enabled' : 'High contrast disabled');
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
@@ -1830,7 +1976,13 @@ export function BlockPropertiesPanel({
                     <Label className="text-xs">Screen Reader Tags</Label>
                     <p className="text-[10px] text-muted-foreground">Add alt text to charts</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={branding.screenReaderTags ?? true}
+                    onCheckedChange={(v) => {
+                      onUpdateBranding({ screenReaderTags: v });
+                      toast.success(v ? 'Screen reader tags enabled' : 'Screen reader tags disabled');
+                    }}
+                  />
                 </div>
               </div>
             </CollapsibleSection>
