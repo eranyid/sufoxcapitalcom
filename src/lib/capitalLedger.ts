@@ -244,3 +244,26 @@ function mapLedgerEntry(data: any): LedgerEntry {
     createdAt: data.created_at
   };
 }
+
+// Labels and colors for UI display
+export const ENTRY_TYPE_LABELS: Record<LedgerEntryType, string> = {
+  BUY: 'Buy',
+  SELL: 'Sell',
+  DEPOSIT: 'Deposit',
+  WITHDRAWAL: 'Withdrawal',
+  FX_CONVERSION: 'FX Conversion',
+  DIVIDEND: 'Dividend',
+  INTEREST: 'Interest',
+  FEE: 'Fee',
+};
+
+export const ENTRY_TYPE_COLORS: Record<LedgerEntryType, string> = {
+  BUY: 'text-destructive',
+  SELL: 'text-green-500',
+  DEPOSIT: 'text-green-500',
+  WITHDRAWAL: 'text-destructive',
+  FX_CONVERSION: 'text-blue-500',
+  DIVIDEND: 'text-green-500',
+  INTEREST: 'text-green-500',
+  FEE: 'text-destructive',
+};

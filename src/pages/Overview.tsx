@@ -12,6 +12,7 @@ import { CashManagement } from '@/components/dashboard/CashManagement';
 import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
+import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileText } from 'lucide-react';
@@ -255,6 +256,9 @@ export default function Overview() {
         <PolicyFitCheck />
         <CrmSummaryWidget />
       </div>
+
+      {/* Capital Ledger - Audit Trail */}
+      <CapitalLedgerView compact />
 
       {/* Current Holdings */}
       {transactions.length > 0 && valuations.length > 0 && (
