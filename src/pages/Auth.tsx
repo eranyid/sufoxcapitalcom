@@ -224,7 +224,7 @@ export default function Auth() {
             </div>
             <div>
               <h3 className="font-medium text-foreground">Risk Management</h3>
-              <p className="text-sm text-muted-foreground">Monte Carlo simulations and VaR analysis</p>
+              <p className="text-sm text-muted-foreground">VaR analysis, drawdown tracking and factor exposure</p>
             </div>
           </div>
           
