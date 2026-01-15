@@ -492,7 +492,7 @@ export default function ReportBuilder() {
                 onClick={() => { setSelectedBlockId(null); setPropertiesPanelOpen(true); }}
               >
                 <Settings2 size={14} />
-                <span className="hidden sm:inline">Branding</span>
+                <span className="hidden sm:inline">Edit</span>
               </Button>
               <Button 
                 variant="outline" 
