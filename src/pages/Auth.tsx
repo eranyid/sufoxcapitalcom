@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, Shield, FlaskConical, Loader2, Mail, CheckCircle, Eye, EyeOff, ArrowLeft, Lock, ShieldCheck, FileText } from 'lucide-react';
+import { TrendingUp, Shield, FlaskConical, Loader2, Mail, CheckCircle, Eye, EyeOff, ArrowLeft, Lock, ShieldCheck, FileText, Dices } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FaceIdIcon } from '@/components/icons/FaceIdIcon';
 import { z } from 'zod';
@@ -235,6 +235,16 @@ export default function Auth() {
             <div>
               <h3 className="font-medium text-foreground">Scenario Lab</h3>
               <p className="text-sm text-muted-foreground">Stress test your portfolio with historical crash scenarios</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4 group">
+            <div className="p-2.5 bg-secondary/80 rounded border border-border/50 group-hover:border-primary/30 transition-colors">
+              <Dices className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium text-foreground">Monte Carlo</h3>
+              <p className="text-sm text-muted-foreground">10,000+ simulations for probability-based forecasting</p>
             </div>
           </div>
         </div>
