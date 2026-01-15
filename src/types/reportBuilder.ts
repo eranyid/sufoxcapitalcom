@@ -46,6 +46,13 @@ export interface ReportBlockConfig {
   backgroundColor?: string;
   showBackground?: boolean;
   
+  // Border & Shadow options
+  borderRadius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  borderWidth?: 'none' | 'thin' | 'medium' | 'thick';
+  borderColor?: string;
+  padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  
   // Data display options
   showLabels?: boolean;
   showTable?: boolean;
