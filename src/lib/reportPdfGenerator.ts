@@ -656,23 +656,59 @@ export async function generateWYSIWYGReportPDF({
   const margin = 15;
   let y = margin;
 
+  // Get colors from branding
   const accentColor = branding.accentColor || COLORS.primary;
+  const backgroundColor = branding.backgroundColor || COLORS.background;
+  const textColor = branding.textColor || COLORS.text;
+  const headingColor = branding.headingColor || '#FAFAF9';
+  const mutedTextColor = branding.mutedTextColor || COLORS.textMuted;
+  const cardBgColor = branding.tableHeaderBgColor || COLORS.card;
+  const borderColor = branding.tableBorderColor || COLORS.border;
+  const positiveColor = branding.chartPositiveColor || COLORS.positive;
+  const negativeColor = branding.chartNegativeColor || COLORS.negative;
 
   // Helper functions
-  const addNewPageIfNeeded = (requiredHeight: number) => {
-    if (y + requiredHeight > pageHeight - 20) {
-      doc.addPage();
-      y = margin;
-      return true;
-    }
-    return false;
-  };
-
   const hexToRgb = (hex: string): [number, number, number] => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result 
       ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
       : [255, 193, 7];
+  };
+
+  // Fill page with dark background
+  const fillPageBackground = () => {
+    doc.setFillColor(...hexToRgb(backgroundColor));
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+  };
+
+  // Draw a card/panel background
+  const drawCardBackground = (x: number, yPos: number, width: number, height: number, withBorder = true) => {
+    doc.setFillColor(...hexToRgb(cardBgColor));
+    doc.roundedRect(x, yPos, width, height, 2, 2, 'F');
+    if (withBorder) {
+      doc.setDrawColor(...hexToRgb(borderColor));
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x, yPos, width, height, 2, 2, 'S');
+    }
+  };
+
+  // Add accent bar at the top of a section
+  const drawAccentBar = (yPos: number) => {
+    doc.setFillColor(...hexToRgb(accentColor));
+    doc.rect(margin, yPos, 25, 0.8, 'F');
+  };
+
+  // Fill first page background
+  fillPageBackground();
+
+  const addNewPageIfNeeded = (requiredHeight: number) => {
+    if (y + requiredHeight > pageHeight - 20) {
+      doc.addPage();
+      fillPageBackground(); // Fill new page with dark background
+      y = margin;
+      return true;
+    }
+    return false;
   };
 
   // Process each enabled block
@@ -742,12 +778,18 @@ export async function generateWYSIWYGReportPDF({
         break;
 
       case 'portfolio_overview':
-        addNewPageIfNeeded(40);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(50);
+        
+        // Draw section card background
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 45);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('PORTFOLIO OVERVIEW', margin, y);
-        y += 8;
+        doc.text('PORTFOLIO OVERVIEW', margin + 4, y + 2);
+        y += 10;
 
         const overviewData = [
           ['Total Value', formatCurrency(totalValue)],
@@ -762,23 +804,36 @@ export async function generateWYSIWYGReportPDF({
           head: [],
           body: overviewData,
           theme: 'plain',
-          styles: { fontSize: 10, cellPadding: 4, textColor: [224, 224, 224] },
+          styles: { 
+            fontSize: 10, 
+            cellPadding: 3, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
           columnStyles: {
-            0: { cellWidth: 60, textColor: [128, 128, 128] },
+            0: { cellWidth: 50, textColor: hexToRgb(mutedTextColor) },
             1: { fontStyle: 'bold', halign: 'right' },
           },
-          margin: { left: margin, right: margin },
+          margin: { left: margin + 4, right: margin + 4 },
+          tableLineColor: hexToRgb(borderColor),
+          tableLineWidth: 0,
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'performance_summary':
-        addNewPageIfNeeded(35);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(45);
+        
+        // Draw section card background
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 38);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('PERFORMANCE SUMMARY', margin, y);
-        y += 8;
+        doc.text('PERFORMANCE SUMMARY', margin + 4, y + 2);
+        y += 10;
 
         const perfData = [
           ['Total Return', performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'],
@@ -792,23 +847,34 @@ export async function generateWYSIWYGReportPDF({
           head: [],
           body: perfData,
           theme: 'plain',
-          styles: { fontSize: 10, cellPadding: 4, textColor: [224, 224, 224] },
+          styles: { 
+            fontSize: 10, 
+            cellPadding: 3, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
           columnStyles: {
-            0: { cellWidth: 60, textColor: [128, 128, 128] },
+            0: { cellWidth: 50, textColor: hexToRgb(mutedTextColor) },
             1: { fontStyle: 'bold', halign: 'right' },
           },
-          margin: { left: margin, right: margin },
+          margin: { left: margin + 4, right: margin + 4 },
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'asset_allocation':
-        addNewPageIfNeeded(50);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(55);
+        
+        // Draw section card background
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 50);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('ASSET ALLOCATION', margin, y);
-        y += 8;
+        doc.text('ASSET ALLOCATION', margin + 4, y + 2);
+        y += 10;
 
         const byType: Record<string, number> = {};
         holdings.forEach(h => {
@@ -825,22 +891,37 @@ export async function generateWYSIWYGReportPDF({
           startY: y,
           head: [['Asset Class', 'Value', 'Weight']],
           body: allocData,
-          theme: 'striped',
-          headStyles: { fillColor: [40, 40, 40], textColor: [180, 180, 180], fontSize: 9 },
-          styles: { fontSize: 9, cellPadding: 3, textColor: [224, 224, 224] },
-          alternateRowStyles: { fillColor: [25, 25, 25] },
-          margin: { left: margin, right: margin },
+          theme: 'plain',
+          headStyles: { 
+            fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
+            textColor: hexToRgb(accentColor), 
+            fontSize: 9,
+            fontStyle: 'bold',
+          },
+          styles: { 
+            fontSize: 9, 
+            cellPadding: 3, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
+          alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
+          margin: { left: margin + 4, right: margin + 4 },
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'currency_exposure':
-        addNewPageIfNeeded(50);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(55);
+        
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 50);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('CURRENCY EXPOSURE', margin, y);
-        y += 8;
+        doc.text('CURRENCY EXPOSURE', margin + 4, y + 2);
+        y += 10;
 
         const byCurrency: Record<string, number> = {};
         holdings.forEach(h => {
@@ -857,22 +938,37 @@ export async function generateWYSIWYGReportPDF({
           startY: y,
           head: [['Currency', 'Value', 'Weight']],
           body: currencyData,
-          theme: 'striped',
-          headStyles: { fillColor: [40, 40, 40], textColor: [180, 180, 180], fontSize: 9 },
-          styles: { fontSize: 9, cellPadding: 3, textColor: [224, 224, 224] },
-          alternateRowStyles: { fillColor: [25, 25, 25] },
-          margin: { left: margin, right: margin },
+          theme: 'plain',
+          headStyles: { 
+            fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
+            textColor: hexToRgb(accentColor), 
+            fontSize: 9,
+            fontStyle: 'bold',
+          },
+          styles: { 
+            fontSize: 9, 
+            cellPadding: 3, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
+          alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
+          margin: { left: margin + 4, right: margin + 4 },
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'geographic_allocation':
-        addNewPageIfNeeded(50);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(55);
+        
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 50);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('GEOGRAPHIC ALLOCATION', margin, y);
-        y += 8;
+        doc.text('GEOGRAPHIC ALLOCATION', margin + 4, y + 2);
+        y += 10;
 
         const byGeo: Record<string, number> = {};
         holdings.forEach(h => {
@@ -889,22 +985,37 @@ export async function generateWYSIWYGReportPDF({
           startY: y,
           head: [['Region', 'Value', 'Weight']],
           body: geoData,
-          theme: 'striped',
-          headStyles: { fillColor: [40, 40, 40], textColor: [180, 180, 180], fontSize: 9 },
-          styles: { fontSize: 9, cellPadding: 3, textColor: [224, 224, 224] },
-          alternateRowStyles: { fillColor: [25, 25, 25] },
-          margin: { left: margin, right: margin },
+          theme: 'plain',
+          headStyles: { 
+            fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
+            textColor: hexToRgb(accentColor), 
+            fontSize: 9,
+            fontStyle: 'bold',
+          },
+          styles: { 
+            fontSize: 9, 
+            cellPadding: 3, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
+          alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
+          margin: { left: margin + 4, right: margin + 4 },
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'holdings_table':
-        addNewPageIfNeeded(60);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(70);
+        
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 65);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('HOLDINGS', margin, y);
-        y += 8;
+        doc.text('HOLDINGS', margin + 4, y + 2);
+        y += 10;
 
         const maxItems = config.maxItems || 20;
         const holdingsData = holdings.slice(0, maxItems).map(h => [
@@ -919,23 +1030,43 @@ export async function generateWYSIWYGReportPDF({
           startY: y,
           head: [['Ticker', 'Name', 'Type', 'Value', 'Weight']],
           body: holdingsData,
-          theme: 'striped',
-          headStyles: { fillColor: [40, 40, 40], textColor: [180, 180, 180], fontSize: 8 },
-          styles: { fontSize: 8, cellPadding: 2, textColor: [224, 224, 224] },
-          alternateRowStyles: { fillColor: [25, 25, 25] },
-          columnStyles: { 0: { fontStyle: 'bold', cellWidth: 25 }, 1: { cellWidth: 50 }, 3: { halign: 'right' }, 4: { halign: 'right' } },
-          margin: { left: margin, right: margin },
+          theme: 'plain',
+          headStyles: { 
+            fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
+            textColor: hexToRgb(accentColor), 
+            fontSize: 8,
+            fontStyle: 'bold',
+          },
+          styles: { 
+            fontSize: 8, 
+            cellPadding: 2, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
+          alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
+          columnStyles: { 
+            0: { fontStyle: 'bold', cellWidth: 25 }, 
+            1: { cellWidth: 50 }, 
+            3: { halign: 'right' }, 
+            4: { halign: 'right' } 
+          },
+          margin: { left: margin + 4, right: margin + 4 },
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'risk_metrics':
-        addNewPageIfNeeded(40);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(50);
+        
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 45);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('RISK METRICS', margin, y);
-        y += 8;
+        doc.text('RISK METRICS', margin + 4, y + 2);
+        y += 10;
 
         const riskData = [
           ['Volatility (Ann.)', riskMetrics ? formatPercent(riskMetrics.volatility) : '—'],
@@ -950,20 +1081,33 @@ export async function generateWYSIWYGReportPDF({
           head: [],
           body: riskData,
           theme: 'plain',
-          styles: { fontSize: 10, cellPadding: 4, textColor: [224, 224, 224] },
-          columnStyles: { 0: { cellWidth: 60, textColor: [128, 128, 128] }, 1: { fontStyle: 'bold', halign: 'right' } },
-          margin: { left: margin, right: margin },
+          styles: { 
+            fontSize: 10, 
+            cellPadding: 3, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
+          columnStyles: { 
+            0: { cellWidth: 50, textColor: hexToRgb(mutedTextColor) }, 
+            1: { fontStyle: 'bold', halign: 'right' } 
+          },
+          margin: { left: margin + 4, right: margin + 4 },
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'top_movers':
-        addNewPageIfNeeded(60);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(70);
+        
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 65);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('TOP MOVERS', margin, y);
-        y += 8;
+        doc.text('TOP MOVERS', margin + 4, y + 2);
+        y += 10;
 
         const sortedHoldings = [...holdings]
           .filter(h => h.unrealizedPL !== undefined)
@@ -973,9 +1117,9 @@ export async function generateWYSIWYGReportPDF({
         const topPerformers = sortedHoldings.slice(0, itemCount).map(h => [h.ticker, h.name, formatCurrency(h.unrealizedPL || 0)]);
         const bottomPerformers = sortedHoldings.slice(-itemCount).reverse().map(h => [h.ticker, h.name, formatCurrency(h.unrealizedPL || 0)]);
 
-        doc.setFontSize(10);
-        doc.setTextColor(76, 175, 80);
-        doc.text('Top Performers', margin, y);
+        doc.setFontSize(9);
+        doc.setTextColor(...hexToRgb(positiveColor));
+        doc.text('Top Performers', margin + 4, y);
         y += 4;
 
         autoTable(doc, {
@@ -983,16 +1127,25 @@ export async function generateWYSIWYGReportPDF({
           head: [['Ticker', 'Name', 'P/L']],
           body: topPerformers,
           theme: 'plain',
-          headStyles: { fillColor: [25, 35, 25], textColor: [76, 175, 80], fontSize: 8 },
-          styles: { fontSize: 8, cellPadding: 2, textColor: [224, 224, 224] },
-          columnStyles: { 2: { textColor: [76, 175, 80], halign: 'right' } },
-          margin: { left: margin, right: margin },
+          headStyles: { 
+            fillColor: [20, 35, 25], 
+            textColor: hexToRgb(positiveColor), 
+            fontSize: 8 
+          },
+          styles: { 
+            fontSize: 8, 
+            cellPadding: 2, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
+          columnStyles: { 2: { textColor: hexToRgb(positiveColor), halign: 'right' } },
+          margin: { left: margin + 4, right: margin + 4 },
         });
         y = (doc as any).lastAutoTable.finalY + 6;
 
-        doc.setFontSize(10);
-        doc.setTextColor(255, 82, 82);
-        doc.text('Bottom Performers', margin, y);
+        doc.setFontSize(9);
+        doc.setTextColor(...hexToRgb(negativeColor));
+        doc.text('Bottom Performers', margin + 4, y);
         y += 4;
 
         autoTable(doc, {
@@ -1000,21 +1153,35 @@ export async function generateWYSIWYGReportPDF({
           head: [['Ticker', 'Name', 'P/L']],
           body: bottomPerformers,
           theme: 'plain',
-          headStyles: { fillColor: [35, 25, 25], textColor: [255, 82, 82], fontSize: 8 },
-          styles: { fontSize: 8, cellPadding: 2, textColor: [224, 224, 224] },
-          columnStyles: { 2: { textColor: [255, 82, 82], halign: 'right' } },
-          margin: { left: margin, right: margin },
+          headStyles: { 
+            fillColor: [35, 20, 20], 
+            textColor: hexToRgb(negativeColor), 
+            fontSize: 8 
+          },
+          styles: { 
+            fontSize: 8, 
+            cellPadding: 2, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
+          columnStyles: { 2: { textColor: hexToRgb(negativeColor), halign: 'right' } },
+          margin: { left: margin + 4, right: margin + 4 },
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'scenarios_snapshot':
-        addNewPageIfNeeded(40);
-        doc.setFontSize(14);
+        addNewPageIfNeeded(50);
+        
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 45);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
         doc.setTextColor(...hexToRgb(accentColor));
         doc.setFont('helvetica', 'bold');
-        doc.text('SCENARIOS SNAPSHOT', margin, y);
-        y += 8;
+        doc.text('SCENARIOS SNAPSHOT', margin + 4, y + 2);
+        y += 10;
 
         const scenarioResults = [
           ['2008 Financial Crisis', '-28.5%'],
@@ -1028,14 +1195,24 @@ export async function generateWYSIWYGReportPDF({
           startY: y,
           head: [['Scenario', 'Impact']],
           body: scenarioResults,
-          theme: 'striped',
-          headStyles: { fillColor: [40, 40, 40], textColor: [180, 180, 180], fontSize: 9 },
-          styles: { fontSize: 9, cellPadding: 3, textColor: [224, 224, 224] },
-          columnStyles: { 1: { textColor: [255, 82, 82], halign: 'right' } },
-          alternateRowStyles: { fillColor: [25, 25, 25] },
-          margin: { left: margin, right: margin },
+          theme: 'plain',
+          headStyles: { 
+            fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
+            textColor: hexToRgb(accentColor), 
+            fontSize: 9,
+            fontStyle: 'bold',
+          },
+          styles: { 
+            fontSize: 9, 
+            cellPadding: 3, 
+            textColor: hexToRgb(textColor),
+            fillColor: hexToRgb(cardBgColor),
+          },
+          columnStyles: { 1: { textColor: hexToRgb(negativeColor), halign: 'right' } },
+          alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
+          margin: { left: margin + 4, right: margin + 4 },
         });
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
       case 'footer':
@@ -1044,6 +1221,7 @@ export async function generateWYSIWYGReportPDF({
 
       case 'page_break':
         doc.addPage();
+        fillPageBackground(); // Fill new page with dark background
         y = margin;
         break;
 
@@ -1055,7 +1233,7 @@ export async function generateWYSIWYGReportPDF({
         // Generic placeholder
         addNewPageIfNeeded(20);
         doc.setFontSize(12);
-        doc.setTextColor(128, 128, 128);
+        doc.setTextColor(...hexToRgb(mutedTextColor));
         doc.text(`[${block.type.replace(/_/g, ' ').toUpperCase()}]`, margin, y);
         y += 15;
         break;
@@ -1068,12 +1246,12 @@ export async function generateWYSIWYGReportPDF({
     doc.setPage(i);
     
     // Footer line
-    doc.setDrawColor(60, 60, 60);
+    doc.setDrawColor(...hexToRgb(borderColor));
     doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
     
     // Footer text
     doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(...hexToRgb(mutedTextColor));
     
     if (branding.footerText) {
       doc.text(branding.footerText, margin, pageHeight - 10);
