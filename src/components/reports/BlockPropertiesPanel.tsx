@@ -841,9 +841,9 @@ export function BlockPropertiesPanel({
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Palette size={14} className="text-primary" />
-            Report Branding
+            Edit Report
           </h3>
-          <p className="text-[10px] text-muted-foreground">Customize the look</p>
+          <p className="text-[10px] text-muted-foreground">Customize your report</p>
         </div>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={copyTheme} title="Copy theme">
@@ -911,22 +911,26 @@ export function BlockPropertiesPanel({
       </div>
 
       <Tabs defaultValue="colors" className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-2 grid grid-cols-4 h-9">
-          <TabsTrigger value="colors" className="text-xs gap-1 px-2">
-            <PaintBucket size={12} />
+        <TabsList className="mx-4 mt-2 grid grid-cols-5 h-9">
+          <TabsTrigger value="colors" className="text-xs gap-1 px-1.5">
+            <PaintBucket size={11} />
             Colors
           </TabsTrigger>
-          <TabsTrigger value="themes" className="text-xs gap-1 px-2">
-            <Sparkles size={12} />
+          <TabsTrigger value="themes" className="text-xs gap-1 px-1.5">
+            <Sparkles size={11} />
             Themes
           </TabsTrigger>
-          <TabsTrigger value="content" className="text-xs gap-1 px-2">
-            <Type size={12} />
+          <TabsTrigger value="layout" className="text-xs gap-1 px-1.5">
+            <LayoutGrid size={11} />
+            Layout
+          </TabsTrigger>
+          <TabsTrigger value="content" className="text-xs gap-1 px-1.5">
+            <Type size={11} />
             Content
           </TabsTrigger>
-          <TabsTrigger value="options" className="text-xs gap-1 px-2">
-            <Settings2 size={12} />
-            Options
+          <TabsTrigger value="options" className="text-xs gap-1 px-1.5">
+            <Settings2 size={11} />
+            More
           </TabsTrigger>
         </TabsList>
 
@@ -1155,6 +1159,111 @@ export function BlockPropertiesPanel({
             </div>
           </TabsContent>
 
+          {/* Layout Tab - NEW */}
+          <TabsContent value="layout" className="p-4 space-y-4 mt-0">
+            <CollapsibleSection title="Page Layout" icon={<LayoutGrid size={14} className="text-muted-foreground" />}>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Page Size</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-10 flex-col gap-0.5"
+                    >
+                      <span className="text-xs font-medium">A4</span>
+                      <span className="text-[9px] text-muted-foreground">210 × 297mm</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-10 flex-col gap-0.5"
+                    >
+                      <span className="text-xs font-medium">Letter</span>
+                      <span className="text-[9px] text-muted-foreground">8.5 × 11in</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Orientation</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 text-xs gap-1.5"
+                    >
+                      <div className="w-3 h-4 border border-current rounded-sm" />
+                      Portrait
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 text-xs gap-1.5"
+                    >
+                      <div className="w-4 h-3 border border-current rounded-sm" />
+                      Landscape
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Margins" icon={<LayoutGrid size={14} className="text-muted-foreground" />}>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Margin Preset</Label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {['Narrow', 'Normal', 'Wide'].map((margin) => (
+                      <Button
+                        key={margin}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                      >
+                        {margin}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Grid Settings" icon={<LayoutGrid size={14} className="text-muted-foreground" />}>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Block Spacing</Label>
+                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">16px</span>
+                  </div>
+                  <Slider
+                    defaultValue={[16]}
+                    min={0}
+                    max={32}
+                    step={4}
+                    className="py-2"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Show Grid Lines</Label>
+                    <p className="text-[10px] text-muted-foreground">Visual guide while editing</p>
+                  </div>
+                  <Switch />
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Snap to Grid</Label>
+                    <p className="text-[10px] text-muted-foreground">Align blocks automatically</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </div>
+            </CollapsibleSection>
+          </TabsContent>
+
           {/* Content Tab */}
           <TabsContent value="content" className="p-4 space-y-4 mt-0">
             {/* Logo Upload */}
@@ -1290,6 +1399,124 @@ export function BlockPropertiesPanel({
                     checked={branding.showConfidentialWatermark}
                     onCheckedChange={(v) => onUpdateBranding({ showConfidentialWatermark: v })}
                   />
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Date in Header</Label>
+                    <p className="text-[10px] text-muted-foreground">Show current date</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Table of Contents</Label>
+                    <p className="text-[10px] text-muted-foreground">Auto-generate TOC</p>
+                  </div>
+                  <Switch />
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Export Options" icon={<Settings2 size={14} className="text-muted-foreground" />}>
+              <div className="space-y-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Export Quality</Label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {['Draft', 'Standard', 'High'].map((quality) => (
+                      <Button
+                        key={quality}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                      >
+                        {quality}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Embed Fonts</Label>
+                    <p className="text-[10px] text-muted-foreground">Include fonts in PDF</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Compress Images</Label>
+                    <p className="text-[10px] text-muted-foreground">Reduce file size</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Data Settings" icon={<Table2 size={14} className="text-muted-foreground" />}>
+              <div className="space-y-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Number Format</Label>
+                  <Select defaultValue="us">
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="us">1,234.56 (US)</SelectItem>
+                      <SelectItem value="eu">1.234,56 (EU)</SelectItem>
+                      <SelectItem value="ch">1'234.56 (CH)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Date Format</Label>
+                  <Select defaultValue="mdy">
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
+                      <SelectItem value="ymd">YYYY-MM-DD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Currency Display</Label>
+                  <Select defaultValue="symbol">
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="symbol">$1,234</SelectItem>
+                      <SelectItem value="code">USD 1,234</SelectItem>
+                      <SelectItem value="none">1,234</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Accessibility" icon={<Settings2 size={14} className="text-muted-foreground" />}>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">High Contrast Mode</Label>
+                    <p className="text-[10px] text-muted-foreground">Improve readability</p>
+                  </div>
+                  <Switch />
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                  <div>
+                    <Label className="text-xs">Screen Reader Tags</Label>
+                    <p className="text-[10px] text-muted-foreground">Add alt text to charts</p>
+                  </div>
+                  <Switch defaultChecked />
                 </div>
               </div>
             </CollapsibleSection>
