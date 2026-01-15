@@ -35,6 +35,12 @@ export interface MonthlyValuation {
   pricePerUnit: number;
   fxRate?: number;
   linkedCompanyId?: string; // Link to CRM company analysis
+  // Bond/Debt specific fields
+  yieldToMaturity?: number; // YTM percentage
+  couponRate?: number; // Annual coupon rate percentage
+  duration?: number; // Modified duration in years
+  accruedInterest?: number; // Accrued interest amount
+  maturityDate?: string; // Bond maturity date (YYYY-MM-DD)
 }
 
 export interface Asset {

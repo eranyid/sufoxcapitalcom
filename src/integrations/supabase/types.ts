@@ -1381,46 +1381,61 @@ export type Database = {
       }
       valuations: {
         Row: {
+          accrued_interest: number | null
           asset_id: string | null
           asset_name: string
+          coupon_rate: number | null
           created_at: string
           deleted_at: string | null
+          duration: number | null
           fx_rate: number | null
           id: string
           linked_company_id: string | null
+          maturity_date: string | null
           month: string
           price_per_unit: number
           ticker: string
           updated_at: string
           user_id: string
+          yield_to_maturity: number | null
         }
         Insert: {
+          accrued_interest?: number | null
           asset_id?: string | null
           asset_name: string
+          coupon_rate?: number | null
           created_at?: string
           deleted_at?: string | null
+          duration?: number | null
           fx_rate?: number | null
           id?: string
           linked_company_id?: string | null
+          maturity_date?: string | null
           month: string
           price_per_unit: number
           ticker: string
           updated_at?: string
           user_id: string
+          yield_to_maturity?: number | null
         }
         Update: {
+          accrued_interest?: number | null
           asset_id?: string | null
           asset_name?: string
+          coupon_rate?: number | null
           created_at?: string
           deleted_at?: string | null
+          duration?: number | null
           fx_rate?: number | null
           id?: string
           linked_company_id?: string | null
+          maturity_date?: string | null
           month?: string
           price_per_unit?: number
           ticker?: string
           updated_at?: string
           user_id?: string
+          yield_to_maturity?: number | null
         }
         Relationships: [
           {

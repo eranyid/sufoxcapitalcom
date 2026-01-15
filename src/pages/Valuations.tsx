@@ -21,9 +21,24 @@ interface EditFormState {
   month: string;
   pricePerUnit: string;
   fxRate: string;
+  yieldToMaturity: string;
+  couponRate: string;
+  duration: string;
+  accruedInterest: string;
+  maturityDate: string;
 }
 
-const emptyEditForm: EditFormState = { ticker: '', month: '', pricePerUnit: '', fxRate: '' };
+const emptyEditForm: EditFormState = { 
+  ticker: '', 
+  month: '', 
+  pricePerUnit: '', 
+  fxRate: '',
+  yieldToMaturity: '',
+  couponRate: '',
+  duration: '',
+  accruedInterest: '',
+  maturityDate: ''
+};
 
 export default function Valuations() {
   const { user } = useAuth();
@@ -68,7 +83,12 @@ export default function Valuations() {
     month: '',
     pricePerUnit: '',
     fxRate: '',
-    linkedCompanyId: ''
+    linkedCompanyId: '',
+    yieldToMaturity: '',
+    couponRate: '',
+    duration: '',
+    accruedInterest: '',
+    maturityDate: ''
   });
 
   // Handle company selection - auto-fill fields
@@ -99,10 +119,27 @@ export default function Valuations() {
       month: form.month,
       pricePerUnit: parseFloat(form.pricePerUnit),
       fxRate: form.fxRate ? parseFloat(form.fxRate) : undefined,
-      linkedCompanyId: form.linkedCompanyId || undefined
+      linkedCompanyId: form.linkedCompanyId || undefined,
+      yieldToMaturity: form.yieldToMaturity ? parseFloat(form.yieldToMaturity) : undefined,
+      couponRate: form.couponRate ? parseFloat(form.couponRate) : undefined,
+      duration: form.duration ? parseFloat(form.duration) : undefined,
+      accruedInterest: form.accruedInterest ? parseFloat(form.accruedInterest) : undefined,
+      maturityDate: form.maturityDate || undefined
     });
     setIsOpen(false);
-    setForm({ ticker: '', assetName: '', month: '', pricePerUnit: '', fxRate: '', linkedCompanyId: '' });
+    setForm({ 
+      ticker: '', 
+      assetName: '', 
+      month: '', 
+      pricePerUnit: '', 
+      fxRate: '', 
+      linkedCompanyId: '',
+      yieldToMaturity: '',
+      couponRate: '',
+      duration: '',
+      accruedInterest: '',
+      maturityDate: ''
+    });
     toast.success('Valuation added successfully');
   };
 
@@ -112,7 +149,12 @@ export default function Valuations() {
       ticker: val.ticker,
       month: val.month,
       pricePerUnit: val.pricePerUnit.toString(),
-      fxRate: val.fxRate?.toString() || ''
+      fxRate: val.fxRate?.toString() || '',
+      yieldToMaturity: val.yieldToMaturity?.toString() || '',
+      couponRate: val.couponRate?.toString() || '',
+      duration: val.duration?.toString() || '',
+      accruedInterest: val.accruedInterest?.toString() || '',
+      maturityDate: val.maturityDate || ''
     });
     setIsEditOpen(true);
   };
@@ -123,7 +165,12 @@ export default function Valuations() {
     
     await updateValuation(editingValuation.id, {
       pricePerUnit: parseFloat(editForm.pricePerUnit),
-      fxRate: editForm.fxRate ? parseFloat(editForm.fxRate) : undefined
+      fxRate: editForm.fxRate ? parseFloat(editForm.fxRate) : undefined,
+      yieldToMaturity: editForm.yieldToMaturity ? parseFloat(editForm.yieldToMaturity) : undefined,
+      couponRate: editForm.couponRate ? parseFloat(editForm.couponRate) : undefined,
+      duration: editForm.duration ? parseFloat(editForm.duration) : undefined,
+      accruedInterest: editForm.accruedInterest ? parseFloat(editForm.accruedInterest) : undefined,
+      maturityDate: editForm.maturityDate || undefined
     });
     setIsEditOpen(false);
     setEditingValuation(null);
@@ -279,6 +326,65 @@ export default function Valuations() {
                     />
                   </div>
                 </div>
+
+                {/* Bond/Debt Fields */}
+                <div className="border-t border-border pt-4 mt-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">Bond/Debt Fields (Optional)</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>YTM (%)</Label>
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        value={form.yieldToMaturity}
+                        onChange={(e) => setForm({ ...form, yieldToMaturity: e.target.value })}
+                        placeholder="e.g. 5.25"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Coupon Rate (%)</Label>
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        value={form.couponRate}
+                        onChange={(e) => setForm({ ...form, couponRate: e.target.value })}
+                        placeholder="e.g. 4.50"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-3">
+                    <div className="space-y-2">
+                      <Label>Duration (Years)</Label>
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        value={form.duration}
+                        onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                        placeholder="e.g. 7.5"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Accrued Interest</Label>
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        value={form.accruedInterest}
+                        onChange={(e) => setForm({ ...form, accruedInterest: e.target.value })}
+                        placeholder="e.g. 125.50"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="space-y-2">
+                      <Label>Maturity Date</Label>
+                      <Input 
+                        type="date"
+                        value={form.maturityDate}
+                        onChange={(e) => setForm({ ...form, maturityDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
                 <Button type="submit" className="w-full gradient-gold text-primary-foreground" disabled={!form.ticker || !form.month || !form.pricePerUnit}>
                   Add Valuation
                 </Button>
@@ -341,6 +447,9 @@ export default function Valuations() {
                               <TableHead>Asset Name</TableHead>
                               <TableHead className="text-right">Price/NAV</TableHead>
                               <TableHead className="text-right">FX Rate</TableHead>
+                              <TableHead className="text-right">YTM</TableHead>
+                              <TableHead className="text-right">Coupon</TableHead>
+                              <TableHead className="text-right">Duration</TableHead>
                               <TableHead></TableHead>
                             </TableRow>
                           </TableHeader>
@@ -352,6 +461,15 @@ export default function Valuations() {
                                 <TableCell className="text-right">{formatCurrency(v.pricePerUnit)}</TableCell>
                                 <TableCell className="text-right text-muted-foreground">
                                   {v.fxRate?.toFixed(4) || '1.0000'}
+                                </TableCell>
+                                <TableCell className="text-right text-muted-foreground">
+                                  {v.yieldToMaturity ? `${v.yieldToMaturity.toFixed(2)}%` : '-'}
+                                </TableCell>
+                                <TableCell className="text-right text-muted-foreground">
+                                  {v.couponRate ? `${v.couponRate.toFixed(2)}%` : '-'}
+                                </TableCell>
+                                <TableCell className="text-right text-muted-foreground">
+                                  {v.duration ? `${v.duration.toFixed(2)}y` : '-'}
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">
@@ -397,7 +515,7 @@ export default function Valuations() {
                       <div className="md:hidden divide-y divide-border">
                         {vals.map((v) => (
                           <div key={v.id} className="p-3 flex items-center justify-between">
-                            <div>
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="font-mono font-bold text-primary text-sm">{v.ticker}</span>
                               </div>
@@ -406,6 +524,14 @@ export default function Valuations() {
                                 <span className="font-mono">{formatCurrency(v.pricePerUnit)}</span>
                                 <span className="text-muted-foreground">FX: {v.fxRate?.toFixed(4) || '1.0000'}</span>
                               </div>
+                              {/* Bond info row */}
+                              {(v.yieldToMaturity || v.couponRate || v.duration) && (
+                                <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                                  {v.yieldToMaturity && <span>YTM: {v.yieldToMaturity.toFixed(2)}%</span>}
+                                  {v.couponRate && <span>Coupon: {v.couponRate.toFixed(2)}%</span>}
+                                  {v.duration && <span>Dur: {v.duration.toFixed(2)}y</span>}
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-1">
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditOpen(v)}>
@@ -493,6 +619,65 @@ export default function Valuations() {
                     onChange={(e) => setEditForm({ ...editForm, fxRate: e.target.value })}
                     placeholder="1.0000"
                   />
+                </div>
+              </div>
+
+              {/* Bond/Debt Fields */}
+              <div className="border-t border-border pt-4">
+                <p className="text-sm font-medium text-muted-foreground mb-3">Bond/Debt Fields (Optional)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>YTM (%)</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={editForm.yieldToMaturity}
+                      onChange={(e) => setEditForm({ ...editForm, yieldToMaturity: e.target.value })}
+                      placeholder="e.g. 5.25"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Coupon Rate (%)</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={editForm.couponRate}
+                      onChange={(e) => setEditForm({ ...editForm, couponRate: e.target.value })}
+                      placeholder="e.g. 4.50"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label>Duration (Years)</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={editForm.duration}
+                      onChange={(e) => setEditForm({ ...editForm, duration: e.target.value })}
+                      placeholder="e.g. 7.5"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Accrued Interest</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={editForm.accruedInterest}
+                      onChange={(e) => setEditForm({ ...editForm, accruedInterest: e.target.value })}
+                      placeholder="e.g. 125.50"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="space-y-2">
+                    <Label>Maturity Date</Label>
+                    <Input 
+                      type="date"
+                      value={editForm.maturityDate}
+                      onChange={(e) => setEditForm({ ...editForm, maturityDate: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
