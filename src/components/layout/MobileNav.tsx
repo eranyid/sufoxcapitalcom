@@ -13,7 +13,8 @@ import {
   FileCheck,
   Users,
   FlaskConical,
-  HelpCircle
+  HelpCircle,
+  Banknote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -37,6 +38,7 @@ const moreNavItems = [
   { path: '/xray', icon: Scan, label: 'X-Ray' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
+  { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },
   { path: '/settings', icon: Settings, label: 'Settings' },
   { path: '/help', icon: HelpCircle, label: 'Help' },
