@@ -226,40 +226,52 @@ export function CashManagement() {
         </Dialog>
       </div>
       <div className="p-4">
-        <div className="grid grid-cols-3 gap-4">
-          {(Object.keys(cashBalances) as CashCurrency[]).map((currency) => (
-            <div key={currency} className="bg-muted/20 border border-border/30 p-3 rounded">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground">{CURRENCY_NAMES[currency]}</span>
-                <span className="text-primary font-mono text-[10px]">{currency}</span>
-              </div>
-              {editMode === currency ? (
-                <div className="flex gap-1">
-                  <Input
-                    type="number"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    className="h-6 text-xs"
-                    autoFocus
-                  />
-                  <Button size="sm" onClick={() => handleSetBalance(currency)} className="h-6 text-[10px] px-2">
-                    Set
-                  </Button>
+        <div className="grid grid-cols-3 gap-3">
+          {(Object.keys(cashBalances) as CashCurrency[]).map((currency) => {
+            const formatAmount = (amount: number) => {
+              const absAmount = Math.abs(amount);
+              if (absAmount >= 1000000) {
+                return `${(amount / 1000000).toFixed(1)}M`;
+              } else if (absAmount >= 10000) {
+                return `${(amount / 1000).toFixed(1)}k`;
+              }
+              return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            };
+            
+            return (
+              <div key={currency} className="bg-muted/20 border border-border/30 p-2.5 rounded overflow-hidden">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-muted-foreground truncate">{CURRENCY_NAMES[currency]}</span>
+                  <span className="text-primary font-mono text-[10px] flex-shrink-0 ml-1">{currency}</span>
                 </div>
-              ) : (
-                <p 
-                  className={`font-mono text-lg tabular-nums cursor-pointer hover:text-primary transition-colors ${cashBalances[currency] < 0 ? 'text-destructive' : ''}`}
-                  onClick={() => {
-                    setEditMode(currency);
-                    setEditValue(cashBalances[currency].toString());
-                  }}
-                  title="Click to edit"
-                >
-                  {CURRENCY_SYMBOLS[currency]}{cashBalances[currency].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              )}
-            </div>
-          ))}
+                {editMode === currency ? (
+                  <div className="flex gap-1">
+                    <Input
+                      type="number"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="h-6 text-xs min-w-0"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={() => handleSetBalance(currency)} className="h-6 text-[10px] px-2 flex-shrink-0">
+                      Set
+                    </Button>
+                  </div>
+                ) : (
+                  <p 
+                    className={`font-mono text-base tabular-nums cursor-pointer hover:text-primary transition-colors truncate ${cashBalances[currency] < 0 ? 'text-destructive' : ''}`}
+                    onClick={() => {
+                      setEditMode(currency);
+                      setEditValue(cashBalances[currency].toString());
+                    }}
+                    title={`${CURRENCY_SYMBOLS[currency]}${cashBalances[currency].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} - Click to edit`}
+                  >
+                    {CURRENCY_SYMBOLS[currency]}{formatAmount(cashBalances[currency])}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="mt-3 pt-3 border-t border-border/30 flex justify-between items-center">
           <span className="text-[10px] text-muted-foreground">Total (approx. USD)</span>
