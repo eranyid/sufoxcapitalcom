@@ -22,27 +22,36 @@ export default function Performance() {
   const hasData = performanceMetrics !== null;
 
   // Calculate aggregated P/L with and without FX impact
+  // Use same costBasis as performanceMetrics to ensure matching percentages
   const plBreakdown = useMemo(() => {
-    if (!computedData || computedData.holdings.length === 0) {
-      return { totalPL: 0, marketPL: 0, fxPL: 0, costBasis: 0 };
+    if (!computedData || computedData.holdings.length === 0 || !performanceMetrics) {
+      return { totalPL: 0, marketPL: 0, fxPL: 0, costBasis: 0, realizedPL: 0, unrealizedPL: 0 };
     }
     
-    const totalPL = computedData.holdings.reduce((sum, h) => sum + h.unrealizedPL, 0);
+    // Sum unrealized P/L components from holdings
+    const unrealizedPL = computedData.holdings.reduce((sum, h) => sum + h.unrealizedPL, 0);
     const marketPL = computedData.holdings.reduce((sum, h) => sum + h.marketPL, 0);
     const fxPL = computedData.holdings.reduce((sum, h) => sum + h.fxPL, 0);
     const costBasis = computedData.holdings.reduce((sum, h) => sum + h.costBasis, 0);
     
-    return { totalPL, marketPL, fxPL, costBasis };
-  }, [computedData]);
+    // Get realized P/L from performanceMetrics (already calculated properly)
+    const realizedPL = performanceMetrics.realizedPL || 0;
+    
+    // Total P/L = Realized + Unrealized (matching performanceMetrics.totalReturn)
+    const totalPL = realizedPL + unrealizedPL;
+    
+    return { totalPL, marketPL, fxPL, costBasis, realizedPL, unrealizedPL };
+  }, [computedData, performanceMetrics]);
 
+  // Use performanceMetrics.totalReturn for the total % to ensure consistency
+  const totalPLPercent = hasData ? performanceMetrics.totalReturn : 0;
+  
+  // Market and FX percentages relative to costBasis (consistent with how total is calculated)
   const marketPLPercent = plBreakdown.costBasis > 0 
     ? (plBreakdown.marketPL / plBreakdown.costBasis) * 100 
     : 0;
   const fxPLPercent = plBreakdown.costBasis > 0 
     ? (plBreakdown.fxPL / plBreakdown.costBasis) * 100 
-    : 0;
-  const totalPLPercent = plBreakdown.costBasis > 0 
-    ? (plBreakdown.totalPL / plBreakdown.costBasis) * 100 
     : 0;
 
   return (
