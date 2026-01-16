@@ -6,25 +6,52 @@ import { PerformanceCalendarHeatmap } from '@/components/dashboard/PerformanceCa
 import { calculateContributions, calculateMonthlyReturns } from '@/lib/calculations';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, Target, Award, Percent } from 'lucide-react';
+import { TrendingUp, Target, Award, Percent, ArrowRightLeft, DollarSign } from 'lucide-react';
+import { useMemo } from 'react';
 
 export default function Performance() {
-  const { transactions, valuations, performanceMetrics, settings } = usePortfolio();
+  const { transactions, valuations, performanceMetrics, settings, computedData } = usePortfolio();
   const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
   const contributions = calculateContributions(transactions, monthlyReturns, valuations);
 
   const formatPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0
+    style: 'currency', currency: settings.baseCurrency || 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0
   }).format(value);
 
   const hasData = performanceMetrics !== null;
+
+  // Calculate aggregated P/L with and without FX impact
+  const plBreakdown = useMemo(() => {
+    if (!computedData || computedData.holdings.length === 0) {
+      return { totalPL: 0, marketPL: 0, fxPL: 0, costBasis: 0 };
+    }
+    
+    const totalPL = computedData.holdings.reduce((sum, h) => sum + h.unrealizedPL, 0);
+    const marketPL = computedData.holdings.reduce((sum, h) => sum + h.marketPL, 0);
+    const fxPL = computedData.holdings.reduce((sum, h) => sum + h.fxPL, 0);
+    const costBasis = computedData.holdings.reduce((sum, h) => sum + h.costBasis, 0);
+    
+    return { totalPL, marketPL, fxPL, costBasis };
+  }, [computedData]);
+
+  const marketPLPercent = plBreakdown.costBasis > 0 
+    ? (plBreakdown.marketPL / plBreakdown.costBasis) * 100 
+    : 0;
+  const fxPLPercent = plBreakdown.costBasis > 0 
+    ? (plBreakdown.fxPL / plBreakdown.costBasis) * 100 
+    : 0;
+  const totalPLPercent = plBreakdown.costBasis > 0 
+    ? (plBreakdown.totalPL / plBreakdown.costBasis) * 100 
+    : 0;
 
   return (
     <div className="section-spacing animate-fade-in">
       <div className="border-b border-border pb-4">
         <h1 className="terminal-label text-base">Performance Analytics</h1>
-        <p className="text-muted-foreground text-[10px] font-mono mt-0.5">Detailed return analysis and attribution</p>
+        <p className="text-muted-foreground text-[10px] font-mono mt-0.5">
+          Detailed return analysis and attribution • Base Currency: {settings.baseCurrency || 'USD'}
+        </p>
       </div>
 
       {/* Key Metrics */}
@@ -53,6 +80,71 @@ export default function Performance() {
           icon={Percent}
           trend={hasData && performanceMetrics.winLossRatio >= 1 ? 'up' : 'neutral'}
         />
+      </div>
+
+      {/* P/L Breakdown: Market vs FX */}
+      <div className="bloomberg-panel">
+        <div className="bloomberg-header">
+          <span className="bloomberg-header-title">P/L Breakdown: Market vs FX Impact</span>
+        </div>
+        <div className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Market P/L (without FX) */}
+            <div className="bg-muted/20 border border-border/30 p-4 rounded">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">Market P/L (excl. FX)</span>
+              </div>
+              <p className={`font-mono text-xl tabular-nums ${plBreakdown.marketPL >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatCurrency(plBreakdown.marketPL)}
+              </p>
+              <p className={`font-mono text-sm tabular-nums ${marketPLPercent >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatPercent(marketPLPercent)}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Price change only, at entry FX rate
+              </p>
+            </div>
+
+            {/* FX P/L */}
+            <div className="bg-muted/20 border border-border/30 p-4 rounded">
+              <div className="flex items-center gap-2 mb-2">
+                <ArrowRightLeft className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">FX P/L</span>
+              </div>
+              <p className={`font-mono text-xl tabular-nums ${plBreakdown.fxPL >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatCurrency(plBreakdown.fxPL)}
+              </p>
+              <p className={`font-mono text-sm tabular-nums ${fxPLPercent >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatPercent(fxPLPercent)}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Currency impact since entry
+              </p>
+            </div>
+
+            {/* Total P/L (with FX) */}
+            <div className="bg-muted/20 border border-border/30 p-4 rounded">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">Total P/L (incl. FX)</span>
+              </div>
+              <p className={`font-mono text-xl tabular-nums ${plBreakdown.totalPL >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatCurrency(plBreakdown.totalPL)}
+              </p>
+              <p className={`font-mono text-sm tabular-nums ${totalPLPercent >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatPercent(totalPLPercent)}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Total unrealized gain/loss
+              </p>
+            </div>
+          </div>
+          
+          <p className="text-[9px] text-muted-foreground mt-3 text-center">
+            All values converted to {settings.baseCurrency || 'USD'} at current exchange rates
+          </p>
+        </div>
       </div>
 
       {hasData ? (
