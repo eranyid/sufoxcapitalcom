@@ -156,7 +156,7 @@ Be precise, professional, and actionable. Reference specific numbers and percent
       userPrompt = buildAnalysisPrompt(policy, portfolio);
     }
 
-    console.log(`Calling Lovable AI with openai/gpt-5 model... Mode: ${mode}`);
+    console.log(`Calling Lovable AI with google/gemini-3-flash-preview model... Mode: ${mode}`);
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -165,12 +165,11 @@ Be precise, professional, and actionable. Reference specific numbers and percent
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.3,
       }),
     });
 
