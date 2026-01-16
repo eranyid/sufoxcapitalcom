@@ -29,6 +29,7 @@ interface PortfolioContextType {
   updateSettings: (settings: Partial<PortfolioSettings>) => Promise<void>;
   updateCashBalance: (currency: CashCurrency, amount: number) => Promise<void>;
   addCash: (currency: CashCurrency, amount: number, description?: string) => Promise<void>;
+  addCashWithType: (currency: CashCurrency, amount: number, entryType: LedgerEntryType, description?: string) => Promise<void>;
   importTransactions: (txs: Transaction[]) => Promise<void>;
   importValuations: (vals: MonthlyValuation[]) => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -613,6 +614,23 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // Add cash with specific entry type (for dividend, interest, fee, etc.)
+  const addCashWithType = async (currency: CashCurrency, amount: number, entryType: LedgerEntryType, description?: string) => {
+    if (!user) return;
+    
+    const newAmount = cashBalances[currency] + amount;
+    await updateCashBalance(currency, newAmount);
+    
+    // Record in Capital Ledger with specific type
+    await createLedgerEntry({
+      userId: user.id,
+      entryType,
+      currency,
+      amount,
+      description: description || entryType
+    });
+  };
+
   return (
     <PortfolioContext.Provider value={{
       transactions,
@@ -634,6 +652,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       updateSettings,
       updateCashBalance,
       addCash,
+      addCashWithType,
       importTransactions,
       importValuations,
       clearAllData,

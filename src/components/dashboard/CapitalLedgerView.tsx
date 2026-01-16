@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { useCapitalLedger } from '@/hooks/useCapitalLedger';
 import { LedgerEntryType, createLedgerEntry } from '@/lib/capitalLedger';
 import { useAuth } from '@/hooks/useAuth';
+import { usePortfolio } from '@/context/PortfolioContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { BloombergPanel } from '@/components/ui/bloomberg-panel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -83,6 +84,7 @@ interface CapitalLedgerViewProps {
 
 export function CapitalLedgerView({ className, compact = false }: CapitalLedgerViewProps) {
   const { user } = useAuth();
+  const { addCash, addCashWithType } = usePortfolio();
   const queryClient = useQueryClient();
   const [selectedCurrency, setSelectedCurrency] = useState<string>('ALL');
   const [selectedType, setSelectedType] = useState<LedgerEntryType | 'ALL'>('ALL');
@@ -131,24 +133,28 @@ export function CapitalLedgerView({ className, compact = false }: CapitalLedgerV
       ? -Math.abs(amount) 
       : Math.abs(amount);
 
+    const validCurrencies = ['USD', 'EUR', 'ILS', 'GBP', 'CHF', 'JPY'];
+    if (!validCurrencies.includes(newEntry.currency)) {
+      toast.error('Invalid currency');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const result = await createLedgerEntry({
-        userId: user.id,
-        entryType: newEntry.entryType,
-        currency: newEntry.currency,
-        amount: signedAmount,
-        description: newEntry.description || undefined,
-      });
-
-      if (result) {
-        toast.success('Entry added successfully');
-        setIsAddOpen(false);
-        setNewEntry({ entryType: 'DEPOSIT', currency: 'USD', amount: '', description: '' });
-        queryClient.invalidateQueries({ queryKey: ['capital-ledger'] });
-      } else {
-        toast.error('Failed to add entry');
-      }
+      const currency = newEntry.currency as 'USD' | 'EUR' | 'ILS' | 'GBP' | 'CHF' | 'JPY';
+      
+      // Use addCashWithType for all entries - it updates both cash balance AND creates ledger entry
+      await addCashWithType(
+        currency,
+        signedAmount,
+        newEntry.entryType,
+        newEntry.description || undefined
+      );
+      
+      toast.success('Entry added successfully');
+      setIsAddOpen(false);
+      setNewEntry({ entryType: 'DEPOSIT', currency: 'USD', amount: '', description: '' });
+      queryClient.invalidateQueries({ queryKey: ['capital-ledger'] });
     } catch (err) {
       console.error('Failed to add ledger entry:', err);
       toast.error('Failed to add entry');
