@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { useCapitalLedger } from '@/hooks/useCapitalLedger';
-import { LedgerEntryType } from '@/lib/capitalLedger';
+import { LedgerEntryType, createLedgerEntry } from '@/lib/capitalLedger';
+import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { BloombergPanel } from '@/components/ui/bloomberg-panel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import { 
   ArrowDownCircle, 
   ArrowUpCircle, 
@@ -18,11 +24,21 @@ import {
   Receipt,
   Coins,
   Percent,
-  Filter
+  Filter,
+  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CURRENCY_OPTIONS = ['ALL', 'USD', 'EUR', 'ILS', 'GBP', 'CHF', 'JPY'] as const;
+const CURRENCY_LIST = ['USD', 'EUR', 'ILS', 'GBP', 'CHF', 'JPY'] as const;
+
+const MANUAL_ENTRY_TYPES: { value: LedgerEntryType; label: string }[] = [
+  { value: 'DEPOSIT', label: 'Deposit' },
+  { value: 'WITHDRAWAL', label: 'Withdrawal' },
+  { value: 'DIVIDEND', label: 'Dividend' },
+  { value: 'INTEREST', label: 'Interest' },
+  { value: 'FEE', label: 'Fee' },
+];
 
 const ENTRY_TYPE_OPTIONS: { value: LedgerEntryType | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'All Types' },
@@ -66,9 +82,21 @@ interface CapitalLedgerViewProps {
 }
 
 export function CapitalLedgerView({ className, compact = false }: CapitalLedgerViewProps) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedCurrency, setSelectedCurrency] = useState<string>('ALL');
   const [selectedType, setSelectedType] = useState<LedgerEntryType | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Add entry dialog state
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newEntry, setNewEntry] = useState({
+    entryType: 'DEPOSIT' as LedgerEntryType,
+    currency: 'USD',
+    amount: '',
+    description: '',
+  });
 
   const { data: entries = [], isLoading, error } = useCapitalLedger({
     currency: selectedCurrency === 'ALL' ? undefined : selectedCurrency,
@@ -85,6 +113,49 @@ export function CapitalLedgerView({ className, compact = false }: CapitalLedgerV
       entry.currency.toLowerCase().includes(term)
     );
   });
+
+  const handleAddEntry = async () => {
+    if (!user?.id || !newEntry.amount) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const amount = parseFloat(newEntry.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    // Adjust sign based on entry type
+    const signedAmount = ['WITHDRAWAL', 'FEE'].includes(newEntry.entryType) 
+      ? -Math.abs(amount) 
+      : Math.abs(amount);
+
+    setIsSubmitting(true);
+    try {
+      const result = await createLedgerEntry({
+        userId: user.id,
+        entryType: newEntry.entryType,
+        currency: newEntry.currency,
+        amount: signedAmount,
+        description: newEntry.description || undefined,
+      });
+
+      if (result) {
+        toast.success('Entry added successfully');
+        setIsAddOpen(false);
+        setNewEntry({ entryType: 'DEPOSIT', currency: 'USD', amount: '', description: '' });
+        queryClient.invalidateQueries({ queryKey: ['capital-ledger'] });
+      } else {
+        toast.error('Failed to add entry');
+      }
+    } catch (err) {
+      console.error('Failed to add ledger entry:', err);
+      toast.error('Failed to add entry');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const formatAmount = (amount: number, currency: string) => {
     const symbol = CURRENCY_SYMBOLS[currency] || currency;
@@ -157,8 +228,95 @@ export function CapitalLedgerView({ className, compact = false }: CapitalLedgerV
           className="w-40 h-8 text-xs"
         />
 
-        <div className="ml-auto text-xs text-muted-foreground font-mono">
-          {filteredEntries.length} entries
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-muted-foreground font-mono">
+            {filteredEntries.length} entries
+          </span>
+          
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Ledger Entry</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="entry-type">Type</Label>
+                  <Select 
+                    value={newEntry.entryType} 
+                    onValueChange={(v) => setNewEntry(prev => ({ ...prev, entryType: v as LedgerEntryType }))}
+                  >
+                    <SelectTrigger id="entry-type">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MANUAL_ENTRY_TYPES.map(type => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="currency">Currency</Label>
+                    <Select 
+                      value={newEntry.currency} 
+                      onValueChange={(v) => setNewEntry(prev => ({ ...prev, currency: v }))}
+                    >
+                      <SelectTrigger id="currency">
+                        <SelectValue placeholder="Currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CURRENCY_LIST.map(ccy => (
+                          <SelectItem key={ccy} value={ccy}>
+                            {ccy}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="amount">Amount</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={newEntry.amount}
+                      onChange={(e) => setNewEntry(prev => ({ ...prev, amount: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description (optional)</Label>
+                  <Input
+                    id="description"
+                    placeholder="e.g., Wire transfer from bank"
+                    value={newEntry.description}
+                    onChange={(e) => setNewEntry(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddEntry} disabled={isSubmitting}>
+                  {isSubmitting ? 'Adding...' : 'Add Entry'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
