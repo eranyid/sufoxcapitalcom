@@ -14,7 +14,8 @@ import {
   Users,
   FlaskConical,
   HelpCircle,
-  Banknote
+  Banknote,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -40,6 +41,7 @@ const moreNavItems = [
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
   { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },
+  { path: '/reports', icon: FileText, label: 'Reports' },
   { path: '/settings', icon: Settings, label: 'Settings' },
   { path: '/help', icon: HelpCircle, label: 'Help' },
 ];
