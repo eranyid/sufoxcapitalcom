@@ -401,7 +401,7 @@ export function ReportCanvas({
             key={pageNum}
             data-page-number={pageNum}
             className={cn(
-              "mx-auto mb-8 rounded-lg shadow-xl overflow-hidden transition-all duration-300",
+              "mx-auto mb-8 rounded-lg shadow-xl overflow-hidden transition-all duration-300 relative",
               isLibraryDragging && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background shadow-2xl shadow-primary/20"
             )}
             style={{
@@ -412,6 +412,24 @@ export function ReportCanvas({
             }}
             onClick={() => onSelectBlock(null)}
           >
+            {/* Confidential Watermark */}
+            {branding.showConfidentialWatermark && (
+              <div 
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 overflow-hidden"
+                style={{ opacity: 0.04 }}
+              >
+                <span 
+                  className="text-6xl md:text-8xl font-bold uppercase tracking-widest whitespace-nowrap select-none"
+                  style={{ 
+                    color: branding.mutedTextColor || '#888888',
+                    transform: 'rotate(-30deg)',
+                  }}
+                >
+                  CONFIDENTIAL
+                </span>
+              </div>
+            )}
+
             {/* Page header accent - with optional gradient */}
             <div 
               className={cn(

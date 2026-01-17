@@ -237,7 +237,7 @@ const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
     const renderPage = (pageBlocks: ReportBlock[], pageNum: number, isFirst: boolean) => (
       <div 
         key={pageNum}
-        className="print-page"
+        className="print-page relative"
         data-page-number={pageNum}
         style={{
           width: pageDims.width,
@@ -250,6 +250,28 @@ const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
           flexDirection: 'column',
         }}
       >
+        {/* Confidential Watermark */}
+        {branding.showConfidentialWatermark && (
+          <div 
+            className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden"
+            style={{ opacity: 0.04, zIndex: 1 }}
+          >
+            <span 
+              style={{ 
+                fontSize: '80px',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                whiteSpace: 'nowrap',
+                color: colors.textMuted,
+                transform: 'rotate(-30deg)',
+              }}
+            >
+              CONFIDENTIAL
+            </span>
+          </div>
+        )}
+
         {/* Header on first page */}
         {isFirst && (
           <PrintHeader 
@@ -258,7 +280,7 @@ const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
           />
         )}
 
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 space-y-4 relative" style={{ zIndex: 2 }}>
           {pageBlocks.map((block) => (
             <PrintBlock
               key={block.id}
