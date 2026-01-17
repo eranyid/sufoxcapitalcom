@@ -15,6 +15,7 @@ import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
 import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
+import { MarketClock, MobileMarketClock } from '@/components/dashboard/MarketClock';
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileText } from 'lucide-react';
@@ -151,29 +152,48 @@ export default function Overview() {
       <NewsTicker rssUrl={rssFeedUrl} />
       
       <div className="section-spacing">
-      {/* Header - Mobile Optimized */}
-      <div className="flex flex-row items-center justify-between gap-2 sm:gap-3 py-1 sm:py-0">
+      {/* Header - Desktop */}
+      <div className="hidden sm:flex flex-row items-center justify-between gap-3 py-0">
         <div className="flex-1 min-w-0">
-          <h1 className="terminal-label text-sm sm:text-base">Portfolio Overview</h1>
+          <h1 className="terminal-label text-base">Portfolio Overview</h1>
           <p className="text-muted-foreground text-[10px] font-mono mt-0.5 truncate">Real-time performance snapshot</p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <MarketClock variant="compact" />
+          <div className="h-6 w-px bg-border" />
           <FxModeToggle />
           <Button 
             onClick={() => navigate('/reports')} 
             variant="outline" 
             size="sm" 
-            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 sm:h-7 min-w-[44px] px-3 sm:px-2"
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2"
           >
-            <FileText className="h-4 w-4 sm:h-3 sm:w-3" />
-            <span className="hidden sm:inline">Reports</span>
-            <span className="sm:hidden">Report</span>
+            <FileText className="h-3 w-3" />
+            <span>Reports</span>
           </Button>
-          <div className="text-right hidden sm:block">
-            <p className="terminal-label">Last Updated</p>
-            <p className="text-sm font-mono tabular-nums text-foreground">{new Date().toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      {/* Header - Mobile */}
+      <div className="sm:hidden flex flex-col gap-2 py-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h1 className="terminal-label text-sm">Portfolio Overview</h1>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <FxModeToggle />
+            <Button 
+              onClick={() => navigate('/reports')} 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 min-w-[44px] px-3"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Report</span>
+            </Button>
           </div>
         </div>
+        <MobileMarketClock />
       </div>
 
       {/* Group 1: Total Portfolio Value (NAV = Cash + Holdings) - Always full width */}
