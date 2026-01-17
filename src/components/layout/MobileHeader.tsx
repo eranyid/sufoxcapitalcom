@@ -51,25 +51,19 @@ function MarketSessionWidget({ market, session, color, countdown, changingSoon, 
   const getStatusStyle = () => {
     switch (color) {
       case 'success': return { 
-        border: 'border-emerald-500', 
-        bg: 'bg-emerald-500/5', 
-        dot: 'bg-emerald-500',
-        progress: 'bg-emerald-500',
-        glow: 'shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+        bar: 'bg-emerald-500', 
+        text: 'text-emerald-400',
+        bg: 'bg-card/60'
       };
       case 'warning': return { 
-        border: 'border-amber-500', 
-        bg: 'bg-amber-500/5', 
-        dot: 'bg-amber-500',
-        progress: 'bg-amber-500',
-        glow: ''
+        bar: 'bg-amber-500', 
+        text: 'text-amber-400',
+        bg: 'bg-card/60'
       };
       case 'muted': return { 
-        border: 'border-muted-foreground/30', 
-        bg: 'bg-muted/20', 
-        dot: 'bg-muted-foreground/50',
-        progress: 'bg-muted-foreground/30',
-        glow: ''
+        bar: 'bg-muted-foreground/40', 
+        text: 'text-muted-foreground',
+        bg: 'bg-card/40'
       };
     }
   };
@@ -91,20 +85,29 @@ function MarketSessionWidget({ market, session, color, countdown, changingSoon, 
     return status === 'MARKET OPEN' || status === 'OPEN';
   };
 
-  const formatCompactCountdown = (cd: string | null) => {
+  // Format countdown with context: "opens in 2h 15m" or "closes in 45m"
+  const formatContextualCountdown = (cd: string | null, status: string) => {
     if (!cd) return null;
-    // Parse countdown like "2h 15m 30s" and make it compact
+    
     const parts = cd.split(' ');
-    if (parts.length >= 2) {
-      // Return first two parts (hours and minutes, or minutes and seconds)
-      return parts.slice(0, 2).join(' ');
+    const compactTime = parts.slice(0, 2).join(' ');
+    
+    const isOpen = status === 'MARKET OPEN' || status === 'OPEN';
+    const isPre = status === 'PRE-MARKET' || status === 'PRE-OPEN';
+    const isAfter = status === 'AFTER-HOURS';
+    
+    if (isOpen) {
+      return `closes ${compactTime}`;
+    } else if (isPre || isAfter) {
+      return `${compactTime}`;
+    } else {
+      return `opens ${compactTime}`;
     }
-    return cd;
   };
 
   const style = getStatusStyle();
   const isOpen = isMarketOpen(session.status);
-  const compactCountdown = formatCompactCountdown(countdown);
+  const contextualCountdown = formatContextualCountdown(countdown, session.status);
   
   const timezone = market === 'US' ? TIMEZONE_US : TIMEZONE_ISRAEL;
   const exchangeTime = formatInTimeZone(currentTime, timezone, 'HH:mm');
@@ -115,41 +118,36 @@ function MarketSessionWidget({ market, session, color, countdown, changingSoon, 
       <PopoverTrigger asChild>
         <button 
           className={`
-            relative flex flex-col min-w-[72px] rounded-md overflow-hidden
-            border-l-2 ${style.border} ${style.bg}
-            ${isOpen ? style.glow : ''}
+            relative flex items-stretch min-w-[70px] rounded-sm overflow-hidden
+            ${style.bg} backdrop-blur-sm
             ${changingSoon ? 'ring-1 ring-amber-500/50' : ''}
-            transition-all active:scale-95
+            transition-all active:scale-[0.97]
           `}
           onClick={() => {
-            // Haptic feedback on mobile
             if ('vibrate' in navigator) {
               navigator.vibrate(10);
             }
           }}
         >
-          {/* Main content */}
-          <div className="flex items-center gap-1.5 px-2 py-1">
-            <span className={`w-1.5 h-1.5 rounded-full ${style.dot} ${changingSoon ? 'animate-pulse' : ''}`} />
-            <div className="flex flex-col items-start">
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-mono font-semibold text-foreground/90">{market}</span>
-                <span className="text-[9px] font-mono text-muted-foreground">{getFullStatusLabel(session.status)}</span>
-              </div>
-              {compactCountdown && (
-                <span className="text-[8px] font-mono text-muted-foreground/70 leading-none">
-                  {compactCountdown}
-                </span>
-              )}
-            </div>
-          </div>
+          {/* Left status bar */}
+          <div className={`w-[2px] ${style.bar} ${changingSoon ? 'animate-pulse' : ''}`} />
           
-          {/* Progress bar at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-muted/30">
-            <div 
-              className={`h-full ${style.progress} transition-all duration-1000`}
-              style={{ width: `${progress}%` }}
-            />
+          {/* Content */}
+          <div className="flex flex-col items-start px-2 py-1.5 gap-0.5">
+            {/* Market code - small, muted */}
+            <span className="text-[9px] font-mono text-muted-foreground/70 uppercase tracking-wider">
+              {market}
+            </span>
+            {/* Status - primary, bold */}
+            <span className={`text-[11px] font-mono font-bold leading-none ${style.text}`}>
+              {getFullStatusLabel(session.status)}
+            </span>
+            {/* Countdown - secondary, smaller */}
+            {contextualCountdown && (
+              <span className="text-[8px] font-mono text-muted-foreground/60 leading-none mt-0.5">
+                {contextualCountdown}
+              </span>
+            )}
           </div>
         </button>
       </PopoverTrigger>
@@ -163,7 +161,7 @@ function MarketSessionWidget({ market, session, color, countdown, changingSoon, 
           {/* Header */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold">{market === 'US' ? 'NYSE / Nasdaq' : 'Tel Aviv (TASE)'}</span>
-            <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${style.bg} ${isOpen ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+            <span className={`text-xs font-mono px-1.5 py-0.5 rounded bg-card ${style.text}`}>
               {getFullStatusLabel(session.status)}
             </span>
           </div>
