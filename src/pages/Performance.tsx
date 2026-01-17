@@ -1,5 +1,7 @@
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useFxMode } from '@/context/FxModeContext';
 import { KPICard } from '@/components/dashboard/KPICard';
+import { FxModeToggle } from '@/components/dashboard/FxModeToggle';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { ContributionChart } from '@/components/dashboard/ContributionChart';
 import { PerformanceCalendarHeatmap } from '@/components/dashboard/PerformanceCalendarHeatmap';
@@ -11,6 +13,7 @@ import { useMemo } from 'react';
 
 export default function Performance() {
   const { transactions, valuations, performanceMetrics, settings, computedData } = usePortfolio();
+  const { fxMode, fxLabel } = useFxMode();
   const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
   const contributions = calculateContributions(transactions, monthlyReturns, valuations);
 
@@ -54,34 +57,56 @@ export default function Performance() {
     ? (plBreakdown.fxPL / plBreakdown.costBasis) * 100 
     : 0;
 
+  // Adjusted metrics based on FX mode
+  const adjustedMetrics = useMemo(() => {
+    if (!performanceMetrics) return null;
+    
+    const isNominal = fxMode === 'nominal';
+    
+    // In Nominal mode, use marketPL (excludes FX)
+    // In Real mode, use totalReturn (includes FX)
+    const totalReturn = isNominal ? marketPLPercent : performanceMetrics.totalReturn;
+    
+    return {
+      ...performanceMetrics,
+      totalReturn,
+    };
+  }, [performanceMetrics, fxMode, marketPLPercent]);
+
   return (
     <div className="section-spacing animate-fade-in">
-      <div className="border-b border-border pb-4">
-        <h1 className="terminal-label text-base">Performance Analytics</h1>
-        <p className="text-muted-foreground text-[10px] font-mono mt-0.5">
-          Detailed return analysis and attribution • Base Currency: {settings.baseCurrency || 'USD'}
-        </p>
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div>
+          <h1 className="terminal-label text-base">Performance Analytics</h1>
+          <p className="text-muted-foreground text-[10px] font-mono mt-0.5">
+            Detailed return analysis and attribution • Base Currency: {settings.baseCurrency || 'USD'}
+          </p>
+        </div>
+        <FxModeToggle />
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <KPICard
           title="Total Return"
-          value={hasData ? formatPercent(performanceMetrics.totalReturn) : '0.00%'}
+          value={hasData && adjustedMetrics ? formatPercent(adjustedMetrics.totalReturn) : '0.00%'}
           icon={TrendingUp}
-          trend={hasData && performanceMetrics.totalReturn >= 0 ? 'up' : 'down'}
+          trend={hasData && adjustedMetrics && adjustedMetrics.totalReturn >= 0 ? 'up' : 'down'}
+          subLabel={fxLabel}
         />
         <KPICard
           title="Annualized Return"
           value={hasData ? formatPercent(performanceMetrics.irr) : '0.00%'}
           icon={Target}
           trend={hasData && performanceMetrics.irr >= 0 ? 'up' : 'down'}
+          subLabel={fxLabel}
         />
         <KPICard
           title="Time-Weighted Return"
           value={hasData ? formatPercent(performanceMetrics.twr) : '0.00%'}
           icon={Award}
           trend={hasData && performanceMetrics.twr >= 0 ? 'up' : 'down'}
+          subLabel={fxLabel}
         />
         <KPICard
           title="Win/Loss Ratio"
