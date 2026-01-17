@@ -45,11 +45,21 @@ export function MobileHeader({
   const usChangingSoon = usSession.nextChange && (usSession.nextChange.getTime() - time.getTime()) <= 300000;
   const taseChangingSoon = taseSession.nextChange && (taseSession.nextChange.getTime() - time.getTime()) <= 300000;
 
-  const getStatusDotColor = (color: 'success' | 'warning' | 'muted') => {
+  const getStatusStyle = (color: 'success' | 'warning' | 'muted') => {
     switch (color) {
-      case 'success': return 'bg-emerald-500';
-      case 'warning': return 'bg-amber-500';
-      case 'muted': return 'bg-muted-foreground';
+      case 'success': return { dot: 'bg-emerald-500', border: 'border-emerald-500/40', bg: 'bg-emerald-500/10' };
+      case 'warning': return { dot: 'bg-amber-500', border: 'border-amber-500/40', bg: 'bg-amber-500/10' };
+      case 'muted': return { dot: 'bg-muted-foreground/50', border: 'border-muted-foreground/20', bg: 'bg-muted/30' };
+    }
+  };
+
+  const getStatusLabel = (sessionStatus: string) => {
+    switch (sessionStatus) {
+      case 'open': return 'OPEN';
+      case 'pre': return 'PRE';
+      case 'after': return 'AFTER';
+      case 'closed': return 'CLSD';
+      default: return sessionStatus.toUpperCase().slice(0, 4);
     }
   };
 
@@ -77,8 +87,8 @@ export function MobileHeader({
     );
   };
 
-  // Get day name
-  const dayName = time.toLocaleDateString('en-US', { weekday: 'short' });
+  const usStyle = getStatusStyle(usColor);
+  const taseStyle = getStatusStyle(taseColor);
 
   return (
     <header className="sticky top-0 z-40 bg-sidebar border-b border-sidebar-border md:hidden">
@@ -100,71 +110,63 @@ export function MobileHeader({
               SUFOX CAPITAL
             </span>
           </div>
+          
+          {/* Right: Notifications + Sample data indicator */}
+          <div className="flex items-center gap-2">
+            <NotificationBell 
+              unreadCount={unreadNotifications} 
+              onClick={onNotificationsClick} 
+            />
+            {sampleDataMode && (
+              <Database className="h-3.5 w-3.5 text-primary opacity-60" />
+            )}
+          </div>
         </div>
 
-        {/* ROW 2 — INFO BAR (Clock centered, status left, market right) */}
+        {/* ROW 2 — INFO BAR (Clock centered, market chips on sides) */}
         <TooltipProvider delayDuration={200}>
-          <div className="flex items-center justify-between px-4 pb-2 pt-1">
-            {/* Left: Status pill (compact, low weight) */}
-            <div className="flex items-center min-w-[50px]">
-              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-muted/20 rounded text-xs text-muted-foreground font-mono">
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                  status === 'ok' ? 'bg-emerald-500' : 
-                  status === 'warning' ? 'bg-amber-500' : 'bg-destructive'
-                }`} />
-                <span>{status === 'ok' ? 'OK' : status === 'warning' ? `${warningCount}W` : `${errorCount}E`}</span>
-                <span className="text-muted-foreground/40">·</span>
-                <span className={isOnline ? 'text-emerald-500' : 'text-destructive'}>{isOnline ? '●' : '○'}</span>
-              </div>
-            </div>
+          <div className="flex items-center justify-between px-3 pb-2 pt-0.5">
+            {/* Left: US Market chip */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded border ${usStyle.border} ${usStyle.bg} ${usChangingSoon ? 'ring-1 ring-amber-500/50 animate-pulse' : ''} transition-all`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${usStyle.dot}`} />
+                  <span className="text-[10px] font-mono font-medium text-foreground/90">US</span>
+                  <span className="text-[9px] font-mono text-muted-foreground">{getStatusLabel(usSession.status)}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                {renderMarketTooltip('US')}
+              </TooltipContent>
+            </Tooltip>
 
             {/* Center: Clock (primary) + Date (secondary) */}
-            <div className="flex flex-col items-center flex-1">
+            <div className="flex flex-col items-center">
               <span className="text-xl font-semibold font-mono text-primary tabular-nums leading-[1.1] tracking-tight">
                 {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
               </span>
               <span className="text-sm font-normal font-mono text-muted-foreground/75 tabular-nums mt-0.5">
-                {time.toLocaleDateString('en-GB')} · {dayName}
+                {time.toLocaleDateString('en-GB')}
               </span>
             </div>
 
-            {/* Right: Market status + Notifications */}
-            <div className="flex items-center gap-3 min-w-[90px] justify-end">
-              {/* Market status inline */}
-              <div className="flex items-center gap-2 text-sm font-medium font-mono text-muted-foreground tracking-[0.02em]">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors">
-                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
-                      <span>US</span>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs">
-                    {renderMarketTooltip('US')}
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors">
-                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
-                      <span>IL</span>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs">
-                    {renderMarketTooltip('TASE')}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              
-              <NotificationBell 
-                unreadCount={unreadNotifications} 
-                onClick={onNotificationsClick} 
-              />
-              
-              {sampleDataMode && (
-                <Database className="h-3 w-3 text-primary opacity-60" />
-              )}
-            </div>
+            {/* Right: IL Market chip */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded border ${taseStyle.border} ${taseStyle.bg} ${taseChangingSoon ? 'ring-1 ring-amber-500/50 animate-pulse' : ''} transition-all`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${taseStyle.dot}`} />
+                  <span className="text-[10px] font-mono font-medium text-foreground/90">IL</span>
+                  <span className="text-[9px] font-mono text-muted-foreground">{getStatusLabel(taseSession.status)}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                {renderMarketTooltip('TASE')}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </TooltipProvider>
       </div>
