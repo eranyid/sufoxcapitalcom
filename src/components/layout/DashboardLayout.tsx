@@ -59,6 +59,10 @@ export function DashboardLayout() {
   const usCountdown = usSession.nextChange ? formatCountdown(usSession.nextChange, currentTime) : null;
   const taseCountdown = taseSession.nextChange ? formatCountdown(taseSession.nextChange, currentTime) : null;
 
+  // Check if session change is within 5 minutes (300000ms)
+  const usChangingSoon = usSession.nextChange && (usSession.nextChange.getTime() - currentTime.getTime()) <= 300000;
+  const taseChangingSoon = taseSession.nextChange && (taseSession.nextChange.getTime() - currentTime.getTime()) <= 300000;
+
   const getStatusDotColor = (color: 'success' | 'warning' | 'muted') => {
     switch (color) {
       case 'success': return 'bg-emerald-500';
@@ -153,8 +157,8 @@ export function DashboardLayout() {
               <div className="flex items-center gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted/50 border border-border/50 rounded text-[9px] cursor-pointer hover:bg-muted/70 transition-colors">
-                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)}`} />
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer hover:bg-muted/70 transition-colors ${usChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
                       <span className="text-muted-foreground">US {usSession.status}</span>
                     </div>
                   </TooltipTrigger>
@@ -164,8 +168,8 @@ export function DashboardLayout() {
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted/50 border border-border/50 rounded text-[9px] cursor-pointer hover:bg-muted/70 transition-colors">
-                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)}`} />
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer hover:bg-muted/70 transition-colors ${taseChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
                       <span className="text-muted-foreground">TASE {taseSession.status}</span>
                     </div>
                   </TooltipTrigger>
