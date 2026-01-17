@@ -932,10 +932,10 @@ export async function generateWYSIWYGReportPDF({
         break;
 
       case 'asset_allocation':
-        addNewPageIfNeeded(55);
+        addNewPageIfNeeded(60);
         
         // Draw section card background
-        const allocCardHeight = 50;
+        const allocCardHeight = 55;
         drawCardBackground(margin, y - 2, pageWidth - (margin * 2), allocCardHeight);
         drawAccentBar(y);
         y += 4;
@@ -952,45 +952,88 @@ export async function generateWYSIWYGReportPDF({
         });
 
         const allocEntries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
-        const allocDataWithDots = allocEntries.map(([name, value]) => [
-          '',  // Empty for color dot column
-          name,
-          formatCurrency(value),
-          totalValue > 0 ? `${((value / totalValue) * 100).toFixed(1)}%` : '0%',
-        ]);
-
-        const allocStartY = y;
-        autoTable(doc, {
-          startY: y,
-          head: [['', 'Asset Class', 'Value', 'Weight']],
-          body: allocDataWithDots,
-          theme: 'plain',
-          headStyles: { 
-            fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
-            textColor: hexToRgb(accentColor), 
-            fontSize: 9,
-            fontStyle: 'bold',
-          },
-          styles: { 
-            fontSize: 9, 
-            cellPadding: 3, 
-            textColor: hexToRgb(textColor),
-            fillColor: hexToRgb(cardBgColor),
-          },
-          alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
-          margin: { left: margin + 4, right: margin + 4 },
-          columnStyles: {
-            0: { cellWidth: 8 },
-          },
-          didDrawCell: (data: any) => {
-            if (data.section === 'body' && data.column.index === 0) {
-              const colorIndex = data.row.index % chartColors.length;
-              doc.setFillColor(...hexToRgb(chartColors[colorIndex]));
-              doc.circle(data.cell.x + 4, data.cell.y + data.cell.height / 2, 2, 'F');
-            }
-          },
+        
+        // Draw pie chart
+        const pieX = margin + 25;
+        const pieY = y + 18;
+        const pieRadius = 15;
+        let startAngle = -Math.PI / 2; // Start from top
+        
+        allocEntries.forEach(([_, value], i) => {
+          const sliceAngle = totalValue > 0 ? (value / totalValue) * 2 * Math.PI : 0;
+          const endAngle = startAngle + sliceAngle;
+          
+          // Draw pie slice
+          doc.setFillColor(...hexToRgb(chartColors[i % chartColors.length]));
+          
+          // Create path for pie slice
+          const centerX = pieX;
+          const centerY = pieY;
+          const segments = 20;
+          const angleStep = sliceAngle / segments;
+          
+          // Build path points
+          let path = `M ${centerX} ${centerY} `;
+          for (let j = 0; j <= segments; j++) {
+            const angle = startAngle + (j * angleStep);
+            const x = centerX + pieRadius * Math.cos(angle);
+            const y2 = centerY + pieRadius * Math.sin(angle);
+            path += `L ${x} ${y2} `;
+          }
+          path += 'Z';
+          
+          // Draw as filled sector using lines
+          doc.setDrawColor(...hexToRgb(chartColors[i % chartColors.length]));
+          for (let j = 0; j < segments; j++) {
+            const angle1 = startAngle + (j * angleStep);
+            const angle2 = startAngle + ((j + 1) * angleStep);
+            const x1 = centerX + pieRadius * Math.cos(angle1);
+            const y1 = centerY + pieRadius * Math.sin(angle1);
+            const x2 = centerX + pieRadius * Math.cos(angle2);
+            const y2 = centerY + pieRadius * Math.sin(angle2);
+            
+            // Draw triangle for each segment
+            doc.setFillColor(...hexToRgb(chartColors[i % chartColors.length]));
+            const trianglePoints = [
+              { x: centerX, y: centerY },
+              { x: x1, y: y1 },
+              { x: x2, y: y2 }
+            ];
+            // @ts-ignore - jsPDF supports triangle drawing
+            doc.triangle(
+              trianglePoints[0].x, trianglePoints[0].y,
+              trianglePoints[1].x, trianglePoints[1].y,
+              trianglePoints[2].x, trianglePoints[2].y,
+              'F'
+            );
+          }
+          
+          startAngle = endAngle;
         });
-        y = (doc as any).lastAutoTable.finalY + 14;
+
+        // Draw legend with data on the right side
+        const legendX = margin + 55;
+        let legendY = y + 4;
+        
+        allocEntries.slice(0, 5).forEach(([name, value], i) => {
+          // Color dot
+          doc.setFillColor(...hexToRgb(chartColors[i % chartColors.length]));
+          doc.circle(legendX, legendY + 1.5, 2, 'F');
+          
+          // Name
+          doc.setFontSize(9);
+          doc.setTextColor(...hexToRgb(textColor));
+          doc.text(name, legendX + 5, legendY + 2);
+          
+          // Value and percentage
+          const pct = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0';
+          doc.setTextColor(...hexToRgb(mutedTextColor));
+          doc.text(`${formatCurrency(value)} (${pct}%)`, pageWidth - margin - 4, legendY + 2, { align: 'right' });
+          
+          legendY += 7;
+        });
+
+        y += allocCardHeight - 8;
         break;
 
       case 'currency_exposure':
