@@ -55,7 +55,6 @@ import {
 import { ReportCanvas } from '@/components/reports/ReportCanvas';
 import { BlockLibraryPanel } from '@/components/reports/BlockLibraryPanel';
 import { BlockPropertiesPanel } from '@/components/reports/BlockPropertiesPanel';
-import { ReportDocument } from '@/components/reports/ReportDocument';
 import { TemplateSelectorDialog, ReportTemplate, useTemplateApplicator } from '@/components/reports/ReportTemplates';
 import { exportWYSIWYGPdf } from '@/lib/wysiwygPdfExporter';
 import type { ReportBranding } from '@/types/reports';
@@ -682,23 +681,26 @@ export default function ReportBuilder() {
             
             <ScrollArea className="flex-1 px-6 py-4 bg-muted/30">
               {/* 
-                ReportDocument - Single Source of Truth
-                This is the SAME component used for preview AND PDF export.
+                Preview uses the same ReportCanvas component for WYSIWYG parity.
                 What you see here IS what you get in the PDF.
               */}
-              <ReportDocument
-                ref={exportContainerRef}
-                blocks={blocks}
-                branding={branding}
-                pageSize={pageSize}
-                holdings={holdings}
-                performanceMetrics={performanceMetrics}
-                riskMetrics={riskMetrics}
-                totalValue={totalValue}
-                forExport={isExporting}
-                scale={0.85}
-                className="mx-auto"
-              />
+              <div ref={exportContainerRef} data-report-document="true">
+                <ReportCanvas
+                  blocks={blocks}
+                  branding={branding}
+                  pageSize={pageSize}
+                  holdings={holdings}
+                  performanceMetrics={performanceMetrics}
+                  riskMetrics={riskMetrics}
+                  totalValue={totalValue}
+                  selectedBlockId={null}
+                  onSelectBlock={() => {}}
+                  onBlocksChange={() => {}}
+                  onDeleteBlock={() => {}}
+                  onDuplicateBlock={() => {}}
+                  onOpenProperties={() => {}}
+                />
+              </div>
             </ScrollArea>
           </DialogContent>
         </Dialog>
