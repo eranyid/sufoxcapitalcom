@@ -117,18 +117,13 @@ export function MobileHeader({
           </div>
         </div>
 
-        {/* Clock & Market Status Row */}
+        {/* Date & Market Status Row - like desktop */}
         <TooltipProvider delayDuration={200}>
           <div className="flex items-center justify-between px-3 pb-1">
-            {/* Clock - stacked vertically */}
-            <div className="flex flex-col items-start flex-shrink-0">
-              <span className="text-sm font-mono text-primary font-bold tabular-nums leading-tight">
-                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-              </span>
-              <span className="text-[9px] font-mono text-muted-foreground font-medium tabular-nums leading-tight">
-                {time.toLocaleDateString('en-GB')}
-              </span>
-            </div>
+            {/* Date only - like desktop */}
+            <span className="text-xs font-mono text-muted-foreground tabular-nums">
+              {time.toLocaleDateString('en-GB')}
+            </span>
 
             {/* Market Status Badges - inline */}
             <div className="flex items-center gap-2">
