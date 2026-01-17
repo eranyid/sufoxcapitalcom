@@ -7,7 +7,6 @@ import {
   Save, 
   Settings2, 
   FileText,
-  Maximize2,
   Undo2,
   Redo2,
   LayoutTemplate,
@@ -530,15 +529,6 @@ export default function ReportBuilder() {
               >
                 <LayoutTemplate size={14} />
                 <span className="hidden sm:inline">Templates</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-1.5 h-8"
-                onClick={() => setPreviewOpen(true)}
-              >
-                <Maximize2 size={14} />
-                <span className="hidden sm:inline">Preview</span>
               </Button>
               <Select value={pageSize} onValueChange={(v) => { setPageSize(v as 'A4' | 'Letter'); setHasChanges(true); }}>
                 <SelectTrigger className="w-[90px] h-8 text-xs">
