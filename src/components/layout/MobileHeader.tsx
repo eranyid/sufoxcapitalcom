@@ -78,6 +78,9 @@ export function MobileHeader({
     );
   };
 
+  // Get day name
+  const dayName = time.toLocaleDateString('en-US', { weekday: 'short' });
+
   return (
     <header className="sticky top-0 z-40 bg-sidebar border-b border-sidebar-border md:hidden">
       {/* Bloomberg gradient bar */}
@@ -85,58 +88,64 @@ export function MobileHeader({
       
       {/* Safe area padding for iOS notch */}
       <div className="pt-safe">
-        {/* Main header row */}
-        <div className="flex items-center justify-between px-3 h-10">
-          {/* Logo & Brand */}
-          <div className="gap-1.5 flex items-center flex-shrink-0">
-            <img alt="SUFOX" className="h-6 w-6 object-contain" src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" />
-            <div>
-              <h1 className="text-xs font-semibold text-primary tracking-wider leading-none">SUFOX</h1>
-              <p className="text-[7px] text-muted-foreground font-mono tracking-widest leading-none">CAPITAL</p>
-            </div>
+        {/* ROW 1 — SYSTEM BAR (compact, low visual weight) */}
+        <div className="flex items-center justify-between px-4 h-8">
+          {/* Left: Logo + Brand (muted) */}
+          <div className="flex items-center gap-1.5">
+            <img 
+              alt="SUFOX" 
+              className="h-5 w-5 object-contain opacity-80" 
+              src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" 
+            />
+            <span className="text-[10px] font-medium text-muted-foreground tracking-wider">
+              SUFOX CAPITAL
+            </span>
           </div>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <OnlineStatusIndicator 
-              isOnline={isOnline} 
-              dataStatus={status}
-              errorCount={errorCount}
-              warningCount={warningCount}
-              onDataClick={onWatchdogClick}
-            />
+          {/* Right: Combined status + notifications */}
+          <div className="flex items-center gap-2">
+            {/* Combined status pill */}
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted/30 rounded text-[9px] text-muted-foreground font-mono">
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                status === 'ok' ? 'bg-emerald-500' : 
+                status === 'warning' ? 'bg-amber-500' : 'bg-destructive'
+              }`} />
+              <span>{status === 'ok' ? 'OK' : status === 'warning' ? `${warningCount} warn` : `${errorCount} err`}</span>
+              <span className="text-muted-foreground/50">·</span>
+              <span className={isOnline ? 'text-emerald-500' : 'text-destructive'}>{isOnline ? 'Online' : 'Offline'}</span>
+            </div>
+            
             <NotificationBell 
               unreadCount={unreadNotifications} 
               onClick={onNotificationsClick} 
             />
+            
             {sampleDataMode && (
-              <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/20 border border-primary/50 text-primary text-[8px] font-semibold rounded animate-pulse">
-                <Database className="h-2.5 w-2.5" />
-              </span>
+              <Database className="h-3 w-3 text-primary opacity-60" />
             )}
           </div>
         </div>
 
-        {/* Date & Market Status Row - like desktop */}
+        {/* ROW 2 — MARKET BAR (primary context) */}
         <TooltipProvider delayDuration={200}>
-          <div className="flex items-center justify-between px-3 pb-1">
-            {/* Clock & Date - stacked like desktop */}
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-mono text-primary font-bold tabular-nums leading-tight">
+          <div className="flex items-center justify-between px-4 pb-2 pt-1">
+            {/* Left: Clock (primary) + Date (secondary) */}
+            <div className="flex flex-col">
+              <span className="text-lg font-mono text-primary font-bold tabular-nums leading-none tracking-tight">
                 {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
               </span>
-              <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
-                {time.toLocaleDateString('en-GB')}
+              <span className="text-[10px] font-mono text-muted-foreground tabular-nums mt-0.5">
+                {time.toLocaleDateString('en-GB')} · {dayName}
               </span>
             </div>
 
-            {/* Market Status Badges - inline */}
-            <div className="flex items-center gap-2">
+            {/* Right: Market status (text, not heavy pills) */}
+            <div className="flex flex-col items-end gap-0.5 text-[10px] font-mono">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${usChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
+                  <div className="flex items-center gap-1.5 text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
                     <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
-                    <span className="text-muted-foreground font-mono">US {usSession.status}</span>
+                    <span>US · {usSession.status}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs">
@@ -145,9 +154,9 @@ export function MobileHeader({
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${taseChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
+                  <div className="flex items-center gap-1.5 text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
                     <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
-                    <span className="text-muted-foreground font-mono">IL {taseSession.status}</span>
+                    <span>IL · {taseSession.status}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs">
