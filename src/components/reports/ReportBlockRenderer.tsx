@@ -4,6 +4,7 @@ import { PortfolioHolding } from '@/lib/portfolioEngine';
 import { PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ScatterChart, Scatter, ZAxis, ReferenceLine } from 'recharts';
 import { TrendingUp, TrendingDown, FileImage } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
@@ -14,22 +15,20 @@ const formatPercent = (value: number): string => {
 };
 
 // Generate harmonized chart colors array from branding
-// Uses a cohesive palette derived from the primary colors
 const getChartColors = (branding: ReportBranding): string[] => {
   const primary = branding.chartPrimaryColor || DEFAULT_BRANDING.chartPrimaryColor;
   const secondary = branding.chartSecondaryColor || DEFAULT_BRANDING.chartSecondaryColor;
   const accent = branding.accentColor || DEFAULT_BRANDING.accentColor;
   
-  // Harmonized palette with consistent saturation and value levels
   return [
-    primary,                     // Gold / Primary
-    secondary,                   // Steel blue / Secondary
-    accent,                      // Accent (usually matches primary)
-    '#7B9E87',                   // Sage - muted green
-    '#A67B8A',                   // Dusty rose - muted pink
-    '#8B7355',                   // Taupe - warm brown
-    '#6B7B8A',                   // Slate - cool gray-blue
-    '#9B8B6B',                   // Khaki - warm neutral
+    primary,
+    secondary,
+    accent,
+    '#7B9E87',
+    '#A67B8A',
+    '#8B7355',
+    '#6B7B8A',
+    '#9B8B6B',
   ];
 };
 
@@ -43,35 +42,133 @@ interface Props {
   isPrintMode?: boolean;
 }
 
-// Helper to get block styling from config
-const getBlockStyles = (config: ReportBlock['config'], branding: ReportBranding): React.CSSProperties => {
+/**
+ * STYLE CONFIGURATION MAPPING
+ * ==========================
+ * This documents which branding properties affect which visual elements:
+ * 
+ * TYPOGRAPHY:
+ * - headingFont: All headings (h1, h2, block titles)
+ * - bodyFont: All body text, table cells, descriptions
+ * - baseFontSize: Base font size for body text (default 14px)
+ * - headingScale: Multiplier for heading sizes (default 1.25x)
+ * - lineHeight: Line height for all text (default 1.5)
+ * - uppercaseHeadings: Whether headings are uppercase
+ * - boldNumbers: Whether numeric values are bold
+ * - letterSpacing: Letter spacing ('tight', 'normal', 'wide', 'wider')
+ * 
+ * COLORS:
+ * - accentColor: Primary accent color for highlights, borders, headers
+ * - backgroundColor: Page/canvas background
+ * - textColor: Primary text color
+ * - headingColor: Heading text color
+ * - mutedTextColor: Secondary/muted text color
+ * - chartPrimaryColor: Primary chart color
+ * - chartSecondaryColor: Secondary chart color
+ * - chartPositiveColor: Positive values (gains)
+ * - chartNegativeColor: Negative values (losses)
+ * - tableHeaderBgColor: Table header background
+ * - tableHeaderTextColor: Table header text
+ * - tableRowAltBgColor: Alternating row background
+ * - tableBorderColor: Table/card borders
+ * 
+ * EFFECTS:
+ * - globalBorderRadius: Default border radius for cards ('none', 'sm', 'md', 'lg', 'xl', '2xl')
+ * - globalShadow: Default shadow for cards ('none', 'sm', 'md', 'lg')
+ * - globalBlur: Blur amount for glassmorphism (0-20px)
+ * - glassmorphism: Enable frosted glass effect
+ * - accentBorders: Add accent color to card borders
+ * - cornerStyle: Corner style ('square', 'rounded', 'pill')
+ * - effectsOpacity: Opacity for effect layers (50-100%)
+ */
+
+// Helper to get global styles from branding
+const getGlobalStyles = (branding: ReportBranding): React.CSSProperties => {
+  const styles: React.CSSProperties = {};
+  
+  // Typography
+  styles.fontFamily = branding.bodyFont || DEFAULT_BRANDING.bodyFont;
+  styles.fontSize = `${branding.baseFontSize || DEFAULT_BRANDING.baseFontSize || 14}px`;
+  styles.lineHeight = branding.lineHeight || DEFAULT_BRANDING.lineHeight || 1.5;
+  
+  // Letter spacing
+  const letterSpacingMap: Record<string, string> = {
+    'tight': '-0.025em',
+    'normal': '0',
+    'wide': '0.025em',
+    'wider': '0.05em',
+  };
+  styles.letterSpacing = letterSpacingMap[branding.letterSpacing || 'normal'];
+  
+  // Base text color
+  styles.color = branding.textColor || DEFAULT_BRANDING.textColor;
+  
+  return styles;
+};
+
+// Helper to get heading styles from branding
+const getHeadingStyles = (branding: ReportBranding): React.CSSProperties => {
+  const baseSize = branding.baseFontSize || DEFAULT_BRANDING.baseFontSize || 14;
+  const scale = branding.headingScale || DEFAULT_BRANDING.headingScale || 1.25;
+  
+  return {
+    fontFamily: branding.headingFont || branding.bodyFont || DEFAULT_BRANDING.headingFont,
+    fontSize: `${baseSize * scale}px`,
+    fontWeight: 600,
+    color: branding.headingColor || DEFAULT_BRANDING.headingColor,
+    textTransform: branding.uppercaseHeadings ? 'uppercase' : undefined,
+    letterSpacing: branding.uppercaseHeadings ? '0.05em' : undefined,
+  };
+};
+
+// Helper to get number styles from branding
+const getNumberStyles = (branding: ReportBranding): React.CSSProperties => {
+  return {
+    fontWeight: branding.boldNumbers ?? DEFAULT_BRANDING.boldNumbers ? 600 : 400,
+    fontVariantNumeric: 'tabular-nums',
+  };
+};
+
+// Helper to get block container styles (card wrapper)
+const getBlockContainerStyles = (config: ReportBlock['config'], branding: ReportBranding): React.CSSProperties => {
   const styles: React.CSSProperties = {};
 
-  // Border radius
+  // Use block-level config if available, otherwise fall back to global branding
+  const borderRadius = config.borderRadius || branding.globalBorderRadius || DEFAULT_BRANDING.globalBorderRadius;
+  const shadow = config.shadow || branding.globalShadow || DEFAULT_BRANDING.globalShadow;
+  const borderWidth = config.borderWidth;
+  const padding = config.padding;
+  
+  // Border radius mapping
   const radiusMap: Record<string, string> = {
     'none': '0',
-    'sm': '0.125rem',
-    'md': '0.375rem',
-    'lg': '0.5rem',
-    'xl': '0.75rem',
-    '2xl': '1rem',
+    'sm': '0.25rem',
+    'md': '0.5rem',
+    'lg': '0.75rem',
+    'xl': '1rem',
+    '2xl': '1.5rem',
   };
-  if (config.borderRadius && config.borderRadius !== 'none') {
-    styles.borderRadius = radiusMap[config.borderRadius] || '0';
+  
+  // Corner style override
+  const cornerStyle = branding.cornerStyle || DEFAULT_BRANDING.cornerStyle || 'rounded';
+  if (cornerStyle === 'square') {
+    styles.borderRadius = '0';
+  } else if (cornerStyle === 'pill') {
+    styles.borderRadius = '9999px';
+  } else {
+    styles.borderRadius = radiusMap[borderRadius || 'md'] || '0.5rem';
   }
 
-  // Shadow
+  // Shadow mapping
   const shadowMap: Record<string, string> = {
     'none': 'none',
-    'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-    'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
-    'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
-    'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-    '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.15)',
+    'md': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.15)',
+    'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.25), 0 4px 6px -4px rgba(0, 0, 0, 0.2)',
+    'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.25)',
+    '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
   };
-  if (config.shadow && config.shadow !== 'none') {
-    styles.boxShadow = shadowMap[config.shadow] || 'none';
-  }
+  styles.boxShadow = shadowMap[shadow || 'none'] || 'none';
 
   // Border
   const borderWidthMap: Record<string, string> = {
@@ -80,10 +177,17 @@ const getBlockStyles = (config: ReportBlock['config'], branding: ReportBranding)
     'medium': '2px',
     'thick': '3px',
   };
-  if (config.borderWidth && config.borderWidth !== 'none') {
-    styles.borderWidth = borderWidthMap[config.borderWidth] || '0';
-    styles.borderStyle = 'solid';
-    styles.borderColor = config.borderColor || branding.tableBorderColor || '#333333';
+  
+  if (borderWidth && borderWidth !== 'none') {
+    styles.borderWidth = borderWidthMap[borderWidth];
+    styles.borderStyle = branding.borderStyle || 'solid';
+    styles.borderColor = branding.accentBorders 
+      ? (branding.accentColor || DEFAULT_BRANDING.accentColor)
+      : (config.borderColor || branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor);
+  } else if (branding.accentBorders) {
+    styles.borderWidth = '1px';
+    styles.borderStyle = branding.borderStyle || 'solid';
+    styles.borderColor = branding.accentColor || DEFAULT_BRANDING.accentColor;
   }
 
   // Padding
@@ -94,8 +198,8 @@ const getBlockStyles = (config: ReportBlock['config'], branding: ReportBranding)
     'lg': '1.5rem',
     'xl': '2rem',
   };
-  if (config.padding && config.padding !== 'none') {
-    styles.padding = paddingMap[config.padding] || '0';
+  if (padding && padding !== 'none') {
+    styles.padding = paddingMap[padding];
   }
 
   // Background color
@@ -103,15 +207,30 @@ const getBlockStyles = (config: ReportBlock['config'], branding: ReportBranding)
     styles.backgroundColor = config.backgroundColor;
   }
 
+  // Glassmorphism effect
+  if (branding.glassmorphism) {
+    const blur = branding.globalBlur || 8;
+    const opacity = (branding.effectsOpacity || 100) / 100;
+    styles.backdropFilter = `blur(${blur}px)`;
+    styles.WebkitBackdropFilter = `blur(${blur}px)`;
+    styles.backgroundColor = config.backgroundColor 
+      ? config.backgroundColor 
+      : `rgba(17, 17, 17, ${0.7 * opacity})`;
+    styles.borderColor = `rgba(255, 255, 255, ${0.1 * opacity})`;
+  }
+
   return styles;
 };
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskMetrics, totalValue, branding }: Props) {
+export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskMetrics, totalValue, branding, isPrintMode }: Props) {
   const chartColors = useMemo(() => getChartColors(branding), [branding]);
   const config = block.config || {};
-  const blockStyles = useMemo(() => getBlockStyles(config, branding), [config, branding]);
+  const containerStyles = useMemo(() => getBlockContainerStyles(config, branding), [config, branding]);
+  const globalStyles = useMemo(() => getGlobalStyles(branding), [branding]);
+  const headingStyles = useMemo(() => getHeadingStyles(branding), [branding]);
+  const numberStyles = useMemo(() => getNumberStyles(branding), [branding]);
 
   const allocationData = useMemo(() => {
     const byType: Record<string, number> = {};
@@ -160,7 +279,6 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     };
   }, [holdings, config.maxItems]);
 
-  // Architecture data for xray_architecture block
   const architectureData = useMemo(() => {
     const byAssetType: Record<string, { name: string; value: number; holdings: { ticker: string; value: number; weight: number }[] }> = {};
     
@@ -186,7 +304,6 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       }));
   }, [holdings, totalValue, chartColors]);
 
-  // Contribution data for contribution_chart block
   const contributionData = useMemo(() => {
     return [...holdings]
       .filter(h => h.unrealizedPL !== undefined && h.unrealizedPL !== 0)
@@ -201,20 +318,16 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       }));
   }, [holdings, config.maxItems, branding]);
 
-  // Calendar data for performance_calendar block
   const calendarData = useMemo(() => {
     const actualReturns = performanceMetrics?.monthlyReturns || [];
-    
-    // Create a map for quick lookup: "YYYY-MM" -> return value
     const returnsByMonth = new Map<string, number>();
     actualReturns.forEach(({ month, return: ret }) => {
       returnsByMonth.set(month, ret);
     });
     
-    // Get unique years from the data, or use current year if no data
     const uniqueYears = [...new Set(actualReturns.map(r => r.month.split('-')[0]))];
     const displayYears = uniqueYears.length > 0 
-      ? uniqueYears.sort().slice(-2) // Show last 2 years
+      ? uniqueYears.sort().slice(-2)
       : [new Date().getFullYear().toString()];
     
     return displayYears.map(year => ({
@@ -224,20 +337,19 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
         const monthReturn = returnsByMonth.get(monthKey);
         return {
           month: monthName,
-          return: monthReturn ?? null // null means no data, 0 means actual 0% return
+          return: monthReturn ?? null
         };
       })
     }));
   }, [performanceMetrics]);
 
-  // Scatter data for risk_return_scatter block
   const scatterData = useMemo(() => {
     return holdings
       .filter(h => h.currentValue > 0 && h.plPercent !== undefined)
       .map(h => ({
         ticker: h.ticker,
         name: h.name,
-        risk: Math.abs(h.plPercent || 0) * 0.5 + Math.random() * 5, // Simulated volatility based on return
+        risk: Math.abs(h.plPercent || 0) * 0.5 + Math.random() * 5,
         return: h.plPercent || 0,
         weight: h.weight,
         value: h.currentValue,
@@ -262,15 +374,15 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
   };
 
   // Check if block has any custom styling applied
-  const hasCustomStyles = config.borderRadius || config.shadow || config.borderWidth || config.padding || config.backgroundColor;
+  const hasCustomStyles = config.borderRadius || config.shadow || config.borderWidth || config.padding || config.backgroundColor || branding.glassmorphism || branding.accentBorders;
 
   // Wrapper component to apply custom styles
   const BlockWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (!hasCustomStyles) {
-      return <>{children}</>;
-    }
     return (
-      <div style={blockStyles} className="h-full">
+      <div 
+        style={{ ...globalStyles, ...containerStyles }} 
+        className={cn("h-full transition-all", branding.subtlePatterns && "bg-[url('/patterns/subtle-noise.png')] bg-repeat")}
+      >
         {children}
       </div>
     );
@@ -285,7 +397,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
             <img 
               src={config.logoUrl} 
               alt="Logo" 
-              className={`mx-auto object-contain ${
+              className={`object-contain ${
                 config.logoSize === 'small' ? 'h-8' : 
                 config.logoSize === 'large' ? 'h-16' : 'h-12'
               } ${config.logoAlignment === 'left' ? 'ml-0 mr-auto' : config.logoAlignment === 'right' ? 'ml-auto mr-0' : 'mx-auto'}`}
@@ -296,10 +408,12 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
             </div>
           )}
           {config.title && (
-            <h1 className="text-xl font-bold mt-2">{config.title}</h1>
+            <h1 style={headingStyles} className="mt-2">{config.title}</h1>
           )}
           {config.subtitle && (
-            <p className="text-sm text-muted-foreground">{config.subtitle}</p>
+            <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} className="text-sm">
+              {config.subtitle}
+            </p>
           )}
         </div>
       );
@@ -307,10 +421,12 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'title':
       return (
         <h1 
-          className={`font-${config.fontWeight || 'bold'} text-${config.textAlign || 'center'}`}
           style={{ 
+            ...headingStyles,
             fontSize: config.fontSize === '2xl' ? '1.5rem' : config.fontSize === 'xl' ? '1.25rem' : '1.125rem',
-            color: config.textColor || 'inherit'
+            fontWeight: config.fontWeight === 'bold' ? 700 : config.fontWeight === 'semibold' ? 600 : config.fontWeight === 'medium' ? 500 : 400,
+            textAlign: config.textAlign || 'center',
+            color: config.textColor || headingStyles.color,
           }}
         >
           {config.title || 'Report Title'}
@@ -320,8 +436,11 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'subtitle':
       return (
         <h2 
-          className={`text-${config.textAlign || 'center'} text-muted-foreground`}
-          style={{ fontSize: '0.875rem' }}
+          style={{ 
+            ...globalStyles,
+            textAlign: config.textAlign || 'center',
+            color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor,
+          }}
         >
           {config.subtitle || 'Subtitle text'}
         </h2>
@@ -330,8 +449,11 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'free_text':
       return (
         <div 
-          className={`text-${config.textAlign || 'left'} text-sm`}
-          style={{ color: config.textColor || 'inherit' }}
+          style={{ 
+            ...globalStyles,
+            textAlign: config.textAlign || 'left',
+            color: config.textColor || globalStyles.color,
+          }}
         >
           {config.text || 'Add your commentary here...'}
         </div>
@@ -340,44 +462,55 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'portfolio_overview':
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Total Value</p>
-            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{formatCurrency(totalValue)}</p>
-          </div>
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>IRR</p>
-            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{performanceMetrics ? formatPercent(performanceMetrics.irr) : '—'}</p>
-          </div>
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Total Return</p>
-            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}</p>
-          </div>
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Sharpe</p>
-            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
-          </div>
+          {[
+            { label: 'Total Value', value: formatCurrency(totalValue) },
+            { label: 'IRR', value: performanceMetrics ? formatPercent(performanceMetrics.irr) : '—' },
+            { label: 'Total Return', value: performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—' },
+            { label: 'Sharpe', value: performanceMetrics?.sharpeRatio.toFixed(2) || '—' },
+          ].map((item, i) => (
+            <div 
+              key={i}
+              className="p-2 rounded-lg" 
+              style={{ 
+                backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent',
+                borderRadius: containerStyles.borderRadius,
+              }}
+            >
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+                {item.label}
+              </p>
+              <p style={{ ...globalStyles, ...numberStyles, color: branding.textColor || DEFAULT_BRANDING.textColor }}>
+                {item.value}
+              </p>
+            </div>
+          ))}
         </div>
       );
 
     case 'performance_summary':
       return (
         <div className="grid grid-cols-3 gap-2">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Total Return</p>
-            <p className="text-sm font-semibold" style={{ color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }}>
-              {performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—'}
-            </p>
-          </div>
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Sharpe Ratio</p>
-            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{performanceMetrics?.sharpeRatio.toFixed(2) || '—'}</p>
-          </div>
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Max Drawdown</p>
-            <p className="text-sm font-semibold" style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>
-              {performanceMetrics ? formatPercent(-performanceMetrics.maxDrawdown) : '—'}
-            </p>
-          </div>
+          {[
+            { label: 'Total Return', value: performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—', color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor },
+            { label: 'Sharpe Ratio', value: performanceMetrics?.sharpeRatio.toFixed(2) || '—', color: branding.textColor || DEFAULT_BRANDING.textColor },
+            { label: 'Max Drawdown', value: performanceMetrics ? formatPercent(-performanceMetrics.maxDrawdown) : '—', color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor },
+          ].map((item, i) => (
+            <div 
+              key={i}
+              className="p-2 rounded-lg" 
+              style={{ 
+                backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent',
+                borderRadius: containerStyles.borderRadius,
+              }}
+            >
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+                {item.label}
+              </p>
+              <p style={{ ...globalStyles, ...numberStyles, color: item.color }}>
+                {item.value}
+              </p>
+            </div>
+          ))}
         </div>
       );
 
@@ -415,8 +548,8 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                   style={{ backgroundColor: chartColors[i % chartColors.length] }} 
                 />
-                <span className="truncate flex-1 font-medium" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{item.name}</span>
-                <span className="text-right whitespace-nowrap" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate flex-1">{item.name}</span>
+                <span style={{ ...globalStyles, ...numberStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} className="text-right whitespace-nowrap">
                   {formatCurrency(item.value)} ({item.percent.toFixed(1)}%)
                 </span>
               </div>
@@ -430,61 +563,56 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
         <div className="h-full">
           {architectureData.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No holdings data available
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Asset Type Bars */}
-              <div className="space-y-2">
-                {architectureData.map((group, i) => (
-                  <div key={i} className="space-y-1">
-                    <div className="flex items-center justify-between text-[9px]">
-                      <div className="flex items-center gap-1.5">
-                        <div 
-                          className="w-2 h-2 rounded-sm" 
-                          style={{ backgroundColor: group.color }}
-                        />
-                        <span className="font-medium capitalize" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>
-                          {group.name.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                      <span style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
-                        {group.percent.toFixed(1)}% • {formatCurrency(group.value)}
+              {architectureData.map((group, i) => (
+                <div key={i} className="space-y-1">
+                  <div className="flex items-center justify-between text-[9px]">
+                    <div className="flex items-center gap-1.5">
+                      <div 
+                        className="w-2 h-2 rounded-sm" 
+                        style={{ backgroundColor: group.color }}
+                      />
+                      <span style={{ ...globalStyles, fontWeight: 500 }} className="capitalize">
+                        {group.name.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    {/* Progress bar */}
-                    <div 
-                      className="h-2 rounded-full overflow-hidden"
-                      style={{ backgroundColor: `${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}30` }}
-                    >
-                      <div 
-                        className="h-full rounded-full transition-all"
-                        style={{ 
-                          width: `${group.percent}%`,
-                          backgroundColor: group.color
-                        }}
-                      />
-                    </div>
-                    {/* Top holdings in this category */}
-                    <div className="flex flex-wrap gap-1 pl-3">
-                      {group.holdings.slice(0, 4).map((h, j) => (
-                        <span 
-                          key={j}
-                          className="text-[8px] px-1.5 py-0.5 rounded"
-                          style={{ 
-                            backgroundColor: `${group.color}20`,
-                            color: branding.textColor || DEFAULT_BRANDING.textColor
-                          }}
-                        >
-                          {h.ticker} ({h.weight.toFixed(1)}%)
-                        </span>
-                      ))}
-                    </div>
+                    <span style={{ ...globalStyles, ...numberStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                      {group.percent.toFixed(1)}% • {formatCurrency(group.value)}
+                    </span>
                   </div>
-                ))}
-              </div>
+                  <div 
+                    className="h-2 rounded-full overflow-hidden"
+                    style={{ backgroundColor: `${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}30` }}
+                  >
+                    <div 
+                      className="h-full rounded-full transition-all"
+                      style={{ 
+                        width: `${group.percent}%`,
+                        backgroundColor: group.color
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1 pl-3">
+                    {group.holdings.slice(0, 4).map((h, j) => (
+                      <span 
+                        key={j}
+                        className="text-[8px] px-1.5 py-0.5 rounded"
+                        style={{ 
+                          backgroundColor: `${group.color}20`,
+                          color: branding.textColor || DEFAULT_BRANDING.textColor
+                        }}
+                      >
+                        {h.ticker} ({h.weight.toFixed(1)}%)
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -494,27 +622,31 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       return (
         <div className="grid grid-cols-2 gap-3 h-full">
           <div>
-            <h4 className="text-[10px] font-medium flex items-center gap-1 mb-1" style={{ color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }}>
+            <h4 style={{ ...globalStyles, color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor, fontSize: '10px', fontWeight: 500 }} className="flex items-center gap-1 mb-1">
               <TrendingUp size={10} /> Top
             </h4>
             <div className="space-y-0.5">
               {topMovers.top.map((h, i) => (
                 <div key={i} className="flex justify-between text-[10px]">
-                  <span className="font-medium truncate" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{h.ticker}</span>
-                  <span style={{ color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }}>{formatCurrency(h.unrealizedPL || 0)}</span>
+                  <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate">{h.ticker}</span>
+                  <span style={{ ...globalStyles, ...numberStyles, color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }}>
+                    {formatCurrency(h.unrealizedPL || 0)}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <h4 className="text-[10px] font-medium flex items-center gap-1 mb-1" style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>
+            <h4 style={{ ...globalStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor, fontSize: '10px', fontWeight: 500 }} className="flex items-center gap-1 mb-1">
               <TrendingDown size={10} /> Bottom
             </h4>
             <div className="space-y-0.5">
               {topMovers.bottom.map((h, i) => (
                 <div key={i} className="flex justify-between text-[10px]">
-                  <span className="font-medium truncate" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{h.ticker}</span>
-                  <span style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>{formatCurrency(h.unrealizedPL || 0)}</span>
+                  <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate">{h.ticker}</span>
+                  <span style={{ ...globalStyles, ...numberStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>
+                    {formatCurrency(h.unrealizedPL || 0)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -527,7 +659,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
         <div className="h-full">
           {contributionData.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No P/L data available
               </p>
             </div>
@@ -575,7 +707,6 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       );
 
     case 'performance_calendar':
-      // Calculate YTD for each year
       const getYtdReturn = (yearMonths: { month: string; return: number | null }[]) => {
         const validReturns = yearMonths.filter(m => m.return !== null).map(m => m.return as number);
         if (validReturns.length === 0) return null;
@@ -586,7 +717,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
         <div className="space-y-1 overflow-x-auto">
           {calendarData.length === 0 ? (
             <div className="text-center py-4">
-              <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No monthly return data available
               </p>
             </div>
@@ -594,11 +725,11 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="text-left text-[8px] font-medium px-1 py-0.5" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Year</th>
+                  <th style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '8px' }} className="text-left font-medium px-1 py-0.5">Year</th>
                   {monthNames.map(m => (
-                    <th key={m} className="text-center text-[7px] font-medium px-0.5 py-0.5" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>{m}</th>
+                    <th key={m} style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '7px' }} className="text-center font-medium px-0.5 py-0.5">{m}</th>
                   ))}
-                  <th className="text-center text-[8px] font-medium px-1 py-0.5" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>YTD</th>
+                  <th style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '8px' }} className="text-center font-medium px-1 py-0.5">YTD</th>
                 </tr>
               </thead>
               <tbody>
@@ -606,7 +737,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                   const ytdReturn = getYtdReturn(yearData.months);
                   return (
                     <tr key={yearData.year}>
-                      <td className="text-[9px] font-semibold px-1 py-0.5" style={{ color: branding.accentColor || DEFAULT_BRANDING.accentColor }}>{yearData.year}</td>
+                      <td style={{ ...globalStyles, ...numberStyles, color: branding.accentColor || DEFAULT_BRANDING.accentColor, fontSize: '9px' }} className="px-1 py-0.5">{yearData.year}</td>
                       {yearData.months.map((m, i) => (
                         <td key={i} className="p-0.5">
                           <div
@@ -643,22 +774,28 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'risk_metrics':
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Volatility</p>
-            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{riskMetrics ? formatPercent(riskMetrics.volatility) : '—'}</p>
-          </div>
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Beta</p>
-            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{riskMetrics?.beta.toFixed(2) || '—'}</p>
-          </div>
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>VaR 95%</p>
-            <p className="text-sm font-semibold" style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>{riskMetrics ? formatPercent(-riskMetrics.var95) : '—'}</p>
-          </div>
-          <div className="p-2 rounded-lg" style={{ backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent' }}>
-            <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Sortino</p>
-            <p className="text-sm font-semibold" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{riskMetrics?.sortinoRatio?.toFixed(2) || '—'}</p>
-          </div>
+          {[
+            { label: 'Volatility', value: riskMetrics ? formatPercent(riskMetrics.volatility) : '—', color: branding.textColor || DEFAULT_BRANDING.textColor },
+            { label: 'Beta', value: riskMetrics?.beta.toFixed(2) || '—', color: branding.textColor || DEFAULT_BRANDING.textColor },
+            { label: 'VaR 95%', value: riskMetrics ? formatPercent(-riskMetrics.var95) : '—', color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor },
+            { label: 'Sortino', value: riskMetrics?.sortinoRatio?.toFixed(2) || '—', color: branding.textColor || DEFAULT_BRANDING.textColor },
+          ].map((item, i) => (
+            <div 
+              key={i}
+              className="p-2 rounded-lg" 
+              style={{ 
+                backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent',
+                borderRadius: containerStyles.borderRadius,
+              }}
+            >
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+                {item.label}
+              </p>
+              <p style={{ ...globalStyles, ...numberStyles, color: item.color }}>
+                {item.value}
+              </p>
+            </div>
+          ))}
         </div>
       );
 
@@ -667,7 +804,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
         <div className="h-full">
           {scatterData.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No holdings data available
               </p>
             </div>
@@ -747,13 +884,13 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
             const barWidth = (Math.abs(s.impact) / maxImpact) * 100;
             return (
               <div key={i} className="flex items-center gap-2">
-                <span 
-                  className="text-[9px] w-28 truncate" 
-                  style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}
-                >
+                <span style={{ ...globalStyles, fontSize: '9px' }} className="w-28 truncate">
                   {s.name}
                 </span>
-                <div className="flex-1 h-4 rounded overflow-hidden" style={{ backgroundColor: `${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}30` }}>
+                <div 
+                  className="flex-1 h-4 rounded overflow-hidden" 
+                  style={{ backgroundColor: `${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}30` }}
+                >
                   <div 
                     className="h-full rounded"
                     style={{ 
@@ -763,8 +900,8 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                   />
                 </div>
                 <span 
-                  className="text-[10px] font-semibold w-14 text-right" 
-                  style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}
+                  style={{ ...globalStyles, ...numberStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor, fontSize: '10px' }} 
+                  className="w-14 text-right"
                 >
                   {formatPercent(s.impact)}
                 </span>
@@ -775,78 +912,130 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       );
 
     case 'holdings_table':
+      const displayHoldings = holdings.slice(0, config.maxItems || 20);
       return (
-        <div className="overflow-hidden">
-          <table className="w-full text-[9px]" style={{ borderColor: branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[9px]" style={{ borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ 
                 backgroundColor: branding.tableHeaderBgColor || DEFAULT_BRANDING.tableHeaderBgColor,
-                borderBottom: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`
+                borderBottom: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
               }}>
-                <th className="text-left py-1 font-medium" style={{ color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }}>Asset</th>
-                <th className="text-right py-1 font-medium" style={{ color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }}>Value</th>
-                <th className="text-right py-1 font-medium" style={{ color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }}>Weight</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-left px-2 py-1.5 font-semibold">Ticker</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-left px-2 py-1.5 font-semibold">Name</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-right px-2 py-1.5 font-semibold">Value</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-right px-2 py-1.5 font-semibold">Weight</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-right px-2 py-1.5 font-semibold">P/L</th>
               </tr>
             </thead>
             <tbody>
-              {holdings.slice(0, config.maxItems || 10).map((h, index) => (
+              {displayHoldings.map((h, i) => (
                 <tr 
-                  key={h.ticker} 
+                  key={i} 
                   style={{ 
-                    backgroundColor: index % 2 === 1 ? (branding.tableRowAltBgColor || DEFAULT_BRANDING.tableRowAltBgColor) : 'transparent',
-                    borderBottom: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}50`
+                    backgroundColor: i % 2 === 1 ? (branding.tableRowAltBgColor || DEFAULT_BRANDING.tableRowAltBgColor) : 'transparent',
+                    borderBottom: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
                   }}
                 >
-                  <td className="py-0.5">
-                    <span className="font-medium" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{h.ticker}</span>
+                  <td style={{ ...globalStyles, fontWeight: 600 }} className="px-2 py-1.5">{h.ticker}</td>
+                  <td style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} className="px-2 py-1.5 truncate max-w-[120px]">{h.name}</td>
+                  <td style={{ ...globalStyles, ...numberStyles }} className="px-2 py-1.5 text-right">{formatCurrency(h.currentValue)}</td>
+                  <td style={{ ...globalStyles, ...numberStyles }} className="px-2 py-1.5 text-right">{h.weight.toFixed(1)}%</td>
+                  <td 
+                    style={{ 
+                      ...globalStyles, 
+                      ...numberStyles, 
+                      color: (h.unrealizedPL || 0) >= 0 
+                        ? (branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor)
+                        : (branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor)
+                    }} 
+                    className="px-2 py-1.5 text-right"
+                  >
+                    {formatCurrency(h.unrealizedPL || 0)}
                   </td>
-                  <td className="text-right py-0.5 font-mono" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{formatCurrency(h.currentValue)}</td>
-                  <td className="text-right py-0.5 font-mono" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{h.weight.toFixed(1)}%</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {holdings.length > (config.maxItems || 10) && (
-            <p className="text-[8px] text-center mt-1" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
-              +{holdings.length - (config.maxItems || 10)} more
-            </p>
-          )}
+        </div>
+      );
+
+    case 'transactions_summary':
+      return (
+        <div className="text-center py-4">
+          <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+            Transactions summary will display recent trades
+          </p>
         </div>
       );
 
     case 'footer':
       return (
         <div 
-          className="flex items-center justify-between text-[10px] pt-2"
+          className="flex items-center justify-between text-xs py-2"
           style={{ 
-            color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor,
-            borderTop: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`
+            borderTop: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
           }}
         >
-          <span>{config.footerText || branding.footerText}</span>
-          {config.analystName && <span>{config.analystName}</span>}
-          {config.showDate && <span>{new Date().toLocaleDateString()}</span>}
+          <span style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+            {config.footerText || branding.footerText || 'Confidential'}
+          </span>
+          <div className="flex items-center gap-3" style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+            {config.analystName && <span>Prepared by: {config.analystName}</span>}
+            {config.showDate && <span>{new Date().toLocaleDateString()}</span>}
+          </div>
         </div>
       );
 
     case 'page_break':
       return (
-        <div className="flex items-center justify-center py-2 border-t border-b border-dashed border-muted-foreground/30">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Page Break</span>
+        <div 
+          className="flex items-center justify-center py-2 text-xs"
+          style={{ 
+            borderTop: `1px dashed ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
+            borderBottom: `1px dashed ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
+            color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor,
+          }}
+        >
+          — Page Break —
         </div>
       );
 
     case 'spacer':
-      return <div className="h-full bg-muted/10 rounded" />;
+      return <div style={{ height: '40px' }} />;
+
+    case 'drawdown_chart':
+      return (
+        <div className="text-center py-4">
+          <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+            Drawdown chart placeholder
+          </p>
+        </div>
+      );
+
+    case 'factor_exposure':
+      return (
+        <div className="text-center py-4">
+          <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+            Factor exposure placeholder
+          </p>
+        </div>
+      );
 
     default:
       return (
-        <div className="p-4 bg-muted/20 rounded-lg text-center h-full flex items-center justify-center">
-          <p className="text-xs text-muted-foreground">{block.type}</p>
+        <div className="text-center py-4">
+          <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+            Unknown block type: {block.type}
+          </p>
         </div>
       );
     }
   };
 
-  return <BlockWrapper>{renderContent()}</BlockWrapper>;
+  return (
+    <BlockWrapper>
+      {renderContent()}
+    </BlockWrapper>
+  );
 }
