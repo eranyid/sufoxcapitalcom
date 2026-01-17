@@ -88,29 +88,27 @@ export function MobileHeader({
       {/* Safe area padding for iOS notch */}
       <div className="pt-safe">
         {/* ROW 1 — BRAND BAR (minimal, logo only) */}
-        <div className="flex items-center justify-between px-4 h-6">
-          {/* Left: Logo + Brand (compact, muted) */}
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between px-4 h-7">
+          {/* Left: Logo + Brand */}
+          <div className="flex items-center gap-2">
             <img 
               alt="SUFOX" 
-              className="h-4 w-4 object-contain opacity-70" 
+              className="h-6 w-6 object-contain opacity-80" 
               src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" 
             />
-            <span className="text-[9px] font-medium text-muted-foreground/80 tracking-wider">
+            <span className="text-sm font-normal text-muted-foreground/80 tracking-wide">
               SUFOX CAPITAL
             </span>
           </div>
-
-          {/* Right: Empty - moved to row 2 */}
         </div>
 
         {/* ROW 2 — INFO BAR (Clock centered, status left, market right) */}
         <TooltipProvider delayDuration={200}>
-          <div className="flex items-center justify-between px-4 pb-2 pt-0.5">
-            {/* Left: Status pill (compact) */}
-            <div className="flex items-center gap-1.5 min-w-[60px]">
-              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-muted/30 rounded text-[8px] text-muted-foreground font-mono">
-                <span className={`w-1 h-1 rounded-full ${
+          <div className="flex items-center justify-between px-4 pb-2 pt-1">
+            {/* Left: Status pill (compact, low weight) */}
+            <div className="flex items-center min-w-[50px]">
+              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-muted/20 rounded text-xs text-muted-foreground font-mono">
+                <span className={`w-1.5 h-1.5 rounded-full ${
                   status === 'ok' ? 'bg-emerald-500' : 
                   status === 'warning' ? 'bg-amber-500' : 'bg-destructive'
                 }`} />
@@ -122,22 +120,22 @@ export function MobileHeader({
 
             {/* Center: Clock (primary) + Date (secondary) */}
             <div className="flex flex-col items-center flex-1">
-              <span className="text-xl font-mono text-primary font-bold tabular-nums leading-none tracking-tight">
+              <span className="text-xl font-semibold font-mono text-primary tabular-nums leading-[1.1] tracking-tight">
                 {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
               </span>
-              <span className="text-[9px] font-mono text-muted-foreground tabular-nums leading-tight mt-0.5">
+              <span className="text-sm font-normal font-mono text-muted-foreground/75 tabular-nums mt-0.5">
                 {time.toLocaleDateString('en-GB')} · {dayName}
               </span>
             </div>
 
             {/* Right: Market status + Notifications */}
-            <div className="flex items-center gap-2 min-w-[80px] justify-end">
+            <div className="flex items-center gap-3 min-w-[90px] justify-end">
               {/* Market status inline */}
-              <div className="flex items-center gap-1.5 text-[8px] font-mono text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm font-medium font-mono text-muted-foreground tracking-[0.02em]">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="flex items-center gap-0.5 cursor-pointer hover:text-foreground transition-colors">
-                      <span className={`w-1 h-1 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
+                    <span className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors">
+                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
                       <span>US</span>
                     </span>
                   </TooltipTrigger>
@@ -147,8 +145,8 @@ export function MobileHeader({
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="flex items-center gap-0.5 cursor-pointer hover:text-foreground transition-colors">
-                      <span className={`w-1 h-1 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
+                    <span className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors">
+                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
                       <span>IL</span>
                     </span>
                   </TooltipTrigger>
@@ -164,7 +162,7 @@ export function MobileHeader({
               />
               
               {sampleDataMode && (
-                <Database className="h-2.5 w-2.5 text-primary opacity-60" />
+                <Database className="h-3 w-3 text-primary opacity-60" />
               )}
             </div>
           </div>
