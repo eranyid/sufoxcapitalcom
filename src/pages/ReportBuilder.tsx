@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -11,6 +11,7 @@ import {
   Redo2,
   LayoutTemplate,
   Plus,
+  Loader2,
 } from 'lucide-react';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -23,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -53,9 +55,9 @@ import {
 import { ReportCanvas } from '@/components/reports/ReportCanvas';
 import { BlockLibraryPanel } from '@/components/reports/BlockLibraryPanel';
 import { BlockPropertiesPanel } from '@/components/reports/BlockPropertiesPanel';
-import { ReportBlockRenderer } from '@/components/reports/ReportBlockRenderer';
+import { ReportDocument } from '@/components/reports/ReportDocument';
 import { TemplateSelectorDialog, ReportTemplate, useTemplateApplicator } from '@/components/reports/ReportTemplates';
-import { generateWYSIWYGReportPDF } from '@/lib/reportPdfGenerator';
+import { exportWYSIWYGPdf } from '@/lib/wysiwygPdfExporter';
 import type { ReportBranding } from '@/types/reports';
 import { BLOCK_LIBRARY as BLOCK_LIBRARY_ITEMS } from '@/types/reportBuilder';
 
@@ -114,8 +116,13 @@ export default function ReportBuilder() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportMessage, setExportMessage] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  
+  // Ref for WYSIWYG PDF export - captures the preview DOM
+  const exportContainerRef = useRef<HTMLDivElement>(null);
   
   const { applyTemplate } = useTemplateApplicator();
 
@@ -209,24 +216,44 @@ export default function ReportBuilder() {
   };
 
   const handleExportPDF = async () => {
+    // Open preview dialog to render the document for capture
+    setPreviewOpen(true);
     setIsExporting(true);
+    setExportProgress(0);
+    setExportMessage('Preparing export...');
+    
+    // Wait for dialog to render
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     try {
-      await generateWYSIWYGReportPDF({
+      const exportContainer = exportContainerRef.current;
+      if (!exportContainer) {
+        throw new Error('Export container not found. Please try again.');
+      }
+      
+      const result = await exportWYSIWYGPdf(exportContainer, {
         blocks,
         branding,
         pageSize,
-        holdings,
-        performanceMetrics,
-        riskMetrics,
-        totalValue,
         reportName: report?.name || 'Report',
+        onProgress: (progress, message) => {
+          setExportProgress(progress);
+          setExportMessage(message);
+        },
       });
-      toast.success('PDF exported successfully');
+      
+      if (result.success) {
+        toast.success('PDF exported successfully - WYSIWYG export complete');
+      } else {
+        throw new Error(result.error || 'Export failed');
+      }
     } catch (err) {
       console.error('PDF generation error:', err);
-      toast.error('Failed to generate PDF');
+      toast.error(err instanceof Error ? err.message : 'Failed to generate PDF');
     } finally {
       setIsExporting(false);
+      setExportProgress(0);
+      setExportMessage('');
     }
   };
 
@@ -607,56 +634,71 @@ export default function ReportBuilder() {
           </Dialog>
         )}
 
-        {/* Full Preview Modal */}
-        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        {/* Full Preview Modal - Used for WYSIWYG PDF Export */}
+        <Dialog open={previewOpen} onOpenChange={(open) => {
+          // Don't allow closing while exporting
+          if (!isExporting) setPreviewOpen(open);
+        }}>
           <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
             <DialogHeader className="flex-shrink-0 px-6 py-4 border-b border-border flex flex-row items-center justify-between">
               <DialogTitle className="text-lg font-semibold">
                 {branding.headerTitle || 'Report Preview'}
+                {isExporting && (
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    - Exporting...
+                  </span>
+                )}
               </DialogTitle>
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="gap-1.5"
-                onClick={handleExportPDF}
-                disabled={isExporting}
-              >
-                <Download size={14} />
-                {isExporting ? 'Exporting...' : 'Export PDF'}
-              </Button>
-            </DialogHeader>
-            <ScrollArea className="flex-1 px-6 py-4">
-              <div 
-                className="mx-auto bg-card rounded-lg border border-border shadow-lg overflow-hidden"
-                style={{ maxWidth: pageSize === 'A4' ? '210mm' : '8.5in' }}
-              >
-                {/* Report Header */}
-                <div 
-                  className="h-1" 
-                  style={{ backgroundColor: branding.accentColor }}
-                />
-                <div className="p-8 space-y-6">
-                  {blocks.filter(b => b.enabled).map((block) => (
-                    <div key={block.id}>
-                      <ReportBlockRenderer
-                        block={block}
-                        holdings={holdings}
-                        performanceMetrics={performanceMetrics}
-                        riskMetrics={riskMetrics}
-                        totalValue={totalValue}
-                        branding={branding}
-                      />
-                    </div>
-                  ))}
-                </div>
-                {/* Report Footer */}
-                {branding.showPageNumbers && (
-                  <div className="border-t border-border px-8 py-4 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{branding.footerText || 'Confidential'}</span>
-                    {branding.analystName && <span>{branding.analystName}</span>}
+              <div className="flex items-center gap-3">
+                {isExporting && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>{exportMessage}</span>
                   </div>
                 )}
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="gap-1.5"
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Download size={14} />
+                  )}
+                  {isExporting ? `${exportProgress}%` : 'Export PDF'}
+                </Button>
               </div>
+            </DialogHeader>
+            
+            {/* Export progress bar */}
+            {isExporting && (
+              <div className="px-6">
+                <Progress value={exportProgress} className="h-1" />
+              </div>
+            )}
+            
+            <ScrollArea className="flex-1 px-6 py-4 bg-muted/30">
+              {/* 
+                ReportDocument - Single Source of Truth
+                This is the SAME component used for preview AND PDF export.
+                What you see here IS what you get in the PDF.
+              */}
+              <ReportDocument
+                ref={exportContainerRef}
+                blocks={blocks}
+                branding={branding}
+                pageSize={pageSize}
+                holdings={holdings}
+                performanceMetrics={performanceMetrics}
+                riskMetrics={riskMetrics}
+                totalValue={totalValue}
+                forExport={isExporting}
+                scale={0.85}
+                className="mx-auto"
+              />
             </ScrollArea>
           </DialogContent>
         </Dialog>
