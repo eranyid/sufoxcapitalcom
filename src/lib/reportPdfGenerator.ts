@@ -1407,6 +1407,90 @@ export async function generateWYSIWYGReportPDF({
         y = (doc as any).lastAutoTable.finalY + 14;
         break;
 
+      case 'contribution_chart':
+        addNewPageIfNeeded(80);
+        
+        // Draw section card background
+        const contribCardHeight = 75;
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), contribCardHeight);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
+        doc.setTextColor(...hexToRgb(accentColor));
+        doc.setFont('helvetica', 'bold');
+        doc.text('P/L CONTRIBUTION', margin + 4, y + 2);
+        y += 12;
+
+        // Get contribution data sorted by absolute value
+        const contribMaxItems = config.maxItems || 10;
+        const contributionData = holdings
+          .filter(h => h.unrealizedPL !== undefined && h.unrealizedPL !== 0)
+          .sort((a, b) => Math.abs(b.unrealizedPL || 0) - Math.abs(a.unrealizedPL || 0))
+          .slice(0, contribMaxItems);
+
+        if (contributionData.length > 0) {
+          // Find max absolute value for scaling
+          const maxAbsValue = Math.max(...contributionData.map(h => Math.abs(h.unrealizedPL || 0)));
+          
+          // Chart dimensions
+          const chartX = margin + 35; // Leave space for ticker labels
+          const chartWidth = pageWidth - margin - chartX - 50; // Leave space for value labels
+          const barHeight = 5;
+          const barSpacing = 6;
+          const centerX = chartX + chartWidth / 2; // Center line for zero
+          
+          contributionData.forEach((holding, i) => {
+            const barY = y + (i * barSpacing);
+            const pl = holding.unrealizedPL || 0;
+            const isPositive = pl >= 0;
+            
+            // Calculate bar width (proportional to max value)
+            const barWidthRatio = Math.abs(pl) / maxAbsValue;
+            const maxBarWidth = chartWidth / 2 - 2; // Half width minus padding
+            const actualBarWidth = barWidthRatio * maxBarWidth;
+            
+            // Draw ticker label on the left
+            doc.setFontSize(7);
+            doc.setTextColor(...hexToRgb(textColor));
+            doc.setFont('helvetica', 'bold');
+            doc.text(holding.ticker, margin + 4, barY + 3.5);
+            
+            // Draw center line (zero axis) - just a thin vertical line
+            doc.setDrawColor(...hexToRgb(borderColor));
+            doc.setLineWidth(0.2);
+            doc.line(centerX, y - 2, centerX, y + (contributionData.length * barSpacing));
+            
+            // Draw bar
+            const barColor = isPositive ? positiveColor : negativeColor;
+            doc.setFillColor(...hexToRgb(barColor));
+            
+            if (isPositive) {
+              // Positive bar: draw from center to the right
+              doc.roundedRect(centerX + 1, barY, actualBarWidth, barHeight, 1, 1, 'F');
+            } else {
+              // Negative bar: draw from center to the left
+              doc.roundedRect(centerX - actualBarWidth - 1, barY, actualBarWidth, barHeight, 1, 1, 'F');
+            }
+            
+            // Draw value label on the right
+            doc.setFontSize(7);
+            doc.setTextColor(...hexToRgb(isPositive ? positiveColor : negativeColor));
+            doc.setFont('helvetica', 'normal');
+            doc.text(formatCurrency(pl), pageWidth - margin - 4, barY + 3.5, { align: 'right' });
+          });
+          
+          y += contributionData.length * barSpacing + 8;
+        } else {
+          doc.setFontSize(9);
+          doc.setTextColor(...hexToRgb(mutedTextColor));
+          doc.text('No P/L data available', margin + 4, y + 10);
+          y += 20;
+        }
+
+        y += contribCardHeight - (contributionData.length * 6) - 15;
+        break;
+
       case 'footer':
         // Footer is handled at the end
         break;
