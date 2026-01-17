@@ -1,6 +1,5 @@
 import { Database } from 'lucide-react';
 import { usePortfolio } from '@/context/PortfolioContext';
-import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useState, useEffect } from 'react';
@@ -109,7 +108,13 @@ export function MobileHeader({
 
           {/* Right Actions */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <OnlineStatusIndicator isOnline={isOnline} compact />
+            <OnlineStatusIndicator 
+              isOnline={isOnline} 
+              dataStatus={status}
+              errorCount={errorCount}
+              warningCount={warningCount}
+              onDataClick={onWatchdogClick}
+            />
             <NotificationBell 
               unreadCount={unreadNotifications} 
               onClick={onNotificationsClick} 
@@ -119,7 +124,6 @@ export function MobileHeader({
                 <Database className="h-2 w-2" />
               </span>
             )}
-            <DataWatchdogStatus status={status} errorCount={errorCount} warningCount={warningCount} onClick={onWatchdogClick} />
           </div>
         </div>
 
