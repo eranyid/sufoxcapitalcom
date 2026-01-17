@@ -407,12 +407,12 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     };
   };
 
-  // Wrapper component to apply custom styles
+  // Wrapper component to apply custom styles - ensures content fills container
   const BlockWrapper = ({ children }: { children: React.ReactNode }) => {
     return (
       <div 
         style={{ ...globalStyles, ...containerStyles }} 
-        className="h-full transition-all relative"
+        className="h-full w-full transition-all relative flex flex-col overflow-hidden"
       >
         {branding.subtlePatterns && (
           <div 
@@ -420,7 +420,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
             style={getPatternStyle()}
           />
         )}
-        <div className="relative">{children}</div>
+        <div className="relative flex-1 min-h-0 w-full overflow-hidden">{children}</div>
       </div>
     );
   };
@@ -523,7 +523,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'portfolio_overview':
       return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 h-full w-full content-center">
           {[
             { label: 'Total Value', value: formatCurrency(totalValue) },
             { label: 'IRR', value: performanceMetrics ? formatPercent(performanceMetrics.irr) : '—' },
@@ -532,16 +532,16 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
           ].map((item, i) => (
             <div 
               key={i}
-              className="p-2 rounded-lg" 
+              className="p-1.5 rounded-lg flex flex-col justify-center" 
               style={{ 
                 backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent',
                 borderRadius: containerStyles.borderRadius,
               }}
             >
-              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '9px' }}>
                 {item.label}
               </p>
-              <p style={{ ...globalStyles, ...numberStyles, color: branding.textColor || DEFAULT_BRANDING.textColor }}>
+              <p style={{ ...globalStyles, ...numberStyles, color: branding.textColor || DEFAULT_BRANDING.textColor, fontSize: '11px' }}>
                 {item.value}
               </p>
             </div>
@@ -551,7 +551,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'performance_summary':
       return (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-1.5 h-full w-full content-center">
           {[
             { label: 'Total Return', value: performanceMetrics ? formatPercent(performanceMetrics.totalReturn) : '—', color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor },
             { label: 'Sharpe Ratio', value: performanceMetrics?.sharpeRatio.toFixed(2) || '—', color: branding.textColor || DEFAULT_BRANDING.textColor },
@@ -559,16 +559,16 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
           ].map((item, i) => (
             <div 
               key={i}
-              className="p-2 rounded-lg" 
+              className="p-1.5 rounded-lg flex flex-col justify-center" 
               style={{ 
                 backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent',
                 borderRadius: containerStyles.borderRadius,
               }}
             >
-              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '9px' }}>
                 {item.label}
               </p>
-              <p style={{ ...globalStyles, ...numberStyles, color: item.color }}>
+              <p style={{ ...globalStyles, ...numberStyles, color: item.color, fontSize: '11px' }}>
                 {item.value}
               </p>
             </div>
@@ -582,9 +582,9 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       const chartData = block.type === 'asset_allocation' ? allocationData :
                         block.type === 'currency_exposure' ? currencyData : geographyData;
       return (
-        <div className="flex items-center gap-3 h-full">
+        <div className="flex items-center gap-3 h-full w-full min-h-0 overflow-hidden">
           {config.showChart !== false && (
-            <div className="w-24 h-24 flex-shrink-0">
+            <div className="flex-shrink-0 flex items-center justify-center" style={{ width: '40%', height: '100%', maxWidth: '120px', minWidth: '60px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -592,7 +592,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                     cx="50%"
                     cy="50%"
                     innerRadius={0}
-                    outerRadius={40}
+                    outerRadius="80%"
                     dataKey="value"
                   >
                     {chartData.map((_, i) => (
@@ -603,16 +603,16 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
               </ResponsiveContainer>
             </div>
           )}
-          <div className="flex-1 space-y-1.5">
+          <div className="flex-1 flex flex-col justify-center gap-1 min-w-0 overflow-hidden">
             {chartData.slice(0, config.maxItems || 5).map((item, i) => (
               <div key={item.name} className="flex items-center gap-2 text-[10px]">
                 <div 
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                   style={{ backgroundColor: chartColors[i % chartColors.length] }} 
                 />
-                <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate flex-1">{item.name}</span>
-                <span style={{ ...globalStyles, ...numberStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} className="text-right whitespace-nowrap">
-                  {formatCurrency(item.value)} ({item.percent.toFixed(1)}%)
+                <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate flex-1 min-w-0">{item.name}</span>
+                <span style={{ ...globalStyles, ...numberStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} className="text-right whitespace-nowrap flex-shrink-0">
+                  {formatCurrency(item.value)}
                 </span>
               </div>
             ))}
@@ -622,33 +622,33 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'xray_architecture':
       return (
-        <div className="h-full">
+        <div className="h-full w-full min-h-0 overflow-auto">
           {architectureData.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full w-full">
               <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No holdings data available
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {architectureData.map((group, i) => (
                 <div key={i} className="space-y-1">
                   <div className="flex items-center justify-between text-[9px]">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <div 
-                        className="w-2 h-2 rounded-sm" 
+                        className="w-2 h-2 rounded-sm flex-shrink-0" 
                         style={{ backgroundColor: group.color }}
                       />
-                      <span style={{ ...globalStyles, fontWeight: 500 }} className="capitalize">
+                      <span style={{ ...globalStyles, fontWeight: 500 }} className="capitalize truncate">
                         {group.name.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <span style={{ ...globalStyles, ...numberStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                    <span style={{ ...globalStyles, ...numberStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} className="flex-shrink-0 ml-2">
                       {group.percent.toFixed(1)}% • {formatCurrency(group.value)}
                     </span>
                   </div>
                   <div 
-                    className="h-2 rounded-full overflow-hidden"
+                    className="h-1.5 rounded-full overflow-hidden"
                     style={{ backgroundColor: `${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}30` }}
                   >
                     <div 
@@ -663,7 +663,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                     {group.holdings.slice(0, 4).map((h, j) => (
                       <span 
                         key={j}
-                        className="text-[8px] px-1.5 py-0.5 rounded"
+                        className="text-[7px] px-1 py-0.5 rounded"
                         style={{ 
                           backgroundColor: `${group.color}20`,
                           color: branding.textColor || DEFAULT_BRANDING.textColor
@@ -682,31 +682,31 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'top_movers':
       return (
-        <div className="grid grid-cols-2 gap-3 h-full">
-          <div>
-            <h4 style={{ ...globalStyles, color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor, fontSize: '10px', fontWeight: 500 }} className="flex items-center gap-1 mb-1">
+        <div className="grid grid-cols-2 gap-2 h-full w-full min-h-0 overflow-hidden">
+          <div className="flex flex-col min-h-0">
+            <h4 style={{ ...globalStyles, color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor, fontSize: '10px', fontWeight: 500 }} className="flex items-center gap-1 mb-1 flex-shrink-0">
               <TrendingUp size={10} /> Top
             </h4>
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 overflow-auto flex-1 min-h-0">
               {topMovers.top.map((h, i) => (
-                <div key={i} className="flex justify-between text-[10px]">
-                  <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate">{h.ticker}</span>
-                  <span style={{ ...globalStyles, ...numberStyles, color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }}>
+                <div key={i} className="flex justify-between text-[9px] gap-1">
+                  <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate min-w-0">{h.ticker}</span>
+                  <span style={{ ...globalStyles, ...numberStyles, color: branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor }} className="flex-shrink-0">
                     {formatCurrency(h.unrealizedPL || 0)}
                   </span>
                 </div>
               ))}
             </div>
           </div>
-          <div>
-            <h4 style={{ ...globalStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor, fontSize: '10px', fontWeight: 500 }} className="flex items-center gap-1 mb-1">
+          <div className="flex flex-col min-h-0">
+            <h4 style={{ ...globalStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor, fontSize: '10px', fontWeight: 500 }} className="flex items-center gap-1 mb-1 flex-shrink-0">
               <TrendingDown size={10} /> Bottom
             </h4>
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 overflow-auto flex-1 min-h-0">
               {topMovers.bottom.map((h, i) => (
-                <div key={i} className="flex justify-between text-[10px]">
-                  <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate">{h.ticker}</span>
-                  <span style={{ ...globalStyles, ...numberStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>
+                <div key={i} className="flex justify-between text-[9px] gap-1">
+                  <span style={{ ...globalStyles, fontWeight: 500 }} className="truncate min-w-0">{h.ticker}</span>
+                  <span style={{ ...globalStyles, ...numberStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }} className="flex-shrink-0">
                     {formatCurrency(h.unrealizedPL || 0)}
                   </span>
                 </div>
@@ -718,16 +718,16 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'contribution_chart':
       return (
-        <div className="h-full">
+        <div className="h-full w-full min-h-0 overflow-hidden">
           {contributionData.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full w-full">
               <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No P/L data available
               </p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={contributionData} layout="vertical" margin={{ left: 35, right: 50, top: 5, bottom: 5 }}>
+              <BarChart data={contributionData} layout="vertical" margin={{ left: 30, right: 40, top: 5, bottom: 5 }}>
                 <XAxis 
                   type="number" 
                   tick={{ fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} 
@@ -737,8 +737,8 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                 <YAxis 
                   type="category" 
                   dataKey="ticker" 
-                  tick={{ fontSize: 9, fill: branding.textColor || DEFAULT_BRANDING.textColor, fontWeight: 'bold' }} 
-                  width={35}
+                  tick={{ fontSize: 8, fill: branding.textColor || DEFAULT_BRANDING.textColor, fontWeight: 'bold' }} 
+                  width={30}
                   axisLine={false}
                   tickLine={false}
                 />
@@ -776,22 +776,22 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       };
 
       return (
-        <div className="space-y-1 overflow-x-auto">
+        <div className="h-full w-full min-h-0 overflow-auto">
           {calendarData.length === 0 ? (
-            <div className="text-center py-4">
+            <div className="flex items-center justify-center h-full w-full">
               <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No monthly return data available
               </p>
             </div>
           ) : (
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse text-[7px]">
               <thead>
                 <tr>
-                  <th style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '8px' }} className="text-left font-medium px-1 py-0.5">Year</th>
+                  <th style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '7px' }} className="text-left font-medium px-0.5 py-0.5">Yr</th>
                   {monthNames.map(m => (
-                    <th key={m} style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '7px' }} className="text-center font-medium px-0.5 py-0.5">{m}</th>
+                    <th key={m} style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '6px' }} className="text-center font-medium px-0 py-0.5">{m.slice(0, 1)}</th>
                   ))}
-                  <th style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '8px' }} className="text-center font-medium px-1 py-0.5">YTD</th>
+                  <th style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '7px' }} className="text-center font-medium px-0.5 py-0.5">YTD</th>
                 </tr>
               </thead>
               <tbody>
@@ -799,29 +799,29 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                   const ytdReturn = getYtdReturn(yearData.months);
                   return (
                     <tr key={yearData.year}>
-                      <td style={{ ...globalStyles, ...numberStyles, color: branding.accentColor || DEFAULT_BRANDING.accentColor, fontSize: '9px' }} className="px-1 py-0.5">{yearData.year}</td>
+                      <td style={{ ...globalStyles, ...numberStyles, color: branding.accentColor || DEFAULT_BRANDING.accentColor, fontSize: '8px' }} className="px-0.5 py-0.5">{yearData.year}</td>
                       {yearData.months.map((m, i) => (
                         <td key={i} className="p-0.5">
                           <div
-                            className="h-6 min-w-[28px] rounded flex items-center justify-center text-[7px] font-medium"
+                            className="h-5 min-w-[18px] rounded flex items-center justify-center text-[6px] font-medium"
                             style={{ 
                               backgroundColor: getReturnColor(m.return),
                               color: m.return !== null && Math.abs(m.return) > 2 ? '#fff' : (branding.textColor || DEFAULT_BRANDING.textColor)
                             }}
                           >
-                            {m.return !== null ? `${m.return > 0 ? '+' : ''}${m.return.toFixed(1)}%` : '—'}
+                            {m.return !== null ? `${m.return > 0 ? '+' : ''}${m.return.toFixed(0)}` : '—'}
                           </div>
                         </td>
                       ))}
                       <td className="p-0.5">
                         <div
-                          className="h-6 min-w-[40px] rounded flex items-center justify-center text-[8px] font-bold"
+                          className="h-5 min-w-[24px] rounded flex items-center justify-center text-[7px] font-bold"
                           style={{ 
                             backgroundColor: getReturnColor(ytdReturn),
                             color: ytdReturn !== null && Math.abs(ytdReturn) > 2 ? '#fff' : (branding.textColor || DEFAULT_BRANDING.textColor)
                           }}
                         >
-                          {ytdReturn !== null ? `${ytdReturn > 0 ? '+' : ''}${ytdReturn.toFixed(1)}%` : '—'}
+                          {ytdReturn !== null ? `${ytdReturn > 0 ? '+' : ''}${ytdReturn.toFixed(0)}%` : '—'}
                         </div>
                       </td>
                     </tr>
@@ -835,7 +835,7 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'risk_metrics':
       return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 h-full w-full content-center">
           {[
             { label: 'Volatility', value: riskMetrics ? formatPercent(riskMetrics.volatility) : '—', color: branding.textColor || DEFAULT_BRANDING.textColor },
             { label: 'Beta', value: riskMetrics?.beta.toFixed(2) || '—', color: branding.textColor || DEFAULT_BRANDING.textColor },
@@ -844,16 +844,16 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
           ].map((item, i) => (
             <div 
               key={i}
-              className="p-2 rounded-lg" 
+              className="p-1.5 rounded-lg flex flex-col justify-center" 
               style={{ 
                 backgroundColor: config.showBackground ? `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` : 'transparent',
                 borderRadius: containerStyles.borderRadius,
               }}
             >
-              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
+              <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '9px' }}>
                 {item.label}
               </p>
-              <p style={{ ...globalStyles, ...numberStyles, color: item.color }}>
+              <p style={{ ...globalStyles, ...numberStyles, color: item.color, fontSize: '11px' }}>
                 {item.value}
               </p>
             </div>
@@ -863,31 +863,32 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'risk_return_scatter':
       return (
-        <div className="h-full">
+        <div className="h-full w-full min-h-0 overflow-hidden">
           {scatterData.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full w-full">
               <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No holdings data available
               </p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 30 }}>
+              <ScatterChart margin={{ top: 5, right: 10, bottom: 15, left: 25 }}>
                 <XAxis 
                   type="number" 
                   dataKey="risk" 
                   name="Risk" 
                   tick={{ fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
-                  label={{ value: 'Risk (%)', position: 'bottom', fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                  label={{ value: 'Risk (%)', position: 'bottom', fontSize: 7, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, offset: -5 }}
                 />
                 <YAxis 
                   type="number" 
                   dataKey="return" 
                   name="Return" 
                   tick={{ fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
-                  label={{ value: 'Return (%)', angle: -90, position: 'insideLeft', fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                  label={{ value: 'Return (%)', angle: -90, position: 'insideLeft', fontSize: 7, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
+                  width={25}
                 />
-                <ZAxis type="number" dataKey="weight" range={[30, 200]} />
+                <ZAxis type="number" dataKey="weight" range={[20, 150]} />
                 <Tooltip 
                   formatter={(value: number, name: string) => [
                     name === 'return' ? formatPercent(value) : `${value.toFixed(1)}%`,
@@ -941,16 +942,16 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       ];
       const maxImpact = Math.max(...scenarios.map(s => Math.abs(s.impact)));
       return (
-        <div className="space-y-2">
+        <div className="h-full w-full min-h-0 flex flex-col justify-center gap-1.5 overflow-hidden">
           {scenarios.slice(0, config.maxItems || 5).map((s, i) => {
             const barWidth = (Math.abs(s.impact) / maxImpact) * 100;
             return (
-              <div key={i} className="flex items-center gap-2">
-                <span style={{ ...globalStyles, fontSize: '9px' }} className="w-28 truncate">
+              <div key={i} className="flex items-center gap-1.5">
+                <span style={{ ...globalStyles, fontSize: '8px' }} className="w-20 truncate flex-shrink-0">
                   {s.name}
                 </span>
                 <div 
-                  className="flex-1 h-4 rounded overflow-hidden" 
+                  className="flex-1 h-3 rounded overflow-hidden min-w-0" 
                   style={{ backgroundColor: `${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}30` }}
                 >
                   <div 
@@ -962,8 +963,8 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                   />
                 </div>
                 <span 
-                  style={{ ...globalStyles, ...numberStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor, fontSize: '10px' }} 
-                  className="w-14 text-right"
+                  style={{ ...globalStyles, ...numberStyles, color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor, fontSize: '9px' }} 
+                  className="w-12 text-right flex-shrink-0"
                 >
                   {formatPercent(s.impact)}
                 </span>
@@ -976,18 +977,18 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'holdings_table':
       const displayHoldings = holdings.slice(0, config.maxItems || 20);
       return (
-        <div className="overflow-x-auto">
-          <table className="w-full text-[9px]" style={{ borderCollapse: 'collapse' }}>
-            <thead>
+        <div className="h-full w-full min-h-0 overflow-auto">
+          <table className="w-full text-[8px]" style={{ borderCollapse: 'collapse' }}>
+            <thead className="sticky top-0">
               <tr style={{ 
                 backgroundColor: branding.tableHeaderBgColor || DEFAULT_BRANDING.tableHeaderBgColor,
                 borderBottom: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
               }}>
-                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-left px-2 py-1.5 font-semibold">Ticker</th>
-                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-left px-2 py-1.5 font-semibold">Name</th>
-                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-right px-2 py-1.5 font-semibold">Value</th>
-                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-right px-2 py-1.5 font-semibold">Weight</th>
-                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor }} className="text-right px-2 py-1.5 font-semibold">P/L</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor, fontSize: '8px' }} className="text-left px-1 py-1 font-semibold">Ticker</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor, fontSize: '8px' }} className="text-left px-1 py-1 font-semibold">Name</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor, fontSize: '8px' }} className="text-right px-1 py-1 font-semibold">Value</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor, fontSize: '8px' }} className="text-right px-1 py-1 font-semibold">Wt%</th>
+                <th style={{ ...globalStyles, color: branding.tableHeaderTextColor || DEFAULT_BRANDING.tableHeaderTextColor, fontSize: '8px' }} className="text-right px-1 py-1 font-semibold">P/L</th>
               </tr>
             </thead>
             <tbody>
@@ -999,19 +1000,20 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                     borderBottom: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
                   }}
                 >
-                  <td style={{ ...globalStyles, fontWeight: 600 }} className="px-2 py-1.5">{h.ticker}</td>
-                  <td style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} className="px-2 py-1.5 truncate max-w-[120px]">{h.name}</td>
-                  <td style={{ ...globalStyles, ...numberStyles }} className="px-2 py-1.5 text-right">{formatCurrency(h.currentValue)}</td>
-                  <td style={{ ...globalStyles, ...numberStyles }} className="px-2 py-1.5 text-right">{h.weight.toFixed(1)}%</td>
+                  <td style={{ ...globalStyles, fontWeight: 600, fontSize: '8px' }} className="px-1 py-0.5">{h.ticker}</td>
+                  <td style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '7px' }} className="px-1 py-0.5 truncate max-w-[80px]">{h.name}</td>
+                  <td style={{ ...globalStyles, ...numberStyles, fontSize: '8px' }} className="px-1 py-0.5 text-right">{formatCurrency(h.currentValue)}</td>
+                  <td style={{ ...globalStyles, ...numberStyles, fontSize: '8px' }} className="px-1 py-0.5 text-right">{h.weight.toFixed(1)}%</td>
                   <td 
                     style={{ 
                       ...globalStyles, 
                       ...numberStyles, 
+                      fontSize: '8px',
                       color: (h.unrealizedPL || 0) >= 0 
                         ? (branding.chartPositiveColor || DEFAULT_BRANDING.chartPositiveColor)
                         : (branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor)
                     }} 
-                    className="px-2 py-1.5 text-right"
+                    className="px-1 py-0.5 text-right"
                   >
                     {formatCurrency(h.unrealizedPL || 0)}
                   </td>
