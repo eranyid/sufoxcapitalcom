@@ -96,16 +96,6 @@ export function MobileHeader({
             </div>
           </div>
 
-          {/* Center: Time & Date */}
-          <div className="flex flex-col items-center flex-shrink-0">
-            <span className="text-sm font-mono text-primary font-bold tabular-nums">
-              {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-            </span>
-            <span className="text-[8px] font-mono text-foreground font-semibold tabular-nums">
-              {time.toLocaleDateString('en-GB')}
-            </span>
-          </div>
-
           {/* Right Actions */}
           <div className="flex items-center gap-1 flex-shrink-0">
             <OnlineStatusIndicator 
@@ -127,9 +117,20 @@ export function MobileHeader({
           </div>
         </div>
 
-        {/* Market Status Row */}
+        {/* Clock & Market Status Row */}
         <TooltipProvider delayDuration={200}>
-          <div className="flex items-center justify-center gap-2 px-3 pb-1.5">
+          <div className="flex items-center justify-center gap-3 px-3 pb-1.5">
+            {/* Clock */}
+            <div className="flex flex-col items-center flex-shrink-0">
+              <span className="text-sm font-mono text-primary font-bold tabular-nums">
+                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+              </span>
+              <span className="text-[8px] font-mono text-foreground font-semibold tabular-nums">
+                {time.toLocaleDateString('en-GB')}
+              </span>
+            </div>
+
+            {/* Market Status Badges */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${usChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
