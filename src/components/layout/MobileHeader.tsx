@@ -120,10 +120,15 @@ export function MobileHeader({
         {/* Date & Market Status Row - like desktop */}
         <TooltipProvider delayDuration={200}>
           <div className="flex items-center justify-between px-3 pb-1">
-            {/* Date only - like desktop */}
-            <span className="text-xs font-mono text-muted-foreground tabular-nums">
-              {time.toLocaleDateString('en-GB')}
-            </span>
+            {/* Clock & Date - stacked like desktop */}
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-mono text-primary font-bold tabular-nums leading-tight">
+                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+              </span>
+              <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+                {time.toLocaleDateString('en-GB')}
+              </span>
+            </div>
 
             {/* Market Status Badges - inline */}
             <div className="flex items-center gap-2">
