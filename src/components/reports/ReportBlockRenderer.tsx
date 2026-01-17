@@ -136,8 +136,9 @@ const getBlockContainerStyles = (config: ReportBlock['config'], branding: Report
   // Use block-level config if available, otherwise fall back to global branding
   const borderRadius = config.borderRadius || branding.globalBorderRadius || DEFAULT_BRANDING.globalBorderRadius;
   const shadow = config.shadow || branding.globalShadow || DEFAULT_BRANDING.globalShadow;
-  const borderWidth = config.borderWidth;
+  const borderWidth = config.borderWidth || 'thin'; // Default to thin border so borderStyle is visible
   const padding = config.padding;
+  const borderStyle = branding.borderStyle || DEFAULT_BRANDING.borderStyle || 'solid';
   
   // Border radius mapping
   const radiusMap: Record<string, string> = {
@@ -170,7 +171,7 @@ const getBlockContainerStyles = (config: ReportBlock['config'], branding: Report
   };
   styles.boxShadow = shadowMap[shadow || 'none'] || 'none';
 
-  // Border
+  // Border - always apply so borderStyle control is visible
   const borderWidthMap: Record<string, string> = {
     'none': '0',
     'thin': '1px',
@@ -178,16 +179,25 @@ const getBlockContainerStyles = (config: ReportBlock['config'], branding: Report
     'thick': '3px',
   };
   
-  if (borderWidth && borderWidth !== 'none') {
+  // Apply border based on borderStyle setting (none = no border)
+  if (borderStyle === 'none') {
+    styles.borderWidth = '0';
+    styles.borderStyle = 'none';
+  } else if (borderWidth && borderWidth !== 'none') {
     styles.borderWidth = borderWidthMap[borderWidth];
-    styles.borderStyle = branding.borderStyle || 'solid';
+    styles.borderStyle = borderStyle;
     styles.borderColor = branding.accentBorders 
       ? (branding.accentColor || DEFAULT_BRANDING.accentColor)
       : (config.borderColor || branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor);
   } else if (branding.accentBorders) {
     styles.borderWidth = '1px';
-    styles.borderStyle = branding.borderStyle || 'solid';
+    styles.borderStyle = borderStyle;
     styles.borderColor = branding.accentColor || DEFAULT_BRANDING.accentColor;
+  } else {
+    // Default: apply thin border with selected style
+    styles.borderWidth = '1px';
+    styles.borderStyle = borderStyle;
+    styles.borderColor = branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor;
   }
 
   // Padding
@@ -207,12 +217,22 @@ const getBlockContainerStyles = (config: ReportBlock['config'], branding: Report
     styles.backgroundColor = config.backgroundColor;
   }
 
+  // Apply globalBlur for drop shadow blur effect (independent of glassmorphism)
+  const blur = branding.globalBlur || 0;
+  if (blur > 0 && shadow !== 'none') {
+    // Enhance shadow with blur amount
+    const shadowOpacity = 0.15 + (blur / 40);
+    const shadowSpread = blur * 0.5;
+    const shadowBlur = blur * 1.5;
+    styles.boxShadow = `0 ${shadowSpread}px ${shadowBlur}px -${shadowSpread * 0.3}px rgba(0, 0, 0, ${shadowOpacity})`;
+  }
+
   // Glassmorphism effect
   if (branding.glassmorphism) {
-    const blur = branding.globalBlur || 8;
+    const glassBlur = blur || 8;
     const opacity = (branding.effectsOpacity || 100) / 100;
-    styles.backdropFilter = `blur(${blur}px)`;
-    styles.WebkitBackdropFilter = `blur(${blur}px)`;
+    styles.backdropFilter = `blur(${glassBlur}px)`;
+    styles.WebkitBackdropFilter = `blur(${glassBlur}px)`;
     styles.backgroundColor = config.backgroundColor 
       ? config.backgroundColor 
       : `rgba(17, 17, 17, ${0.7 * opacity})`;
@@ -408,8 +428,19 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
   const renderContent = () => {
     switch (block.type) {
     case 'logo_header':
+      // Apply header gradient if set
+      const headerGradientStyle: React.CSSProperties = branding.headerGradient 
+        ? { 
+            background: branding.headerGradient, 
+            padding: '1rem',
+            borderRadius: containerStyles.borderRadius,
+          } 
+        : {};
       return (
-        <div className={`text-${config.logoAlignment || 'center'} py-2`}>
+        <div 
+          className={`text-${config.logoAlignment || 'center'} py-2`}
+          style={headerGradientStyle}
+        >
           {config.logoUrl ? (
             <img 
               src={config.logoUrl} 
@@ -420,15 +451,29 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
               } ${config.logoAlignment === 'left' ? 'ml-0 mr-auto' : config.logoAlignment === 'right' ? 'ml-auto mr-0' : 'mx-auto'}`}
             />
           ) : (
-            <div className="h-12 w-20 mx-auto rounded bg-muted flex items-center justify-center">
+            <div className="h-12 w-20 mx-auto rounded bg-muted/30 flex items-center justify-center">
               <FileImage size={20} className="text-muted-foreground" />
             </div>
           )}
           {config.title && (
-            <h1 style={headingStyles} className="mt-2">{config.title}</h1>
+            <h1 
+              style={{ 
+                ...headingStyles, 
+                color: branding.headerGradient ? '#FFFFFF' : headingStyles.color 
+              }} 
+              className="mt-2"
+            >
+              {config.title}
+            </h1>
           )}
           {config.subtitle && (
-            <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} className="text-sm">
+            <p 
+              style={{ 
+                ...globalStyles, 
+                color: branding.headerGradient ? 'rgba(255,255,255,0.8)' : (branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor),
+              }} 
+              className="text-sm"
+            >
               {config.subtitle}
             </p>
           )}
