@@ -4,6 +4,7 @@ import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useState, useEffect } from 'react';
+import { getUSMarketSession, getTASEMarketSession, getUSStatusColor, getTASEStatusColor } from '@/lib/marketSessionEngine';
 
 interface MobileHeaderProps {
   status: 'ok' | 'warning' | 'error';
@@ -14,6 +15,7 @@ interface MobileHeaderProps {
   unreadNotifications: number;
   onNotificationsClick: () => void;
 }
+
 export function MobileHeader({
   status,
   errorCount,
@@ -23,50 +25,83 @@ export function MobileHeader({
   unreadNotifications,
   onNotificationsClick
 }: MobileHeaderProps) {
-  const {
-    sampleDataMode
-  } = usePortfolio();
+  const { sampleDataMode } = usePortfolio();
   const [time, setTime] = useState(new Date());
+  
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-  return <header className="sticky top-0 z-40 bg-sidebar border-b border-sidebar-border md:hidden">
+
+  // Get market sessions
+  const usSession = getUSMarketSession();
+  const taseSession = getTASEMarketSession();
+  const usColor = getUSStatusColor(usSession.status as any);
+  const taseColor = getTASEStatusColor(taseSession.status as any);
+
+  const getStatusDotColor = (color: 'success' | 'warning' | 'muted') => {
+    switch (color) {
+      case 'success': return 'bg-emerald-500';
+      case 'warning': return 'bg-amber-500';
+      case 'muted': return 'bg-muted-foreground';
+    }
+  };
+
+  return (
+    <header className="sticky top-0 z-40 bg-sidebar border-b border-sidebar-border md:hidden">
       {/* Bloomberg gradient bar */}
       <div className="bloomberg-gradient-bar" />
       
       {/* Safe area padding for iOS notch */}
       <div className="pt-safe">
-        <div className="flex items-center justify-between px-4 h-14">
+        <div className="flex items-center justify-between px-3 h-14">
           {/* Logo & Brand */}
-          <div className="gap-2 flex items-center justify-center">
-            <img alt="SUFOX" className="h-7 w-7 object-contain" src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" />
+          <div className="gap-2 flex items-center">
+            <img alt="SUFOX" className="h-6 w-6 object-contain" src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" />
             <div>
-              <h1 className="text-sm font-semibold text-primary tracking-wider">SUFOX</h1>
-              <p className="text-[8px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
+              <h1 className="text-xs font-semibold text-primary tracking-wider">SUFOX</h1>
+              <p className="text-[7px] text-muted-foreground font-mono tracking-widest">CAPITAL</p>
             </div>
-            <span className="ml-3 text-sm font-mono text-primary font-semibold text-right">
-              {time.toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
+          </div>
+
+          {/* Center: Time & Date */}
+          <div className="flex flex-col items-center">
+            <span className="text-sm font-mono text-primary font-bold">
+              {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+            <span className="text-[8px] font-mono text-foreground font-semibold">
+              {time.toLocaleDateString('en-GB')}
             </span>
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <OnlineStatusIndicator isOnline={isOnline} compact />
             <NotificationBell 
               unreadCount={unreadNotifications} 
               onClick={onNotificationsClick} 
             />
-            {sampleDataMode && <span className="flex items-center gap-1 px-2 py-1 bg-primary/20 border border-primary/50 text-primary text-[9px] font-semibold rounded animate-pulse">
-                <Database className="h-3 w-3" />
-                SAMPLE
-              </span>}
+            {sampleDataMode && (
+              <span className="flex items-center gap-1 px-1.5 py-0.5 bg-primary/20 border border-primary/50 text-primary text-[8px] font-semibold rounded animate-pulse">
+                <Database className="h-2.5 w-2.5" />
+              </span>
+            )}
             <DataWatchdogStatus status={status} errorCount={errorCount} warningCount={warningCount} onClick={onWatchdogClick} />
           </div>
         </div>
+
+        {/* Market Status Row */}
+        <div className="flex items-center justify-center gap-2 px-3 pb-2">
+          <div className="flex items-center gap-1 px-2 py-0.5 bg-muted/50 border border-border/50 rounded text-[9px]">
+            <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)}`} />
+            <span className="text-muted-foreground font-mono">US {usSession.status}</span>
+          </div>
+          <div className="flex items-center gap-1 px-2 py-0.5 bg-muted/50 border border-border/50 rounded text-[9px]">
+            <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)}`} />
+            <span className="text-muted-foreground font-mono">TASE {taseSession.status}</span>
+          </div>
+        </div>
       </div>
-    </header>;
+    </header>
+  );
 }
