@@ -40,6 +40,7 @@ interface Props {
   riskMetrics: RiskMetrics | null;
   totalValue: number;
   branding: ReportBranding;
+  isPrintMode?: boolean;
 }
 
 // Helper to get block styling from config

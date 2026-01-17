@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print';
 import { 
   ArrowLeft, 
   Download, 
@@ -12,6 +13,8 @@ import {
   LayoutTemplate,
   Plus,
   Loader2,
+  Image,
+  Printer,
 } from 'lucide-react';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,6 +46,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   ReportBlock, 
@@ -53,10 +61,11 @@ import {
   ReportBlockConfig,
 } from '@/types/reportBuilder';
 import { ReportCanvas } from '@/components/reports/ReportCanvas';
+import { ReportPrintView } from '@/components/reports/ReportPrintView';
 import { BlockLibraryPanel } from '@/components/reports/BlockLibraryPanel';
 import { BlockPropertiesPanel } from '@/components/reports/BlockPropertiesPanel';
 import { TemplateSelectorDialog, ReportTemplate, useTemplateApplicator } from '@/components/reports/ReportTemplates';
-import { exportWYSIWYGPdf, getQualityPresets, ExportQuality, QUALITY_PRESETS } from '@/lib/wysiwygPdfExporter';
+import { exportScreenshotPdf, getQualityPresets, getExportModes, ExportQuality, ExportMode, QUALITY_PRESETS, getPrintStyles } from '@/lib/wysiwygPdfExporter';
 import type { ReportBranding } from '@/types/reports';
 import { BLOCK_LIBRARY as BLOCK_LIBRARY_ITEMS } from '@/types/reportBuilder';
 
@@ -118,11 +127,13 @@ export default function ReportBuilder() {
   const [exportProgress, setExportProgress] = useState(0);
   const [exportMessage, setExportMessage] = useState('');
   const [exportQuality, setExportQuality] = useState<ExportQuality>('high');
+  const [exportMode, setExportMode] = useState<ExportMode>('vector');
   const [hasChanges, setHasChanges] = useState(false);
   const [initialized, setInitialized] = useState(false);
   
-  // Ref for WYSIWYG PDF export - captures the preview DOM
+  // Refs for PDF export
   const exportContainerRef = useRef<HTMLDivElement>(null);
+  const printViewRef = useRef<HTMLDivElement>(null);
   
   const { applyTemplate } = useTemplateApplicator();
 
@@ -215,48 +226,70 @@ export default function ReportBuilder() {
     }
   };
 
+  // Vector PDF export using browser print
+  const handleVectorPrint = useReactToPrint({
+    contentRef: printViewRef,
+    documentTitle: report?.name || 'Investment Report',
+    pageStyle: getPrintStyles(pageSize),
+    onAfterPrint: () => {
+      toast.success('Vector PDF export initiated - use "Save as PDF" in print dialog');
+      setPreviewOpen(false);
+    },
+    onPrintError: (error) => {
+      console.error('Print error:', error);
+      toast.error('Print failed. Try screenshot mode instead.');
+    },
+  });
+
   const handleExportPDF = async () => {
-    // Open preview dialog to render the document for capture
     setPreviewOpen(true);
-    setIsExporting(true);
-    setExportProgress(0);
-    setExportMessage('Preparing export...');
     
-    // Wait for dialog to render
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    try {
-      const exportContainer = exportContainerRef.current;
-      if (!exportContainer) {
-        throw new Error('Export container not found. Please try again.');
-      }
-      
-      const result = await exportWYSIWYGPdf(exportContainer, {
-        blocks,
-        branding,
-        pageSize,
-        quality: exportQuality,
-        reportName: report?.name || 'Report',
-        onProgress: (progress, message) => {
-          setExportProgress(progress);
-          setExportMessage(message);
-        },
-      });
-      
-      if (result.success) {
-        const qualityLabel = QUALITY_PRESETS[exportQuality].label;
-        const dpiInfo = result.actualDpi ? ` at ${result.actualDpi} DPI` : '';
-        toast.success(`PDF exported successfully - ${qualityLabel}${dpiInfo}`);
-      } else {
-        throw new Error(result.error || 'Export failed');
-      }
-    } catch (err) {
-      console.error('PDF generation error:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to generate PDF');
-    } finally {
-      setIsExporting(false);
+    if (exportMode === 'vector') {
+      // Vector mode: use browser print pipeline
+      // Wait for print view to render
+      await new Promise(resolve => setTimeout(resolve, 300));
+      handleVectorPrint();
+    } else {
+      // Screenshot mode: use html2canvas
+      setIsExporting(true);
       setExportProgress(0);
-      setExportMessage('');
+      setExportMessage('Preparing screenshot export...');
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      try {
+        const exportContainer = exportContainerRef.current;
+        if (!exportContainer) {
+          throw new Error('Export container not found. Please try again.');
+        }
+        
+        const result = await exportScreenshotPdf(exportContainer, {
+          blocks,
+          branding,
+          pageSize,
+          quality: exportQuality,
+          reportName: report?.name || 'Report',
+          onProgress: (progress, message) => {
+            setExportProgress(progress);
+            setExportMessage(message);
+          },
+        });
+        
+        if (result.success) {
+          const qualityLabel = QUALITY_PRESETS[exportQuality].label;
+          const dpiInfo = result.actualDpi ? ` at ${result.actualDpi} DPI` : '';
+          toast.success(`Screenshot PDF exported - ${qualityLabel}${dpiInfo}`);
+        } else {
+          throw new Error(result.error || 'Export failed');
+        }
+      } catch (err) {
+        console.error('PDF generation error:', err);
+        toast.error(err instanceof Error ? err.message : 'Failed to generate PDF');
+      } finally {
+        setIsExporting(false);
+        setExportProgress(0);
+        setExportMessage('');
+      }
     }
   };
 
@@ -643,60 +676,98 @@ export default function ReportBuilder() {
           if (!isExporting) setPreviewOpen(open);
         }}>
           <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-            <DialogHeader className="flex-shrink-0 px-6 py-4 border-b border-border flex flex-row items-center justify-between">
-              <DialogTitle className="text-lg font-semibold">
-                {branding.headerTitle || 'Report Preview'}
-                {isExporting && (
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">
-                    - Exporting...
-                  </span>
-                )}
-              </DialogTitle>
-              <div className="flex items-center gap-3">
-                {/* Quality Selector */}
-                {!isExporting && (
-                  <Select 
-                    value={exportQuality} 
-                    onValueChange={(v) => setExportQuality(v as ExportQuality)}
-                  >
-                    <SelectTrigger className="w-[180px] h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getQualityPresets().map((preset) => (
-                        <SelectItem key={preset.value} value={preset.value}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{preset.label}</span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {preset.dpi} DPI • {preset.description}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+            <DialogHeader className="flex-shrink-0 px-6 py-4 border-b border-border">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <DialogTitle className="text-lg font-semibold">
+                    {branding.headerTitle || 'Report Preview'}
+                    {isExporting && (
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">
+                        - Exporting...
+                      </span>
+                    )}
+                  </DialogTitle>
+                  
+                  <div className="flex items-center gap-2">
+                    {isExporting && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>{exportMessage}</span>
+                      </div>
+                    )}
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="gap-1.5"
+                      onClick={handleExportPDF}
+                      disabled={isExporting}
+                    >
+                      {isExporting ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : exportMode === 'vector' ? (
+                        <Printer size={14} />
+                      ) : (
+                        <Image size={14} />
+                      )}
+                      {isExporting ? `${exportProgress}%` : exportMode === 'vector' ? 'Print to PDF' : 'Export PDF'}
+                    </Button>
+                  </div>
+                </div>
                 
-                {isExporting && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>{exportMessage}</span>
+                {/* Export Mode & Quality Controls */}
+                {!isExporting && (
+                  <div className="flex items-center gap-4">
+                    {/* Mode Selector */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Mode:</span>
+                      <Tabs value={exportMode} onValueChange={(v) => setExportMode(v as ExportMode)}>
+                        <TabsList className="h-7">
+                          <TabsTrigger value="vector" className="text-xs px-2 py-1 gap-1">
+                            <FileText size={12} />
+                            Vector (Recommended)
+                          </TabsTrigger>
+                          <TabsTrigger value="screenshot" className="text-xs px-2 py-1 gap-1">
+                            <Image size={12} />
+                            Screenshot
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
+                    
+                    {/* Quality Selector - only for screenshot mode */}
+                    {exportMode === 'screenshot' && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Quality:</span>
+                        <Select 
+                          value={exportQuality} 
+                          onValueChange={(v) => setExportQuality(v as ExportQuality)}
+                        >
+                          <SelectTrigger className="w-[140px] h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getQualityPresets().map((preset) => (
+                              <SelectItem key={preset.value} value={preset.value}>
+                                <span className="font-medium">{preset.label}</span>
+                                <span className="text-[10px] text-muted-foreground ml-1">
+                                  ({preset.dpi} DPI)
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {/* Mode description */}
+                    <span className="text-[10px] text-muted-foreground flex-1">
+                      {exportMode === 'vector' 
+                        ? '✓ Selectable text • ✓ Small file size • ✓ Sharp at any zoom'
+                        : '✓ Pixel-perfect capture • Larger file size'
+                      }
+                    </span>
                   </div>
                 )}
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="gap-1.5"
-                  onClick={handleExportPDF}
-                  disabled={isExporting}
-                >
-                  {isExporting ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Download size={14} />
-                  )}
-                  {isExporting ? `${exportProgress}%` : 'Export PDF'}
-                </Button>
               </div>
             </DialogHeader>
             
@@ -708,12 +779,31 @@ export default function ReportBuilder() {
             )}
             
             <ScrollArea className="flex-1 px-6 py-4 bg-muted/30">
-              {/* 
-                Preview uses the same ReportCanvas component for WYSIWYG parity.
-                What you see here IS what you get in the PDF.
-              */}
-              <div ref={exportContainerRef} data-report-document="true">
-                <ReportCanvas
+              {/* Screenshot mode: dark theme canvas */}
+              {exportMode === 'screenshot' && (
+                <div ref={exportContainerRef} data-report-document="true">
+                  <ReportCanvas
+                    blocks={blocks}
+                    branding={branding}
+                    pageSize={pageSize}
+                    holdings={holdings}
+                    performanceMetrics={performanceMetrics}
+                    riskMetrics={riskMetrics}
+                    totalValue={totalValue}
+                    selectedBlockId={null}
+                    onSelectBlock={() => {}}
+                    onBlocksChange={() => {}}
+                    onDeleteBlock={() => {}}
+                    onDuplicateBlock={() => {}}
+                    onOpenProperties={() => {}}
+                  />
+                </div>
+              )}
+              
+              {/* Vector mode: print-optimized light theme view */}
+              {exportMode === 'vector' && (
+                <ReportPrintView
+                  ref={printViewRef}
                   blocks={blocks}
                   branding={branding}
                   pageSize={pageSize}
@@ -721,14 +811,8 @@ export default function ReportBuilder() {
                   performanceMetrics={performanceMetrics}
                   riskMetrics={riskMetrics}
                   totalValue={totalValue}
-                  selectedBlockId={null}
-                  onSelectBlock={() => {}}
-                  onBlocksChange={() => {}}
-                  onDeleteBlock={() => {}}
-                  onDuplicateBlock={() => {}}
-                  onOpenProperties={() => {}}
                 />
-              </div>
+              )}
             </ScrollArea>
           </DialogContent>
         </Dialog>
