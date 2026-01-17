@@ -121,6 +121,12 @@ function MarketSessionWidget({ market, session, color, countdown, changingSoon, 
             ${changingSoon ? 'ring-1 ring-amber-500/50' : ''}
             transition-all active:scale-95
           `}
+          onClick={() => {
+            // Haptic feedback on mobile
+            if ('vibrate' in navigator) {
+              navigator.vibrate(10);
+            }
+          }}
         >
           {/* Main content */}
           <div className="flex items-center gap-1.5 px-2 py-1">
