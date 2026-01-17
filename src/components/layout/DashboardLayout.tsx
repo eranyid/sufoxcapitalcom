@@ -183,7 +183,7 @@ export function DashboardLayout() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-3 md:p-4 pb-20 md:pb-4 overflow-x-hidden overflow-y-auto">
+        <main className="flex-1 p-2 md:p-4 pb-20 md:pb-4 overflow-x-hidden overflow-y-auto">
           <Outlet />
         </main>
       </div>
