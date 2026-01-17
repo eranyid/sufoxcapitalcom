@@ -100,7 +100,7 @@ export function MobileHeader({
           {/* Center: Time & Date */}
           <div className="flex flex-col items-center flex-shrink-0">
             <span className="text-sm font-mono text-primary font-bold tabular-nums">
-              {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </span>
             <span className="text-[8px] font-mono text-foreground font-semibold tabular-nums">
               {time.toLocaleDateString('en-GB')}
