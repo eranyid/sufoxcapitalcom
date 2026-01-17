@@ -151,7 +151,8 @@ export default function Overview() {
           icon={DollarSign}
           trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
           trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
-          tooltip="שווי כולל של התיק כולל מזומנים ונכסים בשער השוק הנוכחי"
+          subLabel="Real (FX-adjusted)"
+          tooltip="Total portfolio value including cash and assets at current market rates, in base currency"
         />
       </div>
 
@@ -174,7 +175,8 @@ export default function Overview() {
             return ytdReturn >= 0 ? 'up' : 'down';
           })() : 'neutral'}
           subtitle={new Date().getFullYear().toString()}
-          tooltip="תשואה מתחילת השנה הנוכחית ועד היום"
+          subLabel="Real (FX-adjusted)"
+          tooltip="Year-to-date return including FX impact, measured in base currency"
         />
         <KPICard
           title="Unrealized %"
@@ -182,19 +184,22 @@ export default function Overview() {
             ? formatPercent((performanceMetrics.unrealizedPL / performanceMetrics.totalCost) * 100) 
             : '0.00%'}
           trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
-          tooltip="אחוז הרווח/הפסד הלא ממומש ביחס לעלות הרכישה"
+          subLabel="Real (FX-adjusted)"
+          tooltip="Unrealized gain/loss percentage vs cost basis, including FX impact"
         />
         <KPICard
           title="Unrealized P/L"
           value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
           trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
-          tooltip="רווח/הפסד לא ממומש - ההפרש בין שווי שוק נוכחי לעלות הרכישה"
+          subLabel="Real (FX-adjusted)"
+          tooltip="Unrealized profit/loss including FX impact, measured in base currency"
         />
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
           trend={hasData && performanceMetrics.realizedPL >= 0 ? 'up' : 'down'}
-          tooltip="רווח/הפסד ממומש ממכירות שבוצעו"
+          subLabel="Real (FX-adjusted)"
+          tooltip="Realized profit/loss from closed positions, including FX impact"
         />
       </div>
 
@@ -205,7 +210,7 @@ export default function Overview() {
           value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
           trend={hasData && performanceMetrics.fxPL >= 0 ? 'up' : 'down'}
           subtitle="Currency changes"
-          tooltip="רווח/הפסד משינויי שער חליפין בין מטבע הנכס למטבע הבסיס"
+          tooltip="Profit/loss from currency movements between asset and base currency"
         />
         <KPICard
           title="Sharpe Ratio"
@@ -213,7 +218,8 @@ export default function Overview() {
           icon={Activity}
           trend={hasData && performanceMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
           subtitle="Risk-adjusted"
-          tooltip="יחס שארפ - תשואה עודפת ליחידת סיכון. מעל 1 נחשב טוב"
+          subLabel="Real (FX-adjusted)"
+          tooltip="Risk-adjusted return metric including FX impact. Above 1 is considered good"
         />
         <KPICard
           title="Max Drawdown"
@@ -221,13 +227,15 @@ export default function Overview() {
           icon={TrendingDown}
           trend="down"
           subtitle="Peak to trough"
-          tooltip="ירידה מקסימלית - הירידה הגדולה ביותר משיא לשפל בתקופה"
+          subLabel="Real (FX-adjusted)"
+          tooltip="Maximum decline from peak to trough, including FX impact"
         />
         <KPICard
           title="Volatility"
           value={hasData ? `${performanceMetrics.volatility.toFixed(2)}%` : '0.00%'}
           subtitle="Annualized"
-          tooltip="תנודתיות שנתית - סטיית תקן של התשואות על בסיס שנתי"
+          subLabel="Real (FX-adjusted)"
+          tooltip="Annualized standard deviation of returns, including FX impact"
         />
       </div>
 
