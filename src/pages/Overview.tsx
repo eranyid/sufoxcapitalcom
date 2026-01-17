@@ -148,10 +148,8 @@ export default function Overview() {
 
   return (
     <div className="animate-fade-in">
-      {/* News Ticker - Hidden on mobile (integrated in header) */}
-      <div className="hidden sm:block">
-        <NewsTicker rssUrl={rssFeedUrl} />
-      </div>
+      {/* News Ticker */}
+      <NewsTicker rssUrl={rssFeedUrl} />
       
       <div className="section-spacing sm:mt-0 -mt-1">
       {/* Header - Desktop */}
