@@ -86,13 +86,13 @@ export function MobileHeader({
       {/* Safe area padding for iOS notch */}
       <div className="pt-safe">
         {/* Main header row */}
-        <div className="flex items-center justify-between px-3 h-11">
+        <div className="flex items-center justify-between px-3 h-10">
           {/* Logo & Brand */}
-          <div className="gap-2 flex items-center flex-shrink-0">
-            <img alt="SUFOX" className="h-7 w-7 object-contain" src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" />
+          <div className="gap-1.5 flex items-center flex-shrink-0">
+            <img alt="SUFOX" className="h-6 w-6 object-contain" src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" />
             <div>
-              <h1 className="text-sm font-semibold text-primary tracking-wider leading-tight">SUFOX</h1>
-              <p className="text-[8px] text-muted-foreground font-mono tracking-widest leading-tight">CAPITAL</p>
+              <h1 className="text-xs font-semibold text-primary tracking-wider leading-none">SUFOX</h1>
+              <p className="text-[7px] text-muted-foreground font-mono tracking-widest leading-none">CAPITAL</p>
             </div>
           </div>
 
@@ -119,13 +119,13 @@ export function MobileHeader({
 
         {/* Clock & Market Status Row */}
         <TooltipProvider delayDuration={200}>
-          <div className="flex items-center justify-center gap-4 px-3 pb-2">
+          <div className="flex items-center justify-center gap-3 px-3 pb-1.5">
             {/* Clock */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-base font-mono text-primary font-bold tabular-nums">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="text-sm font-mono text-primary font-bold tabular-nums">
                 {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
               </span>
-              <span className="text-xs font-mono text-foreground font-semibold tabular-nums">
+              <span className="text-[10px] font-mono text-foreground font-medium tabular-nums">
                 {time.toLocaleDateString('en-GB')}
               </span>
             </div>
@@ -133,8 +133,8 @@ export function MobileHeader({
             {/* Market Status Badges */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className={`flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 border rounded text-[10px] cursor-pointer active:bg-muted/70 ${usChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
-                  <span className={`w-2 h-2 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
+                <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${usChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
                   <span className="text-muted-foreground font-mono">US {usSession.status}</span>
                 </div>
               </TooltipTrigger>
@@ -144,8 +144,8 @@ export function MobileHeader({
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className={`flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 border rounded text-[10px] cursor-pointer active:bg-muted/70 ${taseChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
-                  <span className={`w-2 h-2 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
+                <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${taseChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
                   <span className="text-muted-foreground font-mono">TASE {taseSession.status}</span>
                 </div>
               </TooltipTrigger>
