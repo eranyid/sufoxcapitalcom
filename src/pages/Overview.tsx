@@ -15,7 +15,7 @@ import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
 import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
-import { MarketClock, MobileMarketClock } from '@/components/dashboard/MarketClock';
+
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileText } from 'lucide-react';
@@ -159,8 +159,6 @@ export default function Overview() {
           <p className="text-muted-foreground text-[10px] font-mono mt-0.5 truncate">Real-time performance snapshot</p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <MarketClock variant="compact" />
-          <div className="h-6 w-px bg-border" />
           <FxModeToggle />
           <Button 
             onClick={() => navigate('/reports')} 
@@ -193,7 +191,7 @@ export default function Overview() {
             </Button>
           </div>
         </div>
-        <MobileMarketClock />
+        
       </div>
 
       {/* Group 1: Total Portfolio Value (NAV = Cash + Holdings) - Always full width */}
