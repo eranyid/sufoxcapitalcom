@@ -119,42 +119,40 @@ export function MobileHeader({
 
         {/* Clock & Market Status Row */}
         <TooltipProvider delayDuration={200}>
-          <div className="flex items-center justify-between px-3 pb-1">
-            {/* Clock - stacked vertically */}
-            <div className="flex flex-col items-start flex-shrink-0">
-              <span className="text-sm font-mono text-primary font-bold tabular-nums leading-tight">
+          <div className="flex items-center justify-center gap-3 px-3 pb-1.5">
+            {/* Clock */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="text-sm font-mono text-primary font-bold tabular-nums">
                 {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
               </span>
-              <span className="text-[9px] font-mono text-muted-foreground font-medium tabular-nums leading-tight">
+              <span className="text-[10px] font-mono text-foreground font-medium tabular-nums">
                 {time.toLocaleDateString('en-GB')}
               </span>
             </div>
 
-            {/* Market Status Badges - inline */}
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${usChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
-                    <span className="text-muted-foreground font-mono">US {usSession.status}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  {renderMarketTooltip('US')}
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${taseChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
-                    <span className="text-muted-foreground font-mono">IL {taseSession.status}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  {renderMarketTooltip('TASE')}
-                </TooltipContent>
-              </Tooltip>
-            </div>
+            {/* Market Status Badges */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${usChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)} ${usChangingSoon ? 'animate-pulse' : ''}`} />
+                  <span className="text-muted-foreground font-mono">US {usSession.status}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                {renderMarketTooltip('US')}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className={`flex items-center gap-1 px-2 py-0.5 bg-muted/50 border rounded text-[9px] cursor-pointer active:bg-muted/70 ${taseChangingSoon ? 'border-amber-500/50' : 'border-border/50'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)} ${taseChangingSoon ? 'animate-pulse' : ''}`} />
+                  <span className="text-muted-foreground font-mono">TASE {taseSession.status}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                {renderMarketTooltip('TASE')}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </TooltipProvider>
       </div>
