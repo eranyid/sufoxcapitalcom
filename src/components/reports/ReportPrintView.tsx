@@ -280,7 +280,7 @@ const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
           />
         )}
 
-        <div className="flex-1 space-y-4 relative" style={{ zIndex: 2 }}>
+        <div className="flex-1 relative" style={{ zIndex: 2, display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {pageBlocks.map((block) => (
             <PrintBlock
               key={block.id}
@@ -410,6 +410,21 @@ function PrintFooter({
   );
 }
 
+// Calculate print height based on block height setting
+const getPrintBlockHeight = (block: ReportBlock): string => {
+  const heightMap: Record<string, string> = {
+    'auto': 'auto',
+    'xs': '60px',
+    'sm': '80px',
+    'md': '120px',
+    'lg': '160px',
+    'xl': '200px',
+    '2xl': '260px',
+    '3xl': '320px',
+  };
+  return heightMap[block.height] || 'auto';
+};
+
 // Dark theme print block wrapper
 function PrintBlock({
   block,
@@ -428,6 +443,9 @@ function PrintBlock({
   branding: ReportBranding;
   colors: typeof DARK_THEME;
 }) {
+  const blockHeight = getPrintBlockHeight(block);
+  const needsExplicitHeight = blockHeight !== 'auto';
+  
   return (
     <div 
       className="print-block"
@@ -442,7 +460,9 @@ function PrintBlock({
         style={{
           backgroundColor: colors.cardBackground,
           border: `1px solid ${colors.cardBorder}`,
-          padding: '16px',
+          padding: '12px 16px',
+          height: needsExplicitHeight ? blockHeight : 'auto',
+          minHeight: needsExplicitHeight ? blockHeight : undefined,
         }}
       >
         <ReportBlockRenderer
