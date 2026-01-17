@@ -581,18 +581,29 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'geographic_allocation':
       const chartData = block.type === 'asset_allocation' ? allocationData :
                         block.type === 'currency_exposure' ? currencyData : geographyData;
+      // Use fixed dimensions in print mode for reliable chart rendering
+      const pieSize = isPrintMode ? 80 : undefined;
       return (
         <div className="flex items-center gap-3 h-full w-full min-h-0 overflow-hidden">
           {config.showChart !== false && (
-            <div className="flex-shrink-0 flex items-center justify-center" style={{ width: '40%', height: '100%', maxWidth: '120px', minWidth: '60px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+            <div 
+              className="flex-shrink-0 flex items-center justify-center" 
+              style={{ 
+                width: isPrintMode ? `${pieSize}px` : '40%', 
+                height: isPrintMode ? `${pieSize}px` : '100%', 
+                maxWidth: '120px', 
+                minWidth: '60px',
+                minHeight: isPrintMode ? `${pieSize}px` : undefined,
+              }}
+            >
+              {isPrintMode ? (
+                <PieChart width={pieSize} height={pieSize}>
                   <Pie
                     data={chartData}
                     cx="50%"
                     cy="50%"
                     innerRadius={0}
-                    outerRadius="80%"
+                    outerRadius={pieSize * 0.4}
                     dataKey="value"
                   >
                     {chartData.map((_, i) => (
@@ -600,7 +611,24 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
                     ))}
                   </Pie>
                 </PieChart>
-              </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={0}
+                      outerRadius="80%"
+                      dataKey="value"
+                    >
+                      {chartData.map((_, i) => (
+                        <Cell key={i} fill={chartColors[i % chartColors.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
           )}
           <div className="flex-1 flex flex-col justify-center gap-1 min-w-0 overflow-hidden">
@@ -717,14 +745,49 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       );
 
     case 'contribution_chart':
+      // Use fixed dimensions in print mode for reliable chart rendering
+      const barChartHeight = isPrintMode ? 120 : undefined;
       return (
-        <div className="h-full w-full min-h-0 overflow-hidden">
+        <div className="h-full w-full min-h-0 overflow-hidden" style={{ minHeight: isPrintMode ? barChartHeight : undefined }}>
           {contributionData.length === 0 ? (
             <div className="flex items-center justify-center h-full w-full">
               <p style={{ ...globalStyles, color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor, fontSize: '10px' }}>
                 No P/L data available
               </p>
             </div>
+          ) : isPrintMode ? (
+            <BarChart 
+              width={500} 
+              height={barChartHeight} 
+              data={contributionData} 
+              layout="vertical" 
+              margin={{ left: 30, right: 40, top: 5, bottom: 5 }}
+            >
+              <XAxis 
+                type="number" 
+                tick={{ fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} 
+                tickFormatter={(v) => formatCurrency(v)}
+                axisLine={{ stroke: branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor }}
+              />
+              <YAxis 
+                type="category" 
+                dataKey="ticker" 
+                tick={{ fontSize: 8, fill: branding.textColor || DEFAULT_BRANDING.textColor, fontWeight: 'bold' }} 
+                width={30}
+                axisLine={false}
+                tickLine={false}
+              />
+              <ReferenceLine 
+                x={0} 
+                stroke={branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}
+                strokeWidth={1}
+              />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {contributionData.map((entry, index) => (
+                  <Cell key={index} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={contributionData} layout="vertical" margin={{ left: 30, right: 40, top: 5, bottom: 5 }}>
