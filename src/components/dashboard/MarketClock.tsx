@@ -12,7 +12,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
-import { Clock as ClockIcon, Globe } from 'lucide-react';
+import { Clock as ClockIcon, Globe, Bell, BellOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getUSMarketSession,
@@ -26,12 +26,14 @@ import {
   type TASEMarketSession,
   type MarketSessionInfo,
 } from '@/lib/marketSessionEngine';
+import { useMarketAlerts } from '@/hooks/useMarketAlerts';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 
 // ============= CLOCK COMPONENT =============
 
@@ -158,18 +160,60 @@ export function MarketStatus({ market, className, showCountdown = true }: Market
   );
 }
 
+// ============= ALERT TOGGLE BUTTON =============
+
+interface AlertToggleProps {
+  className?: string;
+}
+
+export function AlertToggle({ className }: AlertToggleProps) {
+  const { alertsEnabled, toggleAlerts } = useMarketAlerts();
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleAlerts}
+            className={cn(
+              'h-7 w-7 p-0 hover:bg-muted/50',
+              alertsEnabled && 'text-amber-400',
+              className
+            )}
+          >
+            {alertsEnabled ? (
+              <Bell className="h-3.5 w-3.5" />
+            ) : (
+              <BellOff className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {alertsEnabled ? 'Disable market session alerts' : 'Enable market session alerts'}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 // ============= FULL MARKET CLOCK COMPONENT =============
 
 interface MarketClockProps {
   className?: string;
   variant?: 'compact' | 'full';
+  showAlertToggle?: boolean;
 }
 
-export function MarketClock({ className, variant = 'compact' }: MarketClockProps) {
+export function MarketClock({ className, variant = 'compact', showAlertToggle = true }: MarketClockProps) {
   if (variant === 'full') {
     return (
       <div className={cn('flex flex-col gap-2', className)}>
-        <Clock />
+        <div className="flex items-center gap-2">
+          <Clock />
+          {showAlertToggle && <AlertToggle />}
+        </div>
         <div className="flex flex-wrap gap-1.5">
           <MarketStatus market="US" />
           <MarketStatus market="TASE" />
@@ -180,8 +224,9 @@ export function MarketClock({ className, variant = 'compact' }: MarketClockProps
 
   // Compact variant - inline
   return (
-    <div className={cn('flex items-center gap-3', className)}>
+    <div className={cn('flex items-center gap-2', className)}>
       <Clock />
+      {showAlertToggle && <AlertToggle />}
       <div className="hidden sm:flex items-center gap-1.5">
         <MarketStatus market="US" showCountdown={false} />
         <MarketStatus market="TASE" showCountdown={false} />
@@ -194,9 +239,10 @@ export function MarketClock({ className, variant = 'compact' }: MarketClockProps
 
 interface MobileMarketClockProps {
   className?: string;
+  showAlertToggle?: boolean;
 }
 
-export function MobileMarketClock({ className }: MobileMarketClockProps) {
+export function MobileMarketClock({ className, showAlertToggle = true }: MobileMarketClockProps) {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -217,6 +263,7 @@ export function MobileMarketClock({ className }: MobileMarketClockProps) {
         <ClockIcon className="h-3 w-3 text-muted-foreground" />
         <span className="text-xs tabular-nums font-medium">{timeStr}</span>
         <span className="text-[9px] text-muted-foreground tabular-nums">{dateStr}</span>
+        {showAlertToggle && <AlertToggle className="ml-auto" />}
       </div>
       {/* Market status badges */}
       <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
