@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
@@ -14,7 +14,7 @@ import { CommandBar } from '@/components/CommandBar';
 import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationsDrawer } from '@/components/notifications/NotificationsDrawer';
-
+import { getUSMarketSession, getTASEMarketSession, getUSStatusColor, getTASEStatusColor } from '@/lib/marketSessionEngine';
 
 export function DashboardLayout() {
   const navigate = useNavigate();
@@ -38,6 +38,30 @@ export function DashboardLayout() {
     markAsRead, 
     markAllAsRead 
   } = useNotifications();
+
+  // Update time every second
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Get market sessions
+  const usSession = getUSMarketSession();
+  const taseSession = getTASEMarketSession();
+  const usColor = getUSStatusColor(usSession.status as any);
+  const taseColor = getTASEStatusColor(taseSession.status as any);
+
+  const getStatusDotColor = (color: 'success' | 'warning' | 'muted') => {
+    switch (color) {
+      case 'success': return 'bg-emerald-500';
+      case 'warning': return 'bg-amber-500';
+      case 'muted': return 'bg-muted-foreground';
+    }
+  };
 
   const handleNotificationClick = (notification: Notification) => {
     if (notification.task_id) {
@@ -95,8 +119,18 @@ export function DashboardLayout() {
               ⌘K
             </kbd>
             <span>USD</span>
-            <span>{new Date().toLocaleDateString()}</span>
-            <span className="text-primary">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
+            <span className="text-foreground font-semibold">{currentTime.toLocaleDateString('en-GB')}</span>
+            <span className="text-primary font-bold">{currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted/50 border border-border/50 rounded text-[9px]">
+                <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(usColor)}`} />
+                <span className="text-muted-foreground">US {usSession.status}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted/50 border border-border/50 rounded text-[9px]">
+                <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(taseColor)}`} />
+                <span className="text-muted-foreground">TASE {taseSession.status}</span>
+              </div>
+            </div>
           </div>
         </div>
 
