@@ -388,15 +388,15 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
       return (
         <div className="flex items-center gap-3 h-full">
           {config.showChart !== false && (
-            <div className="w-20 h-20 flex-shrink-0">
+            <div className="w-24 h-24 flex-shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={15}
-                    outerRadius={35}
+                    innerRadius={0}
+                    outerRadius={40}
                     dataKey="value"
                   >
                     {chartData.map((_, i) => (
@@ -407,15 +407,17 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
               </ResponsiveContainer>
             </div>
           )}
-          <div className="flex-1 space-y-1">
+          <div className="flex-1 space-y-1.5">
             {chartData.slice(0, config.maxItems || 5).map((item, i) => (
               <div key={item.name} className="flex items-center gap-2 text-[10px]">
                 <div 
-                  className="w-2 h-2 rounded-sm flex-shrink-0" 
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                   style={{ backgroundColor: chartColors[i % chartColors.length] }} 
                 />
-                <span className="truncate flex-1" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{item.name}</span>
-                <span style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>{item.percent.toFixed(1)}%</span>
+                <span className="truncate flex-1 font-medium" style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}>{item.name}</span>
+                <span className="text-right whitespace-nowrap" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                  {formatCurrency(item.value)} ({item.percent.toFixed(1)}%)
+                </span>
               </div>
             ))}
           </div>
@@ -522,31 +524,65 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
     case 'contribution_chart':
       return (
         <div className="h-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={contributionData} layout="vertical" margin={{ left: 30, right: 10, top: 5, bottom: 5 }}>
-              <XAxis type="number" tick={{ fontSize: 9, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} tickFormatter={(v) => formatCurrency(v)} />
-              <YAxis type="category" dataKey="ticker" tick={{ fontSize: 9, fill: branding.textColor || DEFAULT_BRANDING.textColor }} width={40} />
-              <Tooltip 
-                formatter={(value: number) => formatCurrency(value)}
-                contentStyle={{ 
-                  backgroundColor: branding.backgroundColor || DEFAULT_BRANDING.backgroundColor,
-                  border: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
-                  fontSize: 10
-                }}
-              />
-              <Bar dataKey="value" radius={[0, 3, 3, 0]}>
-                {contributionData.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {contributionData.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
+                No P/L data available
+              </p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={contributionData} layout="vertical" margin={{ left: 35, right: 50, top: 5, bottom: 5 }}>
+                <XAxis 
+                  type="number" 
+                  tick={{ fontSize: 8, fill: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }} 
+                  tickFormatter={(v) => formatCurrency(v)}
+                  axisLine={{ stroke: branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor }}
+                />
+                <YAxis 
+                  type="category" 
+                  dataKey="ticker" 
+                  tick={{ fontSize: 9, fill: branding.textColor || DEFAULT_BRANDING.textColor, fontWeight: 'bold' }} 
+                  width={35}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <ReferenceLine 
+                  x={0} 
+                  stroke={branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}
+                  strokeWidth={1}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [formatCurrency(value), 'P/L']}
+                  contentStyle={{ 
+                    backgroundColor: branding.backgroundColor || DEFAULT_BRANDING.backgroundColor,
+                    border: `1px solid ${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}`,
+                    fontSize: 10,
+                    color: branding.textColor || DEFAULT_BRANDING.textColor
+                  }}
+                  labelStyle={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}
+                />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {contributionData.map((entry, index) => (
+                    <Cell key={index} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       );
 
     case 'performance_calendar':
+      // Calculate YTD for each year
+      const getYtdReturn = (yearMonths: { month: string; return: number | null }[]) => {
+        const validReturns = yearMonths.filter(m => m.return !== null).map(m => m.return as number);
+        if (validReturns.length === 0) return null;
+        return (validReturns.reduce((acc, r) => acc * (1 + r / 100), 1) - 1) * 100;
+      };
+
       return (
-        <div className="space-y-2">
+        <div className="space-y-1 overflow-x-auto">
           {calendarData.length === 0 ? (
             <div className="text-center py-4">
               <p className="text-[10px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
@@ -554,35 +590,51 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
               </p>
             </div>
           ) : (
-            calendarData.map(yearData => (
-              <div key={yearData.year}>
-                <p className="text-[9px] font-medium mb-1" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
-                  {yearData.year}
-                </p>
-                <div className="grid grid-cols-12 gap-1">
-                  {yearData.months.map((m, i) => (
-                    <div
-                      key={i}
-                      className="aspect-square rounded flex flex-col items-center justify-center text-center"
-                      style={{ 
-                        backgroundColor: `${getReturnColor(m.return)}25`,
-                        border: `1px solid ${getReturnColor(m.return)}50`
-                      }}
-                    >
-                      <span className="text-[7px]" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>
-                        {m.month}
-                      </span>
-                      <span 
-                        className="text-[8px] font-semibold"
-                        style={{ color: m.return !== null && m.return !== 0 ? getReturnColor(m.return) : branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}
-                      >
-                        {m.return !== null ? `${m.return > 0 ? '+' : ''}${m.return.toFixed(1)}%` : '—'}
-                      </span>
-                    </div>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="text-left text-[8px] font-medium px-1 py-0.5" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>Year</th>
+                  {monthNames.map(m => (
+                    <th key={m} className="text-center text-[7px] font-medium px-0.5 py-0.5" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>{m}</th>
                   ))}
-                </div>
-              </div>
-            ))
+                  <th className="text-center text-[8px] font-medium px-1 py-0.5" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>YTD</th>
+                </tr>
+              </thead>
+              <tbody>
+                {calendarData.map(yearData => {
+                  const ytdReturn = getYtdReturn(yearData.months);
+                  return (
+                    <tr key={yearData.year}>
+                      <td className="text-[9px] font-semibold px-1 py-0.5" style={{ color: branding.accentColor || DEFAULT_BRANDING.accentColor }}>{yearData.year}</td>
+                      {yearData.months.map((m, i) => (
+                        <td key={i} className="p-0.5">
+                          <div
+                            className="h-6 min-w-[28px] rounded flex items-center justify-center text-[7px] font-medium"
+                            style={{ 
+                              backgroundColor: getReturnColor(m.return),
+                              color: m.return !== null && Math.abs(m.return) > 2 ? '#fff' : (branding.textColor || DEFAULT_BRANDING.textColor)
+                            }}
+                          >
+                            {m.return !== null ? `${m.return > 0 ? '+' : ''}${m.return.toFixed(1)}%` : '—'}
+                          </div>
+                        </td>
+                      ))}
+                      <td className="p-0.5">
+                        <div
+                          className="h-6 min-w-[40px] rounded flex items-center justify-center text-[8px] font-bold"
+                          style={{ 
+                            backgroundColor: getReturnColor(ytdReturn),
+                            color: ytdReturn !== null && Math.abs(ytdReturn) > 2 ? '#fff' : (branding.textColor || DEFAULT_BRANDING.textColor)
+                          }}
+                        >
+                          {ytdReturn !== null ? `${ytdReturn > 0 ? '+' : ''}${ytdReturn.toFixed(1)}%` : '—'}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
       );
@@ -681,21 +733,43 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
 
     case 'scenarios_snapshot':
       const scenarios = [
-        { name: '2008 Crisis', impact: -28.5 },
-        { name: 'COVID Crash', impact: -18.2 },
+        { name: '2008 Financial Crisis', impact: -28.5 },
+        { name: 'COVID-19 Crash', impact: -18.2 },
         { name: 'Rates +200bp', impact: -8.4 },
-        { name: 'Tech Bust', impact: -22.1 },
+        { name: 'Tech Bust -40%', impact: -22.1 },
         { name: 'Stagflation', impact: -15.8 },
-        { name: 'EM Crisis', impact: -12.3 },
       ];
+      const maxImpact = Math.max(...scenarios.map(s => Math.abs(s.impact)));
       return (
-        <div className="grid grid-cols-3 gap-1">
-          {scenarios.slice(0, config.maxItems || 6).map((s, i) => (
-            <div key={i} className="p-1.5 rounded text-center" style={{ backgroundColor: `${branding.accentColor || DEFAULT_BRANDING.accentColor}15` }}>
-              <p className="text-[8px] truncate" style={{ color: branding.mutedTextColor || DEFAULT_BRANDING.mutedTextColor }}>{s.name}</p>
-              <p className="text-xs font-semibold" style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}>{formatPercent(s.impact)}</p>
-            </div>
-          ))}
+        <div className="space-y-2">
+          {scenarios.slice(0, config.maxItems || 5).map((s, i) => {
+            const barWidth = (Math.abs(s.impact) / maxImpact) * 100;
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <span 
+                  className="text-[9px] w-28 truncate" 
+                  style={{ color: branding.textColor || DEFAULT_BRANDING.textColor }}
+                >
+                  {s.name}
+                </span>
+                <div className="flex-1 h-4 rounded overflow-hidden" style={{ backgroundColor: `${branding.tableBorderColor || DEFAULT_BRANDING.tableBorderColor}30` }}>
+                  <div 
+                    className="h-full rounded"
+                    style={{ 
+                      width: `${barWidth}%`,
+                      backgroundColor: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor
+                    }}
+                  />
+                </div>
+                <span 
+                  className="text-[10px] font-semibold w-14 text-right" 
+                  style={{ color: branding.chartNegativeColor || DEFAULT_BRANDING.chartNegativeColor }}
+                >
+                  {formatPercent(s.impact)}
+                </span>
+              </div>
+            );
+          })}
         </div>
       );
 
