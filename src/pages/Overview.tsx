@@ -155,51 +155,8 @@ export default function Overview() {
         />
       </div>
 
-      {/* Group 2: KPIs - 2 cols mobile, 4 cols desktop */}
+      {/* Top row: YTD Return, Unrealized %, Unrealized P/L, Realized P/L */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <KPICard
-          title="FX P/L"
-          value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
-          trend={hasData && performanceMetrics.fxPL >= 0 ? 'up' : 'down'}
-          subtitle="Currency changes"
-          tooltip="רווח/הפסד משינויי שער חליפין בין מטבע הנכס למטבע הבסיס"
-        />
-        <KPICard
-          title="Unrealized P/L"
-          value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
-          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
-          tooltip="רווח/הפסד לא ממומש - ההפרש בין שווי שוק נוכחי לעלות הרכישה"
-        />
-        <KPICard
-          title="Unrealized %"
-          value={hasData && performanceMetrics.totalCost > 0 
-            ? formatPercent((performanceMetrics.unrealizedPL / performanceMetrics.totalCost) * 100) 
-            : '0.00%'}
-          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
-          tooltip="אחוז הרווח/הפסד הלא ממומש ביחס לעלות הרכישה"
-        />
-        <KPICard
-          title="Realized P/L"
-          value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
-          trend={hasData && performanceMetrics.realizedPL >= 0 ? 'up' : 'down'}
-          tooltip="רווח/הפסד ממומש ממכירות שבוצעו"
-        />
-        <KPICard
-          title="Sharpe Ratio"
-          value={hasData ? performanceMetrics.sharpeRatio.toFixed(2) : '0.00'}
-          icon={Activity}
-          trend={hasData && performanceMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
-          subtitle="Risk-adjusted"
-          tooltip="יחס שארפ - תשואה עודפת ליחידת סיכון. מעל 1 נחשב טוב"
-        />
-        <KPICard
-          title="Max Drawdown"
-          value={hasData ? `-${performanceMetrics.maxDrawdown.toFixed(2)}%` : '0.00%'}
-          icon={TrendingDown}
-          trend="down"
-          subtitle="Peak to trough"
-          tooltip="ירידה מקסימלית - הירידה הגדולה ביותר משיא לשפל בתקופה"
-        />
         <KPICard
           title="YTD Return"
           value={hasData ? (() => {
@@ -218,6 +175,53 @@ export default function Overview() {
           })() : 'neutral'}
           subtitle={new Date().getFullYear().toString()}
           tooltip="תשואה מתחילת השנה הנוכחית ועד היום"
+        />
+        <KPICard
+          title="Unrealized %"
+          value={hasData && performanceMetrics.totalCost > 0 
+            ? formatPercent((performanceMetrics.unrealizedPL / performanceMetrics.totalCost) * 100) 
+            : '0.00%'}
+          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
+          tooltip="אחוז הרווח/הפסד הלא ממומש ביחס לעלות הרכישה"
+        />
+        <KPICard
+          title="Unrealized P/L"
+          value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
+          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
+          tooltip="רווח/הפסד לא ממומש - ההפרש בין שווי שוק נוכחי לעלות הרכישה"
+        />
+        <KPICard
+          title="Realized P/L"
+          value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
+          trend={hasData && performanceMetrics.realizedPL >= 0 ? 'up' : 'down'}
+          tooltip="רווח/הפסד ממומש ממכירות שבוצעו"
+        />
+      </div>
+
+      {/* Bottom row: FX P/L, Sharpe Ratio, Max Drawdown, Volatility */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <KPICard
+          title="FX P/L"
+          value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
+          trend={hasData && performanceMetrics.fxPL >= 0 ? 'up' : 'down'}
+          subtitle="Currency changes"
+          tooltip="רווח/הפסד משינויי שער חליפין בין מטבע הנכס למטבע הבסיס"
+        />
+        <KPICard
+          title="Sharpe Ratio"
+          value={hasData ? performanceMetrics.sharpeRatio.toFixed(2) : '0.00'}
+          icon={Activity}
+          trend={hasData && performanceMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
+          subtitle="Risk-adjusted"
+          tooltip="יחס שארפ - תשואה עודפת ליחידת סיכון. מעל 1 נחשב טוב"
+        />
+        <KPICard
+          title="Max Drawdown"
+          value={hasData ? `-${performanceMetrics.maxDrawdown.toFixed(2)}%` : '0.00%'}
+          icon={TrendingDown}
+          trend="down"
+          subtitle="Peak to trough"
+          tooltip="ירידה מקסימלית - הירידה הגדולה ביותר משיא לשפל בתקופה"
         />
         <KPICard
           title="Volatility"
