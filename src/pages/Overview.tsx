@@ -1,9 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useFxMode } from '@/context/FxModeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { KPICard } from '@/components/dashboard/KPICard';
+import { FxModeToggle } from '@/components/dashboard/FxModeToggle';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { NavEquityCurve } from '@/components/dashboard/NavEquityCurve';
 import { DrawdownChart } from '@/components/dashboard/DrawdownChart';
@@ -62,9 +64,39 @@ function getPercentile(sortedValues: number[], percentile: number): number {
 
 export default function Overview() {
   const { transactions, valuations, performanceMetrics, riskMetrics, cashBalances, settings, loading } = usePortfolio();
+  const { fxMode, fxLabel } = useFxMode();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [rssFeedUrl, setRssFeedUrl] = useState<string | null>(null);
+
+  // Calculate Real vs Nominal metrics
+  const adjustedMetrics = useMemo(() => {
+    if (!performanceMetrics) return null;
+    
+    const isNominal = fxMode === 'nominal';
+    
+    // Real = unrealizedPL (includes FX)
+    // Nominal = unrealizedPL - fxPL (excludes FX) = marketPL
+    const unrealizedPL = isNominal 
+      ? performanceMetrics.marketPL 
+      : performanceMetrics.unrealizedPL;
+    
+    const totalPL = isNominal
+      ? performanceMetrics.realizedPL + performanceMetrics.marketPL
+      : performanceMetrics.totalPL;
+    
+    // Total value adjustment: in nominal mode, we subtract the FX component
+    const totalValue = isNominal
+      ? performanceMetrics.totalValue - performanceMetrics.fxPL
+      : performanceMetrics.totalValue;
+    
+    return {
+      ...performanceMetrics,
+      unrealizedPL,
+      totalPL,
+      totalValue,
+    };
+  }, [performanceMetrics, fxMode]);
 
   // Load RSS feed URL
   useEffect(() => {
@@ -125,7 +157,8 @@ export default function Overview() {
           <h1 className="terminal-label text-sm sm:text-base">Portfolio Overview</h1>
           <p className="text-muted-foreground text-[10px] font-mono mt-0.5 truncate">Real-time performance snapshot</p>
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <FxModeToggle />
           <Button 
             onClick={() => navigate('/reports')} 
             variant="outline" 
@@ -147,12 +180,14 @@ export default function Overview() {
       <div className="w-full">
         <KPICard
           title="Total Portfolio Value"
-          value={hasData ? formatCurrency(performanceMetrics.totalValue) : '$0'}
+          value={hasData && adjustedMetrics ? formatCurrency(adjustedMetrics.totalValue) : '$0'}
           icon={DollarSign}
-          trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
-          trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
-          subLabel="Real (FX-adjusted)"
-          tooltip="Total portfolio value including cash and assets at current market rates, in base currency"
+          trend={hasData && adjustedMetrics && adjustedMetrics.totalPL >= 0 ? 'up' : 'down'}
+          trendValue={hasData && adjustedMetrics ? formatCurrency(adjustedMetrics.totalPL) : undefined}
+          subLabel={fxLabel}
+          tooltip={fxMode === 'real' 
+            ? "Total portfolio value including cash and assets at current market rates, in base currency" 
+            : "Total portfolio value excluding FX impact, as if exchange rates remained constant"}
         />
       </div>
 
@@ -175,31 +210,39 @@ export default function Overview() {
             return ytdReturn >= 0 ? 'up' : 'down';
           })() : 'neutral'}
           subtitle={new Date().getFullYear().toString()}
-          subLabel="Real (FX-adjusted)"
-          tooltip="Year-to-date return including FX impact, measured in base currency"
+          subLabel={fxLabel}
+          tooltip={fxMode === 'real' 
+            ? "Year-to-date return including FX impact, measured in base currency" 
+            : "Year-to-date return excluding FX impact"}
         />
         <KPICard
           title="Unrealized %"
-          value={hasData && performanceMetrics.totalCost > 0 
-            ? formatPercent((performanceMetrics.unrealizedPL / performanceMetrics.totalCost) * 100) 
+          value={hasData && adjustedMetrics && performanceMetrics.totalCost > 0 
+            ? formatPercent((adjustedMetrics.unrealizedPL / performanceMetrics.totalCost) * 100) 
             : '0.00%'}
-          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
-          subLabel="Real (FX-adjusted)"
-          tooltip="Unrealized gain/loss percentage vs cost basis, including FX impact"
+          trend={hasData && adjustedMetrics && adjustedMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
+          subLabel={fxLabel}
+          tooltip={fxMode === 'real' 
+            ? "Unrealized gain/loss percentage vs cost basis, including FX impact" 
+            : "Unrealized gain/loss percentage vs cost basis, excluding FX impact"}
         />
         <KPICard
           title="Unrealized P/L"
-          value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
-          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
-          subLabel="Real (FX-adjusted)"
-          tooltip="Unrealized profit/loss including FX impact, measured in base currency"
+          value={hasData && adjustedMetrics ? formatCurrency(adjustedMetrics.unrealizedPL) : '$0'}
+          trend={hasData && adjustedMetrics && adjustedMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
+          subLabel={fxLabel}
+          tooltip={fxMode === 'real' 
+            ? "Unrealized profit/loss including FX impact, measured in base currency" 
+            : "Unrealized profit/loss from price changes only, excluding FX impact"}
         />
         <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
           trend={hasData && performanceMetrics.realizedPL >= 0 ? 'up' : 'down'}
-          subLabel="Real (FX-adjusted)"
-          tooltip="Realized profit/loss from closed positions, including FX impact"
+          subLabel={fxLabel}
+          tooltip={fxMode === 'real' 
+            ? "Realized profit/loss from closed positions, including FX impact" 
+            : "Realized profit/loss from closed positions, excluding FX impact"}
         />
       </div>
 
@@ -218,8 +261,10 @@ export default function Overview() {
           icon={Activity}
           trend={hasData && performanceMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
           subtitle="Risk-adjusted"
-          subLabel="Real (FX-adjusted)"
-          tooltip="Risk-adjusted return metric including FX impact. Above 1 is considered good"
+          subLabel={fxLabel}
+          tooltip={fxMode === 'real' 
+            ? "Risk-adjusted return metric including FX impact. Above 1 is considered good" 
+            : "Risk-adjusted return metric excluding FX impact. Above 1 is considered good"}
         />
         <KPICard
           title="Max Drawdown"
@@ -227,15 +272,19 @@ export default function Overview() {
           icon={TrendingDown}
           trend="down"
           subtitle="Peak to trough"
-          subLabel="Real (FX-adjusted)"
-          tooltip="Maximum decline from peak to trough, including FX impact"
+          subLabel={fxLabel}
+          tooltip={fxMode === 'real' 
+            ? "Maximum decline from peak to trough, including FX impact" 
+            : "Maximum decline from peak to trough, excluding FX impact"}
         />
         <KPICard
           title="Volatility"
           value={hasData ? `${performanceMetrics.volatility.toFixed(2)}%` : '0.00%'}
           subtitle="Annualized"
-          subLabel="Real (FX-adjusted)"
-          tooltip="Annualized standard deviation of returns, including FX impact"
+          subLabel={fxLabel}
+          tooltip={fxMode === 'real' 
+            ? "Annualized standard deviation of returns, including FX impact" 
+            : "Annualized standard deviation of returns, excluding FX impact"}
         />
       </div>
 

@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { PortfolioProvider } from "./context/PortfolioContext";
+import { FxModeProvider } from "./context/FxModeContext";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
@@ -53,12 +54,13 @@ const App = () => (
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <PortfolioProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <ErrorBoundary>
-              <ScrollToTop />
+            <FxModeProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <ErrorBoundary>
+                    <ScrollToTop />
               <Routes>
                 <Route path="/auth" element={
                   <Suspense fallback={<AuthLoadingSkeleton />}>
@@ -219,13 +221,14 @@ const App = () => (
                     <NotFound />
                   </Suspense>
                 } />
-              </Routes>
-              </ErrorBoundary>
-            </BrowserRouter>
-          </TooltipProvider>
-        </PortfolioProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+                    </Routes>
+                  </ErrorBoundary>
+                </BrowserRouter>
+              </TooltipProvider>
+            </FxModeProvider>
+          </PortfolioProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   </HelmetProvider>
 );
