@@ -154,15 +154,8 @@ export default function Overview() {
         />
       </div>
 
-      {/* Group 2: Remaining 8 KPIs - 2 cols mobile, 4 cols desktop */}
+      {/* Group 2: KPIs - 2 cols mobile, 4 cols desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <KPICard
-          title="Total Return"
-          value={hasData ? formatPercent(performanceMetrics.totalReturn) : '0.00%'}
-          icon={TrendingUp}
-          trend={hasData && performanceMetrics.totalReturn >= 0 ? 'up' : 'down'}
-          subtitle="Since inception"
-        />
         <KPICard
           title="Sharpe Ratio"
           value={hasData ? performanceMetrics.sharpeRatio.toFixed(2) : '0.00'}
@@ -196,6 +189,11 @@ export default function Overview() {
           subtitle={new Date().getFullYear().toString()}
         />
         <KPICard
+          title="Volatility"
+          value={hasData ? `${performanceMetrics.volatility.toFixed(2)}%` : '0.00%'}
+          subtitle="Annualized"
+        />
+        <KPICard
           title="Realized P/L"
           value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
           trend={hasData && performanceMetrics.realizedPL >= 0 ? 'up' : 'down'}
@@ -217,16 +215,6 @@ export default function Overview() {
           value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
           trend={hasData && performanceMetrics.fxPL >= 0 ? 'up' : 'down'}
           subtitle="Currency changes"
-        />
-        <KPICard
-          title="Volatility"
-          value={hasData ? `${performanceMetrics.volatility.toFixed(2)}%` : '0.00%'}
-          subtitle="Annualized"
-        />
-        <KPICard
-          title="IRR"
-          value={hasData ? `${performanceMetrics.irr.toFixed(2)}%` : '0.00%'}
-          trend={hasData && performanceMetrics.irr >= 0 ? 'up' : 'down'}
         />
       </div>
 
