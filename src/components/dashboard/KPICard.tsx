@@ -12,6 +12,7 @@ interface KPICardProps {
   title: string;
   value: string | number;
   subtitle?: string;
+  subLabel?: string;
   icon?: LucideIcon;
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
@@ -19,7 +20,7 @@ interface KPICardProps {
   tooltip?: string;
 }
 
-export function KPICard({ title, value, subtitle, icon: Icon, trend, trendValue, className, tooltip }: KPICardProps) {
+export function KPICard({ title, value, subtitle, subLabel, icon: Icon, trend, trendValue, className, tooltip }: KPICardProps) {
   return (
     <div className={cn("kpi-card min-h-[80px] sm:min-h-0", className)}>
       <div className="flex items-start justify-between gap-2">
@@ -67,6 +68,9 @@ export function KPICard({ title, value, subtitle, icon: Icon, trend, trendValue,
           {trend === 'down' && '▼ '}
           {trendValue}
         </div>
+      )}
+      {subLabel && (
+        <p className="text-[9px] text-muted-foreground font-mono mt-1">{subLabel}</p>
       )}
     </div>
   );
