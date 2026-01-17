@@ -401,22 +401,27 @@ export function ReportCanvas({
             key={pageNum}
             data-page-number={pageNum}
             className={cn(
-              "mx-auto mb-8 bg-card rounded-lg shadow-xl overflow-hidden transition-all duration-300",
+              "mx-auto mb-8 rounded-lg shadow-xl overflow-hidden transition-all duration-300",
               isLibraryDragging && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background shadow-2xl shadow-primary/20"
             )}
             style={{
               width: pageDimensions.width * scale * 3.78, // mm to px
               minHeight: pageDimensions.height * scale * 3.78,
+              backgroundColor: branding.backgroundColor || '#0A0A0A',
+              fontFamily: branding.bodyFont || 'system-ui, -apple-system, sans-serif',
             }}
             onClick={() => onSelectBlock(null)}
           >
-            {/* Page header accent */}
+            {/* Page header accent - with optional gradient */}
             <div 
               className={cn(
                 "h-1 transition-all duration-300",
                 isLibraryDragging && "h-2"
               )}
-              style={{ backgroundColor: branding.accentColor }}
+              style={{ 
+                backgroundColor: branding.accentColor,
+                background: branding.headerGradient || branding.accentColor,
+              }}
             />
             
             {/* Page content grid */}
@@ -430,6 +435,7 @@ export function ReportCanvas({
                 gridTemplateColumns: `repeat(${GRID_COLUMNS}, 1fr)`,
                 gap: isMobile ? 4 : 8,
                 minHeight: (pageDimensions.height * scale * 3.78) - 50,
+                color: branding.textColor || '#E5E5E5',
               }}
             >
               <SortableContext
@@ -470,7 +476,13 @@ export function ReportCanvas({
 
             {/* Page footer */}
             {branding.showPageNumbers && (
-              <div className="border-t border-border px-4 md:px-6 py-2 md:py-3 flex items-center justify-between text-xs text-muted-foreground">
+              <div 
+                className="px-4 md:px-6 py-2 md:py-3 flex items-center justify-between text-xs"
+                style={{
+                  borderTop: `1px solid ${branding.tableBorderColor || '#333333'}`,
+                  color: branding.mutedTextColor || '#888888',
+                }}
+              >
                 <span>{branding.footerText}</span>
                 <span>Page {pageNum}{isMobile && ` of ${totalPages}`}</span>
               </div>

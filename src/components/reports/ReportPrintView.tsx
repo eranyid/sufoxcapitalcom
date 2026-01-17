@@ -79,7 +79,15 @@ const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
     },
     ref
   ) {
-    const colors = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
+    // Use branding colors if available, otherwise fall back to theme defaults
+    const colors = {
+      pageBackground: branding.backgroundColor || (theme === 'dark' ? DARK_THEME.pageBackground : LIGHT_THEME.pageBackground),
+      cardBackground: branding.tableRowAltBgColor || (theme === 'dark' ? DARK_THEME.cardBackground : LIGHT_THEME.cardBackground),
+      cardBorder: branding.tableBorderColor || (theme === 'dark' ? DARK_THEME.cardBorder : LIGHT_THEME.cardBorder),
+      textPrimary: branding.textColor || (theme === 'dark' ? DARK_THEME.textPrimary : LIGHT_THEME.textPrimary),
+      textSecondary: branding.mutedTextColor || (theme === 'dark' ? DARK_THEME.textSecondary : LIGHT_THEME.textSecondary),
+      textMuted: branding.mutedTextColor || (theme === 'dark' ? DARK_THEME.textMuted : LIGHT_THEME.textMuted),
+    };
     
     const enabledBlocks = useMemo(() => 
       blocks.filter(b => b.enabled).sort((a, b) => a.row - b.row),
