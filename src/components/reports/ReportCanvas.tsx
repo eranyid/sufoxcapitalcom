@@ -98,6 +98,8 @@ function SortableBlock({
 
   return (
     <div
+      data-block-id={block.id}
+      data-block-type={block.type}
       ref={setNodeRef}
       style={style}
       className={cn(
@@ -397,6 +399,7 @@ export function ReportCanvas({
           .map(([pageNum, pageBlocks]) => (
           <div
             key={pageNum}
+            data-page-number={pageNum}
             className={cn(
               "mx-auto mb-8 bg-card rounded-lg shadow-xl overflow-hidden transition-all duration-300",
               isLibraryDragging && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background shadow-2xl shadow-primary/20"
