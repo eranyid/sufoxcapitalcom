@@ -56,7 +56,7 @@ import { ReportCanvas } from '@/components/reports/ReportCanvas';
 import { BlockLibraryPanel } from '@/components/reports/BlockLibraryPanel';
 import { BlockPropertiesPanel } from '@/components/reports/BlockPropertiesPanel';
 import { TemplateSelectorDialog, ReportTemplate, useTemplateApplicator } from '@/components/reports/ReportTemplates';
-import { exportWYSIWYGPdf } from '@/lib/wysiwygPdfExporter';
+import { exportWYSIWYGPdf, getQualityPresets, ExportQuality, QUALITY_PRESETS } from '@/lib/wysiwygPdfExporter';
 import type { ReportBranding } from '@/types/reports';
 import { BLOCK_LIBRARY as BLOCK_LIBRARY_ITEMS } from '@/types/reportBuilder';
 
@@ -117,6 +117,7 @@ export default function ReportBuilder() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportMessage, setExportMessage] = useState('');
+  const [exportQuality, setExportQuality] = useState<ExportQuality>('high');
   const [hasChanges, setHasChanges] = useState(false);
   const [initialized, setInitialized] = useState(false);
   
@@ -234,6 +235,7 @@ export default function ReportBuilder() {
         blocks,
         branding,
         pageSize,
+        quality: exportQuality,
         reportName: report?.name || 'Report',
         onProgress: (progress, message) => {
           setExportProgress(progress);
@@ -242,7 +244,9 @@ export default function ReportBuilder() {
       });
       
       if (result.success) {
-        toast.success('PDF exported successfully - WYSIWYG export complete');
+        const qualityLabel = QUALITY_PRESETS[exportQuality].label;
+        const dpiInfo = result.actualDpi ? ` at ${result.actualDpi} DPI` : '';
+        toast.success(`PDF exported successfully - ${qualityLabel}${dpiInfo}`);
       } else {
         throw new Error(result.error || 'Export failed');
       }
@@ -649,6 +653,30 @@ export default function ReportBuilder() {
                 )}
               </DialogTitle>
               <div className="flex items-center gap-3">
+                {/* Quality Selector */}
+                {!isExporting && (
+                  <Select 
+                    value={exportQuality} 
+                    onValueChange={(v) => setExportQuality(v as ExportQuality)}
+                  >
+                    <SelectTrigger className="w-[180px] h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getQualityPresets().map((preset) => (
+                        <SelectItem key={preset.value} value={preset.value}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{preset.label}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {preset.dpi} DPI • {preset.description}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                
                 {isExporting && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 size={14} className="animate-spin" />
