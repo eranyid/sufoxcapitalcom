@@ -1491,6 +1491,140 @@ export async function generateWYSIWYGReportPDF({
         y += contribCardHeight - (contributionData.length * 6) - 15;
         break;
 
+      case 'performance_calendar':
+        addNewPageIfNeeded(70);
+        
+        // Draw section card background
+        const calendarCardHeight = 65;
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), calendarCardHeight);
+        drawAccentBar(y);
+        y += 4;
+        
+        doc.setFontSize(11);
+        doc.setTextColor(...hexToRgb(accentColor));
+        doc.setFont('helvetica', 'bold');
+        doc.text('MONTHLY RETURNS HEATMAP', margin + 4, y + 2);
+        y += 10;
+
+        // Get monthly returns data
+        const monthlyReturns = performanceMetrics?.monthlyReturns || [];
+        
+        // Group by year and month
+        const dataByYearMonth = new Map<string, number>();
+        monthlyReturns.forEach(({ month, return: ret }) => {
+          dataByYearMonth.set(month, ret);
+        });
+
+        // Get all years from data (most recent first)
+        const calendarYears = [...new Set(monthlyReturns.map(d => d.month.split('-')[0]))].sort().reverse().slice(0, 4);
+        
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        // Helper function to get color based on return value
+        const getReturnColorHex = (ret: number | undefined): string => {
+          if (ret === undefined) return mutedTextColor;
+          
+          const absRet = Math.abs(ret);
+          
+          if (ret >= 0) {
+            // Green shades for positive
+            if (absRet >= 10) return positiveColor;
+            if (absRet >= 5) return '#3D8B40'; // Slightly dimmer green
+            if (absRet >= 2) return '#2E6B30';
+            if (absRet >= 0.5) return '#1F4B20';
+            return '#153515';
+          } else {
+            // Red shades for negative
+            if (absRet >= 10) return negativeColor;
+            if (absRet >= 5) return '#CC4444';
+            if (absRet >= 2) return '#993333';
+            if (absRet >= 0.5) return '#662222';
+            return '#441515';
+          }
+        };
+
+        // Calculate cell dimensions
+        const cellWidth = (pageWidth - (margin * 2) - 30 - 30) / 12; // 30 for year label, 30 for YTD
+        const cellHeight = 8;
+        const startX = margin + 30;
+        let calY = y;
+
+        // Draw header row with month names
+        doc.setFontSize(6);
+        doc.setTextColor(...hexToRgb(mutedTextColor));
+        monthNames.forEach((monthName, idx) => {
+          const cellX = startX + (idx * cellWidth);
+          doc.text(monthName, cellX + cellWidth / 2, calY, { align: 'center' });
+        });
+        doc.text('YTD', startX + (12 * cellWidth) + 12, calY, { align: 'center' });
+        calY += 5;
+
+        // Draw each year row
+        calendarYears.forEach((year) => {
+          // Year label
+          doc.setFontSize(8);
+          doc.setTextColor(...hexToRgb(accentColor));
+          doc.setFont('helvetica', 'bold');
+          doc.text(year, margin + 4, calY + cellHeight / 2 + 1);
+
+          // Calculate YTD for this year
+          const yearReturns: number[] = [];
+          
+          // Draw month cells
+          monthNames.forEach((_, idx) => {
+            const monthKey = `${year}-${String(idx + 1).padStart(2, '0')}`;
+            const ret = dataByYearMonth.get(monthKey);
+            const cellX = startX + (idx * cellWidth);
+            
+            if (ret !== undefined) {
+              yearReturns.push(ret);
+            }
+            
+            // Draw cell background
+            const cellColor = getReturnColorHex(ret);
+            doc.setFillColor(...hexToRgb(cellColor));
+            doc.rect(cellX, calY, cellWidth - 1, cellHeight, 'F');
+            
+            // Draw return value text
+            doc.setFontSize(5);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'normal');
+            if (ret !== undefined) {
+              const displayVal = `${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%`;
+              doc.text(displayVal, cellX + cellWidth / 2 - 0.5, calY + cellHeight / 2 + 1, { align: 'center' });
+            } else {
+              doc.setTextColor(...hexToRgb(mutedTextColor));
+              doc.text('—', cellX + cellWidth / 2 - 0.5, calY + cellHeight / 2 + 1, { align: 'center' });
+            }
+          });
+
+          // Calculate and draw YTD
+          const ytdReturn = yearReturns.length > 0 
+            ? (yearReturns.reduce((acc, r) => acc * (1 + r / 100), 1) - 1) * 100 
+            : undefined;
+          
+          const ytdX = startX + (12 * cellWidth) + 2;
+          const ytdColor = getReturnColorHex(ytdReturn);
+          doc.setFillColor(...hexToRgb(ytdColor));
+          doc.rect(ytdX, calY, 22, cellHeight, 'F');
+          
+          doc.setFontSize(6);
+          doc.setTextColor(255, 255, 255);
+          doc.setFont('helvetica', 'bold');
+          if (ytdReturn !== undefined) {
+            const ytdDisplayVal = `${ytdReturn >= 0 ? '+' : ''}${ytdReturn.toFixed(1)}%`;
+            doc.text(ytdDisplayVal, ytdX + 11, calY + cellHeight / 2 + 1, { align: 'center' });
+          } else {
+            doc.setTextColor(...hexToRgb(mutedTextColor));
+            doc.text('—', ytdX + 11, calY + cellHeight / 2 + 1, { align: 'center' });
+          }
+
+          calY += cellHeight + 2;
+        });
+
+        y += calendarCardHeight - 8;
+        break;
+
       case 'footer':
         // Footer is handled at the end
         break;
