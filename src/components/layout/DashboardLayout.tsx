@@ -152,7 +152,7 @@ export function DashboardLayout() {
             </kbd>
             <span>USD</span>
             <span className="text-foreground font-semibold">{currentTime.toLocaleDateString('en-GB')}</span>
-            <span className="text-primary font-bold">{currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
+            <span className="text-primary font-bold">{currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: false})}</span>
             <TooltipProvider delayDuration={200}>
               <div className="flex items-center gap-2">
                 <Tooltip>
