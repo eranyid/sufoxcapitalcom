@@ -151,17 +151,46 @@ export default function Overview() {
           icon={DollarSign}
           trend={hasData && performanceMetrics.totalPL >= 0 ? 'up' : 'down'}
           trendValue={hasData ? formatCurrency(performanceMetrics.totalPL) : undefined}
+          tooltip="שווי כולל של התיק כולל מזומנים ונכסים בשער השוק הנוכחי"
         />
       </div>
 
       {/* Group 2: KPIs - 2 cols mobile, 4 cols desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <KPICard
+          title="FX P/L"
+          value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
+          trend={hasData && performanceMetrics.fxPL >= 0 ? 'up' : 'down'}
+          subtitle="Currency changes"
+          tooltip="רווח/הפסד משינויי שער חליפין בין מטבע הנכס למטבע הבסיס"
+        />
+        <KPICard
+          title="Unrealized P/L"
+          value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
+          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
+          tooltip="רווח/הפסד לא ממומש - ההפרש בין שווי שוק נוכחי לעלות הרכישה"
+        />
+        <KPICard
+          title="Unrealized %"
+          value={hasData && performanceMetrics.totalCost > 0 
+            ? formatPercent((performanceMetrics.unrealizedPL / performanceMetrics.totalCost) * 100) 
+            : '0.00%'}
+          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
+          tooltip="אחוז הרווח/הפסד הלא ממומש ביחס לעלות הרכישה"
+        />
+        <KPICard
+          title="Realized P/L"
+          value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
+          trend={hasData && performanceMetrics.realizedPL >= 0 ? 'up' : 'down'}
+          tooltip="רווח/הפסד ממומש ממכירות שבוצעו"
+        />
+        <KPICard
           title="Sharpe Ratio"
           value={hasData ? performanceMetrics.sharpeRatio.toFixed(2) : '0.00'}
           icon={Activity}
           trend={hasData && performanceMetrics.sharpeRatio >= 1 ? 'up' : 'neutral'}
           subtitle="Risk-adjusted"
+          tooltip="יחס שארפ - תשואה עודפת ליחידת סיכון. מעל 1 נחשב טוב"
         />
         <KPICard
           title="Max Drawdown"
@@ -169,6 +198,7 @@ export default function Overview() {
           icon={TrendingDown}
           trend="down"
           subtitle="Peak to trough"
+          tooltip="ירידה מקסימלית - הירידה הגדולה ביותר משיא לשפל בתקופה"
         />
         <KPICard
           title="YTD Return"
@@ -187,34 +217,13 @@ export default function Overview() {
             return ytdReturn >= 0 ? 'up' : 'down';
           })() : 'neutral'}
           subtitle={new Date().getFullYear().toString()}
+          tooltip="תשואה מתחילת השנה הנוכחית ועד היום"
         />
         <KPICard
           title="Volatility"
           value={hasData ? `${performanceMetrics.volatility.toFixed(2)}%` : '0.00%'}
           subtitle="Annualized"
-        />
-        <KPICard
-          title="Realized P/L"
-          value={hasData ? formatCurrency(performanceMetrics.realizedPL) : '$0'}
-          trend={hasData && performanceMetrics.realizedPL >= 0 ? 'up' : 'down'}
-        />
-        <KPICard
-          title="Unrealized P/L"
-          value={hasData ? formatCurrency(performanceMetrics.unrealizedPL) : '$0'}
-          trend={hasData && performanceMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
-          subtitle={hasData && performanceMetrics.marketPL !== performanceMetrics.unrealizedPL ? `Market: ${formatCurrency(performanceMetrics.marketPL)} | FX: ${formatCurrency(performanceMetrics.fxPL)}` : undefined}
-        />
-        <KPICard
-          title="Market P/L"
-          value={hasData ? formatCurrency(performanceMetrics.marketPL) : '$0'}
-          trend={hasData && performanceMetrics.marketPL >= 0 ? 'up' : 'down'}
-          subtitle="Price changes"
-        />
-        <KPICard
-          title="FX P/L"
-          value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
-          trend={hasData && performanceMetrics.fxPL >= 0 ? 'up' : 'down'}
-          subtitle="Currency changes"
+          tooltip="תנודתיות שנתית - סטיית תקן של התשואות על בסיס שנתי"
         />
       </div>
 
