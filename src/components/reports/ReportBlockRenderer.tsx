@@ -376,14 +376,31 @@ export function ReportBlockRenderer({ block, holdings, performanceMetrics, riskM
   // Check if block has any custom styling applied
   const hasCustomStyles = config.borderRadius || config.shadow || config.borderWidth || config.padding || config.backgroundColor || branding.glassmorphism || branding.accentBorders;
 
+  // CSS-based subtle noise pattern (no external asset needed)
+  const getPatternStyle = (): React.CSSProperties => {
+    if (!branding.subtlePatterns) return {};
+    return {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+      backgroundSize: '100px 100px',
+      backgroundBlendMode: 'overlay',
+      opacity: 0.03,
+    };
+  };
+
   // Wrapper component to apply custom styles
   const BlockWrapper = ({ children }: { children: React.ReactNode }) => {
     return (
       <div 
         style={{ ...globalStyles, ...containerStyles }} 
-        className={cn("h-full transition-all", branding.subtlePatterns && "bg-[url('/patterns/subtle-noise.png')] bg-repeat")}
+        className="h-full transition-all relative"
       >
-        {children}
+        {branding.subtlePatterns && (
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={getPatternStyle()}
+          />
+        )}
+        <div className="relative">{children}</div>
       </div>
     );
   };

@@ -1823,17 +1823,17 @@ export function BlockPropertiesPanel({
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50 opacity-60">
                   <div>
-                    <Label className="text-xs">Table of Contents</Label>
+                    <Label className="text-xs flex items-center gap-2">
+                      Table of Contents
+                      <span className="text-[8px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">Coming Soon</span>
+                    </Label>
                     <p className="text-[10px] text-muted-foreground">Auto-generate TOC</p>
                   </div>
                   <Switch 
-                    checked={branding.showTableOfContents || false}
-                    onCheckedChange={(v) => {
-                      onUpdateBranding({ showTableOfContents: v });
-                      toast.success(v ? 'Table of contents enabled' : 'Table of contents disabled');
-                    }}
+                    checked={false}
+                    disabled
                   />
                 </div>
               </div>
@@ -1957,31 +1957,31 @@ export function BlockPropertiesPanel({
 
             <CollapsibleSection title="Accessibility" icon={<Settings2 size={14} className="text-muted-foreground" />}>
               <div className="space-y-2">
-                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50 opacity-60">
                   <div>
-                    <Label className="text-xs">High Contrast Mode</Label>
+                    <Label className="text-xs flex items-center gap-2">
+                      High Contrast Mode
+                      <span className="text-[8px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">Coming Soon</span>
+                    </Label>
                     <p className="text-[10px] text-muted-foreground">Improve readability</p>
                   </div>
                   <Switch 
-                    checked={branding.highContrastMode || false}
-                    onCheckedChange={(v) => {
-                      onUpdateBranding({ highContrastMode: v });
-                      toast.success(v ? 'High contrast enabled' : 'High contrast disabled');
-                    }}
+                    checked={false}
+                    disabled
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50">
+                <div className="flex items-center justify-between py-2 px-1 rounded-lg hover:bg-muted/50 opacity-60">
                   <div>
-                    <Label className="text-xs">Screen Reader Tags</Label>
+                    <Label className="text-xs flex items-center gap-2">
+                      Screen Reader Tags
+                      <span className="text-[8px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">Coming Soon</span>
+                    </Label>
                     <p className="text-[10px] text-muted-foreground">Add alt text to charts</p>
                   </div>
                   <Switch 
-                    checked={branding.screenReaderTags ?? true}
-                    onCheckedChange={(v) => {
-                      onUpdateBranding({ screenReaderTags: v });
-                      toast.success(v ? 'Screen reader tags enabled' : 'Screen reader tags disabled');
-                    }}
+                    checked={false}
+                    disabled
                   />
                 </div>
               </div>
