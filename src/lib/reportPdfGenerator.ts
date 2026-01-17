@@ -1037,9 +1037,11 @@ export async function generateWYSIWYGReportPDF({
         break;
 
       case 'currency_exposure':
-        addNewPageIfNeeded(55);
+        addNewPageIfNeeded(60);
         
-        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 50);
+        // Draw section card background
+        const currencyCardHeight = 55;
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), currencyCardHeight);
         drawAccentBar(y);
         y += 4;
         
@@ -1055,50 +1057,71 @@ export async function generateWYSIWYGReportPDF({
         });
 
         const currencyEntries = Object.entries(byCurrency).sort((a, b) => b[1] - a[1]);
-        const currencyDataWithDots = currencyEntries.map(([name, value]) => [
-          '',
-          name,
-          formatCurrency(value),
-          totalValue > 0 ? `${((value / totalValue) * 100).toFixed(1)}%` : '0%',
-        ]);
-
-        autoTable(doc, {
-          startY: y,
-          head: [['', 'Currency', 'Value', 'Weight']],
-          body: currencyDataWithDots,
-          theme: 'plain',
-          headStyles: { 
-            fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
-            textColor: hexToRgb(accentColor), 
-            fontSize: 9,
-            fontStyle: 'bold',
-          },
-          styles: { 
-            fontSize: 9, 
-            cellPadding: 3, 
-            textColor: hexToRgb(textColor),
-            fillColor: hexToRgb(cardBgColor),
-          },
-          alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
-          margin: { left: margin + 4, right: margin + 4 },
-          columnStyles: {
-            0: { cellWidth: 8 },
-          },
-          didDrawCell: (data: any) => {
-            if (data.section === 'body' && data.column.index === 0) {
-              const colorIndex = data.row.index % chartColors.length;
-              doc.setFillColor(...hexToRgb(chartColors[colorIndex]));
-              doc.circle(data.cell.x + 4, data.cell.y + data.cell.height / 2, 2, 'F');
-            }
-          },
+        
+        // Draw pie chart
+        const currencyPieX = margin + 25;
+        const currencyPieY = y + 18;
+        const currencyPieRadius = 15;
+        let currencyStartAngle = -Math.PI / 2; // Start from top
+        
+        currencyEntries.forEach(([_, value], i) => {
+          const sliceAngle = totalValue > 0 ? (value / totalValue) * 2 * Math.PI : 0;
+          const endAngle = currencyStartAngle + sliceAngle;
+          
+          // Draw pie slice using triangles
+          const centerX = currencyPieX;
+          const centerY = currencyPieY;
+          const segments = 20;
+          const angleStep = sliceAngle / segments;
+          
+          doc.setDrawColor(...hexToRgb(chartColors[i % chartColors.length]));
+          for (let j = 0; j < segments; j++) {
+            const angle1 = currencyStartAngle + (j * angleStep);
+            const angle2 = currencyStartAngle + ((j + 1) * angleStep);
+            const x1 = centerX + currencyPieRadius * Math.cos(angle1);
+            const y1 = centerY + currencyPieRadius * Math.sin(angle1);
+            const x2 = centerX + currencyPieRadius * Math.cos(angle2);
+            const y2 = centerY + currencyPieRadius * Math.sin(angle2);
+            
+            doc.setFillColor(...hexToRgb(chartColors[i % chartColors.length]));
+            // @ts-ignore - jsPDF supports triangle drawing
+            doc.triangle(centerX, centerY, x1, y1, x2, y2, 'F');
+          }
+          
+          currencyStartAngle = endAngle;
         });
-        y = (doc as any).lastAutoTable.finalY + 14;
+
+        // Draw legend with data on the right side
+        const currencyLegendX = margin + 55;
+        let currencyLegendY = y + 4;
+        
+        currencyEntries.slice(0, 5).forEach(([name, value], i) => {
+          // Color dot
+          doc.setFillColor(...hexToRgb(chartColors[i % chartColors.length]));
+          doc.circle(currencyLegendX, currencyLegendY + 1.5, 2, 'F');
+          
+          // Name
+          doc.setFontSize(9);
+          doc.setTextColor(...hexToRgb(textColor));
+          doc.text(name, currencyLegendX + 5, currencyLegendY + 2);
+          
+          // Value and percentage
+          const pct = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0';
+          doc.setTextColor(...hexToRgb(mutedTextColor));
+          doc.text(`${formatCurrency(value)} (${pct}%)`, pageWidth - margin - 4, currencyLegendY + 2, { align: 'right' });
+          
+          currencyLegendY += 7;
+        });
+
+        y += currencyCardHeight - 8;
         break;
 
       case 'geographic_allocation':
-        addNewPageIfNeeded(55);
+        addNewPageIfNeeded(60);
         
-        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), 50);
+        // Draw section card background
+        const geoCardHeight = 55;
+        drawCardBackground(margin, y - 2, pageWidth - (margin * 2), geoCardHeight);
         drawAccentBar(y);
         y += 4;
         
@@ -1114,44 +1137,63 @@ export async function generateWYSIWYGReportPDF({
         });
 
         const geoEntries = Object.entries(byGeo).sort((a, b) => b[1] - a[1]);
-        const geoDataWithDots = geoEntries.map(([name, value]) => [
-          '',
-          name,
-          formatCurrency(value),
-          totalValue > 0 ? `${((value / totalValue) * 100).toFixed(1)}%` : '0%',
-        ]);
-
-        autoTable(doc, {
-          startY: y,
-          head: [['', 'Region', 'Value', 'Weight']],
-          body: geoDataWithDots,
-          theme: 'plain',
-          headStyles: { 
-            fillColor: hexToRgb(branding.tableHeaderBgColor || '#161618'), 
-            textColor: hexToRgb(accentColor), 
-            fontSize: 9,
-            fontStyle: 'bold',
-          },
-          styles: { 
-            fontSize: 9, 
-            cellPadding: 3, 
-            textColor: hexToRgb(textColor),
-            fillColor: hexToRgb(cardBgColor),
-          },
-          alternateRowStyles: { fillColor: hexToRgb(backgroundColor) },
-          margin: { left: margin + 4, right: margin + 4 },
-          columnStyles: {
-            0: { cellWidth: 8 },
-          },
-          didDrawCell: (data: any) => {
-            if (data.section === 'body' && data.column.index === 0) {
-              const colorIndex = data.row.index % chartColors.length;
-              doc.setFillColor(...hexToRgb(chartColors[colorIndex]));
-              doc.circle(data.cell.x + 4, data.cell.y + data.cell.height / 2, 2, 'F');
-            }
-          },
+        
+        // Draw pie chart
+        const geoPieX = margin + 25;
+        const geoPieY = y + 18;
+        const geoPieRadius = 15;
+        let geoStartAngle = -Math.PI / 2; // Start from top
+        
+        geoEntries.forEach(([_, value], i) => {
+          const sliceAngle = totalValue > 0 ? (value / totalValue) * 2 * Math.PI : 0;
+          const endAngle = geoStartAngle + sliceAngle;
+          
+          // Draw pie slice using triangles
+          const centerX = geoPieX;
+          const centerY = geoPieY;
+          const segments = 20;
+          const angleStep = sliceAngle / segments;
+          
+          doc.setDrawColor(...hexToRgb(chartColors[i % chartColors.length]));
+          for (let j = 0; j < segments; j++) {
+            const angle1 = geoStartAngle + (j * angleStep);
+            const angle2 = geoStartAngle + ((j + 1) * angleStep);
+            const x1 = centerX + geoPieRadius * Math.cos(angle1);
+            const y1 = centerY + geoPieRadius * Math.sin(angle1);
+            const x2 = centerX + geoPieRadius * Math.cos(angle2);
+            const y2 = centerY + geoPieRadius * Math.sin(angle2);
+            
+            doc.setFillColor(...hexToRgb(chartColors[i % chartColors.length]));
+            // @ts-ignore - jsPDF supports triangle drawing
+            doc.triangle(centerX, centerY, x1, y1, x2, y2, 'F');
+          }
+          
+          geoStartAngle = endAngle;
         });
-        y = (doc as any).lastAutoTable.finalY + 14;
+
+        // Draw legend with data on the right side
+        const geoLegendX = margin + 55;
+        let geoLegendY = y + 4;
+        
+        geoEntries.slice(0, 5).forEach(([name, value], i) => {
+          // Color dot
+          doc.setFillColor(...hexToRgb(chartColors[i % chartColors.length]));
+          doc.circle(geoLegendX, geoLegendY + 1.5, 2, 'F');
+          
+          // Name
+          doc.setFontSize(9);
+          doc.setTextColor(...hexToRgb(textColor));
+          doc.text(name, geoLegendX + 5, geoLegendY + 2);
+          
+          // Value and percentage
+          const pct = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0';
+          doc.setTextColor(...hexToRgb(mutedTextColor));
+          doc.text(`${formatCurrency(value)} (${pct}%)`, pageWidth - margin - 4, geoLegendY + 2, { align: 'right' });
+          
+          geoLegendY += 7;
+        });
+
+        y += geoCardHeight - 8;
         break;
 
       case 'holdings_table':
