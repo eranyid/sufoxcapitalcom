@@ -128,6 +128,7 @@ export default function ReportBuilder() {
   const [exportMessage, setExportMessage] = useState('');
   const [exportQuality, setExportQuality] = useState<ExportQuality>('high');
   const [exportMode, setExportMode] = useState<ExportMode>('vector');
+  const [exportTheme, setExportTheme] = useState<'dark' | 'light'>('dark');
   const [hasChanges, setHasChanges] = useState(false);
   const [initialized, setInitialized] = useState(false);
   
@@ -226,13 +227,13 @@ export default function ReportBuilder() {
     }
   };
 
-  // Vector PDF export using browser print
+  // Vector PDF export using browser print - with dark theme support
   const handleVectorPrint = useReactToPrint({
     contentRef: printViewRef,
     documentTitle: report?.name || 'Investment Report',
-    pageStyle: getPrintStyles(pageSize),
+    pageStyle: getPrintStyles(pageSize, exportTheme),
     onAfterPrint: () => {
-      toast.success('Vector PDF export initiated - use "Save as PDF" in print dialog');
+      toast.success(`${exportTheme === 'dark' ? 'Dark theme' : 'Light theme'} PDF export initiated - use "Save as PDF" in print dialog`);
       setPreviewOpen(false);
     },
     onPrintError: (error) => {
@@ -759,10 +760,27 @@ export default function ReportBuilder() {
                       </div>
                     )}
                     
+                    {/* Theme Selector - for vector mode */}
+                    {exportMode === 'vector' && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Theme:</span>
+                        <Tabs value={exportTheme} onValueChange={(v) => setExportTheme(v as 'dark' | 'light')}>
+                          <TabsList className="h-7">
+                            <TabsTrigger value="dark" className="text-xs px-2 py-1">
+                              🌙 Dark
+                            </TabsTrigger>
+                            <TabsTrigger value="light" className="text-xs px-2 py-1">
+                              ☀️ Light
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      </div>
+                    )}
+                    
                     {/* Mode description */}
                     <span className="text-[10px] text-muted-foreground flex-1">
                       {exportMode === 'vector' 
-                        ? '✓ Selectable text • ✓ Small file size • ✓ Sharp at any zoom'
+                        ? `✓ ${exportTheme === 'dark' ? 'Dark background' : 'Light background'} • ✓ Selectable text • ✓ Small file`
                         : '✓ Pixel-perfect capture • Larger file size'
                       }
                     </span>
@@ -800,7 +818,7 @@ export default function ReportBuilder() {
                 </div>
               )}
               
-              {/* Vector mode: print-optimized light theme view */}
+              {/* Vector mode: print-optimized view with theme support */}
               {exportMode === 'vector' && (
                 <ReportPrintView
                   ref={printViewRef}
@@ -811,6 +829,7 @@ export default function ReportBuilder() {
                   performanceMetrics={performanceMetrics}
                   riskMetrics={riskMetrics}
                   totalValue={totalValue}
+                  theme={exportTheme}
                 />
               )}
             </ScrollArea>

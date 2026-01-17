@@ -118,28 +118,67 @@ export function triggerVectorPrint(
 
 /**
  * Creates print-specific styles for the document
+ * CRITICAL: Forces dark theme background printing for true WYSIWYG
  */
-export function getPrintStyles(pageSize: 'A4' | 'Letter'): string {
+export function getPrintStyles(pageSize: 'A4' | 'Letter', theme: 'dark' | 'light' = 'dark'): string {
+  // Dark theme colors (matching editor)
+  const darkColors = {
+    pageBackground: '#0A0A0A',
+    cardBackground: '#111111',
+    textPrimary: '#E5E5E5',
+  };
+  
+  const lightColors = {
+    pageBackground: '#FFFFFF',
+    cardBackground: '#FAFAFA',
+    textPrimary: '#1A1A1A',
+  };
+  
+  const colors = theme === 'dark' ? darkColors : lightColors;
+  
   return `
+    /* =====================================================
+       CRITICAL: Force Background Color Printing
+       Ensures dark theme is preserved in PDF export
+       ===================================================== */
+    
     @media print {
       @page {
         size: ${pageSize === 'A4' ? 'A4' : 'letter'} portrait;
-        margin: 15mm 12mm;
+        margin: 10mm 8mm;
       }
       
+      /* CRITICAL: Force background graphics to print */
       html, body {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
-        background: white !important;
+        background: ${colors.pageBackground} !important;
+        background-color: ${colors.pageBackground} !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      /* Force dark/light background on all print elements */
+      .report-print-container,
+      .report-print-container *,
+      .print-page,
+      .print-card,
+      .print-block {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
       
       .report-print-container {
-        background: white !important;
-        color: #1a1a1a !important;
+        background: ${colors.pageBackground} !important;
+        background-color: ${colors.pageBackground} !important;
+        color: ${colors.textPrimary} !important;
       }
       
       .print-page {
+        background: ${colors.pageBackground} !important;
+        background-color: ${colors.pageBackground} !important;
         page-break-after: always;
         page-break-inside: avoid;
         break-after: page;
@@ -156,10 +195,18 @@ export function getPrintStyles(pageSize: 'A4' | 'Letter'): string {
         break-inside: avoid;
       }
       
+      .print-card {
+        background: ${colors.cardBackground} !important;
+        background-color: ${colors.cardBackground} !important;
+      }
+      
       /* Hide non-print elements */
       .no-print,
       [data-radix-portal],
-      .sonner-toast {
+      .sonner-toast,
+      .sidebar,
+      nav,
+      header:not(.print-header) {
         display: none !important;
       }
       
@@ -168,15 +215,17 @@ export function getPrintStyles(pageSize: 'A4' | 'Letter'): string {
         max-width: 100%;
         height: auto;
         shape-rendering: geometricPrecision;
+        background: transparent !important;
       }
       
-      /* Force backgrounds to print */
+      /* Force all backgrounds to print */
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
       
-      /* Ensure text is selectable and sharp */
+      /* Ensure text is sharp */
       p, span, h1, h2, h3, h4, h5, h6, div {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;

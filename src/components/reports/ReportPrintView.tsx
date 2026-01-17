@@ -1,15 +1,19 @@
 /**
- * ReportPrintView - Print-Optimized Report Rendering
+ * ReportPrintView - Dark Theme Print-Optimized Report Rendering
  * 
  * This component renders the report in a print-optimized format for
  * browser-native PDF export via window.print() / react-to-print.
  * 
+ * CRITICAL: Enforces TRUE WYSIWYG dark theme printing.
+ * The exported PDF must look identical to the editor - including dark backgrounds.
+ * 
  * Features:
+ * - Dark theme matching editor (NOT white/paper mode)
  * - Vector text (selectable, searchable)
  * - SVG charts (sharp at any zoom)
  * - Proper page breaks
  * - No editor chrome / drag handles
- * - Print-safe colors and backgrounds
+ * - Forced background color printing
  */
 
 import { forwardRef, useMemo } from 'react';
@@ -32,12 +36,33 @@ interface ReportPrintViewProps {
   performanceMetrics: PerformanceMetrics | null;
   riskMetrics: RiskMetrics | null;
   totalValue: number;
+  theme?: 'dark' | 'light';
 }
 
 // Page dimensions in mm for CSS
 const PAGE_CSS_SIZES = {
   A4: { width: '210mm', height: '297mm' },
   Letter: { width: '8.5in', height: '11in' },
+};
+
+// Dark theme colors (matching editor)
+const DARK_THEME = {
+  pageBackground: '#0A0A0A',
+  cardBackground: '#111111',
+  cardBorder: '#222222',
+  textPrimary: '#E5E5E5',
+  textSecondary: '#999999',
+  textMuted: '#666666',
+};
+
+// Light theme colors (optional fallback)
+const LIGHT_THEME = {
+  pageBackground: '#FFFFFF',
+  cardBackground: '#FAFAFA',
+  cardBorder: '#E5E5E5',
+  textPrimary: '#1A1A1A',
+  textSecondary: '#666666',
+  textMuted: '#999999',
 };
 
 const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
@@ -50,9 +75,12 @@ const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
       performanceMetrics,
       riskMetrics,
       totalValue,
+      theme = 'dark', // Default to dark theme for true WYSIWYG
     },
     ref
   ) {
+    const colors = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
+    
     const enabledBlocks = useMemo(() => 
       blocks.filter(b => b.enabled).sort((a, b) => a.row - b.row),
       [blocks]
@@ -73,183 +101,244 @@ const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
     const totalPages = pageNumbers.length || 1;
     const pageDims = PAGE_CSS_SIZES[pageSize];
 
+    // Critical: Generate print styles that FORCE dark background printing
+    const printStyles = `
+      /* =====================================================
+         CRITICAL: Force Background Color Printing
+         This ensures dark theme is preserved in PDF export
+         ===================================================== */
+      
+      @media print {
+        @page {
+          size: ${pageSize === 'A4' ? 'A4' : 'letter'} portrait;
+          margin: 10mm 8mm;
+        }
+        
+        /* CRITICAL: Force background graphics to print */
+        html {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        
+        body {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          background: ${colors.pageBackground} !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        /* Force dark background on all print elements */
+        .report-print-container,
+        .report-print-container * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        
+        .report-print-container {
+          background: ${colors.pageBackground} !important;
+          background-color: ${colors.pageBackground} !important;
+        }
+        
+        .print-page {
+          background: ${colors.pageBackground} !important;
+          background-color: ${colors.pageBackground} !important;
+          page-break-after: always;
+          page-break-inside: avoid;
+          break-after: page;
+          break-inside: avoid;
+        }
+        
+        .print-page:last-child {
+          page-break-after: auto;
+          break-after: auto;
+        }
+        
+        .print-block {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        .print-card {
+          background: ${colors.cardBackground} !important;
+          background-color: ${colors.cardBackground} !important;
+          border-color: ${colors.cardBorder} !important;
+        }
+        
+        /* Hide non-print elements */
+        .no-print,
+        [data-radix-portal],
+        .sonner-toast,
+        .sidebar,
+        nav {
+          display: none !important;
+        }
+        
+        /* Ensure SVG charts print correctly with dark theme */
+        svg {
+          max-width: 100%;
+          height: auto;
+          background: transparent !important;
+        }
+        
+        /* Force all text colors */
+        .print-text-primary {
+          color: ${colors.textPrimary} !important;
+        }
+        
+        .print-text-secondary {
+          color: ${colors.textSecondary} !important;
+        }
+        
+        .print-text-muted {
+          color: ${colors.textMuted} !important;
+        }
+        
+        /* Prevent browser from stripping backgrounds */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        
+        /* Disable any light mode overrides */
+        .light, [data-theme="light"] {
+          background: ${colors.pageBackground} !important;
+          color: ${colors.textPrimary} !important;
+        }
+      }
+      
+      /* Screen preview - match print output exactly */
+      @media screen {
+        .report-print-container {
+          background: #1a1a1a;
+          padding: 20px;
+        }
+        
+        .print-page {
+          background: ${colors.pageBackground};
+          box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+          margin: 0 auto 20px;
+        }
+      }
+    `;
+
+    const renderPage = (pageBlocks: ReportBlock[], pageNum: number, isFirst: boolean) => (
+      <div 
+        key={pageNum}
+        className="print-page"
+        data-page-number={pageNum}
+        style={{
+          width: pageDims.width,
+          minHeight: pageDims.height,
+          padding: '12mm 10mm',
+          boxSizing: 'border-box',
+          backgroundColor: colors.pageBackground,
+          color: colors.textPrimary,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Header on first page */}
+        {isFirst && (
+          <PrintHeader 
+            branding={branding} 
+            colors={colors}
+          />
+        )}
+
+        <div className="flex-1 space-y-4">
+          {pageBlocks.map((block) => (
+            <PrintBlock
+              key={block.id}
+              block={block}
+              holdings={holdings}
+              performanceMetrics={performanceMetrics}
+              riskMetrics={riskMetrics}
+              totalValue={totalValue}
+              branding={branding}
+              colors={colors}
+            />
+          ))}
+        </div>
+
+        <PrintFooter 
+          branding={branding} 
+          pageNumber={pageNum} 
+          totalPages={totalPages}
+          colors={colors}
+        />
+      </div>
+    );
+
     return (
       <div 
         ref={ref} 
         className="report-print-container"
         data-print-document="true"
+        data-theme={theme}
+        style={{
+          backgroundColor: colors.pageBackground,
+          colorAdjust: 'exact',
+          WebkitPrintColorAdjust: 'exact',
+        }}
       >
-        {/* Print-specific styles injected inline for reliability */}
-        <style>{`
-          @media print {
-            @page {
-              size: ${pageSize === 'A4' ? 'A4' : 'letter'} portrait;
-              margin: 15mm 12mm;
-            }
-            
-            body {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              color-adjust: exact !important;
-            }
-            
-            .report-print-container {
-              background: white !important;
-              color: #1a1a1a !important;
-            }
-            
-            .print-page {
-              page-break-after: always;
-              page-break-inside: avoid;
-              break-after: page;
-              break-inside: avoid;
-            }
-            
-            .print-page:last-child {
-              page-break-after: auto;
-              break-after: auto;
-            }
-            
-            .print-block {
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-            
-            /* Hide non-print elements */
-            .no-print {
-              display: none !important;
-            }
-            
-            /* Ensure SVG charts print correctly */
-            svg {
-              max-width: 100%;
-              height: auto;
-            }
-            
-            /* Force backgrounds to print */
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          }
-          
-          /* Screen preview styles */
-          @media screen {
-            .report-print-container {
-              background: #f5f5f5;
-              padding: 20px;
-            }
-            
-            .print-page {
-              background: white;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-              margin: 0 auto 20px;
-            }
-          }
-        `}</style>
+        {/* Critical: Inject print styles that force dark background */}
+        <style dangerouslySetInnerHTML={{ __html: printStyles }} />
 
         {pageNumbers.length === 0 ? (
           // Single page with all blocks if no page assignments
-          <div 
-            className="print-page"
-            style={{
-              width: pageDims.width,
-              minHeight: pageDims.height,
-              padding: '15mm 12mm',
-              boxSizing: 'border-box',
-              backgroundColor: 'white',
-              color: '#1a1a1a',
-            }}
-          >
-            <PrintHeader branding={branding} />
-            
-            <div className="space-y-4">
-              {enabledBlocks.map((block) => (
-                <PrintBlock
-                  key={block.id}
-                  block={block}
-                  holdings={holdings}
-                  performanceMetrics={performanceMetrics}
-                  riskMetrics={riskMetrics}
-                  totalValue={totalValue}
-                  branding={branding}
-                />
-              ))}
-            </div>
-
-            <PrintFooter 
-              branding={branding} 
-              pageNumber={1} 
-              totalPages={1} 
-            />
-          </div>
+          renderPage(enabledBlocks, 1, true)
         ) : (
-          pageNumbers.map((pageNum, idx) => (
-            <div 
-              key={pageNum}
-              className="print-page"
-              style={{
-                width: pageDims.width,
-                minHeight: pageDims.height,
-                padding: '15mm 12mm',
-                boxSizing: 'border-box',
-                backgroundColor: 'white',
-                color: '#1a1a1a',
-              }}
-            >
-              {/* Header on first page */}
-              {idx === 0 && <PrintHeader branding={branding} />}
-
-              <div className="space-y-4">
-                {blocksByPage[pageNum]?.map((block) => (
-                  <PrintBlock
-                    key={block.id}
-                    block={block}
-                    holdings={holdings}
-                    performanceMetrics={performanceMetrics}
-                    riskMetrics={riskMetrics}
-                    totalValue={totalValue}
-                    branding={branding}
-                  />
-                ))}
-              </div>
-
-              <PrintFooter 
-                branding={branding} 
-                pageNumber={idx + 1} 
-                totalPages={totalPages} 
-              />
-            </div>
-          ))
+          pageNumbers.map((pageNum, idx) => 
+            renderPage(blocksByPage[pageNum] || [], pageNum, idx === 0)
+          )
         )}
       </div>
     );
   }
 );
 
-// Print-optimized header
-function PrintHeader({ branding }: { branding: ReportBranding }) {
+// Dark theme print header
+function PrintHeader({ 
+  branding, 
+  colors 
+}: { 
+  branding: ReportBranding;
+  colors: typeof DARK_THEME;
+}) {
   return (
     <header 
       className="mb-6 pb-4"
-      style={{ borderBottom: `2px solid ${branding.accentColor || '#ff8c00'}` }}
+      style={{ 
+        borderBottom: `2px solid ${branding.accentColor || '#ff8c00'}`,
+      }}
     >
       <div className="flex items-start justify-between">
         <div>
           <h1 
-            className="text-2xl font-bold"
-            style={{ color: '#1a1a1a' }}
+            className="text-2xl font-bold print-text-primary"
+            style={{ color: colors.textPrimary }}
           >
             {branding.headerTitle || 'Investment Report'}
           </h1>
           {branding.headerSubtitle && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p 
+              className="text-sm mt-1 print-text-secondary"
+              style={{ color: colors.textSecondary }}
+            >
               {branding.headerSubtitle}
             </p>
           )}
         </div>
         
-        <div className="text-right text-sm text-gray-500">
+        <div 
+          className="text-right text-sm print-text-muted"
+          style={{ color: colors.textMuted }}
+        >
           <div>{format(new Date(), 'MMMM d, yyyy')}</div>
           {branding.analystName && (
             <div className="mt-1">Prepared by: {branding.analystName}</div>
@@ -260,24 +349,25 @@ function PrintHeader({ branding }: { branding: ReportBranding }) {
   );
 }
 
-// Print-optimized footer
+// Dark theme print footer
 function PrintFooter({ 
   branding, 
   pageNumber, 
-  totalPages 
+  totalPages,
+  colors,
 }: { 
   branding: ReportBranding; 
   pageNumber: number; 
   totalPages: number;
+  colors: typeof DARK_THEME;
 }) {
   return (
     <footer 
-      className="mt-auto pt-4 flex justify-between items-center text-xs text-gray-500"
+      className="pt-4 flex justify-between items-center text-xs print-text-muted"
       style={{ 
-        borderTop: '1px solid #e5e5e5',
+        borderTop: `1px solid ${colors.cardBorder}`,
         marginTop: 'auto',
-        position: 'relative',
-        bottom: 0,
+        color: colors.textMuted,
       }}
     >
       <div>
@@ -290,7 +380,7 @@ function PrintFooter({
   );
 }
 
-// Print-optimized block wrapper
+// Dark theme print block wrapper
 function PrintBlock({
   block,
   holdings,
@@ -298,6 +388,7 @@ function PrintBlock({
   riskMetrics,
   totalValue,
   branding,
+  colors,
 }: {
   block: ReportBlock;
   holdings: PortfolioHolding[];
@@ -305,20 +396,22 @@ function PrintBlock({
   riskMetrics: RiskMetrics | null;
   totalValue: number;
   branding: ReportBranding;
+  colors: typeof DARK_THEME;
 }) {
   return (
     <div 
       className="print-block"
+      data-block-id={block.id}
       style={{
         breakInside: 'avoid',
         pageBreakInside: 'avoid',
       }}
     >
       <div 
-        className="rounded-lg overflow-hidden"
+        className="print-card rounded-lg overflow-hidden"
         style={{
-          backgroundColor: '#fafafa',
-          border: '1px solid #e5e5e5',
+          backgroundColor: colors.cardBackground,
+          border: `1px solid ${colors.cardBorder}`,
           padding: '16px',
         }}
       >
@@ -337,3 +430,4 @@ function PrintBlock({
 }
 
 export { ReportPrintView };
+export type { ReportPrintViewProps };
