@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { MobileHeader } from './MobileHeader';
@@ -20,9 +20,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 export function DashboardLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { sampleDataMode } = usePortfolio();
   const [watchdogPanelOpen, setWatchdogPanelOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
+
+  // Page transition effect
+  useEffect(() => {
+    setIsPageTransitioning(true);
+    const timer = setTimeout(() => {
+      setIsPageTransitioning(false);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
   const { 
     validationResult, 
     isValidating, 
@@ -184,7 +195,15 @@ export function DashboardLayout() {
 
         {/* Main Content */}
         <main className="flex-1 p-2 md:p-4 pb-20 md:pb-4 overflow-x-hidden overflow-y-auto">
-          <Outlet />
+          <div 
+            className={`transition-all duration-200 ease-out ${
+              isPageTransitioning 
+                ? 'opacity-0 translate-y-2' 
+                : 'opacity-100 translate-y-0'
+            }`}
+          >
+            <Outlet />
+          </div>
         </main>
       </div>
 

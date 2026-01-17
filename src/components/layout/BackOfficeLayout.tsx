@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { CheckSquare, Activity, FolderKanban, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,16 @@ const tabs = [
 
 export function BackOfficeLayout() {
   const location = useLocation();
+  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
+
+  // Page transition effect
+  useEffect(() => {
+    setIsPageTransitioning(true);
+    const timer = setTimeout(() => {
+      setIsPageTransitioning(false);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
 
   // Check if current path is a project detail page
   const isProjectDetail = location.pathname.match(/^\/backoffice\/projects\/[^/]+$/);
@@ -46,8 +57,16 @@ export function BackOfficeLayout() {
         </nav>
       </div>
 
-      {/* Tab Content */}
-      <Outlet />
+      {/* Tab Content with transition */}
+      <div 
+        className={`transition-all duration-200 ease-out ${
+          isPageTransitioning 
+            ? 'opacity-0 translate-y-2' 
+            : 'opacity-100 translate-y-0'
+        }`}
+      >
+        <Outlet />
+      </div>
     </div>
   );
 }
