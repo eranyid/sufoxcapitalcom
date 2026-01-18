@@ -286,20 +286,32 @@ export const ANALYTICS_BLOCK_LIBRARY: AnalyticsBlockLibraryItem[] = [
 ];
 
 // Quick presets for common pipelines
+export type PresetCategory = 'returns' | 'risk' | 'correlation' | 'comparison';
+
 export interface QuickPreset {
   id: string;
   name: string;
   description: string;
   icon: string;
+  category: PresetCategory;
   blocks: Omit<AnalyticsBlock, 'id'>[];
 }
 
+export const PRESET_CATEGORIES: { id: PresetCategory; label: string }[] = [
+  { id: 'returns', label: 'Returns & Performance' },
+  { id: 'risk', label: 'Risk Analysis' },
+  { id: 'correlation', label: 'Correlation' },
+  { id: 'comparison', label: 'Comparison' },
+];
+
 export const QUICK_PRESETS: QuickPreset[] = [
+  // === RETURNS & PERFORMANCE ===
   {
     id: 'price_in_month',
     name: 'Price in Month',
     description: 'Get month-end price for selected assets',
     icon: 'DollarSign',
+    category: 'returns',
     blocks: [
       { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
       { type: 'date_range', position: 1, config: { preset: '1M' } as DateRangeConfig },
@@ -308,34 +320,11 @@ export const QUICK_PRESETS: QuickPreset[] = [
     ],
   },
   {
-    id: 'correlation_6m',
-    name: 'Correlation (6M)',
-    description: 'Correlation between two assets over 6 months',
-    icon: 'GitMerge',
-    blocks: [
-      { type: 'data_source', position: 0, config: { sourceType: 'returns', assets: [] } as DataSourceConfig },
-      { type: 'date_range', position: 1, config: { preset: '6M' } as DateRangeConfig },
-      { type: 'compute', position: 2, config: { function: 'correlation_pair' } as ComputeConfig },
-      { type: 'output', position: 3, config: { outputType: 'table', title: 'Correlation Analysis' } as OutputConfig },
-    ],
-  },
-  {
-    id: 'rolling_corr_90d',
-    name: 'Rolling Corr (90D)',
-    description: 'Rolling 90-day correlation chart',
-    icon: 'TrendingUp',
-    blocks: [
-      { type: 'data_source', position: 0, config: { sourceType: 'returns', assets: [] } as DataSourceConfig },
-      { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
-      { type: 'compute', position: 2, config: { function: 'rolling_correlation', rollingWindow: 90 } as ComputeConfig },
-      { type: 'output', position: 3, config: { outputType: 'line_chart', title: 'Rolling Correlation' } as OutputConfig },
-    ],
-  },
-  {
     id: 'monthly_returns',
     name: 'Monthly Returns Table',
     description: 'Monthly returns for selected assets',
     icon: 'Table',
+    category: 'returns',
     blocks: [
       { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
       { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
@@ -344,22 +333,11 @@ export const QUICK_PRESETS: QuickPreset[] = [
     ],
   },
   {
-    id: 'correlation_matrix',
-    name: 'Correlation Matrix',
-    description: 'Full correlation heatmap for multiple assets',
-    icon: 'Grid3x3',
-    blocks: [
-      { type: 'data_source', position: 0, config: { sourceType: 'returns', assets: [] } as DataSourceConfig },
-      { type: 'date_range', position: 1, config: { preset: '6M' } as DateRangeConfig },
-      { type: 'compute', position: 2, config: { function: 'correlation_matrix' } as ComputeConfig },
-      { type: 'output', position: 3, config: { outputType: 'heatmap', title: 'Correlation Matrix' } as OutputConfig },
-    ],
-  },
-  {
     id: 'total_return_cost_basis',
     name: 'Total Return (Cost Basis)',
-    description: 'Calculate total return including cost basis from transactions',
+    description: 'Calculate total return including cost basis',
     icon: 'TrendingUp',
+    category: 'returns',
     blocks: [
       { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
       { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
@@ -367,11 +345,14 @@ export const QUICK_PRESETS: QuickPreset[] = [
       { type: 'output', position: 3, config: { outputType: 'table', title: 'Total Return Analysis' } as OutputConfig },
     ],
   },
+  
+  // === RISK ANALYSIS ===
   {
     id: 'volatility_analysis',
     name: 'Volatility Analysis',
     description: 'Annualized volatility for selected assets',
     icon: 'Activity',
+    category: 'risk',
     blocks: [
       { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
       { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
@@ -384,6 +365,7 @@ export const QUICK_PRESETS: QuickPreset[] = [
     name: 'Drawdown Analysis',
     description: 'Maximum drawdown and recovery periods',
     icon: 'TrendingDown',
+    category: 'risk',
     blocks: [
       { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
       { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
@@ -396,6 +378,7 @@ export const QUICK_PRESETS: QuickPreset[] = [
     name: 'Risk-Adjusted Returns',
     description: 'Sharpe, Sortino, and Calmar ratios',
     icon: 'Shield',
+    category: 'risk',
     blocks: [
       { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
       { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
@@ -408,6 +391,7 @@ export const QUICK_PRESETS: QuickPreset[] = [
     name: 'VaR Analysis',
     description: 'Value at Risk at 95% and 99% confidence',
     icon: 'AlertTriangle',
+    category: 'risk',
     blocks: [
       { type: 'data_source', position: 0, config: { sourceType: 'returns', assets: [] } as DataSourceConfig },
       { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
@@ -416,27 +400,72 @@ export const QUICK_PRESETS: QuickPreset[] = [
     ],
   },
   {
-    id: 'benchmark_comparison',
-    name: 'Benchmark Comparison',
-    description: 'Compare portfolio vs S&P 500',
-    icon: 'GitCompare',
-    blocks: [
-      { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
-      { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
-      { type: 'compare', position: 2, config: { mode: 'vs_benchmark', benchmark: 'SPY' } as CompareConfig },
-      { type: 'output', position: 3, config: { outputType: 'line_chart', title: 'Benchmark Comparison' } as OutputConfig },
-    ],
-  },
-  {
     id: 'return_distribution',
     name: 'Return Distribution',
     description: 'Histogram of returns with skew/kurtosis',
     icon: 'BarChart2',
+    category: 'risk',
     blocks: [
       { type: 'data_source', position: 0, config: { sourceType: 'returns', assets: [] } as DataSourceConfig },
       { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
       { type: 'compute', position: 2, config: { function: 'histogram', bins: 20 } as ComputeConfig },
       { type: 'output', position: 3, config: { outputType: 'histogram', title: 'Return Distribution' } as OutputConfig },
+    ],
+  },
+  
+  // === CORRELATION ===
+  {
+    id: 'correlation_6m',
+    name: 'Correlation (6M)',
+    description: 'Correlation between two assets over 6 months',
+    icon: 'GitMerge',
+    category: 'correlation',
+    blocks: [
+      { type: 'data_source', position: 0, config: { sourceType: 'returns', assets: [] } as DataSourceConfig },
+      { type: 'date_range', position: 1, config: { preset: '6M' } as DateRangeConfig },
+      { type: 'compute', position: 2, config: { function: 'correlation_pair' } as ComputeConfig },
+      { type: 'output', position: 3, config: { outputType: 'table', title: 'Correlation Analysis' } as OutputConfig },
+    ],
+  },
+  {
+    id: 'rolling_corr_90d',
+    name: 'Rolling Corr (90D)',
+    description: 'Rolling 90-day correlation chart',
+    icon: 'TrendingUp',
+    category: 'correlation',
+    blocks: [
+      { type: 'data_source', position: 0, config: { sourceType: 'returns', assets: [] } as DataSourceConfig },
+      { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
+      { type: 'compute', position: 2, config: { function: 'rolling_correlation', rollingWindow: 90 } as ComputeConfig },
+      { type: 'output', position: 3, config: { outputType: 'line_chart', title: 'Rolling Correlation' } as OutputConfig },
+    ],
+  },
+  {
+    id: 'correlation_matrix',
+    name: 'Correlation Matrix',
+    description: 'Full correlation heatmap for multiple assets',
+    icon: 'Grid3x3',
+    category: 'correlation',
+    blocks: [
+      { type: 'data_source', position: 0, config: { sourceType: 'returns', assets: [] } as DataSourceConfig },
+      { type: 'date_range', position: 1, config: { preset: '6M' } as DateRangeConfig },
+      { type: 'compute', position: 2, config: { function: 'correlation_matrix' } as ComputeConfig },
+      { type: 'output', position: 3, config: { outputType: 'heatmap', title: 'Correlation Matrix' } as OutputConfig },
+    ],
+  },
+  
+  // === COMPARISON ===
+  {
+    id: 'benchmark_comparison',
+    name: 'Benchmark Comparison',
+    description: 'Compare portfolio vs S&P 500',
+    icon: 'GitCompare',
+    category: 'comparison',
+    blocks: [
+      { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
+      { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
+      { type: 'compare', position: 2, config: { mode: 'vs_benchmark', benchmark: 'SPY' } as CompareConfig },
+      { type: 'output', position: 3, config: { outputType: 'line_chart', title: 'Benchmark Comparison' } as OutputConfig },
     ],
   },
 ];
