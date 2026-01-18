@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, FlaskConical, Building2, HelpCircle, FileText, Banknote, FlaskRound } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, FlaskConical, Building2, HelpCircle, FileText, Banknote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import sufoxLogo from '@/assets/sufox-logo.png';
+import { LabIcon } from '@/components/icons/LabIcon';
 
 const navItems = [{
   path: '/',
@@ -51,7 +52,7 @@ const navItems = [{
   label: 'REPORTS'
 }, {
   path: '/lab',
-  icon: FlaskRound,
+  icon: LabIcon,
   label: 'LAB'
 }, {
   path: '/backoffice',
