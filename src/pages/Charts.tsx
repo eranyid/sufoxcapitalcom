@@ -200,27 +200,8 @@ export default function Charts() {
             </>
           ) : (
             <>
-              {/* Main Panel - Chart Canvas (expanded) */}
-              <div className="flex-1 flex flex-col min-w-0 bg-muted/20">
-                <div className="px-4 py-3 border-b border-border/50 bg-card/30">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                    Chart Canvas
-                  </h2>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Visualize your portfolio data
-                  </p>
-                </div>
-                <div className="flex-1 p-6 overflow-auto">
-                  <ChartCanvas
-                    result={result}
-                    state={state}
-                    isCalculating={isCalculating}
-                  />
-                </div>
-              </div>
-              
-              {/* Right Panel - Builder & Export */}
-              <div className="w-72 border-l border-border bg-card/30 flex flex-col shrink-0">
+              {/* Left Panel - Builder & Export */}
+              <div className="w-72 border-r border-border bg-card/30 flex flex-col shrink-0">
                 <div className="px-4 py-3 border-b border-border/50">
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
                     Chart Builder
@@ -282,6 +263,25 @@ export default function Charts() {
                   ) : (
                     <p className="text-[10px] text-muted-foreground">Configure chart to export</p>
                   )}
+                </div>
+              </div>
+              
+              {/* Main Panel - Chart Canvas (expanded) */}
+              <div className="flex-1 flex flex-col min-w-0 bg-muted/20">
+                <div className="px-4 py-3 border-b border-border/50 bg-card/30">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Chart Canvas
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Visualize your portfolio data
+                  </p>
+                </div>
+                <div className="flex-1 p-6 overflow-auto">
+                  <ChartCanvas
+                    result={result}
+                    state={state}
+                    isCalculating={isCalculating}
+                  />
                 </div>
               </div>
             </>
