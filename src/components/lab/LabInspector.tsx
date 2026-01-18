@@ -27,8 +27,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Common assets for selection
-const COMMON_ASSETS = [
+// Fallback common assets for when no real data is available
+const FALLBACK_ASSETS = [
   'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA',
   'BRK.B', 'JPM', 'JNJ', 'V', 'PG', 'UNH', 'HD', 'MA',
   'SPY', 'QQQ', 'IWM', 'TLT', 'GLD', 'VTI', 'VEA', 'VWO',
@@ -37,9 +37,15 @@ const COMMON_ASSETS = [
 interface LabInspectorProps {
   selectedBlock: AnalyticsBlock | null;
   onUpdateBlock: (blockId: string, config: any) => void;
+  /** Available assets from real database data */
+  availableAssets?: string[];
 }
 
-export function LabInspector({ selectedBlock, onUpdateBlock }: LabInspectorProps) {
+export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [] }: LabInspectorProps) {
+  // Use real assets if available, otherwise fallback
+  const assetsToShow = availableAssets.length > 0 ? availableAssets : FALLBACK_ASSETS;
+  const hasRealData = availableAssets.length > 0;
+  
   if (!selectedBlock) {
     return (
       <div className="h-full flex flex-col bg-card/50 border-l border-border">
@@ -104,21 +110,26 @@ export function LabInspector({ selectedBlock, onUpdateBlock }: LabInspectorProps
               </Badge>
             ))}
           </div>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {COMMON_ASSETS.filter(a => !config.assets.includes(a)).slice(0, 12).map((asset) => (
-              <button
-                key={asset}
-                onClick={() => {
-                  onUpdateBlock(selectedBlock.id, {
-                    ...config,
-                    assets: [...config.assets, asset],
-                  });
-                }}
-                className="text-[10px] px-1.5 py-0.5 rounded border border-dashed border-border hover:border-primary hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                + {asset}
-              </button>
-            ))}
+          <div className="mt-2">
+            {hasRealData && (
+              <p className="text-[10px] text-primary mb-1.5">From your portfolio:</p>
+            )}
+            <div className="flex flex-wrap gap-1">
+              {assetsToShow.filter(a => !config.assets.includes(a)).slice(0, 15).map((asset) => (
+                <button
+                  key={asset}
+                  onClick={() => {
+                    onUpdateBlock(selectedBlock.id, {
+                      ...config,
+                      assets: [...config.assets, asset],
+                    });
+                  }}
+                  className="text-[10px] px-1.5 py-0.5 rounded border border-dashed border-border hover:border-primary hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  + {asset}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

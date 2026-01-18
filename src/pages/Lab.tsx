@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { 
   Play, 
@@ -7,6 +7,8 @@ import {
   Trash2,
   FlaskConical,
   Plus,
+  Database,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -22,13 +24,17 @@ import {
   savePipeline,
   loadSavedPipelines,
   deletePipeline,
+  getAvailableAssets,
+  ValuationData,
 } from '@/lib/analyticsEngine';
+import { usePortfolio } from '@/context/PortfolioContext';
 import { LabBlockLibrary } from '@/components/lab/LabBlockLibrary';
 import { LabCanvas } from '@/components/lab/LabCanvas';
 import { LabInspector } from '@/components/lab/LabInspector';
 import { LabResultPanel } from '@/components/lab/LabResultPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -47,6 +53,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function Lab() {
+  // Get real portfolio data
+  const { valuations, transactions } = usePortfolio();
+  
+  // Convert to analytics engine format
+  const valuationData: ValuationData[] = useMemo(() => 
+    valuations.map(v => ({
+      ticker: v.ticker,
+      assetName: v.assetName,
+      month: v.month,
+      pricePerUnit: v.pricePerUnit,
+      fxRate: v.fxRate,
+    })), [valuations]
+  );
+  
+  // Get available assets from real data
+  const availableAssets = useMemo(() => getAvailableAssets(valuationData), [valuationData]);
+  
   const [blocks, setBlocks] = useState<AnalyticsBlock[]>([]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [pipelineName, setPipelineName] = useState('Untitled Pipeline');
@@ -154,7 +177,10 @@ export default function Lab() {
       updatedAt: new Date().toISOString(),
     };
 
-    const executionResult = executePipeline(pipeline);
+    // Execute with real data
+    const executionResult = executePipeline(pipeline, {
+      valuations: valuationData,
+    });
     setResult(executionResult);
     setIsRunning(false);
 
@@ -163,7 +189,7 @@ export default function Lab() {
     } else {
       toast.error(executionResult.error || 'Execution failed');
     }
-  }, [blocks, pipelineId, pipelineName]);
+  }, [blocks, pipelineId, pipelineName, valuationData]);
 
   const handleSave = useCallback(() => {
     if (blocks.length === 0) {
@@ -229,6 +255,17 @@ export default function Lab() {
                 placeholder="Pipeline name..."
               />
             </div>
+            {/* Data source indicator */}
+            <Badge 
+              variant={availableAssets.length > 0 ? "default" : "secondary"} 
+              className="text-[10px] gap-1"
+            >
+              <Database className="h-3 w-3" />
+              {availableAssets.length > 0 
+                ? `${availableAssets.length} assets from database`
+                : 'No valuation data'
+              }
+            </Badge>
           </div>
 
           <div className="flex items-center gap-2">
@@ -346,6 +383,7 @@ export default function Lab() {
             <LabInspector
               selectedBlock={selectedBlock}
               onUpdateBlock={handleUpdateBlock}
+              availableAssets={availableAssets}
             />
           </div>
         </div>
