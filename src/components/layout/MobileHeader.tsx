@@ -293,13 +293,46 @@ export function MobileHeader({
             currentTime={time}
           />
 
-          {/* Center: Clock (primary) + Date (secondary) - slightly reduced */}
-          <div className="flex flex-col items-center flex-1 min-w-0">
-            <span className="text-lg font-semibold font-mono text-primary tabular-nums leading-[1.1] tracking-tight">
+          {/* Center: System indicators + Clock (time only) */}
+          <div className="flex flex-col items-center flex-1 min-w-0 gap-1">
+            {/* System status indicators */}
+            <div className="flex items-center gap-2">
+              {/* Data OK pill */}
+              <button
+                onClick={onWatchdogClick}
+                className={`
+                  flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[9px] font-mono uppercase tracking-wider
+                  transition-colors
+                  ${status === 'ok' 
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                    : status === 'warning'
+                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                    : 'bg-destructive/15 text-destructive border border-destructive/30'
+                  }
+                `}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  status === 'ok' ? 'bg-emerald-400' : status === 'warning' ? 'bg-amber-400' : 'bg-destructive'
+                }`} />
+                {status === 'ok' ? 'Data OK' : status === 'warning' ? `${warningCount} Warn` : `${errorCount} Err`}
+              </button>
+              
+              {/* Online indicator */}
+              <span className={`
+                flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[9px] font-mono uppercase tracking-wider
+                ${isOnline 
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                  : 'bg-destructive/15 text-destructive border border-destructive/30'
+                }
+              `}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-destructive'}`} />
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+            
+            {/* Clock - time only, reduced size */}
+            <span className="text-base font-semibold font-mono text-primary tabular-nums leading-none tracking-tight">
               {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-            </span>
-            <span className="text-sm font-normal font-mono text-muted-foreground/75 tabular-nums mt-0.5">
-              {time.toLocaleDateString('en-GB')}
             </span>
           </div>
 
