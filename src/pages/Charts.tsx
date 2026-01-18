@@ -3,10 +3,10 @@ import { Helmet } from 'react-helmet-async';
 import { 
   BarChart3, 
   RefreshCw, 
-  Save,
-  PanelLeftClose,
-  PanelLeft,
   Bookmark,
+  Download,
+  FileText,
+  Settings2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -34,7 +34,6 @@ export default function Charts() {
   const [state, setState] = useState<ChartBuilderState>(getDefaultChartState);
   const [result, setResult] = useState<ChartResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   
   // Get available assets from transactions
@@ -50,35 +49,29 @@ export default function Charts() {
   
   // Calculate chart data when state changes
   useEffect(() => {
-    // Only calculate if we have data
     if (transactions.length === 0 && valuations.length === 0) {
       setResult(null);
       return;
     }
     
-    // Use all assets if none selected
     const effectiveAssets = state.assets.length > 0 
       ? state.assets 
       : availableAssets.map(a => a.ticker);
     
-    // Don't calculate if no assets available
     if (effectiveAssets.length === 0) {
       setResult(null);
       return;
     }
     
-    // Debounce calculation
     const timer = setTimeout(() => {
       setIsCalculating(true);
       
-      // Small delay for UI feedback
       setTimeout(() => {
         const effectiveState = {
           ...state,
           assets: effectiveAssets,
         };
         
-        // TODO: Get benchmark returns from settings
         const benchmarkReturns = settings.benchmarkReturns 
           ? Object.values(settings.benchmarkReturns).map(v => Number(v))
           : undefined;
@@ -98,18 +91,15 @@ export default function Charts() {
     return () => clearTimeout(timer);
   }, [state, transactions, valuations, availableAssets, settings.benchmarkReturns]);
   
-  // Handle state updates
   const handleStateChange = useCallback((updates: Partial<ChartBuilderState>) => {
     setState(prev => ({ ...prev, ...updates }));
   }, []);
   
-  // Reset to defaults
   const handleReset = useCallback(() => {
     setState(getDefaultChartState());
     toast.success('Reset to defaults');
   }, []);
   
-  // Save current view (to localStorage)
   const handleSaveView = useCallback(() => {
     try {
       const savedViews = JSON.parse(localStorage.getItem('chart-saved-views') || '[]');
@@ -127,7 +117,6 @@ export default function Charts() {
     }
   }, [state]);
   
-  // Builder panel content
   const builderContent = (
     <ChartBuilderPanel
       state={state}
@@ -144,14 +133,17 @@ export default function Charts() {
       </Helmet>
       
       <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
-        {/* Toolbar */}
+        {/* Toolbar - matching Lab style */}
         <div className="border-b border-border bg-card/50 px-4 py-2 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-semibold">Charts</h1>
+              <span className="text-sm font-medium">Charts</span>
             </div>
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge 
+              variant={availableAssets.length > 0 ? "default" : "secondary"} 
+              className="text-[10px] gap-1"
+            >
               {availableAssets.length} assets
             </Badge>
           </div>
@@ -175,28 +167,11 @@ export default function Charts() {
               <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
               Reset
             </Button>
-            
-            {/* Desktop panel toggle */}
-            {!isMobile && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => setIsPanelOpen(!isPanelOpen)}
-              >
-                {isPanelOpen ? (
-                  <PanelLeftClose className="h-4 w-4" />
-                ) : (
-                  <PanelLeft className="h-4 w-4" />
-                )}
-              </Button>
-            )}
           </div>
         </div>
         
-        {/* Main content */}
+        {/* Main content - 3 panel layout like Lab */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Mobile: Sheet drawer */}
           {isMobile ? (
             <>
               <Sheet open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
@@ -204,7 +179,7 @@ export default function Charts() {
                   <Button
                     variant="default"
                     size="sm"
-                    className="fixed bottom-4 left-4 z-50 shadow-lg"
+                    className="fixed bottom-20 left-4 z-50 shadow-lg"
                   >
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Builder
@@ -215,7 +190,6 @@ export default function Charts() {
                 </SheetContent>
               </Sheet>
               
-              {/* Chart canvas - full width on mobile */}
               <div className="flex-1 p-4">
                 <ChartCanvas
                   result={result}
@@ -226,20 +200,113 @@ export default function Charts() {
             </>
           ) : (
             <>
-              {/* Desktop: Side panel */}
-              {isPanelOpen && (
-                <div className="w-72 border-r border-border bg-card/30 shrink-0">
+              {/* Left Panel - Builder (like BLOCKS LIBRARY) */}
+              <div className="w-80 border-r border-border bg-card/30 flex flex-col shrink-0">
+                <div className="px-4 py-3 border-b border-border/50">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Chart Builder
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Configure chart parameters
+                  </p>
+                </div>
+                <div className="flex-1 overflow-hidden">
                   {builderContent}
                 </div>
-              )}
+              </div>
               
-              {/* Chart canvas */}
-              <div className="flex-1 p-4">
-                <ChartCanvas
-                  result={result}
-                  state={state}
-                  isCalculating={isCalculating}
-                />
+              {/* Center Panel - Chart Canvas (like PIPELINE CANVAS) */}
+              <div className="flex-1 flex flex-col min-w-0">
+                <div className="px-4 py-3 border-b border-border/50">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Chart Canvas
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Visualize your data
+                  </p>
+                </div>
+                <div className="flex-1 p-4 overflow-auto">
+                  <ChartCanvas
+                    result={result}
+                    state={state}
+                    isCalculating={isCalculating}
+                  />
+                </div>
+              </div>
+              
+              {/* Right Panel - Inspector (like Lab INSPECTOR) */}
+              <div className="w-64 border-l border-border bg-card/30 flex flex-col shrink-0">
+                <div className="px-4 py-3 border-b border-border/50">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Export
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Download chart data
+                  </p>
+                </div>
+                <div className="flex-1 p-4 flex flex-col">
+                  {result ? (
+                    <div className="space-y-4">
+                      {/* Export buttons */}
+                      <div className="space-y-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-9 justify-start text-xs"
+                          onClick={() => toast.info('PNG export coming soon')}
+                        >
+                          <Download className="h-3.5 w-3.5 mr-2" />
+                          Export as PNG
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-9 justify-start text-xs"
+                          onClick={() => toast.info('PDF export coming soon')}
+                        >
+                          <FileText className="h-3.5 w-3.5 mr-2" />
+                          Export as PDF
+                        </Button>
+                      </div>
+                      
+                      {/* Result summary */}
+                      <div className="pt-4 border-t border-border/50">
+                        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                          Chart Info
+                        </h3>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Type</span>
+                            <span className="font-mono">{result.dataType}</span>
+                          </div>
+                          {result.metadata && (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Assets</span>
+                                <span className="font-mono">{result.metadata.assetsWithData.length}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Start</span>
+                                <span className="font-mono text-[10px]">{result.metadata.dateRange.start}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">End</span>
+                                <span className="font-mono text-[10px]">{result.metadata.dateRange.end}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <Settings2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                        <p className="text-xs">Configure chart to see export options</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
