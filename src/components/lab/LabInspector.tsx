@@ -276,6 +276,9 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
             <SelectContent>
               <SelectItem value="price_at_month_end">Price at Month End</SelectItem>
               <SelectItem value="return_over_period">Return Over Period</SelectItem>
+              <SelectItem value="total_return_with_cost_basis">Total Return (Cost Basis)</SelectItem>
+              <SelectItem value="volatility">Volatility</SelectItem>
+              <SelectItem value="sharpe_ratio">Sharpe Ratio</SelectItem>
               <SelectItem value="correlation_pair">Correlation (2 Assets)</SelectItem>
               <SelectItem value="correlation_matrix">Correlation Matrix</SelectItem>
               <SelectItem value="rolling_correlation">Rolling Correlation</SelectItem>
@@ -296,6 +299,31 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
               min={7}
               max={365}
             />
+          </div>
+        )}
+        
+        {config.function === 'sharpe_ratio' && (
+          <div>
+            <Label className="text-xs">Risk-Free Rate (%)</Label>
+            <Input
+              type="number"
+              value={(config.riskFreeRate ?? 0.04) * 100}
+              onChange={(e) => 
+                onUpdateBlock(selectedBlock.id, { ...config, riskFreeRate: parseFloat(e.target.value) / 100 })
+              }
+              className="h-8 text-xs mt-1"
+              step={0.1}
+              min={0}
+              max={20}
+            />
+          </div>
+        )}
+        
+        {config.function === 'total_return_with_cost_basis' && (
+          <div className="p-2 bg-muted/50 rounded-md">
+            <p className="text-[10px] text-muted-foreground">
+              Calculates total return using cost basis from your transaction history.
+            </p>
           </div>
         )}
       </div>

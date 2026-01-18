@@ -67,8 +67,24 @@ export default function Lab() {
     })), [valuations]
   );
   
-  // Get available assets from real data
-  const availableAssets = useMemo(() => getAvailableAssets(valuationData), [valuationData]);
+  // Convert transactions to analytics engine format
+  const transactionData = useMemo(() => 
+    transactions.map(t => ({
+      ticker: t.ticker,
+      assetName: t.assetName,
+      date: t.date,
+      pricePerUnit: t.pricePerUnit,
+      quantity: t.quantity,
+      transactionType: t.transactionType as 'buy' | 'sell',
+      costBase: t.costBase,
+      costLocal: t.costLocal,
+      currency: t.currency,
+      fees: t.fees,
+    })), [transactions]
+  );
+  
+  // Get available assets from real data (valuations + transactions)
+  const availableAssets = useMemo(() => getAvailableAssets(valuationData, transactionData), [valuationData, transactionData]);
   
   const [blocks, setBlocks] = useState<AnalyticsBlock[]>([]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
@@ -177,9 +193,10 @@ export default function Lab() {
       updatedAt: new Date().toISOString(),
     };
 
-    // Execute with real data
+    // Execute with real data (valuations + transactions)
     const executionResult = executePipeline(pipeline, {
       valuations: valuationData,
+      transactions: transactionData,
     });
     setResult(executionResult);
     setIsRunning(false);
@@ -189,7 +206,7 @@ export default function Lab() {
     } else {
       toast.error(executionResult.error || 'Execution failed');
     }
-  }, [blocks, pipelineId, pipelineName, valuationData]);
+  }, [blocks, pipelineId, pipelineName, valuationData, transactionData]);
 
   const handleSave = useCallback(() => {
     if (blocks.length === 0) {
@@ -262,8 +279,8 @@ export default function Lab() {
             >
               <Database className="h-3 w-3" />
               {availableAssets.length > 0 
-                ? `${availableAssets.length} assets from database`
-                : 'No valuation data'
+                ? `${availableAssets.length} assets • ${transactions.length} txns`
+                : 'No data'
               }
             </Badge>
           </div>

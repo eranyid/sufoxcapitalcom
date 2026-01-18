@@ -29,6 +29,10 @@ export interface TransactionData {
   pricePerUnit: number;
   quantity: number;
   transactionType: 'buy' | 'sell';
+  costBase?: number;
+  costLocal?: number;
+  currency?: string;
+  fees?: number;
 }
 
 interface PipelineContext {
@@ -43,10 +47,72 @@ interface PipelineContext {
 }
 
 // Get unique tickers from valuations
-export function getAvailableAssets(valuations: ValuationData[]): string[] {
+export function getAvailableAssets(valuations: ValuationData[], transactions?: TransactionData[]): string[] {
   const tickers = new Set<string>();
   valuations.forEach(v => tickers.add(v.ticker));
+  transactions?.forEach(t => tickers.add(t.ticker));
   return Array.from(tickers).sort();
+}
+
+// Calculate cost basis from transactions
+function calculateCostBasis(
+  transactions: TransactionData[],
+  ticker: string,
+  dateRange: { start: string; end: string }
+): { totalCost: number; totalQuantity: number; avgCostPerUnit: number } {
+  const relevantTxns = transactions.filter(
+    t => t.ticker === ticker && 
+         t.date >= dateRange.start && 
+         t.date <= dateRange.end
+  );
+  
+  let totalCost = 0;
+  let totalQuantity = 0;
+  
+  relevantTxns.forEach(txn => {
+    if (txn.transactionType === 'buy') {
+      const cost = txn.costBase ?? (txn.pricePerUnit * txn.quantity + (txn.fees || 0));
+      totalCost += cost;
+      totalQuantity += txn.quantity;
+    } else if (txn.transactionType === 'sell') {
+      // For sells, we reduce quantity proportionally
+      if (totalQuantity > 0) {
+        const avgCost = totalCost / totalQuantity;
+        const soldCost = avgCost * txn.quantity;
+        totalCost -= soldCost;
+        totalQuantity -= txn.quantity;
+      }
+    }
+  });
+  
+  return {
+    totalCost: Math.max(0, totalCost),
+    totalQuantity: Math.max(0, totalQuantity),
+    avgCostPerUnit: totalQuantity > 0 ? totalCost / totalQuantity : 0,
+  };
+}
+
+// Calculate annualized volatility
+function calculateVolatility(returns: number[], periodsPerYear: number = 252): number {
+  if (returns.length < 2) return 0;
+  
+  const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+  const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (returns.length - 1);
+  const stdDev = Math.sqrt(variance);
+  
+  return stdDev * Math.sqrt(periodsPerYear);
+}
+
+// Calculate Sharpe ratio
+function calculateSharpeRatio(returns: number[], riskFreeRate: number = 0.04, periodsPerYear: number = 252): number {
+  if (returns.length < 2) return 0;
+  
+  const meanReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+  const annualizedReturn = meanReturn * periodsPerYear;
+  const volatility = calculateVolatility(returns, periodsPerYear);
+  
+  if (volatility === 0) return 0;
+  return (annualizedReturn - riskFreeRate) / volatility;
 }
 
 // Build price series from real valuations
@@ -448,6 +514,100 @@ function processBlock(block: AnalyticsBlock, context: PipelineContext): Pipeline
               dates: rollingDates,
             } 
           };
+        }
+        
+        case 'total_return_with_cost_basis': {
+          const result: Record<string, { 
+            currentPrice: number; 
+            costBasis: number; 
+            quantity: number;
+            marketValue: number;
+            totalReturn: number;
+            returnPct: number;
+          }> = {};
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset];
+            const currentPrice = prices && prices.length > 0 ? prices[prices.length - 1] : 0;
+            
+            // Calculate cost basis from transactions
+            const costBasisData = context.rawTransactions 
+              ? calculateCostBasis(context.rawTransactions, asset, context.dateRange)
+              : { totalCost: 0, totalQuantity: 0, avgCostPerUnit: 0 };
+            
+            const marketValue = currentPrice * costBasisData.totalQuantity;
+            const totalReturn = marketValue - costBasisData.totalCost;
+            const returnPct = costBasisData.totalCost > 0 
+              ? (totalReturn / costBasisData.totalCost) 
+              : 0;
+            
+            result[asset] = {
+              currentPrice,
+              costBasis: costBasisData.avgCostPerUnit,
+              quantity: costBasisData.totalQuantity,
+              marketValue,
+              totalReturn,
+              returnPct,
+            };
+          });
+          
+          return { ...context, computeResult: result };
+        }
+        
+        case 'volatility': {
+          const result: Record<string, { 
+            dailyVol: number; 
+            annualizedVol: number;
+            dataPoints: number;
+          }> = {};
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset];
+            const returns = calculateReturns(prices || []);
+            const annualizedVol = calculateVolatility(returns);
+            const dailyVol = returns.length > 0 
+              ? Math.sqrt(returns.reduce((sum, r) => sum + r * r, 0) / returns.length)
+              : 0;
+            
+            result[asset] = {
+              dailyVol,
+              annualizedVol,
+              dataPoints: returns.length,
+            };
+          });
+          
+          return { ...context, computeResult: result };
+        }
+        
+        case 'sharpe_ratio': {
+          const result: Record<string, { 
+            sharpeRatio: number;
+            annualizedReturn: number;
+            annualizedVol: number;
+            riskFreeRate: number;
+          }> = {};
+          
+          const riskFreeRate = config.riskFreeRate ?? 0.04;
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset];
+            const returns = calculateReturns(prices || []);
+            const sharpe = calculateSharpeRatio(returns, riskFreeRate);
+            const annualizedVol = calculateVolatility(returns);
+            const meanReturn = returns.length > 0 
+              ? returns.reduce((a, b) => a + b, 0) / returns.length 
+              : 0;
+            const annualizedReturn = meanReturn * 252;
+            
+            result[asset] = {
+              sharpeRatio: sharpe,
+              annualizedReturn,
+              annualizedVol,
+              riskFreeRate,
+            };
+          });
+          
+          return { ...context, computeResult: result };
         }
         
         default:
