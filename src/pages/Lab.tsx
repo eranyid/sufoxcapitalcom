@@ -621,7 +621,7 @@ export default function Lab() {
             </div>
 
             {/* Right Panel - Inspector */}
-            <div className="w-64 shrink-0">
+            <div className="w-52 shrink-0">
               <LabInspector
                 selectedBlock={selectedBlock}
                 onUpdateBlock={handleUpdateBlock}
