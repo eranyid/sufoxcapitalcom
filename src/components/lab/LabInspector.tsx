@@ -35,46 +35,50 @@ const FALLBACK_ASSETS = [
 ];
 
 // Define which compute functions are available for each data source type
-const COMPUTE_FUNCTIONS_BY_SOURCE: Record<string, { value: string; label: string }[]> = {
+// Functions are filtered based on what makes sense for prices vs returns data
+const COMPUTE_FUNCTIONS_BY_SOURCE: Record<string, { value: string; label: string; description?: string }[]> = {
   prices: [
-    { value: 'price_at_month_end', label: 'Price at Month End' },
-    { value: 'return_over_period', label: 'Return Over Period' },
-    { value: 'cagr', label: 'CAGR' },
-    { value: 'price_statistics', label: 'Price Statistics' },
-    { value: 'volatility', label: 'Volatility' },
-    { value: 'rolling_volatility', label: 'Rolling Volatility' },
-    { value: 'drawdown_analysis', label: 'Drawdown Analysis' },
-    { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)' },
+    // Price-native functions (work directly on price data)
+    { value: 'price_at_month_end', label: 'Price at Month End', description: 'Last available price in period' },
+    { value: 'price_statistics', label: 'Price Statistics', description: 'Min, max, mean, median, std dev' },
+    { value: 'return_over_period', label: 'Return Over Period', description: 'Start to end price change' },
+    { value: 'cagr', label: 'CAGR', description: 'Compound annual growth rate' },
+    { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)', description: 'P&L vs cost basis from transactions' },
+    { value: 'drawdown_analysis', label: 'Drawdown Analysis', description: 'Max drawdown & recovery periods' },
+    // Functions that calculate returns internally from prices
+    { value: 'volatility', label: 'Volatility', description: 'Annualized price volatility' },
+    { value: 'rolling_volatility', label: 'Rolling Volatility', description: 'Rolling window volatility chart' },
   ],
   returns: [
-    { value: 'return_over_period', label: 'Return Over Period' },
-    { value: 'correlation_pair', label: 'Correlation (2 Assets)' },
-    { value: 'correlation_matrix', label: 'Correlation Matrix' },
-    { value: 'rolling_correlation', label: 'Rolling Correlation' },
-    { value: 'volatility', label: 'Volatility' },
-    { value: 'rolling_volatility', label: 'Rolling Volatility' },
-    { value: 'sharpe_ratio', label: 'Sharpe Ratio' },
-    { value: 'sortino_ratio', label: 'Sortino Ratio' },
-    { value: 'beta', label: 'Beta (vs Benchmark)' },
-    { value: 'var_analysis', label: 'VaR Analysis' },
-    { value: 'cagr', label: 'CAGR' },
+    // Return-native functions (designed for return series)
+    { value: 'return_over_period', label: 'Cumulative Return', description: 'Sum of returns over period' },
+    { value: 'volatility', label: 'Volatility', description: 'Annualized return volatility' },
+    { value: 'rolling_volatility', label: 'Rolling Volatility', description: 'Rolling window volatility chart' },
+    { value: 'sharpe_ratio', label: 'Sharpe Ratio', description: 'Risk-adjusted return (vs risk-free)' },
+    { value: 'sortino_ratio', label: 'Sortino Ratio', description: 'Downside risk-adjusted return' },
+    { value: 'var_analysis', label: 'VaR Analysis', description: 'Value at Risk 95/99 & CVaR' },
+    { value: 'beta', label: 'Beta (vs Benchmark)', description: 'Market sensitivity coefficient' },
+    // Correlation functions (require return series)
+    { value: 'correlation_pair', label: 'Correlation (2 Assets)', description: 'Pearson correlation coefficient' },
+    { value: 'correlation_matrix', label: 'Correlation Matrix', description: 'Full pairwise correlation heatmap' },
+    { value: 'rolling_correlation', label: 'Rolling Correlation', description: 'Time-varying correlation chart' },
   ],
 };
 
-// All compute functions for fallback
+// All compute functions for fallback (when no data source selected)
 const ALL_COMPUTE_FUNCTIONS = [
   { value: 'price_at_month_end', label: 'Price at Month End' },
-  { value: 'return_over_period', label: 'Return Over Period' },
-  { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)' },
-  { value: 'cagr', label: 'CAGR' },
   { value: 'price_statistics', label: 'Price Statistics' },
+  { value: 'return_over_period', label: 'Return Over Period' },
+  { value: 'cagr', label: 'CAGR' },
+  { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)' },
+  { value: 'drawdown_analysis', label: 'Drawdown Analysis' },
   { value: 'volatility', label: 'Volatility' },
   { value: 'rolling_volatility', label: 'Rolling Volatility' },
   { value: 'sharpe_ratio', label: 'Sharpe Ratio' },
   { value: 'sortino_ratio', label: 'Sortino Ratio' },
-  { value: 'beta', label: 'Beta (vs Benchmark)' },
   { value: 'var_analysis', label: 'VaR Analysis' },
-  { value: 'drawdown_analysis', label: 'Drawdown Analysis' },
+  { value: 'beta', label: 'Beta (vs Benchmark)' },
   { value: 'correlation_pair', label: 'Correlation (2 Assets)' },
   { value: 'correlation_matrix', label: 'Correlation Matrix' },
   { value: 'rolling_correlation', label: 'Rolling Correlation' },
