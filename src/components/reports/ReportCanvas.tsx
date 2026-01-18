@@ -34,6 +34,7 @@ import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { useBlockResize } from '@/hooks/useBlockResize';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { DottedGridBackground } from '@/components/DottedGridBackground';
 
 interface SortableBlockProps {
   block: ReportBlock;
@@ -412,6 +413,18 @@ export function ReportCanvas({
             }}
             onClick={() => onSelectBlock(null)}
           >
+            {/* Dotted grid background for terminal canvas effect */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(circle, hsl(var(--foreground) / 0.04) 1px, transparent 1px)`,
+                backgroundSize: '16px 16px',
+                maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)',
+              }}
+              aria-hidden="true"
+            />
+
             {/* Confidential Watermark */}
             {branding.showConfidentialWatermark && (
               <div 
@@ -433,7 +446,7 @@ export function ReportCanvas({
             {/* Page header accent - with optional gradient */}
             <div 
               className={cn(
-                "h-1 transition-all duration-300",
+                "h-1 transition-all duration-300 relative z-10",
                 isLibraryDragging && "h-2"
               )}
               style={{ 
@@ -445,7 +458,7 @@ export function ReportCanvas({
             {/* Page content grid */}
             <div 
               className={cn(
-                "p-4 md:p-6 transition-all duration-300",
+                "p-4 md:p-6 transition-all duration-300 relative z-10",
                 isLibraryDragging && "bg-primary/5"
               )}
               style={{
