@@ -277,8 +277,14 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
               <SelectItem value="price_at_month_end">Price at Month End</SelectItem>
               <SelectItem value="return_over_period">Return Over Period</SelectItem>
               <SelectItem value="total_return_with_cost_basis">Total Return (Cost Basis)</SelectItem>
+              <SelectItem value="cagr">CAGR</SelectItem>
+              <SelectItem value="price_statistics">Price Statistics</SelectItem>
               <SelectItem value="volatility">Volatility</SelectItem>
+              <SelectItem value="rolling_volatility">Rolling Volatility</SelectItem>
               <SelectItem value="sharpe_ratio">Sharpe Ratio</SelectItem>
+              <SelectItem value="sortino_ratio">Sortino Ratio</SelectItem>
+              <SelectItem value="beta">Beta (vs Benchmark)</SelectItem>
+              <SelectItem value="var_analysis">VaR Analysis</SelectItem>
               <SelectItem value="drawdown_analysis">Drawdown Analysis</SelectItem>
               <SelectItem value="correlation_pair">Correlation (2 Assets)</SelectItem>
               <SelectItem value="correlation_matrix">Correlation Matrix</SelectItem>
@@ -287,12 +293,12 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
           </Select>
         </div>
         
-        {config.function === 'rolling_correlation' && (
+        {(config.function === 'rolling_correlation' || config.function === 'rolling_volatility') && (
           <div>
             <Label className="text-xs">Rolling Window (days)</Label>
             <Input
               type="number"
-              value={config.rollingWindow || 90}
+              value={config.rollingWindow || (config.function === 'rolling_volatility' ? 30 : 90)}
               onChange={(e) => 
                 onUpdateBlock(selectedBlock.id, { ...config, rollingWindow: parseInt(e.target.value) })
               }
@@ -303,7 +309,7 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
           </div>
         )}
         
-        {config.function === 'sharpe_ratio' && (
+        {(config.function === 'sharpe_ratio' || config.function === 'sortino_ratio') && (
           <div>
             <Label className="text-xs">Risk-Free Rate (%)</Label>
             <Input
@@ -320,6 +326,31 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
           </div>
         )}
         
+        {config.function === 'beta' && (
+          <div>
+            <Label className="text-xs">Benchmark Asset</Label>
+            <Input
+              value={config.benchmarkAsset || 'SPY'}
+              onChange={(e) => 
+                onUpdateBlock(selectedBlock.id, { ...config, benchmarkAsset: e.target.value })
+              }
+              className="h-8 text-xs mt-1"
+              placeholder="SPY, QQQ, etc."
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Asset to compare against (must be in data source)
+            </p>
+          </div>
+        )}
+        
+        {config.function === 'var_analysis' && (
+          <div className="p-2 bg-muted/50 rounded-md">
+            <p className="text-[10px] text-muted-foreground">
+              Calculates Value at Risk (95% & 99%), Conditional VaR, and worst day analysis.
+            </p>
+          </div>
+        )}
+        
         {config.function === 'total_return_with_cost_basis' && (
           <div className="p-2 bg-muted/50 rounded-md">
             <p className="text-[10px] text-muted-foreground">
@@ -332,6 +363,30 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
           <div className="p-2 bg-muted/50 rounded-md">
             <p className="text-[10px] text-muted-foreground">
               Calculates maximum drawdown, recovery periods, and current drawdown from price data.
+            </p>
+          </div>
+        )}
+        
+        {config.function === 'cagr' && (
+          <div className="p-2 bg-muted/50 rounded-md">
+            <p className="text-[10px] text-muted-foreground">
+              Compound Annual Growth Rate over the selected period.
+            </p>
+          </div>
+        )}
+        
+        {config.function === 'price_statistics' && (
+          <div className="p-2 bg-muted/50 rounded-md">
+            <p className="text-[10px] text-muted-foreground">
+              Min, max, mean, median, standard deviation, and current vs average.
+            </p>
+          </div>
+        )}
+        
+        {config.function === 'sortino_ratio' && (
+          <div className="p-2 bg-muted/50 rounded-md">
+            <p className="text-[10px] text-muted-foreground">
+              Like Sharpe but uses only downside deviation (negative returns).
             </p>
           </div>
         )}
