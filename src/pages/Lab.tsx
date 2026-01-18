@@ -541,19 +541,16 @@ export default function Lab() {
                 Save
               </Button>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleClear}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Clear Pipeline
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-muted-foreground hover:text-destructive hover:border-destructive/50" 
+                onClick={handleClear}
+                disabled={blocks.length === 0 && !result}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Clear
+              </Button>
 
               {/* Run button with validation indicator */}
               <div className="flex items-center gap-2">
