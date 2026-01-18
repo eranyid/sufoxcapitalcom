@@ -22,13 +22,17 @@ import {
 } from '@/types/analyticsLab';
 import { 
   executePipeline, 
-  validatePipeline,
+  validatePipeline as validatePipelineSimple,
   savePipeline,
   loadSavedPipelines,
   deletePipeline,
   getAvailableAssets,
   ValuationData,
 } from '@/lib/analyticsEngine';
+import { 
+  validatePipeline as validatePipelineDetailed,
+  ValidationError,
+} from '@/lib/pipelineValidation';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { LabBlockLibrary, LIBRARY_ICON_MAP } from '@/components/lab/LabBlockLibrary';
@@ -124,6 +128,13 @@ export default function Lab() {
   const [activeDragBlockType, setActiveDragBlockType] = useState<AnalyticsBlockType | null>(null);
   const [activeDragBlockId, setActiveDragBlockId] = useState<string | null>(null);
   const [isOverCanvas, setIsOverCanvas] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  
+  // Compute validation errors whenever blocks change
+  useEffect(() => {
+    const errors = validatePipelineDetailed(blocks);
+    setValidationErrors(errors);
+  }, [blocks]);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -269,9 +280,13 @@ export default function Lab() {
   }, []);
 
   const handleRun = useCallback(async () => {
-    const validation = validatePipeline(blocks);
-    if (!validation.valid) {
-      toast.error(validation.errors[0]);
+    // Use detailed validation and check for errors
+    const errors = validatePipelineDetailed(blocks);
+    const hasErrors = errors.some(e => e.severity === 'error');
+    
+    if (hasErrors) {
+      const firstError = errors.find(e => e.severity === 'error');
+      toast.error(firstError?.message || 'Pipeline has validation errors');
       return;
     }
 
@@ -540,15 +555,35 @@ export default function Lab() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button 
-                size="sm" 
-                className="h-8"
-                onClick={handleRun}
-                disabled={blocks.length === 0 || isRunning}
-              >
-                <Play className="h-3.5 w-3.5 mr-1.5" />
-                Run
-              </Button>
+              {/* Run button with validation indicator */}
+              <div className="flex items-center gap-2">
+                {validationErrors.length > 0 && (
+                  <div className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium",
+                    validationErrors.some(e => e.severity === 'error')
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  )}>
+                    <AlertCircle className="h-3 w-3" />
+                    {validationErrors.filter(e => e.severity === 'error').length > 0 
+                      ? `${validationErrors.filter(e => e.severity === 'error').length} error${validationErrors.filter(e => e.severity === 'error').length !== 1 ? 's' : ''}`
+                      : `${validationErrors.length} warning${validationErrors.length !== 1 ? 's' : ''}`
+                    }
+                  </div>
+                )}
+                <Button 
+                  size="sm" 
+                  className={cn(
+                    "h-8",
+                    validationErrors.some(e => e.severity === 'error') && "opacity-80"
+                  )}
+                  onClick={handleRun}
+                  disabled={blocks.length === 0 || isRunning || validationErrors.some(e => e.severity === 'error')}
+                >
+                  <Play className="h-3.5 w-3.5 mr-1.5" />
+                  Run
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -574,6 +609,7 @@ export default function Lab() {
                   onReorderBlocks={handleReorderBlocks}
                   isDropTarget={isOverCanvas}
                   activeDragId={activeDragBlockId}
+                  validationErrors={validationErrors}
                 />
               </div>
 
