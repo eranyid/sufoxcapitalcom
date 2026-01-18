@@ -170,7 +170,7 @@ export default function Charts() {
           </div>
         </div>
         
-        {/* Main content - 3 panel layout like Lab */}
+        {/* Main content - 2 panel layout */}
         <div className="flex-1 flex overflow-hidden">
           {isMobile ? (
             <>
@@ -200,32 +200,17 @@ export default function Charts() {
             </>
           ) : (
             <>
-              {/* Left Panel - Builder (like BLOCKS LIBRARY) */}
-              <div className="w-80 border-r border-border bg-card/30 flex flex-col shrink-0">
-                <div className="px-4 py-3 border-b border-border/50">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                    Chart Builder
-                  </h2>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Configure chart parameters
-                  </p>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  {builderContent}
-                </div>
-              </div>
-              
-              {/* Center Panel - Chart Canvas (like PIPELINE CANVAS) */}
-              <div className="flex-1 flex flex-col min-w-0">
-                <div className="px-4 py-3 border-b border-border/50">
+              {/* Main Panel - Chart Canvas (expanded) */}
+              <div className="flex-1 flex flex-col min-w-0 bg-muted/20">
+                <div className="px-4 py-3 border-b border-border/50 bg-card/30">
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
                     Chart Canvas
                   </h2>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Visualize your data
+                    Visualize your portfolio data
                   </p>
                 </div>
-                <div className="flex-1 p-4 overflow-auto">
+                <div className="flex-1 p-6 overflow-auto">
                   <ChartCanvas
                     result={result}
                     state={state}
@@ -234,77 +219,68 @@ export default function Charts() {
                 </div>
               </div>
               
-              {/* Right Panel - Inspector (like Lab INSPECTOR) */}
-              <div className="w-64 border-l border-border bg-card/30 flex flex-col shrink-0">
+              {/* Right Panel - Builder & Export */}
+              <div className="w-72 border-l border-border bg-card/30 flex flex-col shrink-0">
                 <div className="px-4 py-3 border-b border-border/50">
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                    Export
+                    Chart Builder
                   </h2>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Download chart data
+                    Configure chart parameters
                   </p>
                 </div>
-                <div className="flex-1 p-4 flex flex-col">
+                <div className="flex-1 overflow-auto">
+                  {builderContent}
+                </div>
+                
+                {/* Export section */}
+                <div className="border-t border-border/50 p-4">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Export
+                  </h3>
                   {result ? (
-                    <div className="space-y-4">
-                      {/* Export buttons */}
-                      <div className="space-y-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full h-9 justify-start text-xs"
-                          onClick={() => toast.info('PNG export coming soon')}
-                        >
-                          <Download className="h-3.5 w-3.5 mr-2" />
-                          Export as PNG
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full h-9 justify-start text-xs"
-                          onClick={() => toast.info('PDF export coming soon')}
-                        >
-                          <FileText className="h-3.5 w-3.5 mr-2" />
-                          Export as PDF
-                        </Button>
-                      </div>
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-8 justify-start text-xs"
+                        onClick={() => toast.info('PNG export coming soon')}
+                      >
+                        <Download className="h-3.5 w-3.5 mr-2" />
+                        Export as PNG
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-8 justify-start text-xs"
+                        onClick={() => toast.info('PDF export coming soon')}
+                      >
+                        <FileText className="h-3.5 w-3.5 mr-2" />
+                        Export as PDF
+                      </Button>
                       
-                      {/* Result summary */}
-                      <div className="pt-4 border-t border-border/50">
-                        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                          Chart Info
-                        </h3>
-                        <div className="space-y-2 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Type</span>
-                            <span className="font-mono">{result.dataType}</span>
-                          </div>
-                          {result.metadata && (
-                            <>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Assets</span>
-                                <span className="font-mono">{result.metadata.assetsWithData.length}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Start</span>
-                                <span className="font-mono text-[10px]">{result.metadata.dateRange.start}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">End</span>
-                                <span className="font-mono text-[10px]">{result.metadata.dateRange.end}</span>
-                              </div>
-                            </>
-                          )}
+                      {/* Chart info */}
+                      <div className="pt-3 mt-3 border-t border-border/30 space-y-1.5 text-[10px]">
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Type</span>
+                          <span className="font-mono text-foreground">{result.dataType}</span>
                         </div>
+                        {result.metadata && (
+                          <>
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>Assets</span>
+                              <span className="font-mono text-foreground">{result.metadata.assetsWithData.length}</span>
+                            </div>
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>Period</span>
+                              <span className="font-mono text-foreground">{result.metadata.dateRange.start} → {result.metadata.dateRange.end}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   ) : (
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="text-center text-muted-foreground">
-                        <Settings2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                        <p className="text-xs">Configure chart to see export options</p>
-                      </div>
-                    </div>
+                    <p className="text-[10px] text-muted-foreground">Configure chart to export</p>
                   )}
                 </div>
               </div>
