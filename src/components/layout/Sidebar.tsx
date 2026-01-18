@@ -2,19 +2,13 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, 
   ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, 
-  FlaskConical, Building2, HelpCircle, FileText, Banknote, BarChart3,
-  ChevronDown
+  FlaskConical, Building2, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { LucideIcon } from 'lucide-react';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 
 interface NavItem {
   path: string;
@@ -25,39 +19,29 @@ interface NavItem {
 interface NavGroup {
   title: string;
   items: NavItem[];
-  defaultOpen?: boolean;
-}
-
-interface NavGroup {
-  title: string;
-  items: NavItem[];
-  defaultOpen?: boolean;
 }
 
 const navGroups: NavGroup[] = [
   {
     title: 'ANALYTICS',
-    defaultOpen: true,
     items: [
       { path: '/', icon: LayoutDashboard, label: 'Overview' },
       { path: '/performance', icon: TrendingUp, label: 'Performance' },
       { path: '/risk', icon: Shield, label: 'Risk' },
       { path: '/scenarios', icon: Layers, label: 'Scenarios' },
       { path: '/xray', icon: Scan, label: 'X-Ray' },
-      { path: '/charts', icon: BarChart3, label: 'Charts' },
     ],
   },
   {
     title: 'RESEARCH',
-    defaultOpen: true,
     items: [
       { path: '/research', icon: FlaskConical, label: 'Research' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
+      { path: '/charts', icon: BarChart3, label: 'Charts' },
     ],
   },
   {
     title: 'DATA',
-    defaultOpen: true,
     items: [
       { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
       { path: '/valuations', icon: Calendar, label: 'Valuations' },
@@ -66,7 +50,6 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'REPORTING',
-    defaultOpen: false,
     items: [
       { path: '/reports', icon: FileText, label: 'Reports' },
       { path: '/policy', icon: FileCheck, label: 'Policy' },
@@ -74,7 +57,6 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'SYSTEM',
-    defaultOpen: false,
     items: [
       { path: '/backoffice', icon: Building2, label: 'Back Office' },
       { path: '/settings', icon: Settings, label: 'Settings' },
@@ -90,8 +72,6 @@ function NavGroupSection({
   group: NavGroup; 
   collapsed: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(group.defaultOpen ?? true);
-
   if (collapsed) {
     return (
       <div className="py-1">
@@ -115,38 +95,29 @@ function NavGroupSection({
   }
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group">
-      <CollapsibleTrigger className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-semibold tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors">
-        <span>{group.title}</span>
-        <ChevronDown
-          size={12}
-          className={cn(
-            "transition-transform duration-200",
-            isOpen && "rotate-180"
-          )}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="animate-accordion-down">
-        <div className="space-y-0.5 pb-2">
-          {group.items.map(({ path, icon: Icon, label }) => (
-            <NavLink
-              key={path}
-              to={path}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 mx-2 px-3 py-2 rounded-lg text-[11px] font-medium tracking-wide transition-all duration-200",
-                  "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                  isActive && "bg-gradient-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm"
-                )
-              }
-            >
-              <Icon size={14} className="shrink-0" />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+    <div className="mb-2">
+      <div className="px-3 py-2 text-[10px] font-semibold tracking-widest text-muted-foreground/70">
+        {group.title}
+      </div>
+      <div className="space-y-0.5 pb-2">
+        {group.items.map(({ path, icon: Icon, label }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 mx-2 px-3 py-2 rounded-lg text-[11px] font-medium tracking-wide transition-all duration-200",
+                "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                isActive && "bg-gradient-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm"
+              )
+            }
+          >
+            <Icon size={14} className="shrink-0" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </div>
+    </div>
   );
 }
 
