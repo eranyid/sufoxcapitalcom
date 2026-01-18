@@ -3,6 +3,8 @@ import {
   Settings2, 
   Check,
   X,
+  AlertTriangle,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -12,6 +14,7 @@ import {
   TransformConfig,
   ComputeConfig,
   OutputConfig,
+  ComputeFunction,
   ANALYTICS_BLOCK_LIBRARY,
 } from '@/types/analyticsLab';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,6 +29,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  COMPUTE_FUNCTION_REQUIREMENTS,
+  isComputeFunctionValid,
+  getComputeFunctionValidationMessage,
+  getSelectedAssets,
+  getRecommendedOutput,
+} from '@/lib/pipelineValidation';
 
 // Fallback common assets for when no real data is available
 const FALLBACK_ASSETS = [
@@ -36,7 +52,7 @@ const FALLBACK_ASSETS = [
 
 // Define which compute functions are available for each data source type
 // Functions are filtered based on what makes sense for prices vs returns data
-const COMPUTE_FUNCTIONS_BY_SOURCE: Record<string, { value: string; label: string; description?: string }[]> = {
+const COMPUTE_FUNCTIONS_BY_SOURCE: Record<string, { value: ComputeFunction; label: string; description?: string }[]> = {
   prices: [
     // Price-native functions (work directly on price data)
     { value: 'price_at_month_end', label: 'Price at Month End', description: 'Last available price in period' },
@@ -66,7 +82,7 @@ const COMPUTE_FUNCTIONS_BY_SOURCE: Record<string, { value: string; label: string
 };
 
 // All compute functions for fallback (when no data source selected)
-const ALL_COMPUTE_FUNCTIONS = [
+const ALL_COMPUTE_FUNCTIONS: { value: ComputeFunction; label: string }[] = [
   { value: 'price_at_month_end', label: 'Price at Month End' },
   { value: 'price_statistics', label: 'Price Statistics' },
   { value: 'return_over_period', label: 'Return Over Period' },
@@ -102,8 +118,12 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
   const dataSourceBlock = pipelineBlocks.find(b => b.type === 'data_source');
   const dataSourceType = (dataSourceBlock?.config as DataSourceConfig | undefined)?.sourceType;
   
-  // Get available compute functions based on data source
-  const availableComputeFunctions = dataSourceType 
+  // Get selected assets count from the pipeline
+  const selectedAssets = getSelectedAssets(pipelineBlocks);
+  const assetCount = selectedAssets.length;
+  
+  // Get available compute functions based on data source AND filter by asset count validity
+  const baseComputeFunctions = dataSourceType 
     ? COMPUTE_FUNCTIONS_BY_SOURCE[dataSourceType] || ALL_COMPUTE_FUNCTIONS
     : ALL_COMPUTE_FUNCTIONS;
   
@@ -321,8 +341,20 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
   const renderComputeConfig = () => {
     const config = selectedBlock.config as ComputeConfig;
     
-    // Check if current function is available, if not reset to first available
-    const isCurrentFunctionAvailable = availableComputeFunctions.some(f => f.value === config.function);
+    // Filter functions by asset count validity and mark invalid ones
+    const functionsWithValidity = baseComputeFunctions.map(func => ({
+      ...func,
+      isValid: isComputeFunctionValid(func.value, assetCount),
+      validationMessage: getComputeFunctionValidationMessage(func.value, assetCount),
+    }));
+    
+    // Separate valid and invalid functions
+    const validFunctions = functionsWithValidity.filter(f => f.isValid);
+    const invalidFunctions = functionsWithValidity.filter(f => !f.isValid);
+    
+    // Check if current function is valid
+    const currentFunctionValid = isComputeFunctionValid(config.function, assetCount);
+    const currentValidationMessage = getComputeFunctionValidationMessage(config.function, assetCount);
     
     return (
       <div className="space-y-4">
@@ -334,31 +366,177 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
           </div>
         )}
         
+        {/* Asset count indicator */}
+        {assetCount > 0 && (
+          <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-[10px] text-muted-foreground">
+              {assetCount} asset{assetCount !== 1 ? 's' : ''} selected • {validFunctions.length} compatible functions
+            </p>
+          </div>
+        )}
+        
+        {/* Show warning if current function is invalid */}
+        {!currentFunctionValid && currentValidationMessage && (
+          <div className="p-2 bg-destructive/10 border border-destructive/30 rounded-md flex items-start gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+            <p className="text-[10px] text-destructive">
+              {currentValidationMessage}
+            </p>
+          </div>
+        )}
+        
         <div>
           <Label className="text-xs">Function</Label>
           <Select
-            value={isCurrentFunctionAvailable ? config.function : availableComputeFunctions[0]?.value}
-            onValueChange={(value) => 
-              onUpdateBlock(selectedBlock.id, { ...config, function: value })
-            }
+            value={config.function}
+            onValueChange={(value) => {
+              const fn = value as ComputeFunction;
+              const recommendedOutput = getRecommendedOutput(fn);
+              
+              // Auto-set asset1/asset2 for pair functions if exactly 2 assets
+              let updates: Partial<ComputeConfig> = { function: fn };
+              if (assetCount === 2 && COMPUTE_FUNCTION_REQUIREMENTS[fn]?.requiresSpecificAssets) {
+                updates.asset1 = selectedAssets[0];
+                updates.asset2 = selectedAssets[1];
+              }
+              
+              onUpdateBlock(selectedBlock.id, { ...config, ...updates });
+              
+              // Also update output block if exists
+              const outputBlock = pipelineBlocks.find(b => b.type === 'output');
+              if (outputBlock) {
+                const outputConfig = outputBlock.config as OutputConfig;
+                if (outputConfig.outputType !== recommendedOutput) {
+                  onUpdateBlock(outputBlock.id, { ...outputConfig, outputType: recommendedOutput });
+                }
+              }
+            }}
           >
-            <SelectTrigger className="mt-1">
+            <SelectTrigger className={cn(
+              "mt-1",
+              !currentFunctionValid && "border-destructive"
+            )}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {availableComputeFunctions.map((func) => (
-                <SelectItem key={func.value} value={func.value}>
-                  {func.label}
+              {/* Valid functions first */}
+              {validFunctions.length > 0 && (
+                <>
+                  {validFunctions.map((func) => (
+                    <SelectItem key={func.value} value={func.value}>
+                      <div className="flex items-center gap-2">
+                        <span>{func.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </>
+              )}
+              
+              {/* Separator and invalid functions */}
+              {invalidFunctions.length > 0 && validFunctions.length > 0 && (
+                <div className="px-2 py-1.5 border-t border-border mt-1">
+                  <p className="text-[10px] text-muted-foreground">Requires different asset count:</p>
+                </div>
+              )}
+              
+              {invalidFunctions.map((func) => (
+                <SelectItem 
+                  key={func.value} 
+                  value={func.value} 
+                  disabled
+                  className="opacity-50"
+                >
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-2">
+                          <span>{func.label}</span>
+                          <AlertTriangle className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="text-xs">
+                        {func.validationMessage}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {dataSourceType && (
             <p className="text-[10px] text-muted-foreground mt-1">
-              Showing {availableComputeFunctions.length} functions for "{dataSourceType}" data
+              {validFunctions.length} of {baseComputeFunctions.length} functions available for {assetCount} asset{assetCount !== 1 ? 's' : ''}
             </p>
           )}
         </div>
+        
+        {/* Asset selection for pair functions (correlation_pair, rolling_correlation) */}
+        {(config.function === 'correlation_pair' || config.function === 'rolling_correlation') && (
+          <div className="space-y-3 p-3 bg-muted/30 rounded-lg border border-border">
+            <div className="flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 text-primary" />
+              <Label className="text-xs font-medium">Select 2 assets to compare</Label>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Asset 1</Label>
+                <Select
+                  value={config.asset1 || ''}
+                  onValueChange={(value) => 
+                    onUpdateBlock(selectedBlock.id, { ...config, asset1: value })
+                  }
+                >
+                  <SelectTrigger className={cn(
+                    "mt-1 h-8 text-xs",
+                    !config.asset1 && "border-amber-500/50"
+                  )}>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedAssets.filter(a => a !== config.asset2).map((asset) => (
+                      <SelectItem key={asset} value={asset}>
+                        {asset}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Asset 2</Label>
+                <Select
+                  value={config.asset2 || ''}
+                  onValueChange={(value) => 
+                    onUpdateBlock(selectedBlock.id, { ...config, asset2: value })
+                  }
+                >
+                  <SelectTrigger className={cn(
+                    "mt-1 h-8 text-xs",
+                    !config.asset2 && "border-amber-500/50"
+                  )}>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedAssets.filter(a => a !== config.asset1).map((asset) => (
+                      <SelectItem key={asset} value={asset}>
+                        {asset}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {config.asset1 && config.asset2 && (
+              <p className="text-[10px] text-green-500 flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                {config.asset1} ↔ {config.asset2}
+              </p>
+            )}
+          </div>
+        )}
         
         {(config.function === 'rolling_correlation' || config.function === 'rolling_volatility') && (
           <div>
@@ -394,19 +572,55 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
         )}
         
         {config.function === 'beta' && (
-          <div>
-            <Label className="text-xs">Benchmark Asset</Label>
-            <Input
-              value={config.benchmarkAsset || 'SPY'}
-              onChange={(e) => 
-                onUpdateBlock(selectedBlock.id, { ...config, benchmarkAsset: e.target.value })
-              }
-              className="h-8 text-xs mt-1"
-              placeholder="SPY, QQQ, etc."
-            />
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Asset to compare against (must be in data source)
-            </p>
+          <div className="space-y-3 p-3 bg-muted/30 rounded-lg border border-border">
+            <div className="flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 text-primary" />
+              <Label className="text-xs font-medium">Select asset and benchmark</Label>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Asset</Label>
+                <Select
+                  value={config.asset1 || ''}
+                  onValueChange={(value) => 
+                    onUpdateBlock(selectedBlock.id, { ...config, asset1: value })
+                  }
+                >
+                  <SelectTrigger className="mt-1 h-8 text-xs">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedAssets.filter(a => a !== config.benchmarkAsset).map((asset) => (
+                      <SelectItem key={asset} value={asset}>
+                        {asset}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Benchmark</Label>
+                <Select
+                  value={config.benchmarkAsset || ''}
+                  onValueChange={(value) => 
+                    onUpdateBlock(selectedBlock.id, { ...config, benchmarkAsset: value })
+                  }
+                >
+                  <SelectTrigger className="mt-1 h-8 text-xs">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedAssets.filter(a => a !== config.asset1).map((asset) => (
+                      <SelectItem key={asset} value={asset}>
+                        {asset}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         )}
         
