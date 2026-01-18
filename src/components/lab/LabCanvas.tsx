@@ -239,34 +239,76 @@ export function LabCanvas({
       {/* Canvas Area - This is the drop zone */}
       <div ref={setDropRef} className="flex-1 p-6 overflow-auto">
         {blocks.length === 0 ? (
-          <div className={cn(
-            "h-full flex items-center justify-center rounded-lg border-2 border-dashed transition-all duration-300",
-            showDropZone 
-              ? "border-primary bg-primary/10 scale-[1.01]" 
-              : "border-border hover:border-muted-foreground/50"
-          )}>
-            <div className="text-center max-w-xs">
+          <div className="h-full flex items-center justify-center">
+            <div className={cn(
+              "relative w-full max-w-sm aspect-square flex items-center justify-center rounded-2xl transition-all duration-500 ease-out",
+              showDropZone 
+                ? "scale-105" 
+                : "hover:scale-[1.02]"
+            )}>
+              {/* Outer glow ring */}
               <div className={cn(
-                "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300",
-                showDropZone ? "bg-primary/20 scale-110" : "bg-muted/50"
-              )}>
-                <Database className={cn(
-                  "h-8 w-8 transition-colors duration-300",
-                  showDropZone ? "text-primary" : "text-muted-foreground"
-                )} />
+                "absolute inset-0 rounded-2xl border-2 border-dashed transition-all duration-500",
+                showDropZone 
+                  ? "border-primary/60 shadow-[0_0_60px_-15px_hsl(var(--primary))]" 
+                  : "border-border/50 hover:border-muted-foreground/40"
+              )} />
+              
+              {/* Inner content */}
+              <div className="relative z-10 flex flex-col items-center gap-5 p-8">
+                {/* Animated icon container */}
+                <div className={cn(
+                  "relative w-20 h-20 flex items-center justify-center transition-all duration-500",
+                  showDropZone && "animate-pulse"
+                )}>
+                  {/* Background circles */}
+                  <div className={cn(
+                    "absolute inset-0 rounded-full transition-all duration-500",
+                    showDropZone 
+                      ? "bg-primary/20 scale-125" 
+                      : "bg-gradient-to-br from-muted/80 to-muted/40"
+                  )} />
+                  <div className={cn(
+                    "absolute inset-2 rounded-full transition-all duration-500",
+                    showDropZone 
+                      ? "bg-primary/10" 
+                      : "bg-background/60 backdrop-blur-sm"
+                  )} />
+                  
+                  {/* Icon */}
+                  <Database className={cn(
+                    "relative h-9 w-9 transition-all duration-500",
+                    showDropZone 
+                      ? "text-primary scale-110" 
+                      : "text-muted-foreground/70"
+                  )} />
+                </div>
+                
+                {/* Text content */}
+                <div className="text-center space-y-2">
+                  <h4 className={cn(
+                    "text-base font-semibold tracking-tight transition-colors duration-300",
+                    showDropZone ? "text-primary" : "text-foreground/90"
+                  )}>
+                    {showDropZone ? "Drop to add block" : "Start building"}
+                  </h4>
+                  <p className="text-sm text-muted-foreground/80 max-w-[200px] leading-relaxed">
+                    {showDropZone 
+                      ? "Release to add this block to your pipeline"
+                      : "Drag blocks from the library or use a quick preset"
+                    }
+                  </p>
+                </div>
+                
+                {/* Decorative elements */}
+                {!showDropZone && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="w-8 h-0.5 rounded-full bg-border" />
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                    <div className="w-8 h-0.5 rounded-full bg-border" />
+                  </div>
+                )}
               </div>
-              <h4 className={cn(
-                "text-sm font-medium mb-1 transition-colors duration-300",
-                showDropZone ? "text-primary" : "text-foreground"
-              )}>
-                {showDropZone ? "Drop here to add" : "No blocks yet"}
-              </h4>
-              <p className="text-xs text-muted-foreground">
-                {showDropZone 
-                  ? "Release to add this block to your pipeline"
-                  : "Drag a block from the library or click to add"
-                }
-              </p>
             </div>
           </div>
         ) : (
