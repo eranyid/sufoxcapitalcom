@@ -120,14 +120,14 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
   // Empty state
   if (!result && !isCalculating) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-card/30 rounded-lg border border-border/50">
+      <div className="flex-1 flex items-center justify-center h-full">
         <div className="text-center p-8">
-          <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-8 w-8 text-muted-foreground" />
+          <div className="w-12 h-12 rounded-full bg-muted/20 flex items-center justify-center mx-auto mb-4 border border-border/30">
+            <AlertCircle className="h-5 w-5 text-muted-foreground/50" />
           </div>
-          <h3 className="text-lg font-medium mb-2">Select Assets to Generate Chart</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            Choose a metric and select assets from the builder panel to visualize your data
+          <h3 className="text-sm font-medium text-muted-foreground mb-1">Select Assets</h3>
+          <p className="text-xs text-muted-foreground/70 max-w-xs">
+            Choose a metric and select assets from the builder panel
           </p>
         </div>
       </div>
@@ -137,10 +137,10 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
   // Loading state
   if (isCalculating) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-card/30 rounded-lg border border-border/50">
+      <div className="flex-1 flex items-center justify-center h-full">
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-muted-foreground">Calculating...</span>
+          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-muted-foreground">Calculating...</span>
         </div>
       </div>
     );
@@ -149,13 +149,13 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
   // Error state
   if (result && !result.success) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-card/30 rounded-lg border border-border/50">
+      <div className="flex-1 flex items-center justify-center h-full">
         <div className="text-center p-8">
-          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-8 w-8 text-destructive" />
+          <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4 border border-destructive/30">
+            <AlertCircle className="h-5 w-5 text-destructive" />
           </div>
-          <h3 className="text-lg font-medium mb-2">Calculation Error</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">{result.error}</p>
+          <h3 className="text-sm font-medium mb-1">Calculation Error</h3>
+          <p className="text-xs text-muted-foreground max-w-xs">{result.error}</p>
         </div>
       </div>
     );
@@ -172,14 +172,14 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
   
   if (result && result.success && isEmptyData(result.data)) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-card/30 rounded-lg border border-border/50">
+      <div className="flex-1 flex items-center justify-center h-full">
         <div className="text-center p-8">
-          <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-8 w-8 text-muted-foreground" />
+          <div className="w-12 h-12 rounded-full bg-muted/20 flex items-center justify-center mx-auto mb-4 border border-border/30">
+            <AlertCircle className="h-5 w-5 text-muted-foreground/50" />
           </div>
-          <h3 className="text-lg font-medium mb-2">No Data Available</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            Not enough data points for this analysis. Try selecting a longer date range or different assets.
+          <h3 className="text-sm font-medium text-muted-foreground mb-1">No Data Available</h3>
+          <p className="text-xs text-muted-foreground/70 max-w-xs">
+            Try a longer date range or different assets
           </p>
         </div>
       </div>
@@ -551,15 +551,17 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
   };
   
   return (
-    <div className="flex-1 flex flex-col bg-card/30 rounded-lg border border-border/50 overflow-hidden">
-      {/* Header with export buttons */}
-      <div className="flex items-center justify-between p-3 border-b border-border/50">
-        <div className="text-sm font-medium">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      {/* Compact header with metric info and export */}
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/30">
+        <div className="flex items-center gap-2 text-xs">
           {result?.metadata?.metric && (
-            <span className="capitalize">{result.metadata.metric.replace(/_/g, ' ')}</span>
+            <span className="font-medium capitalize text-foreground">
+              {result.metadata.metric.replace(/_/g, ' ')}
+            </span>
           )}
           {result?.metadata?.dateRange && (
-            <span className="text-muted-foreground ml-2 text-xs">
+            <span className="text-muted-foreground font-mono text-[10px]">
               {result.metadata.dateRange.start} → {result.metadata.dateRange.end}
             </span>
           )}
@@ -569,19 +571,19 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-xs"
+            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
             onClick={handleExportPNG}
           >
-            <Image className="h-3.5 w-3.5 mr-1" />
+            <Image className="h-3 w-3 mr-1" />
             PNG
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-xs"
+            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
             onClick={handleExportPDF}
           >
-            <FileText className="h-3.5 w-3.5 mr-1" />
+            <FileText className="h-3 w-3 mr-1" />
             PDF
           </Button>
         </div>
@@ -589,20 +591,18 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
       
       {/* Warnings banner */}
       {result?.warnings && result.warnings.length > 0 && (
-        <div className="mx-4 mb-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-md">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-            <div className="text-xs text-amber-200">
-              {result.warnings.map((warning, i) => (
-                <p key={i}>{warning}</p>
-              ))}
-            </div>
+        <div className="mb-3 px-2 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded text-[10px] text-amber-300/90 flex items-start gap-2">
+          <AlertCircle className="h-3 w-3 shrink-0 mt-0.5" />
+          <div>
+            {result.warnings.map((warning, i) => (
+              <p key={i}>{warning}</p>
+            ))}
           </div>
         </div>
       )}
       
-      {/* Chart area */}
-      <div ref={chartRef} className="flex-1 p-4 min-h-[400px]">
+      {/* Chart area - takes remaining space */}
+      <div ref={chartRef} className="flex-1 min-h-[300px]">
         {renderChart()}
       </div>
     </div>
