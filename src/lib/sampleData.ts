@@ -31,7 +31,7 @@ export const sampleTransactions: Transaction[] = [
 
   // February 2024 - Adding growth exposure
   { id: 'tx-006', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-02-05', quantity: 25, pricePerUnit: 674.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+    date: '2024-02-05', quantity: 50, pricePerUnit: 674.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
   { id: 'tx-007', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
     date: '2024-02-12', quantity: 4.0, pricePerUnit: 2518.00, fees: 15.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
   { id: 'tx-008', assetName: 'Taiwan Semiconductor', ticker: 'TSM', assetType: 'equity', transactionType: 'buy', 
