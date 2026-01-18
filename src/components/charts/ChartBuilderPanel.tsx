@@ -169,30 +169,6 @@ export function ChartBuilderPanel({
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-5">
-        {/* Quick Presets */}
-        <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground uppercase tracking-wide">Quick Start</Label>
-          <div className="grid grid-cols-1 gap-2">
-            {CHART_PRESETS.map(preset => (
-              <Button
-                key={preset.id}
-                variant="outline"
-                size="sm"
-                className="justify-start h-auto py-2 px-3 text-left"
-                onClick={() => onChange({ ...state, ...preset.config })}
-              >
-                <TrendingUp className="h-3.5 w-3.5 mr-2 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium truncate">{preset.name}</div>
-                  <div className="text-[10px] text-muted-foreground truncate">{preset.description}</div>
-                </div>
-              </Button>
-            ))}
-          </div>
-        </div>
-        
-        <Separator />
-        
         {/* Metric Selection */}
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
@@ -336,27 +312,6 @@ export function ChartBuilderPanel({
           </>
         )}
         
-        {/* Frequency */}
-        {metricConfig?.showsFrequency && (
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Frequency</Label>
-            <Select 
-              value={state.frequency} 
-              onValueChange={(v: Frequency) => onChange({ frequency: v })}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {FREQUENCY_OPTIONS.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
         
         {/* Benchmark (for Beta) */}
         {metricConfig?.showsBenchmark && (
