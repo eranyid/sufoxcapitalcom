@@ -215,18 +215,6 @@ export default function Charts() {
               <div className="flex-1 flex flex-col min-w-0 p-4 bg-background">
                 {/* Canvas container with Lab-style styling */}
                 <div className="flex-1 relative rounded-xl border border-border/40 bg-card/10 overflow-hidden shadow-[0_0_60px_-15px_hsl(var(--primary)/0.15)]">
-                  {/* Dotted grid background */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: `radial-gradient(circle, hsl(var(--foreground) / 0.03) 1px, transparent 1px)`,
-                      backgroundSize: '20px 20px',
-                      maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)',
-                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)',
-                    }}
-                    aria-hidden="true"
-                  />
-                  
                   {/* Chart content */}
                   <div className="relative z-10 h-full p-4">
                     <ChartCanvas

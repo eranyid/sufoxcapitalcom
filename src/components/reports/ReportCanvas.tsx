@@ -413,17 +413,6 @@ export function ReportCanvas({
             }}
             onClick={() => onSelectBlock(null)}
           >
-            {/* Dotted grid background for terminal canvas effect */}
-            <div 
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: `radial-gradient(circle, hsl(var(--foreground) / 0.04) 1px, transparent 1px)`,
-                backgroundSize: '16px 16px',
-                maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)',
-              }}
-              aria-hidden="true"
-            />
 
             {/* Confidential Watermark */}
             {branding.showConfidentialWatermark && (

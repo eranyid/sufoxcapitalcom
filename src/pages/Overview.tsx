@@ -16,7 +16,7 @@ import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
 import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
 import { StaggeredContainer } from '@/components/StaggeredContainer';
-import { DottedGridBackground } from '@/components/DottedGridBackground';
+
 
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
@@ -153,15 +153,8 @@ export default function Overview() {
       {/* News Ticker */}
       <NewsTicker rssUrl={rssFeedUrl} />
       
-      {/* Hero section with dotted grid background */}
-      <DottedGridBackground 
-        dotSize={1} 
-        dotSpacing={16} 
-        opacity={0.04} 
-        fadeEdges={true}
-        fadeType="linear"
-        className="section-spacing sm:mt-0 -mt-1 -mx-3 px-3 sm:-mx-4 sm:px-4 py-4"
-      >
+      {/* Hero section */}
+      <div className="section-spacing sm:mt-0 -mt-1 -mx-3 px-3 sm:-mx-4 sm:px-4 py-4">
         {/* Header - Desktop */}
         <div className="hidden sm:flex flex-row items-center justify-between gap-3 py-0">
           <div className="flex-1 min-w-0">
@@ -217,7 +210,7 @@ export default function Overview() {
               : "Total portfolio value excluding FX impact, as if exchange rates remained constant"}
           />
         </div>
-      </DottedGridBackground>
+      </div>
 
       <div className="section-spacing">
       <StaggeredContainer className="grid grid-cols-2 lg:grid-cols-4 gap-2" staggerDelay={60} baseDelay={100}>
