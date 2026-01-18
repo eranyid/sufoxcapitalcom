@@ -5,11 +5,11 @@ import {
   Save, 
   FolderOpen,
   Trash2,
-  FlaskConical,
   Plus,
   Database,
   AlertCircle,
 } from 'lucide-react';
+import { LabIcon } from '@/components/icons/LabIcon';
 import { cn } from '@/lib/utils';
 import { 
   AnalyticsBlock, 
@@ -267,7 +267,7 @@ export default function Lab() {
         <div className="border-b border-border bg-card/50 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <FlaskConical className="h-5 w-5 text-primary" />
+              <LabIcon className="h-5 w-5 text-primary" />
               <Input
                 value={pipelineName}
                 onChange={(e) => setPipelineName(e.target.value)}
