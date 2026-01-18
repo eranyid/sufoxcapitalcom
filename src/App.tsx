@@ -45,6 +45,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FXRates = lazy(() => import("./pages/FXRates"));
+const Lab = lazy(() => import("./pages/Lab"));
 
 const queryClient = new QueryClient();
 
@@ -125,6 +126,11 @@ const App = () => (
                   <Route path="/fx-rates" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <FXRates />
+                    </Suspense>
+                  } />
+                  <Route path="/lab" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Lab />
                     </Suspense>
                   } />
                   <Route path="/admin/users" element={
