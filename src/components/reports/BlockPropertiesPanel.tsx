@@ -510,8 +510,8 @@ export function BlockPropertiesPanel({
   // Block-specific panel
   if (block) {
     return (
-      <div className="w-80 border-l border-border bg-card/50 flex flex-col">
-        <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center justify-between bg-muted/30">
+      <div className="w-80 border-l border-border bg-card flex flex-col">
+        <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center justify-between bg-secondary">
           <div>
             <h3 className="text-sm font-semibold capitalize flex items-center gap-2">
               <Settings2 size={14} className="text-primary" />
@@ -908,8 +908,8 @@ export function BlockPropertiesPanel({
 
   // Global branding panel
   return (
-    <div className="w-80 border-l border-border bg-card/50 flex flex-col">
-      <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center justify-between bg-muted/30">
+    <div className="w-80 border-l border-border bg-card flex flex-col">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center justify-between bg-secondary">
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Palette size={14} className="text-primary" />

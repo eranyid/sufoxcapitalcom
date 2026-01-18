@@ -167,7 +167,7 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
   
   if (!selectedBlock) {
     return (
-      <div className="h-full flex flex-col bg-card/50 border-l border-border">
+      <div className="h-full flex flex-col bg-card border-l border-border">
         <div className="px-4 py-3 border-b border-border">
           <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
             Inspector
@@ -902,7 +902,7 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
   };
 
   return (
-    <div className="h-full flex flex-col bg-card/50 border-l border-border">
+    <div className="h-full flex flex-col bg-card border-l border-border">
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <div 

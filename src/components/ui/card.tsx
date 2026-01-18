@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const cardVariants = cva(
-  "rounded-sm border bg-card text-card-foreground",
+  "rounded-sm border bg-card text-card-foreground shadow-[0_2px_8px_-2px_rgba(0,0,0,0.3)]",
   {
     variants: {
       size: {
@@ -15,8 +15,8 @@ const cardVariants = cva(
         xl: "card-xl",
       },
       variant: {
-        default: "shadow-sm",
-        glass: "bg-card/95 backdrop-blur-sm",
+        default: "",
+        elevated: "bg-[hsl(var(--card-elevated))]",
         panel: "shadow-none",
       }
     },

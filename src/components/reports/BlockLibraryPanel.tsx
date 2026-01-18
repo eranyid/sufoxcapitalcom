@@ -129,7 +129,7 @@ export function BlockLibraryPanel({ onAddBlock }: BlockLibraryPanelProps) {
 
   // Desktop: vertical sidebar
   return (
-    <div className="w-72 border-r border-border bg-card/50 flex flex-col">
+    <div className="w-72 border-r border-border bg-card flex flex-col">
       <div className="flex-shrink-0 px-4 py-3 border-b border-border">
         <h3 className="text-sm font-medium">Block Library</h3>
         <p className="text-xs text-muted-foreground mt-0.5">

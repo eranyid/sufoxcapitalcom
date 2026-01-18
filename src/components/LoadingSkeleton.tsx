@@ -4,7 +4,7 @@ export function DashboardLoadingSkeleton() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Sidebar skeleton */}
-      <div className="w-[200px] border-r border-border bg-secondary/30 p-4 flex flex-col gap-4">
+      <div className="w-[200px] border-r border-border bg-card p-4 flex flex-col gap-4">
         <div className="flex items-center gap-2 mb-6">
           <Skeleton className="h-8 w-8 bg-primary/20" />
           <div>

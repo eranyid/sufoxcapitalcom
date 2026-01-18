@@ -115,7 +115,7 @@ export default function Risk() {
           {factorModelResults && (
             <>
               {/* Factor Model Header */}
-              <div className="bloomberg-panel bg-secondary/30">
+              <div className="bloomberg-panel bg-secondary">
                 <div className="px-3 py-2 flex items-center gap-2">
                   <Layers className="h-4 w-4 text-primary" />
                   <span className="text-primary font-semibold text-xs uppercase tracking-wide">

@@ -323,7 +323,7 @@ export function LabCanvas({
       )}
     >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border bg-background/50 backdrop-blur-sm">
+      <div className="px-4 py-3 border-b border-border bg-card">
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
           Pipeline Canvas
         </h3>

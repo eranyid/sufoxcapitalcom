@@ -820,7 +820,7 @@ export function RebalanceTool() {
             )}
 
             {/* Min Trade Size Setting */}
-            <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded">
+            <div className="flex items-center gap-4 p-2 bg-secondary rounded">
               <Label className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">
                 Min Trade Size
               </Label>

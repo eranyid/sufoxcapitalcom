@@ -60,7 +60,7 @@ export function PortfolioWeightsModal({
 
         <div className="space-y-4">
           {/* Portfolio Metrics */}
-          <div className="grid grid-cols-3 gap-3 p-3 bg-secondary/30 rounded-sm border border-border/30">
+          <div className="grid grid-cols-3 gap-3 p-3 bg-secondary rounded-sm border border-border/30">
             <div className="text-center">
               <p className="text-[10px] text-muted-foreground font-mono mb-1">Expected Return</p>
               <p className={`font-mono text-sm font-medium ${portfolio.return >= 0 ? 'text-chart-positive' : 'text-chart-negative'}`}>

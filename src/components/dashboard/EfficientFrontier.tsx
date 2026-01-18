@@ -272,7 +272,7 @@ export function EfficientFrontier() {
         
         <div className="p-4 space-y-4">
           {/* Controls */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-secondary/30 rounded-sm border border-border/30">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-secondary rounded-sm border border-border/30">
             <div className="space-y-1">
               <Label className="text-[10px] text-muted-foreground font-mono">Risk-Free Rate (%)</Label>
               <Input
@@ -478,7 +478,7 @@ export function EfficientFrontier() {
               <div className="overflow-x-auto border border-border/30 rounded-sm">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-secondary/30">
+                    <tr className="bg-secondary">
                       <th className="text-[10px] text-muted-foreground font-mono text-left py-2 px-3">Portfolio</th>
                       <th className="text-[10px] text-muted-foreground font-mono text-right py-2 px-3">E[Return]</th>
                       <th className="text-[10px] text-muted-foreground font-mono text-right py-2 px-3">Volatility</th>

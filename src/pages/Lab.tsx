@@ -439,7 +439,7 @@ export default function Lab() {
       >
         <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
           {/* Toolbar */}
-          <div className="border-b border-border bg-card/50 px-4 py-2 flex items-center justify-between">
+          <div className="border-b border-border bg-card px-4 py-2 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <LabIcon className="h-5 w-5 text-primary" />
