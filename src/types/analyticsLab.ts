@@ -16,7 +16,10 @@ export type ComputeFunction =
   | 'return_over_period'
   | 'correlation_pair'
   | 'correlation_matrix'
-  | 'rolling_correlation';
+  | 'rolling_correlation'
+  | 'total_return_with_cost_basis'
+  | 'volatility'
+  | 'sharpe_ratio';
 export type OutputType = 'table' | 'line_chart' | 'heatmap';
 
 export interface DataSourceConfig {
@@ -45,6 +48,8 @@ export interface ComputeConfig {
   rollingWindow?: number;
   // For price at month end
   targetMonth?: string;
+  // For Sharpe ratio
+  riskFreeRate?: number;
 }
 
 export interface OutputConfig {
@@ -205,6 +210,30 @@ export const QUICK_PRESETS: QuickPreset[] = [
       { type: 'date_range', position: 1, config: { preset: '6M' } as DateRangeConfig },
       { type: 'compute', position: 2, config: { function: 'correlation_matrix' } as ComputeConfig },
       { type: 'output', position: 3, config: { outputType: 'heatmap', title: 'Correlation Matrix' } as OutputConfig },
+    ],
+  },
+  {
+    id: 'total_return_cost_basis',
+    name: 'Total Return (Cost Basis)',
+    description: 'Calculate total return including cost basis from transactions',
+    icon: 'TrendingUp',
+    blocks: [
+      { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
+      { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
+      { type: 'compute', position: 2, config: { function: 'total_return_with_cost_basis' } as ComputeConfig },
+      { type: 'output', position: 3, config: { outputType: 'table', title: 'Total Return Analysis' } as OutputConfig },
+    ],
+  },
+  {
+    id: 'volatility_analysis',
+    name: 'Volatility Analysis',
+    description: 'Annualized volatility for selected assets',
+    icon: 'Activity',
+    blocks: [
+      { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
+      { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
+      { type: 'compute', position: 2, config: { function: 'volatility' } as ComputeConfig },
+      { type: 'output', position: 3, config: { outputType: 'table', title: 'Volatility Analysis' } as OutputConfig },
     ],
   },
 ];
