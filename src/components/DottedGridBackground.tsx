@@ -24,8 +24,8 @@ interface DottedGridBackgroundProps {
  */
 export function DottedGridBackground({
   dotSize = 1,
-  dotSpacing = 10,
-  opacity = 0.08,
+  dotSpacing = 12,
+  opacity = 0.06,
   fadeEdges = true,
   fadeType = 'linear',
   className,

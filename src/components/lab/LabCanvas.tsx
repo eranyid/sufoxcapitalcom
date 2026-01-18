@@ -23,7 +23,7 @@ import {
   OutputConfig,
 } from '@/types/analyticsLab';
 import { ValidationError } from '@/lib/pipelineValidation';
-import { DottedGridBackground } from '@/components/DottedGridBackground';
+
 import {
   SortableContext,
   useSortable,
@@ -316,12 +316,7 @@ export function LabCanvas({
   const showDropZone = isDropTarget || isOver;
 
   return (
-    <DottedGridBackground
-      dotSize={1}
-      dotSpacing={16}
-      opacity={0.04}
-      fadeEdges={true}
-      fadeType="linear"
+    <div
       className={cn(
         "h-full flex flex-col transition-all duration-300",
         showDropZone && "ring-2 ring-primary ring-inset bg-primary/5"
@@ -452,6 +447,6 @@ export function LabCanvas({
           </SortableContext>
         )}
       </div>
-    </DottedGridBackground>
+    </div>
   );
 }

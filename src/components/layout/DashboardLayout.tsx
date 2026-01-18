@@ -117,12 +117,12 @@ export function DashboardLayout() {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen min-h-dvh w-full bg-background overflow-x-hidden relative">
-      {/* Global dotted grid background */}
+      {/* Global dotted grid background - single source of truth */}
       <div 
         className="fixed inset-0 pointer-events-none z-0"
         style={{
-          background: `radial-gradient(circle, hsl(var(--foreground) / 0.03) 1px, transparent 1px)`,
-          backgroundSize: '24px 24px',
+          background: `radial-gradient(circle, hsl(var(--foreground) / 0.06) 1px, transparent 1px)`,
+          backgroundSize: '12px 12px',
         }}
         aria-hidden="true"
       />
