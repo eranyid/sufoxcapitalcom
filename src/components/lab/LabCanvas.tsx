@@ -10,6 +10,7 @@ import {
   GripVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDroppable } from '@dnd-kit/core';
 import { 
   AnalyticsBlock, 
   ANALYTICS_BLOCK_LIBRARY,
@@ -45,13 +46,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   BarChart3,
 };
 
-interface LabCanvasProps {
-  blocks: AnalyticsBlock[];
-  selectedBlockId: string | null;
-  onSelectBlock: (blockId: string | null) => void;
-  onRemoveBlock: (blockId: string) => void;
-  onReorderBlocks: (activeId: string, overId: string) => void;
-}
+// Remove duplicate interface - moved to main component
 
 function getBlockSummary(block: AnalyticsBlock): string {
   switch (block.type) {
@@ -173,14 +168,29 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove }: Sorta
   );
 }
 
+interface LabCanvasProps {
+  blocks: AnalyticsBlock[];
+  selectedBlockId: string | null;
+  onSelectBlock: (blockId: string | null) => void;
+  onRemoveBlock: (blockId: string) => void;
+  onReorderBlocks: (activeId: string, overId: string) => void;
+  isDropTarget?: boolean;
+}
+
 export function LabCanvas({ 
   blocks, 
   selectedBlockId, 
   onSelectBlock, 
   onRemoveBlock,
   onReorderBlocks,
+  isDropTarget = false,
 }: LabCanvasProps) {
   const sortedBlocks = [...blocks].sort((a, b) => a.position - b.position);
+  
+  // Droppable hook for receiving blocks from library
+  const { setNodeRef: setDropRef } = useDroppable({
+    id: 'canvas-drop-zone',
+  });
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -208,7 +218,10 @@ export function LabCanvas({
       opacity={0.04}
       fadeEdges={true}
       fadeType="linear"
-      className="h-full flex flex-col"
+      className={cn(
+        "h-full flex flex-col transition-all duration-200",
+        isDropTarget && "ring-2 ring-primary ring-inset bg-primary/5"
+      )}
     >
       {/* Header */}
       <div className="px-4 py-3 border-b border-border bg-background/50 backdrop-blur-sm">
@@ -217,25 +230,37 @@ export function LabCanvas({
         </h3>
         <p className="text-xs text-muted-foreground mt-0.5">
           {blocks.length === 0 
-            ? 'Add blocks from the library or use a quick preset'
+            ? 'Drag blocks from library or use a preset'
             : `${blocks.length} block${blocks.length !== 1 ? 's' : ''} • Drag to reorder`
           }
         </p>
       </div>
       
-      {/* Canvas Area */}
-      <div className="flex-1 p-6 overflow-auto">
+      {/* Canvas Area - This is the drop zone */}
+      <div ref={setDropRef} className="flex-1 p-6 overflow-auto">
         {blocks.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
+          <div className={cn(
+            "h-full flex items-center justify-center rounded-lg border-2 border-dashed transition-colors",
+            isDropTarget ? "border-primary bg-primary/10" : "border-border"
+          )}>
             <div className="text-center max-w-xs">
-              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                <Database className="h-8 w-8 text-muted-foreground" />
+              <div className={cn(
+                "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors",
+                isDropTarget ? "bg-primary/20" : "bg-muted/50"
+              )}>
+                <Database className={cn(
+                  "h-8 w-8",
+                  isDropTarget ? "text-primary" : "text-muted-foreground"
+                )} />
               </div>
               <h4 className="text-sm font-medium text-foreground mb-1">
-                No blocks yet
+                {isDropTarget ? "Drop here to add" : "No blocks yet"}
               </h4>
               <p className="text-xs text-muted-foreground">
-                Click on a block from the library or use a quick preset to get started.
+                {isDropTarget 
+                  ? "Release to add this block to your pipeline"
+                  : "Drag a block from the library or click to add"
+                }
               </p>
             </div>
           </div>

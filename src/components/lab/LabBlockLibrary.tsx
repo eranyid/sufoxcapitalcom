@@ -16,8 +16,9 @@ import { cn } from '@/lib/utils';
 import { ANALYTICS_BLOCK_LIBRARY, QUICK_PRESETS, AnalyticsBlockType } from '@/types/analyticsLab';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { DraggableLibraryBlock } from './DraggableLibraryBlock';
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+export const LIBRARY_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Database,
   Calendar,
   Shuffle,
@@ -43,6 +44,9 @@ export function LabBlockLibrary({ onAddBlock, onLoadPreset }: LabBlockLibraryPro
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
           Blocks Library
         </h3>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          Drag blocks to canvas
+        </p>
       </div>
       
       <ScrollArea className="flex-1">
@@ -57,7 +61,7 @@ export function LabBlockLibrary({ onAddBlock, onLoadPreset }: LabBlockLibraryPro
             </div>
             <div className="space-y-1.5">
               {QUICK_PRESETS.map((preset) => {
-                const Icon = ICON_MAP[preset.icon] || BarChart3;
+                const Icon = LIBRARY_ICON_MAP[preset.icon] || BarChart3;
                 return (
                   <button
                     key={preset.id}
@@ -92,32 +96,14 @@ export function LabBlockLibrary({ onAddBlock, onLoadPreset }: LabBlockLibraryPro
             </span>
             <div className="space-y-1.5">
               {ANALYTICS_BLOCK_LIBRARY.map((block) => {
-                const Icon = ICON_MAP[block.icon] || Database;
+                const Icon = LIBRARY_ICON_MAP[block.icon] || Database;
                 return (
-                  <button
+                  <DraggableLibraryBlock
                     key={block.type}
+                    block={block}
+                    icon={Icon}
                     onClick={() => onAddBlock(block.type)}
-                    className={cn(
-                      "w-full flex items-start gap-2.5 p-2.5 rounded-lg text-left",
-                      "bg-muted/30 hover:bg-muted/50 border border-border hover:border-muted-foreground/30",
-                      "transition-all duration-150"
-                    )}
-                  >
-                    <div 
-                      className="p-1.5 rounded-md shrink-0"
-                      style={{ backgroundColor: `${block.color}20` }}
-                    >
-                      <Icon className="h-3.5 w-3.5" style={{ color: block.color }} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-foreground truncate">
-                        {block.label}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground line-clamp-1">
-                        {block.description}
-                      </div>
-                    </div>
-                  </button>
+                  />
                 );
               })}
             </div>
