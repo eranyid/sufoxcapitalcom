@@ -73,6 +73,8 @@
     --lab-accent-foreground: 0 0% 100%;
     --lab-glow: 220 85% 55%;
 
+    /* Flow pulse animation for lab connectors */
+
     --sidebar-background: 0 0% 9%;
     --sidebar-foreground: 0 0% 85%;
     --sidebar-primary: 30 100% 50%;
@@ -126,6 +128,18 @@
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 0 0% 85%;
     --sidebar-ring: 30 100% 45%;
+  }
+
+  /* Lab connector flow animation */
+  @keyframes flowPulse {
+    0%, 100% {
+      transform: translateY(-12px);
+      opacity: 0;
+    }
+    50% {
+      transform: translateY(12px);
+      opacity: 1;
+    }
   }
 }
 
