@@ -1,15 +1,15 @@
 import React from 'react';
 import { 
   Table as TableIcon, 
-  LineChart as LineChartIcon,
-  Grid3X3,
   Download,
   CheckCircle2,
   XCircle,
   Clock,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PipelineResult, OutputConfig } from '@/types/analyticsLab';
+import { PipelineResult } from '@/types/analyticsLab';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -23,11 +23,27 @@ import {
 import {
   LineChart,
   Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ScatterChart,
+  Scatter,
+  Treemap,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from 'recharts';
 import { format } from 'date-fns';
 
@@ -35,6 +51,23 @@ interface LabResultPanelProps {
   result: PipelineResult | null;
   isRunning: boolean;
 }
+
+// Color palette for charts
+const CHART_COLORS = [
+  'hsl(var(--lab-accent))',
+  'hsl(var(--primary))',
+  'hsl(142, 71%, 45%)',
+  'hsl(262, 83%, 58%)',
+  'hsl(340, 82%, 52%)',
+  'hsl(43, 96%, 56%)',
+  'hsl(199, 89%, 48%)',
+  'hsl(280, 65%, 60%)',
+];
+
+const PIE_COLORS = [
+  '#f97316', '#22c55e', '#3b82f6', '#a855f7', 
+  '#ec4899', '#eab308', '#06b6d4', '#6366f1',
+];
 
 export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
   const handleExport = () => {
@@ -48,6 +81,37 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
     a.download = `analytics-result-${format(new Date(), 'yyyy-MM-dd-HHmm')}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Helper function to format cell values
+  const formatCellValue = (value: any): string => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'number') {
+      if (Number.isInteger(value)) return value.toLocaleString();
+      return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    }
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  };
+
+  // Prepare data for different chart types
+  const prepareChartData = () => {
+    if (!result?.data) return [];
+    
+    // If chartData is already provided
+    if (result.chartData && Array.isArray(result.chartData)) {
+      return result.chartData;
+    }
+    
+    // Convert object data to array format
+    const entries = Object.entries(result.data);
+    return entries.map(([key, value]: [string, any]) => {
+      if (typeof value === 'object' && value !== null) {
+        return { name: key, ...value };
+      }
+      return { name: key, value: typeof value === 'number' ? value : 0 };
+    });
   };
 
   const renderTable = () => {
@@ -92,118 +156,14 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
       );
     }
     
-    // Price at month end or generic object
+    // Generic table rendering
     const entries = Object.entries(result.data);
     if (entries.length === 0) return <p className="text-xs text-muted-foreground">No data</p>;
     
-    // Check if it's price data
     const firstValue = entries[0][1] as any;
-    if (firstValue?.price !== undefined) {
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs">Asset</TableHead>
-              <TableHead className="text-xs text-right">Price</TableHead>
-              <TableHead className="text-xs text-right">Date</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.map(([asset, data]: [string, any]) => (
-              <TableRow key={asset}>
-                <TableCell className="text-xs font-medium">{asset}</TableCell>
-                <TableCell className="text-xs text-right font-mono">
-                  ${data.price.toFixed(2)}
-                </TableCell>
-                <TableCell className="text-xs text-right text-muted-foreground">
-                  {data.date}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      );
-    }
     
-    // Return data
-    if (firstValue?.return !== undefined) {
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs">Asset</TableHead>
-              <TableHead className="text-xs text-right">Return</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.map(([asset, data]: [string, any]) => (
-              <TableRow key={asset}>
-                <TableCell className="text-xs font-medium">{asset}</TableCell>
-                <TableCell className={cn(
-                  "text-xs text-right font-mono",
-                  data.return > 0 ? "text-green-500" : "text-red-500"
-                )}>
-                  {(data.return * 100).toFixed(2)}%
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      );
-    }
-    
-    // Portfolio/Holdings data (currentPrice, marketValue, etc.)
-    if (firstValue?.currentPrice !== undefined || firstValue?.marketValue !== undefined) {
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs">Ticker</TableHead>
-              <TableHead className="text-xs text-right">Price</TableHead>
-              <TableHead className="text-xs text-right">Qty</TableHead>
-              <TableHead className="text-xs text-right">Market Value</TableHead>
-              <TableHead className="text-xs text-right">Total Return</TableHead>
-              <TableHead className="text-xs text-right">Return %</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.map(([ticker, data]: [string, any]) => {
-              const hasPosition = data.quantity > 0 || data.marketValue > 0;
-              return (
-                <TableRow key={ticker} className={!hasPosition ? "opacity-50" : ""}>
-                  <TableCell className="text-xs font-medium">{ticker}</TableCell>
-                  <TableCell className="text-xs text-right font-mono">
-                    ${(data.currentPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell className="text-xs text-right font-mono">
-                    {(data.quantity || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                  </TableCell>
-                  <TableCell className="text-xs text-right font-mono">
-                    ${(data.marketValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell className={cn(
-                    "text-xs text-right font-mono",
-                    (data.totalReturn || 0) > 0 ? "text-green-500" : (data.totalReturn || 0) < 0 ? "text-red-500" : ""
-                  )}>
-                    ${(data.totalReturn || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell className={cn(
-                    "text-xs text-right font-mono",
-                    (data.returnPct || 0) > 0 ? "text-green-500" : (data.returnPct || 0) < 0 ? "text-red-500" : ""
-                  )}>
-                    {((data.returnPct || 0) * 100).toFixed(2)}%
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      );
-    }
-    
-    // Generic object with nested properties - render as a structured table
+    // Check if it's nested object data
     if (typeof firstValue === 'object' && firstValue !== null) {
-      // Get all unique keys from all entries
       const allKeys = new Set<string>();
       entries.forEach(([_, data]) => {
         if (typeof data === 'object' && data !== null) {
@@ -230,7 +190,6 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
                 <TableCell className="text-xs font-medium">{key}</TableCell>
                 {columns.map(col => {
                   const value = data?.[col];
-                  const displayValue = formatCellValue(value);
                   const isNumeric = typeof value === 'number';
                   const isPositive = isNumeric && value > 0;
                   const isNegative = isNumeric && value < 0;
@@ -244,7 +203,7 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
                         isNegative && "text-red-500"
                       )}
                     >
-                      {displayValue}
+                      {formatCellValue(value)}
                     </TableCell>
                   );
                 })}
@@ -277,36 +236,27 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
       </Table>
     );
   };
-  
-  // Helper function to format cell values
-  const formatCellValue = (value: any): string => {
-    if (value === null || value === undefined) return '-';
-    if (typeof value === 'number') {
-      if (Number.isInteger(value)) return value.toLocaleString();
-      return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-    }
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-    if (typeof value === 'object') return JSON.stringify(value);
-    return String(value);
-  };
 
   const renderLineChart = () => {
-    if (!result?.chartData || !Array.isArray(result.chartData)) return null;
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    // Determine value keys (exclude 'name' and 'date')
+    const valueKeys = data[0] ? Object.keys(data[0]).filter(k => k !== 'name' && k !== 'date') : ['value'];
     
     return (
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={result.chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+          <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis 
-              dataKey="date" 
+              dataKey={data[0]?.date ? 'date' : 'name'}
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              tickFormatter={(value) => format(new Date(value), 'MMM d')}
+              tickFormatter={(value) => data[0]?.date ? format(new Date(value), 'MMM d') : value}
             />
             <YAxis 
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              domain={[-1, 1]}
-              tickFormatter={(value) => value.toFixed(2)}
+              tickFormatter={(value) => typeof value === 'number' ? value.toFixed(2) : value}
             />
             <Tooltip 
               contentStyle={{ 
@@ -315,17 +265,321 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
                 borderRadius: '8px',
                 fontSize: '12px',
               }}
-              labelFormatter={(value) => format(new Date(value), 'MMM d, yyyy')}
-              formatter={(value: number) => [value.toFixed(4), 'Correlation']}
             />
-            <Line 
-              type="monotone" 
-              dataKey="value" 
-              stroke="hsl(var(--primary))" 
-              strokeWidth={2}
-              dot={false}
-            />
+            <Legend />
+            {valueKeys.map((key, i) => (
+              <Line 
+                key={key}
+                type="monotone" 
+                dataKey={key} 
+                stroke={CHART_COLORS[i % CHART_COLORS.length]} 
+                strokeWidth={2}
+                dot={false}
+              />
+            ))}
           </LineChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderAreaChart = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    const valueKeys = data[0] ? Object.keys(data[0]).filter(k => k !== 'name' && k !== 'date') : ['value'];
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis 
+              dataKey={data[0]?.date ? 'date' : 'name'}
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+            />
+            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+            <Legend />
+            {valueKeys.map((key, i) => (
+              <Area 
+                key={key}
+                type="monotone" 
+                dataKey={key} 
+                stroke={CHART_COLORS[i % CHART_COLORS.length]} 
+                fill={CHART_COLORS[i % CHART_COLORS.length]}
+                fillOpacity={0.3}
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderBarChart = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    const valueKeys = data[0] ? Object.keys(data[0]).filter(k => k !== 'name' && k !== 'date') : ['value'];
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+            <Legend />
+            {valueKeys.map((key, i) => (
+              <Bar 
+                key={key}
+                dataKey={key} 
+                fill={CHART_COLORS[i % CHART_COLORS.length]}
+                radius={[4, 4, 0, 0]}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderStackedBar = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    const valueKeys = data[0] ? Object.keys(data[0]).filter(k => k !== 'name' && k !== 'date') : ['value'];
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+            <Legend />
+            {valueKeys.map((key, i) => (
+              <Bar 
+                key={key}
+                dataKey={key} 
+                stackId="a"
+                fill={CHART_COLORS[i % CHART_COLORS.length]}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderPieChart = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    // Get numeric value
+    const valueKey = Object.keys(data[0] || {}).find(k => k !== 'name' && typeof data[0][k] === 'number') || 'value';
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey={valueKey}
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={80}
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              labelLine={false}
+            >
+              {data.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderDonutChart = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    const valueKey = Object.keys(data[0] || {}).find(k => k !== 'name' && typeof data[0][k] === 'number') || 'value';
+    const total = data.reduce((sum, item) => sum + (item[valueKey] || 0), 0);
+    
+    return (
+      <div className="h-64 relative">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey={valueKey}
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={50}
+              outerRadius={80}
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              labelLine={false}
+            >
+              {data.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-center">
+            <div className="text-lg font-bold text-foreground">{total.toFixed(1)}</div>
+            <div className="text-xs text-muted-foreground">Total</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTreemap = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    const valueKey = Object.keys(data[0] || {}).find(k => k !== 'name' && typeof data[0][k] === 'number') || 'value';
+    const treemapData = data.map((item, i) => ({
+      ...item,
+      fill: PIE_COLORS[i % PIE_COLORS.length],
+    }));
+    
+    const CustomTreemapContent = (props: any) => {
+      const { x, y, width, height, name, value, fill } = props;
+      return (
+        <g>
+          <rect
+            x={x}
+            y={y}
+            width={width}
+            height={height}
+            style={{
+              fill,
+              stroke: 'hsl(var(--background))',
+              strokeWidth: 2,
+              opacity: 0.9,
+            }}
+          />
+          {width > 50 && height > 30 && (
+            <>
+              <text
+                x={x + width / 2}
+                y={y + height / 2 - 6}
+                textAnchor="middle"
+                fill="white"
+                fontSize={11}
+                fontWeight="bold"
+              >
+                {name}
+              </text>
+              <text
+                x={x + width / 2}
+                y={y + height / 2 + 10}
+                textAnchor="middle"
+                fill="white"
+                fontSize={10}
+                opacity={0.8}
+              >
+                {typeof value === 'number' ? value.toFixed(2) : value}
+              </text>
+            </>
+          )}
+        </g>
+      );
+    };
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <Treemap
+            data={treemapData}
+            dataKey={valueKey}
+            aspectRatio={4 / 3}
+            stroke="hsl(var(--border))"
+            content={<CustomTreemapContent />}
+          />
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderRadarChart = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    const valueKey = Object.keys(data[0] || {}).find(k => k !== 'name' && typeof data[0][k] === 'number') || 'value';
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart data={data}>
+            <PolarGrid stroke="hsl(var(--border))" />
+            <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <PolarRadiusAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+            <Radar
+              dataKey={valueKey}
+              stroke="hsl(var(--lab-accent))"
+              fill="hsl(var(--lab-accent))"
+              fillOpacity={0.3}
+            />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+          </RadarChart>
         </ResponsiveContainer>
       </div>
     );
@@ -380,14 +634,285 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
     );
   };
 
+  const renderScatter = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis type="number" dataKey="x" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis type="number" dataKey="y" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+            <Scatter data={data} fill="hsl(var(--lab-accent))" />
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderHistogram = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+            <Bar dataKey="count" fill="hsl(var(--lab-accent))" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderWaterfall = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    // Add running total for waterfall effect
+    let runningTotal = 0;
+    const waterfallData = data.map((item, i) => {
+      const value = item.value || 0;
+      const start = runningTotal;
+      runningTotal += value;
+      return {
+        ...item,
+        start,
+        end: runningTotal,
+        value,
+        fill: value >= 0 ? '#22c55e' : '#ef4444',
+      };
+    });
+    
+    return (
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={waterfallData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+            <Bar dataKey="start" stackId="a" fill="transparent" />
+            <Bar dataKey="value" stackId="a" radius={[2, 2, 0, 0]}>
+              {waterfallData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderGauge = () => {
+    const data = prepareChartData();
+    if (!data.length) return null;
+    
+    const value = data[0]?.value || 0;
+    const percentage = Math.min(Math.max(value, 0), 100);
+    
+    return (
+      <div className="h-48 flex flex-col items-center justify-center">
+        <div className="relative w-40 h-20 overflow-hidden">
+          <svg className="w-full h-full" viewBox="0 0 100 50">
+            {/* Background arc */}
+            <path
+              d="M 10 50 A 40 40 0 0 1 90 50"
+              fill="none"
+              stroke="hsl(var(--muted))"
+              strokeWidth="8"
+              strokeLinecap="round"
+            />
+            {/* Value arc */}
+            <path
+              d="M 10 50 A 40 40 0 0 1 90 50"
+              fill="none"
+              stroke="hsl(var(--lab-accent))"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={`${percentage * 1.26} 126`}
+            />
+          </svg>
+        </div>
+        <div className="text-center mt-2">
+          <div className="text-2xl font-bold text-foreground">{value.toFixed(1)}%</div>
+          <div className="text-xs text-muted-foreground">{data[0]?.name || 'Value'}</div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSparklineGrid = () => {
+    const entries = Object.entries(result?.data || {});
+    if (!entries.length) return null;
+    
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {entries.slice(0, 8).map(([key, value]: [string, any]) => {
+          const chartData = Array.isArray(value?.history) 
+            ? value.history 
+            : [{ value: typeof value === 'number' ? value : 0 }];
+          const currentValue = typeof value === 'number' ? value : value?.value || 0;
+          const isPositive = currentValue >= 0;
+          
+          return (
+            <div key={key} className="p-2 bg-muted/30 rounded-lg">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-muted-foreground">{key}</span>
+                <span className={cn(
+                  "text-xs font-mono font-semibold",
+                  isPositive ? "text-green-500" : "text-red-500"
+                )}>
+                  {isPositive ? <TrendingUp className="h-3 w-3 inline mr-0.5" /> : <TrendingDown className="h-3 w-3 inline mr-0.5" />}
+                  {formatCellValue(currentValue)}
+                </span>
+              </div>
+              <div className="h-8">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke={isPositive ? '#22c55e' : '#ef4444'} 
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderKpiCards = () => {
+    const entries = Object.entries(result?.data || {});
+    if (!entries.length) return null;
+    
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {entries.slice(0, 6).map(([key, value]: [string, any]) => {
+          const displayValue = typeof value === 'object' ? value?.value : value;
+          const isPositive = typeof displayValue === 'number' && displayValue >= 0;
+          const change = typeof value === 'object' ? value?.change : null;
+          
+          return (
+            <div 
+              key={key} 
+              className="p-3 bg-gradient-to-br from-muted/50 to-muted/20 rounded-xl border border-border/50"
+            >
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                {key.replace(/([A-Z])/g, ' $1').trim()}
+              </div>
+              <div className={cn(
+                "text-xl font-bold",
+                typeof displayValue === 'number' && (isPositive ? "text-green-500" : "text-red-500")
+              )}>
+                {formatCellValue(displayValue)}
+              </div>
+              {change !== null && (
+                <div className={cn(
+                  "text-xs flex items-center gap-1 mt-1",
+                  change >= 0 ? "text-green-500" : "text-red-500"
+                )}>
+                  {change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {Math.abs(change).toFixed(2)}%
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderSummaryCard = () => {
+    if (!result?.data) return null;
+    
+    const entries = Object.entries(result.data).slice(0, 8);
+    
+    return (
+      <div className="p-4 bg-gradient-to-br from-[hsl(var(--lab-accent)/0.1)] to-card rounded-xl border border-[hsl(var(--lab-accent)/0.3)]">
+        <div className="grid grid-cols-2 gap-3">
+          {entries.map(([key, value]) => (
+            <div key={key} className="flex justify-between items-center py-1 border-b border-border/30 last:border-0">
+              <span className="text-xs text-muted-foreground">{key}</span>
+              <span className="text-xs font-mono font-semibold text-foreground">
+                {formatCellValue(value)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderResult = () => {
     if (!result) return null;
     
     switch (result.outputType) {
       case 'line_chart':
         return renderLineChart();
+      case 'area_chart':
+        return renderAreaChart();
+      case 'bar_chart':
+        return renderBarChart();
+      case 'stacked_bar':
+        return renderStackedBar();
+      case 'pie_chart':
+        return renderPieChart();
+      case 'donut_chart':
+        return renderDonutChart();
+      case 'treemap':
+        return renderTreemap();
+      case 'radar_chart':
+        return renderRadarChart();
       case 'heatmap':
         return renderHeatmap();
+      case 'scatter':
+        return renderScatter();
+      case 'histogram':
+        return renderHistogram();
+      case 'waterfall':
+        return renderWaterfall();
+      case 'gauge':
+        return renderGauge();
+      case 'sparkline_grid':
+        return renderSparklineGrid();
+      case 'kpi_cards':
+        return renderKpiCards();
+      case 'summary_card':
+        return renderSummaryCard();
       case 'table':
       default:
         return renderTable();

@@ -72,7 +72,24 @@ export type FilterOperator =
   | 'in_list'
   | 'contains';
 
-export type OutputType = 'table' | 'line_chart' | 'bar_chart' | 'heatmap' | 'scatter' | 'histogram' | 'summary_card';
+export type OutputType = 
+  | 'table' 
+  | 'line_chart' 
+  | 'area_chart'
+  | 'bar_chart' 
+  | 'stacked_bar'
+  | 'pie_chart'
+  | 'donut_chart'
+  | 'treemap'
+  | 'radar_chart'
+  | 'heatmap' 
+  | 'scatter' 
+  | 'histogram' 
+  | 'waterfall'
+  | 'gauge'
+  | 'sparkline_grid'
+  | 'kpi_cards'
+  | 'summary_card';
 
 export interface DataSourceConfig {
   sourceType: DataSourceType;
