@@ -44,16 +44,16 @@ export function RiskContributionTable({ transactions, valuations }: RiskContribu
             {riskContributions.slice(0, 10).map((item) => (
               <tr key={item.ticker} className="border-b border-border/20 hover:bg-primary/5">
                 <td className="py-2">
-                  <span className="font-mono text-xs text-primary font-medium">{item.ticker}</span>
-                  <span className="text-muted-foreground text-[10px] ml-2">{item.name}</span>
+                  <span className="font-mono text-sm text-primary font-semibold">{item.ticker}</span>
+                  <span className="text-foreground/70 text-xs ml-2">{item.name}</span>
                 </td>
-                <td className="font-mono text-xs text-right tabular-nums">
+                <td className="font-mono text-sm text-foreground text-right tabular-nums">
                   {item.weight.toFixed(2)}%
                 </td>
-                <td className="font-mono text-xs text-right tabular-nums text-muted-foreground">
+                <td className="font-mono text-sm text-right tabular-nums text-foreground/80">
                   {item.marginalRisk.toFixed(2)}%
                 </td>
-                <td className="font-mono text-xs text-right tabular-nums font-medium">
+                <td className="font-mono text-sm text-right tabular-nums font-semibold text-foreground">
                   {item.riskPct.toFixed(2)}%
                 </td>
                 <td className="py-2 pl-4">
