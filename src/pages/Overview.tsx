@@ -16,6 +16,7 @@ import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
 import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
 import { StaggeredContainer } from '@/components/StaggeredContainer';
+import { DottedGridBackground } from '@/components/DottedGridBackground';
 
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
@@ -152,65 +153,72 @@ export default function Overview() {
       {/* News Ticker */}
       <NewsTicker rssUrl={rssFeedUrl} />
       
-      <div className="section-spacing sm:mt-0 -mt-1">
-      {/* Header - Desktop */}
-      <div className="hidden sm:flex flex-row items-center justify-between gap-3 py-0">
-        <div className="flex-1 min-w-0">
-          <h1 className="terminal-label text-base">Portfolio Overview</h1>
-          <p className="text-muted-foreground text-[10px] font-mono mt-0.5 truncate">Real-time performance snapshot</p>
-        </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <FxModeToggle />
-          <Button 
-            onClick={() => navigate('/reports')} 
-            variant="outline" 
-            size="sm" 
-            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2"
-          >
-            <FileText className="h-3 w-3" />
-            <span>Reports</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Header - Mobile */}
-      <div className="sm:hidden flex flex-col gap-2 py-1">
-        <div className="flex items-center justify-between gap-2">
+      {/* Hero section with dotted grid background */}
+      <DottedGridBackground 
+        dotSize={1} 
+        dotSpacing={20} 
+        opacity={0.05} 
+        fadeEdges={true}
+        className="section-spacing sm:mt-0 -mt-1 -mx-3 px-3 sm:-mx-4 sm:px-4 py-4"
+      >
+        {/* Header - Desktop */}
+        <div className="hidden sm:flex flex-row items-center justify-between gap-3 py-0">
           <div className="flex-1 min-w-0">
-            <h1 className="terminal-label text-sm">Portfolio Overview</h1>
+            <h1 className="terminal-label text-base">Portfolio Overview</h1>
+            <p className="text-muted-foreground text-[10px] font-mono mt-0.5 truncate">Real-time performance snapshot</p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <FxModeToggle />
             <Button 
               onClick={() => navigate('/reports')} 
               variant="outline" 
               size="sm" 
-              className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 min-w-[44px] px-3"
+              className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-7 px-2"
             >
-              <FileText className="h-4 w-4" />
-              <span>Report</span>
+              <FileText className="h-3 w-3" />
+              <span>Reports</span>
             </Button>
           </div>
         </div>
-        
-      </div>
 
-      {/* Group 1: Total Portfolio Value (NAV = Cash + Holdings) - Always full width */}
-      <div className="w-full">
-        <KPICard
-          title="Total Portfolio Value"
-          value={hasData && adjustedMetrics ? formatCurrency(adjustedMetrics.totalValue) : '$0'}
-          icon={DollarSign}
-          trend={hasData && adjustedMetrics && adjustedMetrics.totalPL >= 0 ? 'up' : 'down'}
-          trendValue={hasData && adjustedMetrics ? formatCurrency(adjustedMetrics.totalPL) : undefined}
-          subLabel={fxLabel}
-          tooltip={fxMode === 'real' 
-            ? "Total portfolio value including cash and assets at current market rates, in base currency" 
-            : "Total portfolio value excluding FX impact, as if exchange rates remained constant"}
-        />
-      </div>
+        {/* Header - Mobile */}
+        <div className="sm:hidden flex flex-col gap-2 py-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h1 className="terminal-label text-sm">Portfolio Overview</h1>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <FxModeToggle />
+              <Button 
+                onClick={() => navigate('/reports')} 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 min-w-[44px] px-3"
+              >
+                <FileText className="h-4 w-4" />
+                <span>Report</span>
+              </Button>
+            </div>
+          </div>
+        </div>
 
-      {/* Top row: YTD Return, Unrealized %, Unrealized P/L, Realized P/L */}
+        {/* Group 1: Total Portfolio Value (NAV = Cash + Holdings) - Always full width */}
+        <div className="w-full mt-2">
+          <KPICard
+            title="Total Portfolio Value"
+            value={hasData && adjustedMetrics ? formatCurrency(adjustedMetrics.totalValue) : '$0'}
+            icon={DollarSign}
+            trend={hasData && adjustedMetrics && adjustedMetrics.totalPL >= 0 ? 'up' : 'down'}
+            trendValue={hasData && adjustedMetrics ? formatCurrency(adjustedMetrics.totalPL) : undefined}
+            subLabel={fxLabel}
+            tooltip={fxMode === 'real' 
+              ? "Total portfolio value including cash and assets at current market rates, in base currency" 
+              : "Total portfolio value excluding FX impact, as if exchange rates remained constant"}
+          />
+        </div>
+      </DottedGridBackground>
+
+      <div className="section-spacing">
       <StaggeredContainer className="grid grid-cols-2 lg:grid-cols-4 gap-2" staggerDelay={60} baseDelay={100}>
         <KPICard
           title="YTD Return"
