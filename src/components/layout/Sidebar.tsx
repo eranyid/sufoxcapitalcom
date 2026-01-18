@@ -1,145 +1,280 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, FlaskConical, Building2, HelpCircle, FileText, Banknote, BarChart3 } from 'lucide-react';
+import { 
+  LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, 
+  ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, 
+  FlaskConical, Building2, HelpCircle, FileText, Banknote, BarChart3,
+  ChevronDown
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import sufoxLogo from '@/assets/sufox-logo.png';
 import { LabIcon } from '@/components/icons/LabIcon';
+import { LucideIcon } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
-const navItems = [{
-  path: '/',
-  icon: LayoutDashboard,
-  label: 'OVERVIEW'
-}, {
-  path: '/performance',
-  icon: TrendingUp,
-  label: 'PERFORMANCE'
-}, {
-  path: '/risk',
-  icon: Shield,
-  label: 'RISK'
-}, {
-  path: '/scenarios',
-  icon: Layers,
-  label: 'SCENARIOS'
-}, {
-  path: '/xray',
-  icon: Scan,
-  label: 'X-RAY'
-}, {
-  path: '/research',
-  icon: FlaskConical,
-  label: 'RESEARCH'
-}, {
-  path: '/transactions',
-  icon: ArrowRightLeft,
-  label: 'TRANSACTIONS'
-}, {
-  path: '/valuations',
-  icon: Calendar,
-  label: 'VALUATIONS'
-}, {
-  path: '/fx-rates',
-  icon: Banknote,
-  label: 'FX RATES'
-}, {
-  path: '/policy',
-  icon: FileCheck,
-  label: 'POLICY'
-}, {
-  path: '/reports',
-  icon: FileText,
-  label: 'REPORTS'
-}, {
-  path: '/charts',
-  icon: BarChart3,
-  label: 'CHARTS'
-}, {
-  path: '/lab',
-  icon: LabIcon,
-  label: 'LAB'
-}, {
-  path: '/backoffice',
-  icon: Building2,
-  label: 'BACK OFFICE'
-}, {
-  path: '/settings',
-  icon: Settings,
-  label: 'SETTINGS'
-}, {
-  path: '/help',
-  icon: HelpCircle,
-  label: 'HELP'
-}];
+interface NavItem {
+  path: string;
+  icon: LucideIcon | typeof LabIcon;
+  label: string;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
+
+const navGroups: NavGroup[] = [
+  {
+    title: 'ANALYTICS',
+    defaultOpen: true,
+    items: [
+      { path: '/', icon: LayoutDashboard, label: 'Overview' },
+      { path: '/performance', icon: TrendingUp, label: 'Performance' },
+      { path: '/risk', icon: Shield, label: 'Risk' },
+      { path: '/scenarios', icon: Layers, label: 'Scenarios' },
+      { path: '/xray', icon: Scan, label: 'X-Ray' },
+      { path: '/charts', icon: BarChart3, label: 'Charts' },
+    ],
+  },
+  {
+    title: 'RESEARCH',
+    defaultOpen: true,
+    items: [
+      { path: '/research', icon: FlaskConical, label: 'Research' },
+      { path: '/lab', icon: LabIcon, label: 'Lab' },
+    ],
+  },
+  {
+    title: 'DATA',
+    defaultOpen: true,
+    items: [
+      { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
+      { path: '/valuations', icon: Calendar, label: 'Valuations' },
+      { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
+    ],
+  },
+  {
+    title: 'REPORTING',
+    defaultOpen: false,
+    items: [
+      { path: '/reports', icon: FileText, label: 'Reports' },
+      { path: '/policy', icon: FileCheck, label: 'Policy' },
+    ],
+  },
+  {
+    title: 'SYSTEM',
+    defaultOpen: false,
+    items: [
+      { path: '/backoffice', icon: Building2, label: 'Back Office' },
+      { path: '/settings', icon: Settings, label: 'Settings' },
+      { path: '/help', icon: HelpCircle, label: 'Help' },
+    ],
+  },
+];
+
+function NavGroupSection({ 
+  group, 
+  collapsed 
+}: { 
+  group: NavGroup; 
+  collapsed: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(group.defaultOpen ?? true);
+
+  if (collapsed) {
+    return (
+      <div className="py-1">
+        {group.items.map(({ path, icon: Icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center justify-center h-9 w-9 mx-auto rounded-lg transition-all duration-200",
+                "hover:bg-primary/10 hover:text-primary",
+                isActive && "bg-primary/15 text-primary shadow-sm shadow-primary/20"
+              )
+            }
+          >
+            <Icon size={16} />
+          </NavLink>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group">
+      <CollapsibleTrigger className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-semibold tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors">
+        <span>{group.title}</span>
+        <ChevronDown
+          size={12}
+          className={cn(
+            "transition-transform duration-200",
+            isOpen && "rotate-180"
+          )}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="animate-accordion-down">
+        <div className="space-y-0.5 pb-2">
+          {group.items.map(({ path, icon: Icon, label }) => (
+            <NavLink
+              key={path}
+              to={path}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 mx-2 px-3 py-2 rounded-lg text-[11px] font-medium tracking-wide transition-all duration-200",
+                  "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                  isActive && "bg-gradient-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm"
+                )
+              }
+            >
+              <Icon size={14} className="shrink-0" />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const {
-    user,
-    signOut,
-    isAdmin
-  } = useAuth();
-  return <aside className={cn("h-screen bg-sidebar flex flex-col transition-all duration-200 hidden md:flex", collapsed ? "w-12" : "w-56")}>
-      {/* Bloomberg gradient bar */}
-      <div className="bloomberg-gradient-bar" />
-      
+  const { user, signOut, isAdmin } = useAuth();
+
+  return (
+    <aside
+      className={cn(
+        "h-screen bg-sidebar flex flex-col transition-all duration-300 hidden md:flex relative",
+        "border-r border-sidebar-border/50",
+        collapsed ? "w-14" : "w-56"
+      )}
+    >
+      {/* Gradient accent line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
+
       {/* Logo */}
-      <div className={cn("px-4 py-6 border-b border-sidebar-border flex items-center justify-center", collapsed && "justify-center")}>
-        {!collapsed && <div className="flex items-center justify-center w-full">
-            <img alt="SUFOX Capital" className="h-20 w-20 object-contain" src="/lovable-uploads/02339762-cdfe-438f-8e95-2f033c67710b.png" />
-            
-          </div>}
-        {collapsed && <img alt="SUFOX" className="h-6 w-6 object-contain" src="/lovable-uploads/1e09c6ce-0760-4af9-bce3-47cfd7593a82.png" />}
-        <button onClick={() => setCollapsed(!collapsed)} className={cn("p-1 hover:bg-sidebar-accent text-muted-foreground hover:text-primary transition-colors", collapsed && "absolute left-12 top-4 bg-sidebar border border-sidebar-border z-10")}>
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      <div
+        className={cn(
+          "px-3 py-4 border-b border-sidebar-border/50 flex items-center",
+          collapsed ? "justify-center" : "justify-between"
+        )}
+      >
+        <div className={cn("flex items-center gap-2", collapsed && "justify-center")}>
+          <div className="relative">
+            <img
+              alt="SUFOX"
+              className={cn(
+                "object-contain transition-all duration-300",
+                collapsed ? "h-7 w-7" : "h-10 w-10"
+              )}
+              src="/lovable-uploads/1e09c6ce-0760-4af9-bce3-47cfd7593a82.png"
+            />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-sidebar animate-pulse" />
+          </div>
+          {!collapsed && (
+            <div className="flex flex-col">
+              <span className="text-sm font-bold tracking-tight text-foreground">SUFOX</span>
+              <span className="text-[9px] text-muted-foreground font-mono tracking-widest">CAPITAL</span>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className={cn(
+            "p-1.5 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-primary transition-all duration-200",
+            collapsed && "absolute -right-3 top-5 bg-sidebar border border-sidebar-border shadow-lg z-10 rounded-full"
+          )}
+        >
+          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-2 space-y-0.5 overflow-y-auto">
-        {navItems.map(({
-        path,
-        icon: Icon,
-        label
-      }) => <NavLink key={path} to={path} className={({
-        isActive
-      }) => cn("nav-link mx-1", isActive && "active")}>
-            <Icon size={14} />
-            {!collapsed && <span className="text-[11px] tracking-wide">{label}</span>}
-          </NavLink>)}
-        
-        {/* Admin Link - only visible to admin */}
-        {isAdmin && <NavLink to="/admin/users" className={({
-        isActive
-      }) => cn("nav-link mx-1 mt-2 border-t border-sidebar-border pt-2", isActive && "active")}>
-            <Users size={14} />
-            {!collapsed && <span className="text-[11px] tracking-wide text-primary">ADMIN</span>}
-          </NavLink>}
+      <nav className="flex-1 py-3 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted/30">
+        {navGroups.map((group) => (
+          <NavGroupSection key={group.title} group={group} collapsed={collapsed} />
+        ))}
+
+        {/* Admin Link */}
+        {isAdmin && (
+          <div className="pt-2 mt-2 border-t border-sidebar-border/50">
+            {collapsed ? (
+              <NavLink
+                to="/admin/users"
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center justify-center h-9 w-9 mx-auto rounded-lg transition-all duration-200",
+                    "hover:bg-primary/10 text-primary",
+                    isActive && "bg-primary/15 shadow-sm shadow-primary/20"
+                  )
+                }
+              >
+                <Users size={16} />
+              </NavLink>
+            ) : (
+              <NavLink
+                to="/admin/users"
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 mx-2 px-3 py-2 rounded-lg text-[11px] font-medium tracking-wide transition-all duration-200",
+                    "text-primary hover:bg-primary/10",
+                    isActive && "bg-primary/15 border-l-2 border-primary"
+                  )
+                }
+              >
+                <Users size={14} className="shrink-0" />
+                <span>Admin</span>
+              </NavLink>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* User & Sign Out */}
-      <div className="border-t border-sidebar-border p-2 space-y-1">
-        {!collapsed && user && <div className="px-2 py-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Signed in as</p>
-            <p className="text-xs text-foreground truncate font-mono">{user.email}</p>
-          </div>}
-        <button onClick={signOut} className={cn("w-full flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded", collapsed && "justify-center")}>
+      <div className="border-t border-sidebar-border/50 p-3 space-y-2 bg-gradient-to-t from-muted/5 to-transparent">
+        {!collapsed && user && (
+          <div className="px-1 py-1">
+            <p className="text-[9px] text-muted-foreground/60 uppercase tracking-widest">Signed in</p>
+            <p className="text-[11px] text-foreground truncate font-mono mt-0.5">{user.email}</p>
+          </div>
+        )}
+        <button
+          onClick={signOut}
+          className={cn(
+            "w-full flex items-center gap-2 px-3 py-2 text-[11px] text-muted-foreground hover:text-destructive",
+            "hover:bg-destructive/10 transition-all duration-200 rounded-lg font-medium",
+            collapsed && "justify-center px-0"
+          )}
+        >
           <LogOut size={14} />
-          {!collapsed && <span className="text-[11px] tracking-wide">SIGN OUT</span>}
+          {!collapsed && <span>Sign Out</span>}
         </button>
       </div>
 
       {/* Footer */}
-      {!collapsed && <div className="px-2 py-2 border-t border-sidebar-border">
-          <p className="text-[9px] text-primary font-mono text-center tracking-widest">
-            TERMINAL v1.0
-          </p>
-          <p className="text-[8px] text-muted-foreground font-mono text-center mt-0.5">
-            {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        })}
-          </p>
-        </div>}
-    </aside>;
+      {!collapsed && (
+        <div className="px-3 py-2 border-t border-sidebar-border/30 bg-muted/5">
+          <div className="flex items-center justify-between text-[9px] text-muted-foreground/50 font-mono">
+            <span className="tracking-widest">v1.0</span>
+            <span>
+              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
 }
