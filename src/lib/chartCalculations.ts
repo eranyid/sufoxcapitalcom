@@ -579,12 +579,26 @@ export function calculateChartData(
         };
         
       case 'correlation_matrix':
-        const { tickers, matrix } = calculateCorrelationMatrix(filteredTransactions, filteredValuations);
+        // For correlation matrix, use ALL transactions and valuations (not filtered)
+        // because we need enough history for meaningful correlations
+        const { tickers, matrix } = calculateCorrelationMatrix(transactions, valuations);
+        
+        // Filter tickers based on selected assets
         const filteredTickers = state.assets.length > 0 
           ? tickers.filter(t => state.assets.includes(t))
           : tickers;
         
-        // Filter matrix to match
+        // If not enough assets after filtering, return error
+        if (filteredTickers.length < 2) {
+          return {
+            success: false,
+            data: { tickers: [], matrix: [] },
+            dataType: 'matrix',
+            error: 'Need at least 2 assets with overlapping data for correlation matrix',
+          };
+        }
+        
+        // Filter matrix to match selected assets
         const tickerIndices = filteredTickers.map(t => tickers.indexOf(t)).filter(i => i >= 0);
         const filteredMatrix = tickerIndices.map(i => 
           tickerIndices.map(j => matrix[i][j])

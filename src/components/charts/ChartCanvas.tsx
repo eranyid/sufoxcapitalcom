@@ -162,7 +162,15 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
   }
   
   // No data
-  if (result && result.success && (!result.data || (Array.isArray(result.data) && result.data.length === 0))) {
+  const isEmptyData = (data: any): boolean => {
+    if (!data) return true;
+    if (Array.isArray(data)) return data.length === 0;
+    // For correlation matrix
+    if (data.tickers && Array.isArray(data.tickers)) return data.tickers.length === 0;
+    return false;
+  };
+  
+  if (result && result.success && isEmptyData(result.data)) {
     return (
       <div className="flex-1 flex items-center justify-center bg-card/30 rounded-lg border border-border/50">
         <div className="text-center p-8">
