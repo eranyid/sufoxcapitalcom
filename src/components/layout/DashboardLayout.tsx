@@ -14,6 +14,7 @@ import { CommandBar } from '@/components/CommandBar';
 import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationsDrawer } from '@/components/notifications/NotificationsDrawer';
+import { DottedGridBackground } from '@/components/DottedGridBackground';
 import { getUSMarketSession, getTASEMarketSession, getUSStatusColor, getTASEStatusColor, formatCountdown, TIMEZONE_ISRAEL } from '@/lib/marketSessionEngine';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -115,7 +116,16 @@ export function DashboardLayout() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen min-h-dvh w-full bg-background overflow-x-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen min-h-dvh w-full bg-background overflow-x-hidden relative">
+      {/* Global dotted grid background */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: `radial-gradient(circle, hsl(var(--foreground) / 0.03) 1px, transparent 1px)`,
+          backgroundSize: '24px 24px',
+        }}
+        aria-hidden="true"
+      />
       {/* Desktop Sidebar - hidden on mobile */}
       <Sidebar />
 
