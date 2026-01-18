@@ -404,6 +404,7 @@ export default function Lab() {
               selectedBlock={selectedBlock}
               onUpdateBlock={handleUpdateBlock}
               availableAssets={availableAssets}
+              pipelineBlocks={blocks}
             />
           </div>
         </div>
