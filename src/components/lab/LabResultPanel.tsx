@@ -395,20 +395,23 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
   };
 
   return (
-    <div className="border-t border-border bg-card/50">
+    <div className="border-t border-[hsl(var(--lab-accent)/0.3)] bg-gradient-to-b from-[hsl(var(--lab-accent)/0.08)] to-card/50">
       {/* Header */}
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+      <div className="px-4 py-2.5 border-b border-[hsl(var(--lab-accent)/0.2)] flex items-center justify-between bg-[hsl(var(--lab-accent)/0.05)]">
         <div className="flex items-center gap-2">
           {isRunning ? (
-            <Clock className="h-4 w-4 text-primary animate-pulse" />
+            <Clock className="h-4 w-4 text-[hsl(var(--lab-accent))] animate-pulse" />
           ) : result?.success ? (
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lab-accent))]" />
           ) : result ? (
             <XCircle className="h-4 w-4 text-red-500" />
           ) : (
-            <TableIcon className="h-4 w-4 text-muted-foreground" />
+            <TableIcon className="h-4 w-4 text-[hsl(var(--lab-accent)/0.6)]" />
           )}
-          <span className="text-xs font-medium">
+          <span className={cn(
+            "text-xs font-medium",
+            result?.success ? "text-[hsl(var(--lab-accent))]" : ""
+          )}>
             {isRunning 
               ? 'Running...' 
               : result?.success 
@@ -425,7 +428,7 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
             variant="ghost" 
             size="sm" 
             onClick={handleExport}
-            className="h-7 text-xs"
+            className="h-7 text-xs text-[hsl(var(--lab-accent))] hover:text-[hsl(var(--lab-accent))] hover:bg-[hsl(var(--lab-accent)/0.1)]"
           >
             <Download className="h-3.5 w-3.5 mr-1.5" />
             Export
@@ -438,14 +441,16 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
         <div className="p-4">
           {isRunning ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+              <div className="animate-spin h-6 w-6 border-2 border-[hsl(var(--lab-accent))] border-t-transparent rounded-full" />
             </div>
           ) : result?.error ? (
             <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
               <p className="text-xs text-destructive">{result.error}</p>
             </div>
           ) : result ? (
-            renderResult()
+            <div className="[&_th]:text-[hsl(var(--lab-accent))] [&_th]:border-[hsl(var(--lab-accent)/0.2)]">
+              {renderResult()}
+            </div>
           ) : (
             <div className="text-center py-8">
               <p className="text-xs text-muted-foreground">

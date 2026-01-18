@@ -68,6 +68,11 @@
     --chart-white: 0 0% 90%;
     --chart-navy: 220 60% 35%;
 
+    /* Lab Results Accent */
+    --lab-accent: 220 85% 55%;
+    --lab-accent-foreground: 0 0% 100%;
+    --lab-glow: 220 85% 55%;
+
     --sidebar-background: 0 0% 9%;
     --sidebar-foreground: 0 0% 85%;
     --sidebar-primary: 30 100% 50%;
