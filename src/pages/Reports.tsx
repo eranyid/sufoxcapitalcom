@@ -172,8 +172,8 @@ export default function Reports() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Reports</h1>
+          <p className="text-sm text-foreground/70 mt-1">
             Build and export custom investment reports
           </p>
         </div>
@@ -210,13 +210,13 @@ export default function Reports() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
+        <div className="rounded-md border border-border/60 overflow-hidden bg-card/30">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground">Name</TableHead>
-                <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[140px]">Last Updated</TableHead>
-                <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[100px]">Page Size</TableHead>
+              <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/50">
+                <TableHead className="font-medium text-xs uppercase tracking-wide text-foreground/80">Name</TableHead>
+                <TableHead className="font-medium text-xs uppercase tracking-wide text-foreground/80 w-[140px]">Last Updated</TableHead>
+                <TableHead className="font-medium text-xs uppercase tracking-wide text-foreground/80 w-[100px]">Page Size</TableHead>
                 <TableHead className="w-[140px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -237,7 +237,7 @@ export default function Reports() {
                           {report.name}
                         </span>
                         {report.description && (
-                          <p className="text-xs text-muted-foreground truncate max-w-md mt-0.5">
+                          <p className="text-xs text-foreground/60 truncate max-w-md mt-0.5">
                             {report.description}
                           </p>
                         )}
@@ -245,7 +245,7 @@ export default function Reports() {
                     </div>
                   </TableCell>
                   <TableCell className="py-3">
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-sm text-foreground/70">
                       <Calendar size={12} />
                       <span className="font-mono text-xs">
                         {format(new Date(report.updated_at), 'MMM d, HH:mm')}
@@ -253,7 +253,7 @@ export default function Reports() {
                     </div>
                   </TableCell>
                   <TableCell className="py-3">
-                    <span className="text-xs font-mono text-muted-foreground">
+                    <span className="text-xs font-mono text-foreground/70">
                       {report.page_size}
                     </span>
                   </TableCell>
@@ -262,7 +262,7 @@ export default function Reports() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        className="h-8 w-8 text-foreground/60 hover:text-primary"
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/reports/${report.id}`);
@@ -274,7 +274,7 @@ export default function Reports() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        className="h-8 w-8 text-foreground/60 hover:text-primary"
                         onClick={(e) => openEmailDialog(report, e)}
                         title="Send via Email"
                       >
@@ -283,7 +283,7 @@ export default function Reports() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        className="h-8 w-8 text-foreground/60 hover:text-primary"
                         onClick={(e) => handleDuplicate(report.id, e)}
                         title="Duplicate"
                       >
@@ -292,7 +292,7 @@ export default function Reports() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        className="h-8 w-8 text-foreground/60 hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
                           setDeleteId(report.id);
