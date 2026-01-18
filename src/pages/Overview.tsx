@@ -156,9 +156,10 @@ export default function Overview() {
       {/* Hero section with dotted grid background */}
       <DottedGridBackground 
         dotSize={1} 
-        dotSpacing={20} 
-        opacity={0.05} 
+        dotSpacing={16} 
+        opacity={0.04} 
         fadeEdges={true}
+        fadeType="linear"
         className="section-spacing sm:mt-0 -mt-1 -mx-3 px-3 sm:-mx-4 sm:px-4 py-4"
       >
         {/* Header - Desktop */}
