@@ -77,15 +77,15 @@ function NavGroupSection({
   if (collapsed) {
     return (
       <>
-        {!isFirst && <div className="mx-2 my-1 border-t border-sidebar-border/30" />}
-        <div className="py-0.5">
+        {!isFirst && <div className="mx-2 my-1.5 border-t border-sidebar-border/30" />}
+        <div className="py-0.5 space-y-0.5">
           {group.items.map(({ path, icon: Icon }) => (
             <NavLink
               key={path}
               to={path}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center justify-center h-7 w-7 mx-auto rounded-md transition-all duration-200",
+                  "flex items-center justify-center h-8 w-8 mx-auto rounded-md transition-all duration-200",
                   "hover:bg-primary/10 hover:text-primary",
                   isActive && "bg-primary/15 text-primary shadow-sm shadow-primary/20"
                 )
@@ -101,21 +101,21 @@ function NavGroupSection({
 
   return (
     <>
-      {!isFirst && <div className="mx-3 my-1 border-t border-sidebar-border/30" />}
-      <div className="space-y-0">
+      {!isFirst && <div className="mx-3 my-1.5 border-t border-sidebar-border/30" />}
+      <div className="space-y-0.5 py-0.5">
         {group.items.map(({ path, icon: Icon, label }) => (
           <NavLink
             key={path}
             to={path}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-2.5 mx-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-medium tracking-wide transition-all duration-200",
+                "flex items-center gap-2.5 mx-1.5 px-2.5 py-2 rounded-md text-[11px] font-medium tracking-wide transition-all duration-200",
                 "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                 isActive && "bg-gradient-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm"
               )
             }
           >
-            <Icon size={13} className="shrink-0" />
+            <Icon size={14} className="shrink-0" />
             <span>{label}</span>
           </NavLink>
         ))}
