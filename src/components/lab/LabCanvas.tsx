@@ -122,11 +122,22 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, onDupli
         </div>
       )}
 
-      {/* Connection line */}
+      {/* Connection line with animated flow */}
       {!isFirst && !isDragging && (
-        <div className="flex justify-center -my-1 transition-opacity duration-200">
-          <div className="w-0.5 h-4 bg-border" />
-          <ChevronDown className="h-4 w-4 text-muted-foreground -ml-2" />
+        <div className="flex flex-col items-center -my-0.5 transition-opacity duration-200">
+          {/* Connector line with gradient */}
+          <div className="relative w-8 h-6 flex items-center justify-center">
+            {/* Animated flow indicator */}
+            <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+              <div className="w-0.5 h-full bg-gradient-to-b from-[hsl(var(--lab-accent)/0.3)] via-[hsl(var(--lab-accent)/0.6)] to-[hsl(var(--lab-accent)/0.3)]" />
+              {/* Animated pulse */}
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-[hsl(var(--lab-accent))] animate-[flowPulse_2s_ease-in-out_infinite] shadow-[0_0_6px_hsl(var(--lab-accent))]" />
+            </div>
+          </div>
+          {/* Arrow indicator */}
+          <div className="relative -mt-1">
+            <ChevronDown className="h-4 w-4 text-[hsl(var(--lab-accent))]" />
+          </div>
         </div>
       )}
       
