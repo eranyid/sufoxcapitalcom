@@ -4,9 +4,7 @@ import {
   BarChart3, 
   RefreshCw, 
   Bookmark,
-  Download,
-  FileText,
-  Settings2,
+  Database,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -134,16 +132,17 @@ export default function Charts() {
       
       <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
         {/* Toolbar - matching Lab style */}
-        <div className="border-b border-border bg-card/50 px-4 py-2 flex items-center justify-between shrink-0">
+        <div className="border-b border-border/50 bg-card/30 backdrop-blur-sm px-4 py-2 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium">Charts</span>
+              <span className="text-sm font-medium tracking-wide">Charts</span>
             </div>
             <Badge 
               variant={availableAssets.length > 0 ? "default" : "secondary"} 
               className="text-[10px] gap-1"
             >
+              <Database className="h-3 w-3" />
               {availableAssets.length} assets
             </Badge>
           </div>
@@ -152,7 +151,7 @@ export default function Charts() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8"
+              className="h-8 text-xs"
               onClick={handleSaveView}
             >
               <Bookmark className="h-3.5 w-3.5 mr-1.5" />
@@ -161,7 +160,7 @@ export default function Charts() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8"
+              className="h-8 text-xs"
               onClick={handleReset}
             >
               <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
@@ -170,7 +169,7 @@ export default function Charts() {
           </div>
         </div>
         
-        {/* Main content - 2 panel layout */}
+        {/* Main content */}
         <div className="flex-1 flex overflow-hidden">
           {isMobile ? (
             <>
@@ -200,88 +199,42 @@ export default function Charts() {
             </>
           ) : (
             <>
-              {/* Left Panel - Builder & Export */}
-              <div className="w-72 border-r border-border bg-card/30 flex flex-col shrink-0">
-                <div className="px-4 py-3 border-b border-border/50">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+              {/* Left Panel - Compact Builder */}
+              <div className="w-64 border-r border-border/50 bg-card/20 flex flex-col shrink-0">
+                <div className="px-3 py-2.5 border-b border-border/30">
+                  <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Chart Builder
                   </h2>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Configure chart parameters
-                  </p>
                 </div>
                 <div className="flex-1 overflow-auto">
                   {builderContent}
                 </div>
-                
-                {/* Export section */}
-                <div className="border-t border-border/50 p-4">
-                  <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                    Export
-                  </h3>
-                  {result ? (
-                    <div className="space-y-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full h-8 justify-start text-xs"
-                        onClick={() => toast.info('PNG export coming soon')}
-                      >
-                        <Download className="h-3.5 w-3.5 mr-2" />
-                        Export as PNG
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full h-8 justify-start text-xs"
-                        onClick={() => toast.info('PDF export coming soon')}
-                      >
-                        <FileText className="h-3.5 w-3.5 mr-2" />
-                        Export as PDF
-                      </Button>
-                      
-                      {/* Chart info */}
-                      <div className="pt-3 mt-3 border-t border-border/30 space-y-1.5 text-[10px]">
-                        <div className="flex justify-between text-muted-foreground">
-                          <span>Type</span>
-                          <span className="font-mono text-foreground">{result.dataType}</span>
-                        </div>
-                        {result.metadata && (
-                          <>
-                            <div className="flex justify-between text-muted-foreground">
-                              <span>Assets</span>
-                              <span className="font-mono text-foreground">{result.metadata.assetsWithData.length}</span>
-                            </div>
-                            <div className="flex justify-between text-muted-foreground">
-                              <span>Period</span>
-                              <span className="font-mono text-foreground">{result.metadata.dateRange.start} → {result.metadata.dateRange.end}</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground">Configure chart to export</p>
-                  )}
-                </div>
               </div>
               
-              {/* Main Panel - Chart Canvas (expanded) */}
-              <div className="flex-1 flex flex-col min-w-0 bg-muted/20">
-                <div className="px-4 py-3 border-b border-border/50 bg-card/30">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                    Chart Canvas
-                  </h2>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Visualize your portfolio data
-                  </p>
-                </div>
-                <div className="flex-1 p-6 overflow-auto">
-                  <ChartCanvas
-                    result={result}
-                    state={state}
-                    isCalculating={isCalculating}
+              {/* Main Panel - Chart Canvas (dominant) */}
+              <div className="flex-1 flex flex-col min-w-0 p-4 bg-background">
+                {/* Canvas container with Lab-style styling */}
+                <div className="flex-1 relative rounded-xl border border-border/40 bg-card/10 overflow-hidden shadow-[0_0_60px_-15px_hsl(var(--primary)/0.15)]">
+                  {/* Dotted grid background */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `radial-gradient(circle, hsl(var(--foreground) / 0.03) 1px, transparent 1px)`,
+                      backgroundSize: '20px 20px',
+                      maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)',
+                    }}
+                    aria-hidden="true"
                   />
+                  
+                  {/* Chart content */}
+                  <div className="relative z-10 h-full p-4">
+                    <ChartCanvas
+                      result={result}
+                      state={state}
+                      isCalculating={isCalculating}
+                    />
+                  </div>
                 </div>
               </div>
             </>
