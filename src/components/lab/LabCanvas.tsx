@@ -255,32 +255,36 @@ export function LabCanvas({
               )} />
               
               {/* Inner content */}
-              <div className="relative z-10 flex flex-col items-center gap-5 p-8">
+              <div className="relative z-10 flex flex-col items-center gap-5 p-8 group/icon">
                 {/* Animated icon container */}
                 <div className={cn(
                   "relative w-20 h-20 flex items-center justify-center transition-all duration-500",
+                  "group-hover/icon:animate-[float_3s_ease-in-out_infinite]",
                   showDropZone && "animate-pulse"
                 )}>
                   {/* Background circles */}
                   <div className={cn(
                     "absolute inset-0 rounded-full transition-all duration-500",
+                    "group-hover/icon:scale-110 group-hover/icon:shadow-lg",
                     showDropZone 
                       ? "bg-primary/20 scale-125" 
-                      : "bg-gradient-to-br from-muted/80 to-muted/40"
+                      : "bg-gradient-to-br from-muted/80 to-muted/40 group-hover/icon:from-primary/20 group-hover/icon:to-primary/10"
                   )} />
                   <div className={cn(
                     "absolute inset-2 rounded-full transition-all duration-500",
+                    "group-hover/icon:scale-105",
                     showDropZone 
                       ? "bg-primary/10" 
-                      : "bg-background/60 backdrop-blur-sm"
+                      : "bg-background/60 backdrop-blur-sm group-hover/icon:bg-background/80"
                   )} />
                   
                   {/* Icon */}
                   <Database className={cn(
                     "relative h-9 w-9 transition-all duration-500",
+                    "group-hover/icon:rotate-6 group-hover/icon:scale-110",
                     showDropZone 
                       ? "text-primary scale-110" 
-                      : "text-muted-foreground/70"
+                      : "text-muted-foreground/70 group-hover/icon:text-primary"
                   )} />
                 </div>
                 
