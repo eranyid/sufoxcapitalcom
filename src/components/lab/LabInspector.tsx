@@ -718,9 +718,23 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="table">Table</SelectItem>
-              <SelectItem value="line_chart">Line Chart</SelectItem>
-              <SelectItem value="heatmap">Heatmap</SelectItem>
+              <SelectItem value="table">📊 Table</SelectItem>
+              <SelectItem value="line_chart">📈 Line Chart</SelectItem>
+              <SelectItem value="area_chart">📉 Area Chart</SelectItem>
+              <SelectItem value="bar_chart">📊 Bar Chart</SelectItem>
+              <SelectItem value="stacked_bar">📊 Stacked Bar</SelectItem>
+              <SelectItem value="pie_chart">🥧 Pie Chart</SelectItem>
+              <SelectItem value="donut_chart">🍩 Donut Chart</SelectItem>
+              <SelectItem value="treemap">🔲 Treemap</SelectItem>
+              <SelectItem value="radar_chart">🕸️ Radar Chart</SelectItem>
+              <SelectItem value="heatmap">🔥 Heatmap</SelectItem>
+              <SelectItem value="scatter">⚬ Scatter Plot</SelectItem>
+              <SelectItem value="histogram">📊 Histogram</SelectItem>
+              <SelectItem value="waterfall">💧 Waterfall</SelectItem>
+              <SelectItem value="gauge">🎯 Gauge</SelectItem>
+              <SelectItem value="sparkline_grid">✨ Sparklines Grid</SelectItem>
+              <SelectItem value="kpi_cards">🎴 KPI Cards</SelectItem>
+              <SelectItem value="summary_card">📝 Summary Card</SelectItem>
             </SelectContent>
           </Select>
         </div>
