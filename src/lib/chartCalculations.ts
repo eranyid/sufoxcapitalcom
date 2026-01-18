@@ -542,34 +542,38 @@ export function calculateChartData(
         };
         
       case 'return_pct':
+        // Use ALL transactions for ticker discovery, but filtered valuations for data
         return {
           success: true,
-          data: calculateReturnData(filteredTransactions, filteredValuations, state.assets),
+          data: calculateReturnData(transactions, filteredValuations, state.assets),
           dataType: 'timeseries',
           metadata,
         };
         
       case 'cumulative_return':
+        // Use ALL transactions for ticker discovery, but filtered valuations for data
         return {
           success: true,
-          data: calculateCumulativeReturnData(filteredTransactions, filteredValuations, state.assets),
+          data: calculateCumulativeReturnData(transactions, filteredValuations, state.assets),
           dataType: 'timeseries',
           metadata,
         };
         
       case 'drawdown':
+        // Use ALL transactions for ticker discovery, but filtered valuations for data
         return {
           success: true,
-          data: calculateDrawdownData(filteredTransactions, filteredValuations, state.assets),
+          data: calculateDrawdownData(transactions, filteredValuations, state.assets),
           dataType: 'timeseries',
           metadata,
         };
         
       case 'rolling_volatility':
+        // Use ALL transactions for ticker discovery, but filtered valuations for data
         return {
           success: true,
           data: calculateRollingVolatilityData(
-            filteredTransactions, 
+            transactions, 
             filteredValuations, 
             state.assets, 
             state.rollingWindow
@@ -627,7 +631,7 @@ export function calculateChartData(
         return {
           success: true,
           data: calculateRollingCorrelationData(
-            filteredTransactions,
+            transactions,
             filteredValuations,
             asset1,
             asset2,
@@ -660,7 +664,7 @@ export function calculateChartData(
         return {
           success: true,
           data: calculateBetaData(
-            filteredTransactions,
+            transactions,
             filteredValuations,
             betaAsset,
             benchmarkReturns,
@@ -679,9 +683,10 @@ export function calculateChartData(
         };
         
       case 'contribution':
+        // Use ALL transactions for ticker discovery
         return {
           success: true,
-          data: calculateContributionData(filteredTransactions, filteredValuations, state.assets),
+          data: calculateContributionData(transactions, filteredValuations, state.assets),
           dataType: 'contribution',
           metadata,
         };
