@@ -34,17 +34,74 @@ const FALLBACK_ASSETS = [
   'SPY', 'QQQ', 'IWM', 'TLT', 'GLD', 'VTI', 'VEA', 'VWO',
 ];
 
+// Define which compute functions are available for each data source type
+const COMPUTE_FUNCTIONS_BY_SOURCE: Record<string, { value: string; label: string }[]> = {
+  prices: [
+    { value: 'price_at_month_end', label: 'Price at Month End' },
+    { value: 'return_over_period', label: 'Return Over Period' },
+    { value: 'cagr', label: 'CAGR' },
+    { value: 'price_statistics', label: 'Price Statistics' },
+    { value: 'volatility', label: 'Volatility' },
+    { value: 'rolling_volatility', label: 'Rolling Volatility' },
+    { value: 'drawdown_analysis', label: 'Drawdown Analysis' },
+    { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)' },
+  ],
+  returns: [
+    { value: 'return_over_period', label: 'Return Over Period' },
+    { value: 'correlation_pair', label: 'Correlation (2 Assets)' },
+    { value: 'correlation_matrix', label: 'Correlation Matrix' },
+    { value: 'rolling_correlation', label: 'Rolling Correlation' },
+    { value: 'volatility', label: 'Volatility' },
+    { value: 'rolling_volatility', label: 'Rolling Volatility' },
+    { value: 'sharpe_ratio', label: 'Sharpe Ratio' },
+    { value: 'sortino_ratio', label: 'Sortino Ratio' },
+    { value: 'beta', label: 'Beta (vs Benchmark)' },
+    { value: 'var_analysis', label: 'VaR Analysis' },
+    { value: 'cagr', label: 'CAGR' },
+  ],
+};
+
+// All compute functions for fallback
+const ALL_COMPUTE_FUNCTIONS = [
+  { value: 'price_at_month_end', label: 'Price at Month End' },
+  { value: 'return_over_period', label: 'Return Over Period' },
+  { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)' },
+  { value: 'cagr', label: 'CAGR' },
+  { value: 'price_statistics', label: 'Price Statistics' },
+  { value: 'volatility', label: 'Volatility' },
+  { value: 'rolling_volatility', label: 'Rolling Volatility' },
+  { value: 'sharpe_ratio', label: 'Sharpe Ratio' },
+  { value: 'sortino_ratio', label: 'Sortino Ratio' },
+  { value: 'beta', label: 'Beta (vs Benchmark)' },
+  { value: 'var_analysis', label: 'VaR Analysis' },
+  { value: 'drawdown_analysis', label: 'Drawdown Analysis' },
+  { value: 'correlation_pair', label: 'Correlation (2 Assets)' },
+  { value: 'correlation_matrix', label: 'Correlation Matrix' },
+  { value: 'rolling_correlation', label: 'Rolling Correlation' },
+];
+
 interface LabInspectorProps {
   selectedBlock: AnalyticsBlock | null;
   onUpdateBlock: (blockId: string, config: any) => void;
   /** Available assets from real database data */
   availableAssets?: string[];
+  /** All blocks in the pipeline to determine data source type */
+  pipelineBlocks?: AnalyticsBlock[];
 }
 
-export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [] }: LabInspectorProps) {
+export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [], pipelineBlocks = [] }: LabInspectorProps) {
   // Use real assets if available, otherwise fallback
   const assetsToShow = availableAssets.length > 0 ? availableAssets : FALLBACK_ASSETS;
   const hasRealData = availableAssets.length > 0;
+  
+  // Determine the data source type from the pipeline
+  const dataSourceBlock = pipelineBlocks.find(b => b.type === 'data_source');
+  const dataSourceType = (dataSourceBlock?.config as DataSourceConfig | undefined)?.sourceType;
+  
+  // Get available compute functions based on data source
+  const availableComputeFunctions = dataSourceType 
+    ? COMPUTE_FUNCTIONS_BY_SOURCE[dataSourceType] || ALL_COMPUTE_FUNCTIONS
+    : ALL_COMPUTE_FUNCTIONS;
   
   if (!selectedBlock) {
     return (
@@ -260,12 +317,23 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
   const renderComputeConfig = () => {
     const config = selectedBlock.config as ComputeConfig;
     
+    // Check if current function is available, if not reset to first available
+    const isCurrentFunctionAvailable = availableComputeFunctions.some(f => f.value === config.function);
+    
     return (
       <div className="space-y-4">
+        {!dataSourceType && (
+          <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-md">
+            <p className="text-[10px] text-amber-400">
+              Add a Data Source block to see relevant functions
+            </p>
+          </div>
+        )}
+        
         <div>
           <Label className="text-xs">Function</Label>
           <Select
-            value={config.function}
+            value={isCurrentFunctionAvailable ? config.function : availableComputeFunctions[0]?.value}
             onValueChange={(value) => 
               onUpdateBlock(selectedBlock.id, { ...config, function: value })
             }
@@ -274,23 +342,18 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="price_at_month_end">Price at Month End</SelectItem>
-              <SelectItem value="return_over_period">Return Over Period</SelectItem>
-              <SelectItem value="total_return_with_cost_basis">Total Return (Cost Basis)</SelectItem>
-              <SelectItem value="cagr">CAGR</SelectItem>
-              <SelectItem value="price_statistics">Price Statistics</SelectItem>
-              <SelectItem value="volatility">Volatility</SelectItem>
-              <SelectItem value="rolling_volatility">Rolling Volatility</SelectItem>
-              <SelectItem value="sharpe_ratio">Sharpe Ratio</SelectItem>
-              <SelectItem value="sortino_ratio">Sortino Ratio</SelectItem>
-              <SelectItem value="beta">Beta (vs Benchmark)</SelectItem>
-              <SelectItem value="var_analysis">VaR Analysis</SelectItem>
-              <SelectItem value="drawdown_analysis">Drawdown Analysis</SelectItem>
-              <SelectItem value="correlation_pair">Correlation (2 Assets)</SelectItem>
-              <SelectItem value="correlation_matrix">Correlation Matrix</SelectItem>
-              <SelectItem value="rolling_correlation">Rolling Correlation</SelectItem>
+              {availableComputeFunctions.map((func) => (
+                <SelectItem key={func.value} value={func.value}>
+                  {func.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+          {dataSourceType && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Showing {availableComputeFunctions.length} functions for "{dataSourceType}" data
+            </p>
+          )}
         </div>
         
         {(config.function === 'rolling_correlation' || config.function === 'rolling_volatility') && (
