@@ -459,7 +459,7 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
             )}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[280px] overflow-y-auto">
               {/* Only show valid functions - hide invalid ones completely */}
               {validFunctions.length > 0 ? (
                 validFunctions.map((func) => (
