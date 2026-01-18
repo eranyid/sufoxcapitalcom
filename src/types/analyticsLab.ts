@@ -19,7 +19,8 @@ export type ComputeFunction =
   | 'rolling_correlation'
   | 'total_return_with_cost_basis'
   | 'volatility'
-  | 'sharpe_ratio';
+  | 'sharpe_ratio'
+  | 'drawdown_analysis';
 export type OutputType = 'table' | 'line_chart' | 'heatmap';
 
 export interface DataSourceConfig {
@@ -234,6 +235,18 @@ export const QUICK_PRESETS: QuickPreset[] = [
       { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
       { type: 'compute', position: 2, config: { function: 'volatility' } as ComputeConfig },
       { type: 'output', position: 3, config: { outputType: 'table', title: 'Volatility Analysis' } as OutputConfig },
+    ],
+  },
+  {
+    id: 'drawdown_analysis',
+    name: 'Drawdown Analysis',
+    description: 'Maximum drawdown and recovery periods',
+    icon: 'TrendingDown',
+    blocks: [
+      { type: 'data_source', position: 0, config: { sourceType: 'prices', assets: [] } as DataSourceConfig },
+      { type: 'date_range', position: 1, config: { preset: '12M' } as DateRangeConfig },
+      { type: 'compute', position: 2, config: { function: 'drawdown_analysis' } as ComputeConfig },
+      { type: 'output', position: 3, config: { outputType: 'table', title: 'Drawdown Analysis' } as OutputConfig },
     ],
   },
 ];

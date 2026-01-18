@@ -279,6 +279,7 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
               <SelectItem value="total_return_with_cost_basis">Total Return (Cost Basis)</SelectItem>
               <SelectItem value="volatility">Volatility</SelectItem>
               <SelectItem value="sharpe_ratio">Sharpe Ratio</SelectItem>
+              <SelectItem value="drawdown_analysis">Drawdown Analysis</SelectItem>
               <SelectItem value="correlation_pair">Correlation (2 Assets)</SelectItem>
               <SelectItem value="correlation_matrix">Correlation Matrix</SelectItem>
               <SelectItem value="rolling_correlation">Rolling Correlation</SelectItem>
@@ -323,6 +324,14 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
           <div className="p-2 bg-muted/50 rounded-md">
             <p className="text-[10px] text-muted-foreground">
               Calculates total return using cost basis from your transaction history.
+            </p>
+          </div>
+        )}
+        
+        {config.function === 'drawdown_analysis' && (
+          <div className="p-2 bg-muted/50 rounded-md">
+            <p className="text-[10px] text-muted-foreground">
+              Calculates maximum drawdown, recovery periods, and current drawdown from price data.
             </p>
           </div>
         )}

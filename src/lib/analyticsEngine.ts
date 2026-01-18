@@ -103,6 +103,136 @@ function calculateVolatility(returns: number[], periodsPerYear: number = 252): n
   return stdDev * Math.sqrt(periodsPerYear);
 }
 
+// Calculate drawdown analysis
+interface DrawdownResult {
+  maxDrawdown: number;
+  maxDrawdownStart: string;
+  maxDrawdownEnd: string;
+  maxDrawdownRecovery: string | null;
+  recoveryDays: number | null;
+  currentDrawdown: number;
+  drawdownSeries: { date: string; drawdown: number }[];
+  drawdownPeriods: {
+    start: string;
+    trough: string;
+    end: string | null;
+    drawdown: number;
+    daysToTrough: number;
+    daysToRecovery: number | null;
+  }[];
+}
+
+function calculateDrawdownAnalysis(prices: number[], dates: string[]): DrawdownResult {
+  if (prices.length === 0) {
+    return {
+      maxDrawdown: 0,
+      maxDrawdownStart: '',
+      maxDrawdownEnd: '',
+      maxDrawdownRecovery: null,
+      recoveryDays: null,
+      currentDrawdown: 0,
+      drawdownSeries: [],
+      drawdownPeriods: [],
+    };
+  }
+
+  const drawdownSeries: { date: string; drawdown: number }[] = [];
+  const drawdownPeriods: DrawdownResult['drawdownPeriods'] = [];
+  
+  let runningMax = prices[0];
+  let runningMaxIndex = 0;
+  let maxDrawdown = 0;
+  let maxDrawdownStart = 0;
+  let maxDrawdownEnd = 0;
+  let inDrawdown = false;
+  let currentDrawdownStart = 0;
+  let currentDrawdownTrough = 0;
+  let currentDrawdownTroughValue = prices[0];
+
+  for (let i = 0; i < prices.length; i++) {
+    const price = prices[i];
+    
+    if (price >= runningMax) {
+      // New peak - close any open drawdown period
+      if (inDrawdown) {
+        drawdownPeriods.push({
+          start: dates[currentDrawdownStart],
+          trough: dates[currentDrawdownTrough],
+          end: dates[i],
+          drawdown: (currentDrawdownTroughValue - prices[currentDrawdownStart]) / prices[currentDrawdownStart],
+          daysToTrough: currentDrawdownTrough - currentDrawdownStart,
+          daysToRecovery: i - currentDrawdownTrough,
+        });
+        inDrawdown = false;
+      }
+      runningMax = price;
+      runningMaxIndex = i;
+    }
+    
+    const drawdown = (price - runningMax) / runningMax;
+    drawdownSeries.push({ date: dates[i], drawdown });
+    
+    if (drawdown < 0 && !inDrawdown) {
+      // Start of new drawdown period
+      inDrawdown = true;
+      currentDrawdownStart = runningMaxIndex;
+      currentDrawdownTrough = i;
+      currentDrawdownTroughValue = price;
+    }
+    
+    if (inDrawdown && price < currentDrawdownTroughValue) {
+      // New trough in current drawdown
+      currentDrawdownTrough = i;
+      currentDrawdownTroughValue = price;
+    }
+    
+    if (drawdown < maxDrawdown) {
+      maxDrawdown = drawdown;
+      maxDrawdownStart = runningMaxIndex;
+      maxDrawdownEnd = i;
+    }
+  }
+
+  // Handle open drawdown period at end
+  if (inDrawdown) {
+    drawdownPeriods.push({
+      start: dates[currentDrawdownStart],
+      trough: dates[currentDrawdownTrough],
+      end: null,
+      drawdown: (currentDrawdownTroughValue - prices[currentDrawdownStart]) / prices[currentDrawdownStart],
+      daysToTrough: currentDrawdownTrough - currentDrawdownStart,
+      daysToRecovery: null,
+    });
+  }
+
+  // Find recovery date for max drawdown
+  let maxDrawdownRecovery: string | null = null;
+  let recoveryDays: number | null = null;
+  const peakValue = prices[maxDrawdownStart];
+  for (let i = maxDrawdownEnd + 1; i < prices.length; i++) {
+    if (prices[i] >= peakValue) {
+      maxDrawdownRecovery = dates[i];
+      recoveryDays = i - maxDrawdownEnd;
+      break;
+    }
+  }
+
+  const currentDrawdown = drawdownSeries.length > 0 
+    ? drawdownSeries[drawdownSeries.length - 1].drawdown 
+    : 0;
+
+  return {
+    maxDrawdown,
+    maxDrawdownStart: dates[maxDrawdownStart] || '',
+    maxDrawdownEnd: dates[maxDrawdownEnd] || '',
+    maxDrawdownRecovery,
+    recoveryDays,
+    currentDrawdown,
+    drawdownSeries,
+    drawdownPeriods,
+  };
+}
+
 // Calculate Sharpe ratio
 function calculateSharpeRatio(returns: number[], riskFreeRate: number = 0.04, periodsPerYear: number = 252): number {
   if (returns.length < 2) return 0;
@@ -608,6 +738,45 @@ function processBlock(block: AnalyticsBlock, context: PipelineContext): Pipeline
           });
           
           return { ...context, computeResult: result };
+        }
+        
+        case 'drawdown_analysis': {
+          const result: Record<string, {
+            maxDrawdown: number;
+            maxDrawdownStart: string;
+            maxDrawdownEnd: string;
+            maxDrawdownRecovery: string | null;
+            recoveryDays: number | null;
+            currentDrawdown: number;
+            drawdownPeriods: number;
+          }> = {};
+          
+          const chartData: Record<string, { date: string; drawdown: number }[]> = {};
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset];
+            if (prices && prices.length > 0) {
+              const analysis = calculateDrawdownAnalysis(prices, context.dates);
+              result[asset] = {
+                maxDrawdown: analysis.maxDrawdown,
+                maxDrawdownStart: analysis.maxDrawdownStart,
+                maxDrawdownEnd: analysis.maxDrawdownEnd,
+                maxDrawdownRecovery: analysis.maxDrawdownRecovery,
+                recoveryDays: analysis.recoveryDays,
+                currentDrawdown: analysis.currentDrawdown,
+                drawdownPeriods: analysis.drawdownPeriods.length,
+              };
+              chartData[asset] = analysis.drawdownSeries;
+            }
+          });
+          
+          return { 
+            ...context, 
+            computeResult: { 
+              summary: result, 
+              chartData,
+            } 
+          };
         }
         
         default:
