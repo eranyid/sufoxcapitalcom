@@ -10,6 +10,7 @@ import { computeFactorModel } from '@/lib/factorModel';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge, Crosshair, Layers, RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
+import { StaggeredContainer } from '@/components/StaggeredContainer';
 
 export default function Risk() {
   const { performanceMetrics, riskMetrics, settings, transactions, valuations } = usePortfolio();
@@ -49,7 +50,7 @@ export default function Risk() {
       </div>
 
       {/* Risk KPIs */}
-      <div className="kpi-grid">
+      <StaggeredContainer className="kpi-grid" staggerDelay={50} baseDelay={50}>
         <KPICard
           title="Volatility"
           value={hasData ? `${riskMetrics.volatility.toFixed(2)}%` : '0.00%'}
@@ -99,7 +100,7 @@ export default function Risk() {
           icon={Crosshair}
           subtitle="Annualized"
         />
-      </div>
+      </StaggeredContainer>
 
       {hasData ? (
         <>

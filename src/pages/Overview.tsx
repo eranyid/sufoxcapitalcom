@@ -15,6 +15,7 @@ import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
 import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
+import { StaggeredContainer } from '@/components/StaggeredContainer';
 
 import { computeFactorModel } from '@/lib/factorModel';
 import { Button } from '@/components/ui/button';
@@ -210,7 +211,7 @@ export default function Overview() {
       </div>
 
       {/* Top row: YTD Return, Unrealized %, Unrealized P/L, Realized P/L */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <StaggeredContainer className="grid grid-cols-2 lg:grid-cols-4 gap-2" staggerDelay={60} baseDelay={100}>
         <KPICard
           title="YTD Return"
           value={hasData ? (() => {
@@ -262,10 +263,10 @@ export default function Overview() {
             ? "Realized profit/loss from closed positions, including FX impact" 
             : "Realized profit/loss from closed positions, excluding FX impact"}
         />
-      </div>
+      </StaggeredContainer>
 
       {/* Bottom row: FX P/L, Sharpe Ratio, Max Drawdown, Volatility */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <StaggeredContainer className="grid grid-cols-2 lg:grid-cols-4 gap-2" staggerDelay={60} baseDelay={340}>
         <KPICard
           title="FX P/L"
           value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
@@ -304,7 +305,7 @@ export default function Overview() {
             ? "Annualized standard deviation of returns, including FX impact" 
             : "Annualized standard deviation of returns, excluding FX impact"}
         />
-      </div>
+      </StaggeredContainer>
 
       {/* NAV Equity Curve - Above Performance Chart */}
       {transactions.length > 0 && valuations.length > 0 && (
