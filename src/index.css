@@ -19,24 +19,24 @@
   :root {
     /* Bloomberg Terminal Theme - Authentic Dark with Orange */
     --background: 0 0% 7%;
-    --foreground: 0 0% 85%;
+    --foreground: 0 0% 93%;
 
     /* Card backgrounds - solid and opaque to prevent grid bleed-through */
     --card: 0 0% 10%;
-    --card-foreground: 0 0% 85%;
+    --card-foreground: 0 0% 93%;
     --card-elevated: 0 0% 12%;
 
     --popover: 0 0% 13%;
-    --popover-foreground: 0 0% 85%;
+    --popover-foreground: 0 0% 93%;
 
     --primary: 30 100% 50%;
     --primary-foreground: 0 0% 0%;
 
     --secondary: 0 0% 16%;
-    --secondary-foreground: 0 0% 85%;
+    --secondary-foreground: 0 0% 93%;
 
     --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 50%;
+    --muted-foreground: 0 0% 60%;
 
     --accent: 0 0% 18%;
     --accent-foreground: 30 100% 50%;
@@ -78,7 +78,7 @@
     /* Flow pulse animation for lab connectors */
 
     --sidebar-background: 0 0% 9%;
-    --sidebar-foreground: 0 0% 85%;
+    --sidebar-foreground: 0 0% 93%;
     --sidebar-primary: 30 100% 50%;
     --sidebar-primary-foreground: 0 0% 0%;
     --sidebar-accent: 0 0% 14%;
