@@ -27,7 +27,7 @@ export interface ComputeFunctionRequirement {
 
 // Define requirements for each compute function
 export const COMPUTE_FUNCTION_REQUIREMENTS: Record<ComputeFunction, ComputeFunctionRequirement> = {
-  // Exactly 2 assets required
+  // === Exactly 2 assets required ===
   correlation_pair: {
     minAssets: 2,
     maxAssets: 2,
@@ -49,8 +49,22 @@ export const COMPUTE_FUNCTION_REQUIREMENTS: Record<ComputeFunction, ComputeFunct
     recommendedOutput: 'table',
     description: 'Beta calculation requires exactly 2 assets (asset + benchmark)',
   },
+  alpha: {
+    minAssets: 2,
+    maxAssets: 2,
+    requiresSpecificAssets: true,
+    recommendedOutput: 'table',
+    description: 'Alpha (excess return vs benchmark)',
+  },
+  information_ratio: {
+    minAssets: 2,
+    maxAssets: 2,
+    requiresSpecificAssets: true,
+    recommendedOutput: 'table',
+    description: 'Information ratio vs benchmark',
+  },
   
-  // At least 2 assets required
+  // === At least 2 assets required ===
   correlation_matrix: {
     minAssets: 2,
     maxAssets: null,
@@ -58,7 +72,7 @@ export const COMPUTE_FUNCTION_REQUIREMENTS: Record<ComputeFunction, ComputeFunct
     description: 'Correlation matrix requires at least 2 assets',
   },
   
-  // At least 1 asset required
+  // === At least 1 asset required ===
   price_at_month_end: {
     minAssets: 1,
     maxAssets: null,
@@ -83,6 +97,12 @@ export const COMPUTE_FUNCTION_REQUIREMENTS: Record<ComputeFunction, ComputeFunct
     recommendedOutput: 'table',
     description: 'Annualized volatility for each asset',
   },
+  rolling_volatility: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'line_chart',
+    description: 'Rolling volatility over time',
+  },
   sharpe_ratio: {
     minAssets: 1,
     maxAssets: null,
@@ -95,11 +115,23 @@ export const COMPUTE_FUNCTION_REQUIREMENTS: Record<ComputeFunction, ComputeFunct
     recommendedOutput: 'table',
     description: 'Downside risk-adjusted return',
   },
+  calmar_ratio: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'table',
+    description: 'Return / Max Drawdown ratio',
+  },
   drawdown_analysis: {
     minAssets: 1,
     maxAssets: null,
     recommendedOutput: 'table',
     description: 'Maximum drawdown and recovery analysis',
+  },
+  max_drawdown: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'table',
+    description: 'Maximum drawdown percentage',
   },
   cagr: {
     minAssets: 1,
@@ -113,17 +145,53 @@ export const COMPUTE_FUNCTION_REQUIREMENTS: Record<ComputeFunction, ComputeFunct
     recommendedOutput: 'table',
     description: 'Price statistics (min, max, avg, etc.)',
   },
-  rolling_volatility: {
-    minAssets: 1,
-    maxAssets: null,
-    recommendedOutput: 'line_chart',
-    description: 'Rolling volatility over time',
-  },
   var_analysis: {
     minAssets: 1,
     maxAssets: null,
     recommendedOutput: 'table',
     description: 'Value at Risk analysis',
+  },
+  cvar_analysis: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'table',
+    description: 'Conditional Value at Risk (Expected Shortfall)',
+  },
+  skewness: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'table',
+    description: 'Return distribution skewness',
+  },
+  kurtosis: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'table',
+    description: 'Return distribution kurtosis',
+  },
+  histogram: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'histogram',
+    description: 'Return distribution histogram',
+  },
+  contribution_to_return: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'table',
+    description: 'Asset contribution to portfolio return',
+  },
+  sector_attribution: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'bar_chart',
+    description: 'Return attribution by sector',
+  },
+  currency_attribution: {
+    minAssets: 1,
+    maxAssets: null,
+    recommendedOutput: 'bar_chart',
+    description: 'Return attribution by currency',
   },
 };
 

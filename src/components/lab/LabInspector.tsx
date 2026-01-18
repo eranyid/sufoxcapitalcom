@@ -14,14 +14,17 @@ import {
   TransformConfig,
   ComputeConfig,
   OutputConfig,
+  FilterConfig,
+  AggregateConfig,
+  CompareConfig,
   ComputeFunction,
   ANALYTICS_BLOCK_LIBRARY,
 } from '@/types/analyticsLab';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -51,37 +54,49 @@ const FALLBACK_ASSETS = [
 ];
 
 // Define which compute functions are available for each data source type
-// Functions are filtered based on what makes sense for prices vs returns data
 const COMPUTE_FUNCTIONS_BY_SOURCE: Record<string, { value: ComputeFunction; label: string; description?: string }[]> = {
   prices: [
-    // Price-native functions (work directly on price data)
     { value: 'price_at_month_end', label: 'Price at Month End', description: 'Last available price in period' },
     { value: 'price_statistics', label: 'Price Statistics', description: 'Min, max, mean, median, std dev' },
     { value: 'return_over_period', label: 'Return Over Period', description: 'Start to end price change' },
     { value: 'cagr', label: 'CAGR', description: 'Compound annual growth rate' },
-    { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)', description: 'P&L vs cost basis from transactions' },
+    { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)', description: 'P&L vs cost basis' },
     { value: 'drawdown_analysis', label: 'Drawdown Analysis', description: 'Max drawdown & recovery periods' },
-    // Functions that calculate returns internally from prices
+    { value: 'max_drawdown', label: 'Max Drawdown', description: 'Maximum peak-to-trough decline' },
     { value: 'volatility', label: 'Volatility', description: 'Annualized price volatility' },
     { value: 'rolling_volatility', label: 'Rolling Volatility', description: 'Rolling window volatility chart' },
   ],
   returns: [
-    // Return-native functions (designed for return series)
     { value: 'return_over_period', label: 'Cumulative Return', description: 'Sum of returns over period' },
     { value: 'volatility', label: 'Volatility', description: 'Annualized return volatility' },
     { value: 'rolling_volatility', label: 'Rolling Volatility', description: 'Rolling window volatility chart' },
     { value: 'sharpe_ratio', label: 'Sharpe Ratio', description: 'Risk-adjusted return (vs risk-free)' },
     { value: 'sortino_ratio', label: 'Sortino Ratio', description: 'Downside risk-adjusted return' },
+    { value: 'calmar_ratio', label: 'Calmar Ratio', description: 'Return / Max Drawdown' },
     { value: 'var_analysis', label: 'VaR Analysis', description: 'Value at Risk 95/99 & CVaR' },
+    { value: 'cvar_analysis', label: 'CVaR (Expected Shortfall)', description: 'Conditional VaR' },
+    { value: 'skewness', label: 'Skewness', description: 'Distribution asymmetry' },
+    { value: 'kurtosis', label: 'Kurtosis', description: 'Distribution tail heaviness' },
+    { value: 'histogram', label: 'Return Histogram', description: 'Distribution visualization' },
     { value: 'beta', label: 'Beta (vs Benchmark)', description: 'Market sensitivity coefficient' },
-    // Correlation functions (require return series)
+    { value: 'alpha', label: 'Alpha (vs Benchmark)', description: 'Excess return over benchmark' },
+    { value: 'information_ratio', label: 'Information Ratio', description: 'Active return / tracking error' },
     { value: 'correlation_pair', label: 'Correlation (2 Assets)', description: 'Pearson correlation coefficient' },
     { value: 'correlation_matrix', label: 'Correlation Matrix', description: 'Full pairwise correlation heatmap' },
     { value: 'rolling_correlation', label: 'Rolling Correlation', description: 'Time-varying correlation chart' },
   ],
+  transactions: [
+    { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)', description: 'P&L vs cost basis' },
+    { value: 'contribution_to_return', label: 'Contribution to Return', description: 'Asset contribution analysis' },
+  ],
+  holdings: [
+    { value: 'contribution_to_return', label: 'Contribution to Return', description: 'Asset contribution analysis' },
+    { value: 'sector_attribution', label: 'Sector Attribution', description: 'Performance by sector' },
+    { value: 'currency_attribution', label: 'Currency Attribution', description: 'Performance by currency' },
+  ],
 };
 
-// All compute functions for fallback (when no data source selected)
+// All compute functions for fallback
 const ALL_COMPUTE_FUNCTIONS: { value: ComputeFunction; label: string }[] = [
   { value: 'price_at_month_end', label: 'Price at Month End' },
   { value: 'price_statistics', label: 'Price Statistics' },
@@ -89,15 +104,26 @@ const ALL_COMPUTE_FUNCTIONS: { value: ComputeFunction; label: string }[] = [
   { value: 'cagr', label: 'CAGR' },
   { value: 'total_return_with_cost_basis', label: 'Total Return (Cost Basis)' },
   { value: 'drawdown_analysis', label: 'Drawdown Analysis' },
+  { value: 'max_drawdown', label: 'Max Drawdown' },
   { value: 'volatility', label: 'Volatility' },
   { value: 'rolling_volatility', label: 'Rolling Volatility' },
   { value: 'sharpe_ratio', label: 'Sharpe Ratio' },
   { value: 'sortino_ratio', label: 'Sortino Ratio' },
+  { value: 'calmar_ratio', label: 'Calmar Ratio' },
   { value: 'var_analysis', label: 'VaR Analysis' },
+  { value: 'cvar_analysis', label: 'CVaR (Expected Shortfall)' },
+  { value: 'skewness', label: 'Skewness' },
+  { value: 'kurtosis', label: 'Kurtosis' },
+  { value: 'histogram', label: 'Return Histogram' },
   { value: 'beta', label: 'Beta (vs Benchmark)' },
+  { value: 'alpha', label: 'Alpha (vs Benchmark)' },
+  { value: 'information_ratio', label: 'Information Ratio' },
   { value: 'correlation_pair', label: 'Correlation (2 Assets)' },
   { value: 'correlation_matrix', label: 'Correlation Matrix' },
   { value: 'rolling_correlation', label: 'Rolling Correlation' },
+  { value: 'contribution_to_return', label: 'Contribution to Return' },
+  { value: 'sector_attribution', label: 'Sector Attribution' },
+  { value: 'currency_attribution', label: 'Currency Attribution' },
 ];
 
 interface LabInspectorProps {
@@ -720,15 +746,113 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
         return renderDataSourceConfig();
       case 'date_range':
         return renderDateRangeConfig();
+      case 'filter':
+        return renderFilterConfig();
       case 'transform':
         return renderTransformConfig();
+      case 'aggregate':
+        return renderAggregateConfig();
       case 'compute':
         return renderComputeConfig();
+      case 'compare':
+        return renderCompareConfig();
       case 'output':
         return renderOutputConfig();
       default:
-        return null;
+        return <p className="text-xs text-muted-foreground">No configuration available</p>;
     }
+  };
+  
+  const renderFilterConfig = () => {
+    const config = selectedBlock.config as FilterConfig;
+    return (
+      <div className="space-y-4">
+        <div className="p-2 bg-muted/50 rounded-md">
+          <p className="text-[10px] text-muted-foreground">
+            Filter data by specific conditions. Select field, operator, and value.
+          </p>
+        </div>
+        <div>
+          <Label className="text-xs">Field</Label>
+          <Select value={config.field || 'ticker'} onValueChange={(v) => onUpdateBlock(selectedBlock.id, { ...config, field: v })}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ticker">Ticker</SelectItem>
+              <SelectItem value="asset_type">Asset Type</SelectItem>
+              <SelectItem value="geography">Geography</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAggregateConfig = () => {
+    const config = selectedBlock.config as AggregateConfig;
+    return (
+      <div className="space-y-4">
+        <div>
+          <Label className="text-xs">Aggregate Function</Label>
+          <Select value={config.function || 'mean'} onValueChange={(v) => onUpdateBlock(selectedBlock.id, { ...config, function: v as any })}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sum">Sum</SelectItem>
+              <SelectItem value="mean">Mean</SelectItem>
+              <SelectItem value="median">Median</SelectItem>
+              <SelectItem value="min">Min</SelectItem>
+              <SelectItem value="max">Max</SelectItem>
+              <SelectItem value="std">Std Dev</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Group By</Label>
+          <Select value={config.groupBy || 'asset'} onValueChange={(v) => onUpdateBlock(selectedBlock.id, { ...config, groupBy: v as any })}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asset">Asset</SelectItem>
+              <SelectItem value="sector">Sector</SelectItem>
+              <SelectItem value="geography">Geography</SelectItem>
+              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="year">Year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCompareConfig = () => {
+    const config = selectedBlock.config as CompareConfig;
+    return (
+      <div className="space-y-4">
+        <div>
+          <Label className="text-xs">Compare Mode</Label>
+          <Select value={config.mode || 'vs_benchmark'} onValueChange={(v) => onUpdateBlock(selectedBlock.id, { ...config, mode: v as any })}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="vs_benchmark">vs Benchmark</SelectItem>
+              <SelectItem value="vs_period">vs Previous Period</SelectItem>
+              <SelectItem value="rank">Rank Assets</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {config.mode === 'vs_benchmark' && (
+          <div>
+            <Label className="text-xs">Benchmark</Label>
+            <Select value={config.benchmark || 'SPY'} onValueChange={(v) => onUpdateBlock(selectedBlock.id, { ...config, benchmark: v })}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SPY">S&P 500 (SPY)</SelectItem>
+                <SelectItem value="QQQ">Nasdaq 100 (QQQ)</SelectItem>
+                <SelectItem value="IWM">Russell 2000 (IWM)</SelectItem>
+                <SelectItem value="AGG">US Bonds (AGG)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (

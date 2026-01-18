@@ -8,9 +8,17 @@ import {
   DollarSign,
   GitMerge,
   TrendingUp,
+  TrendingDown,
   Table,
   Grid3X3,
   Sparkles,
+  Filter,
+  Layers,
+  GitCompare,
+  Activity,
+  Shield,
+  AlertTriangle,
+  BarChart2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ANALYTICS_BLOCK_LIBRARY, QUICK_PRESETS, AnalyticsBlockType } from '@/types/analyticsLab';
@@ -27,8 +35,16 @@ export const LIBRARY_ICON_MAP: Record<string, React.ComponentType<{ className?: 
   DollarSign,
   GitMerge,
   TrendingUp,
+  TrendingDown,
   Table,
   Grid3x3: Grid3X3,
+  Filter,
+  Layers,
+  GitCompare,
+  Activity,
+  Shield,
+  AlertTriangle,
+  BarChart2,
 };
 
 interface LabBlockLibraryProps {
@@ -92,25 +108,39 @@ export function LabBlockLibrary({ onAddBlock, onLoadPreset }: LabBlockLibraryPro
           
           <Separator className="my-3" />
           
-          {/* Individual Blocks */}
-          <div>
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block px-1">
-              Pipeline Blocks
-            </span>
-            <div className="space-y-1.5">
-              {ANALYTICS_BLOCK_LIBRARY.map((block) => {
-                const Icon = LIBRARY_ICON_MAP[block.icon] || Database;
-                return (
-                  <DraggableLibraryBlock
-                    key={block.type}
-                    block={block}
-                    icon={Icon}
-                    onClick={() => onAddBlock(block.type)}
-                  />
-                );
-              })}
-            </div>
-          </div>
+          {/* Individual Blocks - Grouped by category */}
+          {['input', 'transform', 'analysis', 'output'].map((category) => {
+            const categoryBlocks = ANALYTICS_BLOCK_LIBRARY.filter(b => b.category === category);
+            if (categoryBlocks.length === 0) return null;
+            
+            const categoryLabels: Record<string, string> = {
+              input: 'Input',
+              transform: 'Transform',
+              analysis: 'Analysis',
+              output: 'Output',
+            };
+            
+            return (
+              <div key={category} className="mb-3">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block px-1">
+                  {categoryLabels[category]}
+                </span>
+                <div className="space-y-1">
+                  {categoryBlocks.map((block) => {
+                    const Icon = LIBRARY_ICON_MAP[block.icon] || Database;
+                    return (
+                      <DraggableLibraryBlock
+                        key={block.type}
+                        block={block}
+                        icon={Icon}
+                        onClick={() => onAddBlock(block.type)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>

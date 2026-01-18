@@ -427,7 +427,7 @@ function generateDateRange(config: DateRangeConfig): { start: string; end: strin
 function resampleData(
   data: Record<string, number[]>, 
   dates: string[], 
-  period: 'daily' | 'weekly' | 'monthly'
+  period: 'daily' | 'weekly' | 'monthly' | 'quarterly'
 ): { data: Record<string, number[]>; dates: string[] } {
   if (period === 'daily') {
     return { data, dates };
