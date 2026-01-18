@@ -6,6 +6,7 @@ import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { ContributionChart } from '@/components/dashboard/ContributionChart';
 import { PerformanceCalendarHeatmap } from '@/components/dashboard/PerformanceCalendarHeatmap';
 import { calculateContributions, calculateMonthlyReturns } from '@/lib/calculations';
+import { StaggeredContainer } from '@/components/StaggeredContainer';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, Target, Award, Percent, ArrowRightLeft, DollarSign } from 'lucide-react';
@@ -86,7 +87,7 @@ export default function Performance() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <StaggeredContainer className="grid grid-cols-2 md:grid-cols-4 gap-2" staggerDelay={60} baseDelay={50}>
         <KPICard
           title="Total Return"
           value={hasData && adjustedMetrics ? formatPercent(adjustedMetrics.totalReturn) : '0.00%'}
@@ -114,7 +115,7 @@ export default function Performance() {
           icon={Percent}
           trend={hasData && performanceMetrics.winLossRatio >= 1 ? 'up' : 'neutral'}
         />
-      </div>
+      </StaggeredContainer>
 
       {/* P/L Breakdown: Market vs FX */}
       <div className="bloomberg-panel">
