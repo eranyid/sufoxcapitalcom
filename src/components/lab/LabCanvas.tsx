@@ -10,6 +10,7 @@ import {
   GripVertical,
   Plus,
   Copy,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDroppable } from '@dnd-kit/core';
@@ -21,6 +22,7 @@ import {
   ComputeConfig,
   OutputConfig,
 } from '@/types/analyticsLab';
+import { ValidationError } from '@/lib/pipelineValidation';
 import { DottedGridBackground } from '@/components/DottedGridBackground';
 import {
   SortableContext,
@@ -28,6 +30,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Database,
@@ -71,9 +79,10 @@ interface SortableBlockProps {
   onRemove: () => void;
   onDuplicate: () => void;
   isDraggingOver?: boolean;
+  errors?: ValidationError[];
 }
 
-function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, onDuplicate, isDraggingOver }: SortableBlockProps) {
+function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, onDuplicate, isDraggingOver, errors = [] }: SortableBlockProps) {
   const {
     attributes,
     listeners,
@@ -128,9 +137,13 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, onDupli
           "w-full flex items-center gap-3 p-3 rounded-lg text-left cursor-pointer",
           "border transition-all duration-200",
           isDragging && "opacity-90 shadow-2xl scale-[1.02] ring-2 ring-primary/50",
-          isSelected 
-            ? "bg-primary/10 border-primary shadow-sm shadow-primary/10"
-            : "bg-card hover:bg-muted/50 border-border hover:border-muted-foreground/30",
+          errors.length > 0 && errors.some(e => e.severity === 'error')
+            ? "border-destructive/60 bg-destructive/5"
+            : errors.length > 0
+              ? "border-amber-500/60 bg-amber-500/5"
+              : isSelected 
+                ? "bg-primary/10 border-primary shadow-sm shadow-primary/10"
+                : "bg-card hover:bg-muted/50 border-border hover:border-muted-foreground/30",
           "hover:shadow-md"
         )}
       >
@@ -157,8 +170,40 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, onDupli
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium text-foreground">
-            {blockMeta?.label || block.type}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-foreground">
+              {blockMeta?.label || block.type}
+            </span>
+            {/* Error indicator */}
+            {errors.length > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={cn(
+                      "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+                      errors.some(e => e.severity === 'error')
+                        ? "bg-destructive/20 text-destructive"
+                        : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                    )}>
+                      <AlertTriangle className="h-3 w-3" />
+                      {errors.length}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <div className="space-y-1">
+                      {errors.map((error, i) => (
+                        <div key={i} className={cn(
+                          "text-xs",
+                          error.severity === 'error' ? "text-destructive" : "text-amber-600"
+                        )}>
+                          • {error.message}
+                        </div>
+                      ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           {summary && (
             <div className="text-[10px] text-muted-foreground truncate mt-0.5">
@@ -196,6 +241,26 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, onDupli
           </button>
         </div>
       </div>
+      
+      {/* Inline error messages */}
+      {errors.length > 0 && (
+        <div className="mt-1 ml-8 space-y-1">
+          {errors.map((error, i) => (
+            <div 
+              key={i}
+              className={cn(
+                "flex items-center gap-1.5 text-[10px] px-2 py-1 rounded",
+                error.severity === 'error' 
+                  ? "bg-destructive/10 text-destructive border border-destructive/20" 
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+              )}
+            >
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              <span>{error.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -209,6 +274,7 @@ interface LabCanvasProps {
   onReorderBlocks: (activeId: string, overId: string) => void;
   isDropTarget?: boolean;
   activeDragId?: string | null;
+  validationErrors?: ValidationError[];
 }
 
 export function LabCanvas({ 
@@ -220,8 +286,16 @@ export function LabCanvas({
   onReorderBlocks,
   isDropTarget = false,
   activeDragId,
+  validationErrors = [],
 }: LabCanvasProps) {
   const sortedBlocks = [...blocks].sort((a, b) => a.position - b.position);
+  
+  // Group errors by block ID
+  const errorsByBlockId = validationErrors.reduce((acc, error) => {
+    if (!acc[error.blockId]) acc[error.blockId] = [];
+    acc[error.blockId].push(error);
+    return acc;
+  }, {} as Record<string, ValidationError[]>);
   
   // Droppable hook for receiving blocks from library
   const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -349,6 +423,7 @@ export function LabCanvas({
                   onSelect={() => onSelectBlock(selectedBlockId === block.id ? null : block.id)}
                   onRemove={() => onRemoveBlock(block.id)}
                   onDuplicate={() => onDuplicateBlock(block.id)}
+                  errors={errorsByBlockId[block.id]}
                 />
               ))}
               
