@@ -67,39 +67,42 @@ const navGroups: NavGroup[] = [
 
 function NavGroupSection({ 
   group, 
-  collapsed 
+  collapsed,
+  isFirst
 }: { 
   group: NavGroup; 
   collapsed: boolean;
+  isFirst: boolean;
 }) {
   if (collapsed) {
     return (
-      <div className="py-1">
-        {group.items.map(({ path, icon: Icon }) => (
-          <NavLink
-            key={path}
-            to={path}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center justify-center h-9 w-9 mx-auto rounded-lg transition-all duration-200",
-                "hover:bg-primary/10 hover:text-primary",
-                isActive && "bg-primary/15 text-primary shadow-sm shadow-primary/20"
-              )
-            }
-          >
-            <Icon size={16} />
-          </NavLink>
-        ))}
-      </div>
+      <>
+        {!isFirst && <div className="mx-2 my-2 border-t border-sidebar-border/30" />}
+        <div className="py-1">
+          {group.items.map(({ path, icon: Icon }) => (
+            <NavLink
+              key={path}
+              to={path}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center justify-center h-9 w-9 mx-auto rounded-lg transition-all duration-200",
+                  "hover:bg-primary/10 hover:text-primary",
+                  isActive && "bg-primary/15 text-primary shadow-sm shadow-primary/20"
+                )
+              }
+            >
+              <Icon size={16} />
+            </NavLink>
+          ))}
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="mb-2">
-      <div className="px-3 py-2 text-[10px] font-semibold tracking-widest text-muted-foreground/70">
-        {group.title}
-      </div>
-      <div className="space-y-0.5 pb-2">
+    <>
+      {!isFirst && <div className="mx-3 my-2 border-t border-sidebar-border/30" />}
+      <div className="space-y-0.5 py-1">
         {group.items.map(({ path, icon: Icon, label }) => (
           <NavLink
             key={path}
@@ -117,7 +120,7 @@ function NavGroupSection({
           </NavLink>
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -175,8 +178,8 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-3 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted/30">
-        {navGroups.map((group) => (
-          <NavGroupSection key={group.title} group={group} collapsed={collapsed} />
+        {navGroups.map((group, index) => (
+          <NavGroupSection key={group.title} group={group} collapsed={collapsed} isFirst={index === 0} />
         ))}
 
         {/* Admin Link */}
