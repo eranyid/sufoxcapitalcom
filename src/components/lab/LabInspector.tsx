@@ -44,6 +44,8 @@ import {
   getComputeFunctionValidationMessage,
   getSelectedAssets,
   getRecommendedOutput,
+  getCompatibleOutputTypes,
+  getCompatibleComputeFunctions,
 } from '@/lib/pipelineValidation';
 
 // Fallback common assets for when no real data is available
@@ -148,9 +150,19 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
   const selectedAssets = getSelectedAssets(pipelineBlocks);
   const assetCount = selectedAssets.length;
   
-  // Get available compute functions based on data source AND filter by asset count validity
+  // Get the current compute function from the pipeline
+  const computeBlock = pipelineBlocks.find(b => b.type === 'compute');
+  const currentComputeFunction = (computeBlock?.config as ComputeConfig | undefined)?.function;
+  
+  // Get available compute functions based on data source - ONLY show compatible functions
+  const compatibleFunctions = dataSourceType 
+    ? getCompatibleComputeFunctions(dataSourceType)
+    : [];
+  
+  // Build compute functions list with labels, filtering by data source compatibility
   const baseComputeFunctions = dataSourceType 
-    ? COMPUTE_FUNCTIONS_BY_SOURCE[dataSourceType] || ALL_COMPUTE_FUNCTIONS
+    ? (COMPUTE_FUNCTIONS_BY_SOURCE[dataSourceType] || ALL_COMPUTE_FUNCTIONS)
+        .filter(fn => compatibleFunctions.includes(fn.value))
     : ALL_COMPUTE_FUNCTIONS;
   
   if (!selectedBlock) {
@@ -367,16 +379,10 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
   const renderComputeConfig = () => {
     const config = selectedBlock.config as ComputeConfig;
     
-    // Filter functions by asset count validity and mark invalid ones
-    const functionsWithValidity = baseComputeFunctions.map(func => ({
-      ...func,
-      isValid: isComputeFunctionValid(func.value, assetCount),
-      validationMessage: getComputeFunctionValidationMessage(func.value, assetCount),
-    }));
-    
-    // Separate valid and invalid functions
-    const validFunctions = functionsWithValidity.filter(f => f.isValid);
-    const invalidFunctions = functionsWithValidity.filter(f => !f.isValid);
+    // Filter functions by asset count validity - ONLY show valid functions
+    const validFunctions = baseComputeFunctions.filter(func => 
+      isComputeFunctionValid(func.value, assetCount)
+    );
     
     // Check if current function is valid
     const currentFunctionValid = isComputeFunctionValid(config.function, assetCount);
@@ -392,17 +398,25 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
           </div>
         )}
         
+        {dataSourceType && assetCount === 0 && (
+          <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-md">
+            <p className="text-[10px] text-amber-400">
+              Select assets in Data Source to see available functions
+            </p>
+          </div>
+        )}
+        
         {/* Asset count indicator */}
         {assetCount > 0 && (
           <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
             <Info className="h-3.5 w-3.5 text-muted-foreground" />
             <p className="text-[10px] text-muted-foreground">
-              {assetCount} asset{assetCount !== 1 ? 's' : ''} selected • {validFunctions.length} compatible functions
+              {assetCount} asset{assetCount !== 1 ? 's' : ''} • {validFunctions.length} available functions
             </p>
           </div>
         )}
         
-        {/* Show warning if current function is invalid */}
+        {/* Show warning if current function is no longer valid (e.g., after removing assets) */}
         {!currentFunctionValid && currentValidationMessage && (
           <div className="p-2 bg-destructive/10 border border-destructive/30 rounded-md flex items-start gap-2">
             <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
@@ -446,53 +460,34 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {/* Valid functions first */}
-              {validFunctions.length > 0 && (
-                <>
-                  {validFunctions.map((func) => (
-                    <SelectItem key={func.value} value={func.value}>
-                      <div className="flex items-center gap-2">
-                        <span>{func.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </>
-              )}
-              
-              {/* Separator and invalid functions */}
-              {invalidFunctions.length > 0 && validFunctions.length > 0 && (
-                <div className="px-2 py-1.5 border-t border-border mt-1">
-                  <p className="text-[10px] text-muted-foreground">Requires different asset count:</p>
+              {/* Only show valid functions - hide invalid ones completely */}
+              {validFunctions.length > 0 ? (
+                validFunctions.map((func) => (
+                  <SelectItem key={func.value} value={func.value}>
+                    <div className="flex items-center gap-2">
+                      <span>{func.label}</span>
+                      {'description' in func && func.description && (
+                        <span className="text-[10px] text-muted-foreground ml-1">
+                          — {func.description as string}
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="px-2 py-3 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    {assetCount === 0 
+                      ? 'Select assets to see available functions'
+                      : 'No compatible functions for current selection'}
+                  </p>
                 </div>
               )}
-              
-              {invalidFunctions.map((func) => (
-                <SelectItem 
-                  key={func.value} 
-                  value={func.value} 
-                  disabled
-                  className="opacity-50"
-                >
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-2">
-                          <span>{func.label}</span>
-                          <AlertTriangle className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="text-xs">
-                        {func.validationMessage}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </SelectItem>
-              ))}
             </SelectContent>
           </Select>
-          {dataSourceType && (
+          {dataSourceType && validFunctions.length > 0 && (
             <p className="text-[10px] text-muted-foreground mt-1">
-              {validFunctions.length} of {baseComputeFunctions.length} functions available for {assetCount} asset{assetCount !== 1 ? 's' : ''}
+              Showing {validFunctions.length} functions for {dataSourceType} data with {assetCount} asset{assetCount !== 1 ? 's' : ''}
             </p>
           )}
         </div>
@@ -704,8 +699,57 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
   const renderOutputConfig = () => {
     const config = selectedBlock.config as OutputConfig;
     
+    // Get compatible output types based on the compute function
+    const compatibleOutputs = currentComputeFunction 
+      ? getCompatibleOutputTypes(currentComputeFunction)
+      : [];
+    
+    // All output types with their labels and emojis
+    const ALL_OUTPUT_OPTIONS: { value: string; label: string; emoji: string }[] = [
+      { value: 'table', label: 'Table', emoji: '📊' },
+      { value: 'line_chart', label: 'Line Chart', emoji: '📈' },
+      { value: 'area_chart', label: 'Area Chart', emoji: '📉' },
+      { value: 'bar_chart', label: 'Bar Chart', emoji: '📊' },
+      { value: 'stacked_bar', label: 'Stacked Bar', emoji: '📊' },
+      { value: 'pie_chart', label: 'Pie Chart', emoji: '🥧' },
+      { value: 'donut_chart', label: 'Donut Chart', emoji: '🍩' },
+      { value: 'treemap', label: 'Treemap', emoji: '🔲' },
+      { value: 'radar_chart', label: 'Radar Chart', emoji: '🕸️' },
+      { value: 'heatmap', label: 'Heatmap', emoji: '🔥' },
+      { value: 'scatter', label: 'Scatter Plot', emoji: '⚬' },
+      { value: 'histogram', label: 'Histogram', emoji: '📊' },
+      { value: 'waterfall', label: 'Waterfall', emoji: '💧' },
+      { value: 'gauge', label: 'Gauge', emoji: '🎯' },
+      { value: 'sparkline_grid', label: 'Sparklines Grid', emoji: '✨' },
+      { value: 'kpi_cards', label: 'KPI Cards', emoji: '🎴' },
+      { value: 'summary_card', label: 'Summary Card', emoji: '📝' },
+    ];
+    
+    // Filter to only show compatible outputs (or all if no compute function selected)
+    const availableOutputs = currentComputeFunction && compatibleOutputs.length > 0
+      ? ALL_OUTPUT_OPTIONS.filter(opt => compatibleOutputs.includes(opt.value as any))
+      : ALL_OUTPUT_OPTIONS;
+    
     return (
       <div className="space-y-4">
+        {/* Show hint about filtering */}
+        {currentComputeFunction && compatibleOutputs.length > 0 && (
+          <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-[10px] text-muted-foreground">
+              {availableOutputs.length} display types available for {currentComputeFunction.replace(/_/g, ' ')}
+            </p>
+          </div>
+        )}
+        
+        {!currentComputeFunction && (
+          <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-md">
+            <p className="text-[10px] text-amber-400">
+              Add a Compute block to see recommended display types
+            </p>
+          </div>
+        )}
+        
         <div>
           <Label className="text-xs">Output Type</Label>
           <Select
@@ -718,23 +762,11 @@ export function LabInspector({ selectedBlock, onUpdateBlock, availableAssets = [
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="table">📊 Table</SelectItem>
-              <SelectItem value="line_chart">📈 Line Chart</SelectItem>
-              <SelectItem value="area_chart">📉 Area Chart</SelectItem>
-              <SelectItem value="bar_chart">📊 Bar Chart</SelectItem>
-              <SelectItem value="stacked_bar">📊 Stacked Bar</SelectItem>
-              <SelectItem value="pie_chart">🥧 Pie Chart</SelectItem>
-              <SelectItem value="donut_chart">🍩 Donut Chart</SelectItem>
-              <SelectItem value="treemap">🔲 Treemap</SelectItem>
-              <SelectItem value="radar_chart">🕸️ Radar Chart</SelectItem>
-              <SelectItem value="heatmap">🔥 Heatmap</SelectItem>
-              <SelectItem value="scatter">⚬ Scatter Plot</SelectItem>
-              <SelectItem value="histogram">📊 Histogram</SelectItem>
-              <SelectItem value="waterfall">💧 Waterfall</SelectItem>
-              <SelectItem value="gauge">🎯 Gauge</SelectItem>
-              <SelectItem value="sparkline_grid">✨ Sparklines Grid</SelectItem>
-              <SelectItem value="kpi_cards">🎴 KPI Cards</SelectItem>
-              <SelectItem value="summary_card">📝 Summary Card</SelectItem>
+              {availableOutputs.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.emoji} {opt.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
