@@ -8,6 +8,8 @@ import {
   Plus,
   Database,
   AlertCircle,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { cn } from '@/lib/utils';
@@ -28,6 +30,7 @@ import {
   ValuationData,
 } from '@/lib/analyticsEngine';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { LabBlockLibrary, LIBRARY_ICON_MAP } from '@/components/lab/LabBlockLibrary';
 import { LabCanvas } from '@/components/lab/LabCanvas';
 import { LabInspector } from '@/components/lab/LabInspector';
@@ -100,7 +103,17 @@ export default function Lab() {
   // Get available assets from real data (valuations + transactions)
   const availableAssets = useMemo(() => getAvailableAssets(valuationData, transactionData), [valuationData, transactionData]);
   
-  const [blocks, setBlocks] = useState<AnalyticsBlock[]>([]);
+  // Use undo/redo hook for blocks
+  const {
+    state: blocks,
+    setState: setBlocks,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    reset: resetBlocks,
+  } = useUndoRedo<AnalyticsBlock[]>([]);
+  
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [pipelineName, setPipelineName] = useState('Untitled Pipeline');
   const [pipelineId, setPipelineId] = useState<string>(() => crypto.randomUUID());
@@ -111,6 +124,36 @@ export default function Lab() {
   const [activeDragBlockType, setActiveDragBlockType] = useState<AnalyticsBlockType | null>(null);
   const [activeDragBlockId, setActiveDragBlockId] = useState<string | null>(null);
   const [isOverCanvas, setIsOverCanvas] = useState(false);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (canRedo) {
+            redo();
+            toast.success('Redo');
+          }
+        } else {
+          if (canUndo) {
+            undo();
+            toast.success('Undo');
+          }
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+        e.preventDefault();
+        if (canRedo) {
+          redo();
+          toast.success('Redo');
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, undo, redo]);
 
   // Sensors for DnD - support both pointer and keyboard
   const sensors = useSensors(
@@ -297,12 +340,12 @@ export default function Lab() {
   }, []);
 
   const handleClear = useCallback(() => {
-    setBlocks([]);
+    resetBlocks([]);
     setPipelineName('Untitled Pipeline');
     setPipelineId(crypto.randomUUID());
     setSelectedBlockId(null);
     setResult(null);
-  }, []);
+  }, [resetBlocks]);
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId) || null;
 
@@ -406,6 +449,29 @@ export default function Lab() {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Undo/Redo buttons */}
+              <div className="flex items-center border-r border-border pr-2 mr-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => { undo(); toast.success('Undo'); }}
+                  disabled={!canUndo}
+                  title="Undo (Ctrl+Z)"
+                >
+                  <Undo2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => { redo(); toast.success('Redo'); }}
+                  disabled={!canRedo}
+                  title="Redo (Ctrl+Shift+Z)"
+                >
+                  <Redo2 className="h-4 w-4" />
+                </Button>
+              </div>
               <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8">
