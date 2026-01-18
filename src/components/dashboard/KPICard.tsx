@@ -22,7 +22,7 @@ interface KPICardProps {
 
 export function KPICard({ title, value, subtitle, subLabel, icon: Icon, trend, trendValue, className, tooltip }: KPICardProps) {
   return (
-    <div className={cn("kpi-card min-h-[80px] sm:min-h-0", className)}>
+    <div className={cn("kpi-card min-h-[80px] sm:min-h-0 h-full", className)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">

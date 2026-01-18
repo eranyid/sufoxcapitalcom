@@ -1,5 +1,4 @@
-import React, { Children, cloneElement, isValidElement } from 'react';
-import { cn } from '@/lib/utils';
+import React, { Children, isValidElement } from 'react';
 
 interface StaggeredContainerProps {
   children: React.ReactNode;
@@ -11,7 +10,8 @@ interface StaggeredContainerProps {
 }
 
 /**
- * Wraps children and applies staggered animation delays for sequential fade-in effect
+ * Wraps children and applies staggered animation delays for sequential fade-in effect.
+ * Uses h-full on wrappers to preserve grid equal-height alignment.
  */
 export function StaggeredContainer({
   children,
@@ -31,7 +31,7 @@ export function StaggeredContainer({
         return (
           <div
             key={index}
-            className="animate-fade-in opacity-0"
+            className="animate-fade-in opacity-0 h-full"
             style={{
               animationDelay: `${delay}ms`,
               animationFillMode: 'forwards',
