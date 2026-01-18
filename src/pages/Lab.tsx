@@ -177,6 +177,27 @@ export default function Lab() {
     }
   }, [selectedBlockId]);
 
+  const handleDuplicateBlock = useCallback((blockId: string) => {
+    setBlocks(prev => {
+      const blockToDuplicate = prev.find(b => b.id === blockId);
+      if (!blockToDuplicate) return prev;
+      
+      const blockIndex = prev.findIndex(b => b.id === blockId);
+      const newBlock: AnalyticsBlock = {
+        ...blockToDuplicate,
+        id: generateBlockId(),
+        config: { ...blockToDuplicate.config },
+        position: blockIndex + 1,
+      };
+      
+      // Insert after the original and recompute positions
+      const newBlocks = [...prev];
+      newBlocks.splice(blockIndex + 1, 0, newBlock);
+      return newBlocks.map((block, i) => ({ ...block, position: i }));
+    });
+    toast.success('Block duplicated');
+  }, []);
+
   const handleReorderBlocks = useCallback((activeId: string, overId: string) => {
     setBlocks(prev => {
       const oldIndex = prev.findIndex(b => b.id === activeId);
@@ -483,6 +504,7 @@ export default function Lab() {
                   selectedBlockId={selectedBlockId}
                   onSelectBlock={setSelectedBlockId}
                   onRemoveBlock={handleRemoveBlock}
+                  onDuplicateBlock={handleDuplicateBlock}
                   onReorderBlocks={handleReorderBlocks}
                   isDropTarget={isOverCanvas}
                   activeDragId={activeDragBlockId}

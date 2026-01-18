@@ -9,6 +9,7 @@ import {
   X,
   GripVertical,
   Plus,
+  Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDroppable } from '@dnd-kit/core';
@@ -68,10 +69,11 @@ interface SortableBlockProps {
   isFirst: boolean;
   onSelect: () => void;
   onRemove: () => void;
+  onDuplicate: () => void;
   isDraggingOver?: boolean;
 }
 
-function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, isDraggingOver }: SortableBlockProps) {
+function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, onDuplicate, isDraggingOver }: SortableBlockProps) {
   const {
     attributes,
     listeners,
@@ -165,19 +167,34 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, isDragg
           )}
         </div>
         
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          className={cn(
-            "p-1.5 rounded-md text-muted-foreground transition-all duration-200",
-            "opacity-0 group-hover:opacity-100",
-            "hover:bg-destructive/20 hover:text-destructive hover:scale-110"
-          )}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate();
+            }}
+            className={cn(
+              "p-1.5 rounded-md text-muted-foreground transition-all duration-200",
+              "hover:bg-primary/20 hover:text-primary hover:scale-110"
+            )}
+            title="Duplicate block"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className={cn(
+              "p-1.5 rounded-md text-muted-foreground transition-all duration-200",
+              "hover:bg-destructive/20 hover:text-destructive hover:scale-110"
+            )}
+            title="Remove block"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -188,6 +205,7 @@ interface LabCanvasProps {
   selectedBlockId: string | null;
   onSelectBlock: (blockId: string | null) => void;
   onRemoveBlock: (blockId: string) => void;
+  onDuplicateBlock: (blockId: string) => void;
   onReorderBlocks: (activeId: string, overId: string) => void;
   isDropTarget?: boolean;
   activeDragId?: string | null;
@@ -198,6 +216,7 @@ export function LabCanvas({
   selectedBlockId, 
   onSelectBlock, 
   onRemoveBlock,
+  onDuplicateBlock,
   onReorderBlocks,
   isDropTarget = false,
   activeDragId,
@@ -329,6 +348,7 @@ export function LabCanvas({
                   isFirst={index === 0}
                   onSelect={() => onSelectBlock(selectedBlockId === block.id ? null : block.id)}
                   onRemove={() => onRemoveBlock(block.id)}
+                  onDuplicate={() => onDuplicateBlock(block.id)}
                 />
               ))}
               
