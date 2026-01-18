@@ -19,6 +19,23 @@ import {
   OutputConfig,
 } from '@/types/analyticsLab';
 import { DottedGridBackground } from '@/components/DottedGridBackground';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Database,
@@ -33,7 +50,7 @@ interface LabCanvasProps {
   selectedBlockId: string | null;
   onSelectBlock: (blockId: string | null) => void;
   onRemoveBlock: (blockId: string) => void;
-  onMoveBlock: (blockId: string, direction: 'up' | 'down') => void;
+  onReorderBlocks: (activeId: string, overId: string) => void;
 }
 
 function getBlockSummary(block: AnalyticsBlock): string {
@@ -62,14 +79,127 @@ function getBlockSummary(block: AnalyticsBlock): string {
   }
 }
 
+interface SortableBlockProps {
+  block: AnalyticsBlock;
+  isSelected: boolean;
+  isFirst: boolean;
+  onSelect: () => void;
+  onRemove: () => void;
+}
+
+function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove }: SortableBlockProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  const blockMeta = ANALYTICS_BLOCK_LIBRARY.find(b => b.type === block.type);
+  const Icon = ICON_MAP[blockMeta?.icon || 'Database'] || Database;
+  const summary = getBlockSummary(block);
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {/* Connection line */}
+      {!isFirst && (
+        <div className="flex justify-center -my-1">
+          <div className="w-0.5 h-4 bg-border" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground -ml-2" />
+        </div>
+      )}
+      
+      {/* Block */}
+      <div
+        onClick={onSelect}
+        className={cn(
+          "w-full flex items-center gap-3 p-3 rounded-lg text-left cursor-pointer",
+          "border transition-all duration-150",
+          isDragging && "opacity-50 shadow-lg",
+          isSelected 
+            ? "bg-primary/10 border-primary shadow-sm shadow-primary/10"
+            : "bg-card hover:bg-muted/50 border-border hover:border-muted-foreground/30"
+        )}
+      >
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing touch-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+        </div>
+        
+        <div 
+          className="p-1.5 rounded-md shrink-0"
+          style={{ backgroundColor: `${blockMeta?.color || 'hsl(var(--primary))'}20` }}
+        >
+          <Icon 
+            className="h-4 w-4" 
+            style={{ color: blockMeta?.color || 'hsl(var(--primary))' }} 
+          />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-medium text-foreground">
+            {blockMeta?.label || block.type}
+          </div>
+          {summary && (
+            <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+              {summary}
+            </div>
+          )}
+        </div>
+        
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function LabCanvas({ 
   blocks, 
   selectedBlockId, 
   onSelectBlock, 
   onRemoveBlock,
-  onMoveBlock,
+  onReorderBlocks,
 }: LabCanvasProps) {
   const sortedBlocks = [...blocks].sort((a, b) => a.position - b.position);
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      onReorderBlocks(active.id as string, over.id as string);
+    }
+  }
 
   return (
     <DottedGridBackground
@@ -88,7 +218,7 @@ export function LabCanvas({
         <p className="text-xs text-muted-foreground mt-0.5">
           {blocks.length === 0 
             ? 'Add blocks from the library or use a quick preset'
-            : `${blocks.length} block${blocks.length !== 1 ? 's' : ''} in pipeline`
+            : `${blocks.length} block${blocks.length !== 1 ? 's' : ''} • Drag to reorder`
           }
         </p>
       </div>
@@ -110,71 +240,29 @@ export function LabCanvas({
             </div>
           </div>
         ) : (
-          <div className="space-y-3 max-w-md mx-auto">
-            {sortedBlocks.map((block, index) => {
-              const blockMeta = ANALYTICS_BLOCK_LIBRARY.find(b => b.type === block.type);
-              const Icon = ICON_MAP[blockMeta?.icon || 'Database'] || Database;
-              const isSelected = selectedBlockId === block.id;
-              const summary = getBlockSummary(block);
-              
-              return (
-                <div key={block.id}>
-                  {/* Connection line */}
-                  {index > 0 && (
-                    <div className="flex justify-center -my-1">
-                      <div className="w-0.5 h-4 bg-border" />
-                      <ChevronDown className="h-4 w-4 text-muted-foreground -ml-2" />
-                    </div>
-                  )}
-                  
-                  {/* Block */}
-                  <button
-                    onClick={() => onSelectBlock(isSelected ? null : block.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg text-left",
-                      "border transition-all duration-150",
-                      isSelected 
-                        ? "bg-primary/10 border-primary shadow-sm shadow-primary/10"
-                        : "bg-card hover:bg-muted/50 border-border hover:border-muted-foreground/30"
-                    )}
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
-                    
-                    <div 
-                      className="p-1.5 rounded-md shrink-0"
-                      style={{ backgroundColor: `${blockMeta?.color || 'hsl(var(--primary))'}20` }}
-                    >
-                      <Icon 
-                        className="h-4 w-4" 
-                        style={{ color: blockMeta?.color || 'hsl(var(--primary))' }} 
-                      />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-foreground">
-                        {blockMeta?.label || block.type}
-                      </div>
-                      {summary && (
-                        <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                          {summary}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemoveBlock(block.id);
-                      }}
-                      className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sortedBlocks.map(b => b.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3 max-w-md mx-auto">
+                {sortedBlocks.map((block, index) => (
+                  <SortableBlock
+                    key={block.id}
+                    block={block}
+                    isSelected={selectedBlockId === block.id}
+                    isFirst={index === 0}
+                    onSelect={() => onSelectBlock(selectedBlockId === block.id ? null : block.id)}
+                    onRemove={() => onRemoveBlock(block.id)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </DottedGridBackground>

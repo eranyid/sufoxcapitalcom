@@ -148,16 +148,19 @@ export default function Lab() {
     }
   }, [selectedBlockId]);
 
-  const handleMoveBlock = useCallback((blockId: string, direction: 'up' | 'down') => {
+  const handleReorderBlocks = useCallback((activeId: string, overId: string) => {
     setBlocks(prev => {
-      const index = prev.findIndex(b => b.id === blockId);
-      if (index === -1) return prev;
+      const oldIndex = prev.findIndex(b => b.id === activeId);
+      const newIndex = prev.findIndex(b => b.id === overId);
       
-      const newIndex = direction === 'up' ? index - 1 : index + 1;
-      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      if (oldIndex === -1 || newIndex === -1) return prev;
       
+      // Create new array with swapped positions
       const newBlocks = [...prev];
-      [newBlocks[index], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[index]];
+      const [removed] = newBlocks.splice(oldIndex, 1);
+      newBlocks.splice(newIndex, 0, removed);
+      
+      // Update positions
       return newBlocks.map((block, i) => ({ ...block, position: i }));
     });
   }, []);
@@ -384,7 +387,7 @@ export default function Lab() {
                 selectedBlockId={selectedBlockId}
                 onSelectBlock={setSelectedBlockId}
                 onRemoveBlock={handleRemoveBlock}
-                onMoveBlock={handleMoveBlock}
+                onReorderBlocks={handleReorderBlocks}
               />
             </div>
 
