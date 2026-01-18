@@ -274,12 +274,12 @@
 
   .data-table th {
     @apply text-left text-primary font-semibold py-1.5 px-2 border-b border-border uppercase tracking-wider bg-secondary;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .data-table td {
-    @apply py-1.5 px-2 border-b border-border/40 font-mono tabular-nums;
-    font-size: 11px;
+    @apply py-1.5 px-2 border-b border-border/40 font-mono tabular-nums text-foreground;
+    font-size: 12px;
   }
 
   @media (max-width: 640px) {
@@ -321,7 +321,7 @@
 
   /* Bloomberg-style text classes */
   .terminal-label {
-    @apply text-primary text-[10px] uppercase tracking-widest font-semibold;
+    @apply text-primary text-[11px] uppercase tracking-widest font-semibold;
   }
 
   @media (max-width: 640px) {
@@ -331,11 +331,11 @@
   }
 
   .terminal-value {
-    @apply font-mono text-foreground tabular-nums;
+    @apply font-mono text-foreground tabular-nums font-medium;
   }
 
   .terminal-value-lg {
-    @apply font-mono text-xl tabular-nums tracking-tight;
+    @apply font-mono text-xl tabular-nums tracking-tight font-semibold;
   }
 
   @media (max-width: 640px) {
