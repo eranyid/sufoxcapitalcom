@@ -587,6 +587,20 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
         </div>
       </div>
       
+      {/* Warnings banner */}
+      {result?.warnings && result.warnings.length > 0 && (
+        <div className="mx-4 mb-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-md">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-200">
+              {result.warnings.map((warning, i) => (
+                <p key={i}>{warning}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Chart area */}
       <div ref={chartRef} className="flex-1 p-4 min-h-[400px]">
         {renderChart()}

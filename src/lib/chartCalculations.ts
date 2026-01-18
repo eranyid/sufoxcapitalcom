@@ -54,8 +54,11 @@ export interface ChartResult {
   data: ChartDataPoint[] | CorrelationMatrixData | AllocationData[] | ContributionData[];
   dataType: 'timeseries' | 'matrix' | 'allocation' | 'contribution';
   error?: string;
+  warnings?: string[];
   metadata?: {
     assets: string[];
+    assetsWithData: string[];
+    assetsMissingData: string[];
     dateRange: { start: string; end: string };
     metric: ChartMetric;
   };
@@ -523,8 +526,19 @@ export function calculateChartData(
     
     const { start, end } = getDateRangeBounds(state.dateRange, state.customDateStart, state.customDateEnd);
     
+    // Check which assets have valuation data
+    const assetsToCheck = state.assets.length > 0 ? state.assets : [...new Set(transactions.map(t => t.ticker))];
+    const assetsWithData = assetsToCheck.filter(ticker => 
+      filteredValuations.some(v => v.ticker === ticker)
+    );
+    const assetsMissingData = assetsToCheck.filter(ticker => 
+      !filteredValuations.some(v => v.ticker === ticker)
+    );
+    
     const metadata = {
       assets: state.assets,
+      assetsWithData,
+      assetsMissingData,
       dateRange: {
         start: format(start, 'yyyy-MM-dd'),
         end: format(end, 'yyyy-MM-dd'),
@@ -532,12 +546,19 @@ export function calculateChartData(
       metric: state.metric,
     };
     
+    // Generate warnings for missing data
+    const warnings: string[] = [];
+    if (assetsMissingData.length > 0) {
+      warnings.push(`No valuation data for: ${assetsMissingData.join(', ')}`);
+    }
+    
     switch (state.metric) {
       case 'price':
         return {
           success: true,
           data: calculatePriceData(filteredValuations, state.assets, state.normalize),
           dataType: 'timeseries',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
@@ -547,6 +568,7 @@ export function calculateChartData(
           success: true,
           data: calculateReturnData(transactions, filteredValuations, state.assets),
           dataType: 'timeseries',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
@@ -556,6 +578,7 @@ export function calculateChartData(
           success: true,
           data: calculateCumulativeReturnData(transactions, filteredValuations, state.assets),
           dataType: 'timeseries',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
@@ -565,6 +588,7 @@ export function calculateChartData(
           success: true,
           data: calculateDrawdownData(transactions, filteredValuations, state.assets),
           dataType: 'timeseries',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
@@ -579,6 +603,7 @@ export function calculateChartData(
             state.rollingWindow
           ),
           dataType: 'timeseries',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
@@ -608,10 +633,17 @@ export function calculateChartData(
           tickerIndices.map(j => matrix[i][j])
         );
         
+        // Check for assets that didn't make it into the matrix
+        const matrixMissingAssets = state.assets.filter(a => !filteredTickers.includes(a));
+        const matrixWarnings = matrixMissingAssets.length > 0 
+          ? [`Excluded from matrix (insufficient data): ${matrixMissingAssets.join(', ')}`]
+          : warnings.length > 0 ? warnings : undefined;
+        
         return {
           success: true,
           data: { tickers: filteredTickers, matrix: filteredMatrix },
           dataType: 'matrix',
+          warnings: matrixWarnings,
           metadata,
         };
         
@@ -638,6 +670,7 @@ export function calculateChartData(
             state.rollingWindow
           ),
           dataType: 'timeseries',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
@@ -671,6 +704,7 @@ export function calculateChartData(
             state.rollingWindow
           ),
           dataType: 'timeseries',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
@@ -679,6 +713,7 @@ export function calculateChartData(
           success: true,
           data: calculateAllocationData(transactions, valuations, state.assets),
           dataType: 'allocation',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
@@ -688,6 +723,7 @@ export function calculateChartData(
           success: true,
           data: calculateContributionData(transactions, filteredValuations, state.assets),
           dataType: 'contribution',
+          warnings: warnings.length > 0 ? warnings : undefined,
           metadata,
         };
         
