@@ -128,7 +128,7 @@ function SortableBlock({
           {...attributes} 
           {...listeners}
           className={cn(
-            "flex items-center gap-1.5 bg-card/95 backdrop-blur-sm border border-border rounded-md px-2.5 py-1.5",
+            "flex items-center gap-1.5 bg-card border border-border rounded-md px-2.5 py-1.5",
             "cursor-grab active:cursor-grabbing transition-all duration-150",
             "hover:border-primary/50 hover:shadow-md hover:shadow-primary/10",
             "active:scale-95"
@@ -139,7 +139,7 @@ function SortableBlock({
             {block.type.replace(/_/g, ' ')}
           </span>
         </div>
-        <div className="flex items-center gap-0.5 bg-card/95 backdrop-blur-sm border border-border rounded-md p-0.5">
+        <div className="flex items-center gap-0.5 bg-card border border-border rounded-md p-0.5">
           <Button
             variant="ghost"
             size="icon"
@@ -344,12 +344,12 @@ export function ReportCanvas({
 
   return (
     <div 
-      className="flex-1 overflow-auto bg-muted/30 p-4 md:p-8"
+      className="flex-1 overflow-auto bg-muted p-4 md:p-8"
       {...(isMobile ? swipeHandlers : {})}
     >
       {/* Mobile page navigation indicator */}
       {isMobile && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 mb-4 sticky top-0 z-10 bg-muted/80 backdrop-blur-sm py-2 rounded-lg">
+        <div className="flex items-center justify-center gap-4 mb-4 sticky top-0 z-10 bg-muted py-2 rounded-lg">
           <Button
             variant="ghost"
             size="icon"

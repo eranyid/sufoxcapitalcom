@@ -219,7 +219,7 @@ export function NavEquityCurve({
       </div>
 
       {/* Controls Bar */}
-      <div className="px-4 py-2 border-b border-border/20 bg-background/50">
+      <div className="px-4 py-2 border-b border-border/20 bg-secondary">
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setShowSplit(false)}

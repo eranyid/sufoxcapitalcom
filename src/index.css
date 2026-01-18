@@ -21,8 +21,10 @@
     --background: 0 0% 7%;
     --foreground: 0 0% 85%;
 
-    --card: 0 0% 11%;
+    /* Card backgrounds - solid and opaque to prevent grid bleed-through */
+    --card: 0 0% 10%;
     --card-foreground: 0 0% 85%;
+    --card-elevated: 0 0% 12%;
 
     --popover: 0 0% 13%;
     --popover-foreground: 0 0% 85%;
@@ -220,10 +222,10 @@
 }
 
 @layer components {
-  /* Bloomberg Panel Style */
+  /* Bloomberg Panel Style - Solid background to prevent grid bleed-through */
   .bloomberg-panel {
     @apply bg-card border border-border;
-    box-shadow: inset 0 1px 0 hsl(var(--muted) / 0.3);
+    box-shadow: inset 0 1px 0 hsl(var(--muted) / 0.3), 0 2px 8px -2px rgba(0, 0, 0, 0.3);
   }
 
   .bloomberg-header {
@@ -249,9 +251,10 @@
     @apply bg-primary text-primary-foreground;
   }
 
-  /* KPI Card Bloomberg style */
+  /* KPI Card Bloomberg style - Solid background */
   .kpi-card {
     @apply bg-card border border-border p-3 transition-all duration-150;
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.3);
   }
 
   @media (max-width: 640px) {
@@ -270,7 +273,7 @@
   }
 
   .data-table th {
-    @apply text-left text-primary font-semibold py-1.5 px-2 border-b border-border uppercase tracking-wider bg-secondary/50;
+    @apply text-left text-primary font-semibold py-1.5 px-2 border-b border-border uppercase tracking-wider bg-secondary;
     font-size: 10px;
   }
 
@@ -352,9 +355,10 @@
     background: linear-gradient(90deg, hsl(30 100% 50%), hsl(35 100% 55%), hsl(30 100% 50%));
   }
 
-  /* Glass effect for overlays */
+  /* Glass effect for overlays - now more opaque */
   .glass-card {
-    @apply bg-card/95 backdrop-blur-sm border border-border;
+    @apply bg-card border border-border;
+    box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4);
   }
 
   /* Mobile Touch Targets - Apple's 44x44 minimum */
@@ -369,7 +373,7 @@
 
   /* Collapsible Section Header */
   .section-header {
-    @apply flex items-center justify-between py-3 px-4 bg-secondary/50 border-b border-border cursor-pointer active:bg-secondary transition-colors;
+    @apply flex items-center justify-between py-3 px-4 bg-secondary border-b border-border cursor-pointer active:bg-muted transition-colors;
   }
 
   /* Mobile List Item */

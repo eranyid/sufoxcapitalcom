@@ -190,7 +190,7 @@ export function CommandBar({ onOpenActivityLog }: CommandBarProps) {
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/90"
         onClick={() => {
           setIsOpen(false);
           setCommand('');
@@ -201,7 +201,7 @@ export function CommandBar({ onOpenActivityLog }: CommandBarProps) {
       {/* Command Bar */}
       <div className="relative w-full max-w-xl mx-4 bg-card border border-border shadow-2xl animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden">
         {/* Header bar */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-secondary/50">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-secondary">
           <Terminal className="h-3.5 w-3.5 text-primary" />
           <span className="text-[10px] uppercase tracking-widest text-primary font-semibold">Command</span>
           <div className="ml-auto flex items-center gap-2">
@@ -293,7 +293,7 @@ export function CommandBar({ onOpenActivityLog }: CommandBarProps) {
         )}
 
         {/* Footer with keyboard hints */}
-        <div className="px-4 py-2 border-t border-border/50 bg-secondary/30 flex items-center justify-between">
+        <div className="px-4 py-2 border-t border-border/50 bg-secondary flex items-center justify-between">
           <p className="text-[10px] text-muted-foreground">
             <span className="text-primary font-semibold">{filteredCommands.length}</span> commands available
           </p>

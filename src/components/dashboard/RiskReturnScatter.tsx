@@ -126,8 +126,8 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
   // Empty state
   if (holdings.length < 2) {
     return (
-      <div className="bg-card/50 border border-border/40 rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-border/30 bg-muted/20">
+      <div className="bg-card border border-border/40 rounded-lg overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/30 bg-secondary">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             Risk / Return Map
@@ -144,9 +144,9 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
   }
   
   return (
-    <div className="bg-card/50 border border-border/40 rounded-lg overflow-hidden flex flex-col">
+    <div className="bg-card border border-border/40 rounded-lg overflow-hidden flex flex-col">
       {/* Header - compact */}
-      <div className="px-3 py-2 border-b border-border/30 bg-muted/20 flex-shrink-0">
+      <div className="px-3 py-2 border-b border-border/30 bg-secondary flex-shrink-0">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           Risk / Return Map

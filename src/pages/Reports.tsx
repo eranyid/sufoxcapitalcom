@@ -210,10 +210,10 @@ export default function Reports() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-md border border-border/60 overflow-hidden bg-card/30">
+        <div className="rounded-md border border-border/60 overflow-hidden bg-card">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/50">
+              <TableRow className="bg-secondary hover:bg-secondary border-b border-border/50">
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-foreground/80">Name</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-foreground/80 w-[140px]">Last Updated</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-foreground/80 w-[100px]">Page Size</TableHead>

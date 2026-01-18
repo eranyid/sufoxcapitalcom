@@ -132,7 +132,7 @@ export default function Charts() {
       
       <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
         {/* Toolbar - matching Lab style */}
-        <div className="border-b border-border/50 bg-card/30 backdrop-blur-sm px-4 py-2 flex items-center justify-between shrink-0">
+        <div className="border-b border-border/50 bg-card px-4 py-2 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
@@ -200,7 +200,7 @@ export default function Charts() {
           ) : (
             <>
               {/* Left Panel - Compact Builder */}
-              <div className="w-64 border-r border-border/50 bg-card/20 flex flex-col shrink-0">
+              <div className="w-64 border-r border-border/50 bg-card flex flex-col shrink-0">
                 <div className="px-3 py-2.5 border-b border-border/30">
                   <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Chart Builder
@@ -214,7 +214,7 @@ export default function Charts() {
               {/* Main Panel - Chart Canvas (dominant) */}
               <div className="flex-1 flex flex-col min-w-0 p-4 bg-background">
                 {/* Canvas container with Lab-style styling */}
-                <div className="flex-1 relative rounded-xl border border-border/40 bg-card/10 overflow-hidden shadow-[0_0_60px_-15px_hsl(var(--primary)/0.15)]">
+                <div className="flex-1 relative rounded-xl border border-border/40 bg-card overflow-hidden shadow-[0_0_60px_-15px_hsl(var(--primary)/0.15)]">
                   {/* Chart content */}
                   <div className="relative z-10 h-full p-4">
                     <ChartCanvas

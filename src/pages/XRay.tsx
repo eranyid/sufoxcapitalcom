@@ -20,8 +20,8 @@ function DistributionSection({ title, data }: DistributionSectionProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="bg-card/50 border border-border/40 rounded-lg overflow-hidden">
-      <div className="px-4 py-3 border-b border-border/30 bg-muted/20">
+    <div className="bg-card border border-border/40 rounded-lg overflow-hidden">
+      <div className="px-4 py-3 border-b border-border/30 bg-secondary">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           {title}
@@ -121,8 +121,8 @@ function TopHoldingsSection({ holdings }: { holdings: { ticker: string; name: st
   const topHoldings = holdings.slice(0, 10);
 
   return (
-    <div className="bg-card/50 border border-border/40 rounded-lg overflow-hidden">
-      <div className="px-4 py-3 border-b border-border/30 bg-muted/20">
+    <div className="bg-card border border-border/40 rounded-lg overflow-hidden">
+      <div className="px-4 py-3 border-b border-border/30 bg-secondary">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           Top 10 Holdings
