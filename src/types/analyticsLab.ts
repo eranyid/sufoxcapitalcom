@@ -20,7 +20,13 @@ export type ComputeFunction =
   | 'total_return_with_cost_basis'
   | 'volatility'
   | 'sharpe_ratio'
-  | 'drawdown_analysis';
+  | 'sortino_ratio'
+  | 'drawdown_analysis'
+  | 'beta'
+  | 'cagr'
+  | 'price_statistics'
+  | 'rolling_volatility'
+  | 'var_analysis';
 export type OutputType = 'table' | 'line_chart' | 'heatmap';
 
 export interface DataSourceConfig {
@@ -45,12 +51,16 @@ export interface ComputeConfig {
   // For correlation pair
   asset1?: string;
   asset2?: string;
-  // For rolling correlation
+  // For rolling correlation/volatility
   rollingWindow?: number;
   // For price at month end
   targetMonth?: string;
-  // For Sharpe ratio
+  // For Sharpe/Sortino ratio
   riskFreeRate?: number;
+  // For Beta calculation
+  benchmarkAsset?: string;
+  // For VaR
+  confidenceLevel?: number;
 }
 
 export interface OutputConfig {

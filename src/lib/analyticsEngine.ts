@@ -779,6 +779,246 @@ function processBlock(block: AnalyticsBlock, context: PipelineContext): Pipeline
           };
         }
         
+        case 'sortino_ratio': {
+          const result: Record<string, {
+            sortinoRatio: number;
+            annualizedReturn: number;
+            downsideDeviation: number;
+            riskFreeRate: number;
+          }> = {};
+          
+          const riskFreeRate = config.riskFreeRate ?? 0.04;
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset];
+            const returns = calculateReturns(prices || []);
+            
+            // Calculate downside deviation (only negative returns)
+            const negativeReturns = returns.filter(r => r < 0);
+            const downsideVariance = negativeReturns.length > 0
+              ? negativeReturns.reduce((sum, r) => sum + r * r, 0) / negativeReturns.length
+              : 0;
+            const downsideDeviation = Math.sqrt(downsideVariance) * Math.sqrt(252);
+            
+            const meanReturn = returns.length > 0 
+              ? returns.reduce((a, b) => a + b, 0) / returns.length 
+              : 0;
+            const annualizedReturn = meanReturn * 252;
+            
+            const sortinoRatio = downsideDeviation > 0 
+              ? (annualizedReturn - riskFreeRate) / downsideDeviation 
+              : 0;
+            
+            result[asset] = {
+              sortinoRatio,
+              annualizedReturn,
+              downsideDeviation,
+              riskFreeRate,
+            };
+          });
+          
+          return { ...context, computeResult: result };
+        }
+        
+        case 'beta': {
+          const result: Record<string, {
+            beta: number;
+            alpha: number;
+            rSquared: number;
+            benchmarkAsset: string;
+          }> = {};
+          
+          const benchmarkAsset = config.benchmarkAsset || context.assets[0];
+          const benchmarkPrices = context.data[benchmarkAsset] || [];
+          const benchmarkReturns = calculateReturns(benchmarkPrices);
+          
+          context.assets.forEach(asset => {
+            if (asset === benchmarkAsset) return;
+            
+            const prices = context.data[asset];
+            const returns = calculateReturns(prices || []);
+            
+            const minLen = Math.min(returns.length, benchmarkReturns.length);
+            const assetRet = returns.slice(0, minLen);
+            const benchRet = benchmarkReturns.slice(0, minLen);
+            
+            if (minLen < 2) {
+              result[asset] = { beta: 0, alpha: 0, rSquared: 0, benchmarkAsset };
+              return;
+            }
+            
+            // Calculate beta = Cov(asset, benchmark) / Var(benchmark)
+            const meanAsset = assetRet.reduce((a, b) => a + b, 0) / minLen;
+            const meanBench = benchRet.reduce((a, b) => a + b, 0) / minLen;
+            
+            let covariance = 0;
+            let varBench = 0;
+            let varAsset = 0;
+            
+            for (let i = 0; i < minLen; i++) {
+              covariance += (assetRet[i] - meanAsset) * (benchRet[i] - meanBench);
+              varBench += Math.pow(benchRet[i] - meanBench, 2);
+              varAsset += Math.pow(assetRet[i] - meanAsset, 2);
+            }
+            
+            covariance /= minLen;
+            varBench /= minLen;
+            varAsset /= minLen;
+            
+            const beta = varBench > 0 ? covariance / varBench : 0;
+            const alpha = (meanAsset - beta * meanBench) * 252; // Annualized
+            const rSquared = varAsset > 0 && varBench > 0 
+              ? Math.pow(covariance, 2) / (varAsset * varBench) 
+              : 0;
+            
+            result[asset] = { beta, alpha, rSquared, benchmarkAsset };
+          });
+          
+          return { ...context, computeResult: result };
+        }
+        
+        case 'cagr': {
+          const result: Record<string, {
+            cagr: number;
+            totalReturn: number;
+            years: number;
+            startPrice: number;
+            endPrice: number;
+          }> = {};
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset];
+            if (!prices || prices.length < 2) {
+              result[asset] = { cagr: 0, totalReturn: 0, years: 0, startPrice: 0, endPrice: 0 };
+              return;
+            }
+            
+            const startPrice = prices[0];
+            const endPrice = prices[prices.length - 1];
+            const years = prices.length / 252; // Assuming daily data
+            
+            const totalReturn = startPrice > 0 ? (endPrice - startPrice) / startPrice : 0;
+            const cagr = years > 0 && startPrice > 0 
+              ? Math.pow(endPrice / startPrice, 1 / years) - 1 
+              : 0;
+            
+            result[asset] = { cagr, totalReturn, years, startPrice, endPrice };
+          });
+          
+          return { ...context, computeResult: result };
+        }
+        
+        case 'price_statistics': {
+          const result: Record<string, {
+            min: number;
+            max: number;
+            mean: number;
+            median: number;
+            stdDev: number;
+            range: number;
+            currentVsAvg: number;
+          }> = {};
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset];
+            if (!prices || prices.length === 0) {
+              result[asset] = { min: 0, max: 0, mean: 0, median: 0, stdDev: 0, range: 0, currentVsAvg: 0 };
+              return;
+            }
+            
+            const sorted = [...prices].sort((a, b) => a - b);
+            const min = sorted[0];
+            const max = sorted[sorted.length - 1];
+            const mean = prices.reduce((a, b) => a + b, 0) / prices.length;
+            const median = sorted.length % 2 === 0 
+              ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+              : sorted[Math.floor(sorted.length / 2)];
+            
+            const variance = prices.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / prices.length;
+            const stdDev = Math.sqrt(variance);
+            const range = max - min;
+            const currentPrice = prices[prices.length - 1];
+            const currentVsAvg = mean > 0 ? (currentPrice - mean) / mean : 0;
+            
+            result[asset] = { min, max, mean, median, stdDev, range, currentVsAvg };
+          });
+          
+          return { ...context, computeResult: result };
+        }
+        
+        case 'rolling_volatility': {
+          const window = config.rollingWindow || 30;
+          const chartData: Record<string, { date: string; volatility: number }[]> = {};
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset] || [];
+            const returns = calculateReturns(prices);
+            const rollingVols: { date: string; volatility: number }[] = [];
+            
+            for (let i = window - 1; i < returns.length; i++) {
+              const windowReturns = returns.slice(i - window + 1, i + 1);
+              const vol = calculateVolatility(windowReturns);
+              rollingVols.push({
+                date: context.dates[i + 1] || '',
+                volatility: vol,
+              });
+            }
+            
+            chartData[asset] = rollingVols;
+          });
+          
+          return { 
+            ...context, 
+            computeResult: { 
+              window,
+              chartData,
+            } 
+          };
+        }
+        
+        case 'var_analysis': {
+          const confidenceLevel = config.confidenceLevel ?? 0.95;
+          const result: Record<string, {
+            var95: number;
+            var99: number;
+            cvar95: number;
+            worstDay: number;
+            worstDayDate: string;
+          }> = {};
+          
+          context.assets.forEach(asset => {
+            const prices = context.data[asset] || [];
+            const returns = calculateReturns(prices);
+            
+            if (returns.length < 10) {
+              result[asset] = { var95: 0, var99: 0, cvar95: 0, worstDay: 0, worstDayDate: '' };
+              return;
+            }
+            
+            const sortedReturns = [...returns].sort((a, b) => a - b);
+            const var95Index = Math.floor(returns.length * 0.05);
+            const var99Index = Math.floor(returns.length * 0.01);
+            
+            const var95 = sortedReturns[var95Index] || 0;
+            const var99 = sortedReturns[var99Index] || 0;
+            
+            // CVaR (Expected Shortfall) - average of returns below VaR
+            const tailReturns = sortedReturns.slice(0, var95Index + 1);
+            const cvar95 = tailReturns.length > 0 
+              ? tailReturns.reduce((a, b) => a + b, 0) / tailReturns.length 
+              : 0;
+            
+            // Worst single day
+            const worstDay = sortedReturns[0] || 0;
+            const worstDayIndex = returns.indexOf(worstDay);
+            const worstDayDate = context.dates[worstDayIndex + 1] || '';
+            
+            result[asset] = { var95, var99, cvar95, worstDay, worstDayDate };
+          });
+          
+          return { ...context, computeResult: result };
+        }
+        
         default:
           return context;
       }
