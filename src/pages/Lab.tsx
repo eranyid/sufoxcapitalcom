@@ -28,14 +28,24 @@ import {
   ValuationData,
 } from '@/lib/analyticsEngine';
 import { usePortfolio } from '@/context/PortfolioContext';
-import { LabBlockLibrary } from '@/components/lab/LabBlockLibrary';
+import { LabBlockLibrary, LIBRARY_ICON_MAP } from '@/components/lab/LabBlockLibrary';
 import { LabCanvas } from '@/components/lab/LabCanvas';
 import { LabInspector } from '@/components/lab/LabInspector';
 import { LabResultPanel } from '@/components/lab/LabResultPanel';
+import { DragOverlayBlock } from '@/components/lab/DraggableLibraryBlock';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import {
+  DndContext,
+  DragOverlay,
+  DragStartEvent,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import {
   Dialog,
   DialogContent,
@@ -94,6 +104,17 @@ export default function Lab() {
   const [isRunning, setIsRunning] = useState(false);
   const [savedPipelines, setSavedPipelines] = useState<AnalyticsPipeline[]>([]);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+  const [activeDragBlockType, setActiveDragBlockType] = useState<AnalyticsBlockType | null>(null);
+  const [isOverCanvas, setIsOverCanvas] = useState(false);
+
+  // Sensors for DnD
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // Load saved pipelines on mount
   useEffect(() => {
@@ -256,159 +277,214 @@ export default function Lab() {
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId) || null;
 
+  // Drag and drop handlers
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active } = event;
+    const data = active.data.current;
+    
+    if (data?.type === 'library-block') {
+      setActiveDragBlockType(data.blockType);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((event: DragEndEvent) => {
+    const { over } = event;
+    setIsOverCanvas(over?.id === 'canvas-drop-zone');
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    const data = active.data.current;
+    
+    // Check if dropped on canvas
+    if (data?.type === 'library-block' && over?.id === 'canvas-drop-zone') {
+      handleAddBlock(data.blockType);
+    }
+    
+    setActiveDragBlockType(null);
+    setIsOverCanvas(false);
+  }, [handleAddBlock]);
+
+  const handleDragCancel = useCallback(() => {
+    setActiveDragBlockType(null);
+    setIsOverCanvas(false);
+  }, []);
+
+  // Get the active block meta for overlay
+  const activeDragBlock = activeDragBlockType 
+    ? ANALYTICS_BLOCK_LIBRARY.find(b => b.type === activeDragBlockType)
+    : null;
+  const ActiveIcon = activeDragBlock ? (LIBRARY_ICON_MAP[activeDragBlock.icon] || Database) : Database;
+
   return (
     <>
       <Helmet>
         <title>Analytics Lab | SUFOX Capital</title>
       </Helmet>
 
-      <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
-        {/* Toolbar */}
-        <div className="border-b border-border bg-card/50 px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
+          {/* Toolbar */}
+          <div className="border-b border-border bg-card/50 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <LabIcon className="h-5 w-5 text-primary" />
+                <Input
+                  value={pipelineName}
+                  onChange={(e) => setPipelineName(e.target.value)}
+                  className="h-8 w-48 text-sm font-medium bg-transparent border-none focus-visible:ring-1"
+                  placeholder="Pipeline name..."
+                />
+              </div>
+              {/* Data source indicator */}
+              <Badge 
+                variant={availableAssets.length > 0 ? "default" : "secondary"} 
+                className="text-[10px] gap-1"
+              >
+                <Database className="h-3 w-3" />
+                {availableAssets.length > 0 
+                  ? `${availableAssets.length} assets • ${transactions.length} txns`
+                  : 'No data'
+                }
+              </Badge>
+            </div>
+
             <div className="flex items-center gap-2">
-              <LabIcon className="h-5 w-5 text-primary" />
-              <Input
-                value={pipelineName}
-                onChange={(e) => setPipelineName(e.target.value)}
-                className="h-8 w-48 text-sm font-medium bg-transparent border-none focus-visible:ring-1"
-                placeholder="Pipeline name..."
-              />
+              <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8">
+                    <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
+                    Load
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Load Pipeline</DialogTitle>
+                    <DialogDescription>
+                      Select a saved pipeline to load
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2 mt-4">
+                    {savedPipelines.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        No saved pipelines yet
+                      </p>
+                    ) : (
+                      savedPipelines.map((pipeline) => (
+                        <div 
+                          key={pipeline.id}
+                          className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        >
+                          <button
+                            onClick={() => handleLoad(pipeline)}
+                            className="flex-1 text-left"
+                          >
+                            <div className="text-sm font-medium">{pipeline.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {pipeline.blocks.length} blocks • Updated {new Date(pipeline.updatedAt).toLocaleDateString()}
+                            </div>
+                          </button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteSaved(pipeline.id)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Button variant="outline" size="sm" className="h-8" onClick={handleSave}>
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                Save
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleClear}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear Pipeline
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button 
+                size="sm" 
+                className="h-8"
+                onClick={handleRun}
+                disabled={blocks.length === 0 || isRunning}
+              >
+                <Play className="h-3.5 w-3.5 mr-1.5" />
+                Run
+              </Button>
             </div>
-            {/* Data source indicator */}
-            <Badge 
-              variant={availableAssets.length > 0 ? "default" : "secondary"} 
-              className="text-[10px] gap-1"
-            >
-              <Database className="h-3 w-3" />
-              {availableAssets.length > 0 
-                ? `${availableAssets.length} assets • ${transactions.length} txns`
-                : 'No data'
-              }
-            </Badge>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
-                  <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
-                  Load
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Load Pipeline</DialogTitle>
-                  <DialogDescription>
-                    Select a saved pipeline to load
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-2 mt-4">
-                  {savedPipelines.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No saved pipelines yet
-                    </p>
-                  ) : (
-                    savedPipelines.map((pipeline) => (
-                      <div 
-                        key={pipeline.id}
-                        className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                      >
-                        <button
-                          onClick={() => handleLoad(pipeline)}
-                          className="flex-1 text-left"
-                        >
-                          <div className="text-sm font-medium">{pipeline.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {pipeline.blocks.length} blocks • Updated {new Date(pipeline.updatedAt).toLocaleDateString()}
-                          </div>
-                        </button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteSaved(pipeline.id)}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Button variant="outline" size="sm" className="h-8" onClick={handleSave}>
-              <Save className="h-3.5 w-3.5 mr-1.5" />
-              Save
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleClear}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear Pipeline
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button 
-              size="sm" 
-              className="h-8"
-              onClick={handleRun}
-              disabled={blocks.length === 0 || isRunning}
-            >
-              <Play className="h-3.5 w-3.5 mr-1.5" />
-              Run
-            </Button>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Block Library */}
-          <div className="w-56 shrink-0">
-            <LabBlockLibrary 
-              onAddBlock={handleAddBlock}
-              onLoadPreset={handleLoadPreset}
-            />
-          </div>
-
-          {/* Center - Canvas */}
-          <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex-1 overflow-hidden">
-              <LabCanvas
-                blocks={blocks}
-                selectedBlockId={selectedBlockId}
-                onSelectBlock={setSelectedBlockId}
-                onRemoveBlock={handleRemoveBlock}
-                onReorderBlocks={handleReorderBlocks}
+          {/* Main Content */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left Panel - Block Library */}
+            <div className="w-56 shrink-0">
+              <LabBlockLibrary 
+                onAddBlock={handleAddBlock}
+                onLoadPreset={handleLoadPreset}
               />
             </div>
 
-            {/* Bottom - Results */}
-            <LabResultPanel 
-              result={result}
-              isRunning={isRunning}
-            />
-          </div>
+            {/* Center - Canvas */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <div className="flex-1 overflow-hidden">
+                <LabCanvas
+                  blocks={blocks}
+                  selectedBlockId={selectedBlockId}
+                  onSelectBlock={setSelectedBlockId}
+                  onRemoveBlock={handleRemoveBlock}
+                  onReorderBlocks={handleReorderBlocks}
+                  isDropTarget={isOverCanvas}
+                />
+              </div>
 
-          {/* Right Panel - Inspector */}
-          <div className="w-64 shrink-0">
-            <LabInspector
-              selectedBlock={selectedBlock}
-              onUpdateBlock={handleUpdateBlock}
-              availableAssets={availableAssets}
-              pipelineBlocks={blocks}
-            />
+              {/* Bottom - Results */}
+              <LabResultPanel 
+                result={result}
+                isRunning={isRunning}
+              />
+            </div>
+
+            {/* Right Panel - Inspector */}
+            <div className="w-64 shrink-0">
+              <LabInspector
+                selectedBlock={selectedBlock}
+                onUpdateBlock={handleUpdateBlock}
+                availableAssets={availableAssets}
+                pipelineBlocks={blocks}
+              />
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Drag Overlay */}
+        <DragOverlay>
+          {activeDragBlock && (
+            <DragOverlayBlock block={activeDragBlock} icon={ActiveIcon} />
+          )}
+        </DragOverlay>
+      </DndContext>
     </>
   );
 }
