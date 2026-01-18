@@ -67,14 +67,17 @@ export function LabBlockLibrary({ onAddBlock, onLoadPreset }: LabBlockLibraryPro
                     key={preset.id}
                     onClick={() => onLoadPreset(preset.id)}
                     className={cn(
-                      "w-full flex items-start gap-2.5 p-2.5 rounded-lg text-left",
-                      "bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40",
-                      "transition-all duration-150"
+                      "group w-full flex items-start gap-2.5 p-2.5 rounded-lg text-left",
+                      "bg-primary/5 hover:bg-primary/15 border border-primary/20 hover:border-primary/50",
+                      "transition-all duration-200 hover:shadow-sm hover:shadow-primary/10",
+                      "active:scale-[0.98]"
                     )}
                   >
-                    <Icon className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-foreground truncate">
+                    <div className="p-1 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <Icon className="h-3.5 w-3.5 text-primary group-hover:scale-110 transition-transform" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
                         {preset.name}
                       </div>
                       <div className="text-[10px] text-muted-foreground line-clamp-1">

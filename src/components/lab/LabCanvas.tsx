@@ -8,6 +8,7 @@ import {
   ChevronDown,
   X,
   GripVertical,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDroppable } from '@dnd-kit/core';
@@ -21,18 +22,7 @@ import {
 } from '@/types/analyticsLab';
 import { DottedGridBackground } from '@/components/DottedGridBackground';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -45,8 +35,6 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Calculator,
   BarChart3,
 };
-
-// Remove duplicate interface - moved to main component
 
 function getBlockSummary(block: AnalyticsBlock): string {
   switch (block.type) {
@@ -80,9 +68,10 @@ interface SortableBlockProps {
   isFirst: boolean;
   onSelect: () => void;
   onRemove: () => void;
+  isDraggingOver?: boolean;
 }
 
-function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove }: SortableBlockProps) {
+function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove, isDraggingOver }: SortableBlockProps) {
   const {
     attributes,
     listeners,
@@ -90,12 +79,12 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove }: Sorta
     transform,
     transition,
     isDragging,
+    isOver,
   } = useSortable({ id: block.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 10 : undefined,
+    transition: transition || 'transform 200ms cubic-bezier(0.25, 1, 0.5, 1)',
   };
 
   const blockMeta = ANALYTICS_BLOCK_LIBRARY.find(b => b.type === block.type);
@@ -103,10 +92,28 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove }: Sorta
   const summary = getBlockSummary(block);
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div 
+      ref={setNodeRef} 
+      style={style}
+      className={cn(
+        "group relative",
+        isDragging && "z-50"
+      )}
+    >
+      {/* Drop indicator line */}
+      {isOver && !isDragging && (
+        <div className="absolute -top-2 left-0 right-0 flex items-center gap-2 z-10">
+          <div className="flex-1 h-0.5 bg-primary rounded-full" />
+          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+            <Plus className="w-3 h-3 text-primary-foreground" />
+          </div>
+          <div className="flex-1 h-0.5 bg-primary rounded-full" />
+        </div>
+      )}
+
       {/* Connection line */}
-      {!isFirst && (
-        <div className="flex justify-center -my-1">
+      {!isFirst && !isDragging && (
+        <div className="flex justify-center -my-1 transition-opacity duration-200">
           <div className="w-0.5 h-4 bg-border" />
           <ChevronDown className="h-4 w-4 text-muted-foreground -ml-2" />
         </div>
@@ -117,24 +124,28 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove }: Sorta
         onClick={onSelect}
         className={cn(
           "w-full flex items-center gap-3 p-3 rounded-lg text-left cursor-pointer",
-          "border transition-all duration-150",
-          isDragging && "opacity-50 shadow-lg",
+          "border transition-all duration-200",
+          isDragging && "opacity-90 shadow-2xl scale-[1.02] ring-2 ring-primary/50",
           isSelected 
             ? "bg-primary/10 border-primary shadow-sm shadow-primary/10"
-            : "bg-card hover:bg-muted/50 border-border hover:border-muted-foreground/30"
+            : "bg-card hover:bg-muted/50 border-border hover:border-muted-foreground/30",
+          "hover:shadow-md"
         )}
       >
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing touch-none"
+          className={cn(
+            "cursor-grab active:cursor-grabbing touch-none p-1 -m-1 rounded transition-colors",
+            "hover:bg-muted/80"
+          )}
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
         </div>
         
         <div 
-          className="p-1.5 rounded-md shrink-0"
+          className="p-1.5 rounded-md shrink-0 transition-transform duration-200 group-hover:scale-110"
           style={{ backgroundColor: `${blockMeta?.color || 'hsl(var(--primary))'}20` }}
         >
           <Icon 
@@ -159,7 +170,11 @@ function SortableBlock({ block, isSelected, isFirst, onSelect, onRemove }: Sorta
             e.stopPropagation();
             onRemove();
           }}
-          className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+          className={cn(
+            "p-1.5 rounded-md text-muted-foreground transition-all duration-200",
+            "opacity-0 group-hover:opacity-100",
+            "hover:bg-destructive/20 hover:text-destructive hover:scale-110"
+          )}
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -175,6 +190,7 @@ interface LabCanvasProps {
   onRemoveBlock: (blockId: string) => void;
   onReorderBlocks: (activeId: string, overId: string) => void;
   isDropTarget?: boolean;
+  activeDragId?: string | null;
 }
 
 export function LabCanvas({ 
@@ -184,32 +200,16 @@ export function LabCanvas({
   onRemoveBlock,
   onReorderBlocks,
   isDropTarget = false,
+  activeDragId,
 }: LabCanvasProps) {
   const sortedBlocks = [...blocks].sort((a, b) => a.position - b.position);
   
   // Droppable hook for receiving blocks from library
-  const { setNodeRef: setDropRef } = useDroppable({
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: 'canvas-drop-zone',
   });
-  
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    
-    if (over && active.id !== over.id) {
-      onReorderBlocks(active.id as string, over.id as string);
-    }
-  }
+  const showDropZone = isDropTarget || isOver;
 
   return (
     <DottedGridBackground
@@ -219,8 +219,8 @@ export function LabCanvas({
       fadeEdges={true}
       fadeType="linear"
       className={cn(
-        "h-full flex flex-col transition-all duration-200",
-        isDropTarget && "ring-2 ring-primary ring-inset bg-primary/5"
+        "h-full flex flex-col transition-all duration-300",
+        showDropZone && "ring-2 ring-primary ring-inset bg-primary/5"
       )}
     >
       {/* Header */}
@@ -240,24 +240,29 @@ export function LabCanvas({
       <div ref={setDropRef} className="flex-1 p-6 overflow-auto">
         {blocks.length === 0 ? (
           <div className={cn(
-            "h-full flex items-center justify-center rounded-lg border-2 border-dashed transition-colors",
-            isDropTarget ? "border-primary bg-primary/10" : "border-border"
+            "h-full flex items-center justify-center rounded-lg border-2 border-dashed transition-all duration-300",
+            showDropZone 
+              ? "border-primary bg-primary/10 scale-[1.01]" 
+              : "border-border hover:border-muted-foreground/50"
           )}>
             <div className="text-center max-w-xs">
               <div className={cn(
-                "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors",
-                isDropTarget ? "bg-primary/20" : "bg-muted/50"
+                "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300",
+                showDropZone ? "bg-primary/20 scale-110" : "bg-muted/50"
               )}>
                 <Database className={cn(
-                  "h-8 w-8",
-                  isDropTarget ? "text-primary" : "text-muted-foreground"
+                  "h-8 w-8 transition-colors duration-300",
+                  showDropZone ? "text-primary" : "text-muted-foreground"
                 )} />
               </div>
-              <h4 className="text-sm font-medium text-foreground mb-1">
-                {isDropTarget ? "Drop here to add" : "No blocks yet"}
+              <h4 className={cn(
+                "text-sm font-medium mb-1 transition-colors duration-300",
+                showDropZone ? "text-primary" : "text-foreground"
+              )}>
+                {showDropZone ? "Drop here to add" : "No blocks yet"}
               </h4>
               <p className="text-xs text-muted-foreground">
-                {isDropTarget 
+                {showDropZone 
                   ? "Release to add this block to your pipeline"
                   : "Drag a block from the library or click to add"
                 }
@@ -265,29 +270,34 @@ export function LabCanvas({
             </div>
           </div>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+          <SortableContext
+            items={sortedBlocks.map(b => b.id)}
+            strategy={verticalListSortingStrategy}
           >
-            <SortableContext
-              items={sortedBlocks.map(b => b.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-3 max-w-md mx-auto">
-                {sortedBlocks.map((block, index) => (
-                  <SortableBlock
-                    key={block.id}
-                    block={block}
-                    isSelected={selectedBlockId === block.id}
-                    isFirst={index === 0}
-                    onSelect={() => onSelectBlock(selectedBlockId === block.id ? null : block.id)}
-                    onRemove={() => onRemoveBlock(block.id)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+            <div className="space-y-3 max-w-md mx-auto">
+              {sortedBlocks.map((block, index) => (
+                <SortableBlock
+                  key={block.id}
+                  block={block}
+                  isSelected={selectedBlockId === block.id}
+                  isFirst={index === 0}
+                  onSelect={() => onSelectBlock(selectedBlockId === block.id ? null : block.id)}
+                  onRemove={() => onRemoveBlock(block.id)}
+                />
+              ))}
+              
+              {/* Drop zone at bottom when blocks exist */}
+              {showDropZone && (
+                <div className="flex items-center gap-2 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex-1 h-0.5 bg-primary/50 rounded-full" />
+                  <div className="px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-[10px] font-medium text-primary">
+                    Drop here
+                  </div>
+                  <div className="flex-1 h-0.5 bg-primary/50 rounded-full" />
+                </div>
+              )}
+            </div>
+          </SortableContext>
         )}
       </div>
     </DottedGridBackground>
