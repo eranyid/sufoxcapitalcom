@@ -121,8 +121,8 @@ export function DashboardLayout() {
       <div 
         className="fixed inset-0 pointer-events-none z-0"
         style={{
-          background: `radial-gradient(circle, hsl(var(--foreground) / var(--grid-dot-opacity)) 1px, transparent 1px)`,
-          backgroundSize: 'var(--grid-dot-size) var(--grid-dot-size)',
+          background: `radial-gradient(circle, hsl(var(--foreground) / 0.06) 1px, transparent 1px)`,
+          backgroundSize: '12px 12px',
         }}
         aria-hidden="true"
       />
