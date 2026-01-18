@@ -38,7 +38,6 @@ const moreNavItems = [
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/scenarios', icon: Layers, label: 'Scenarios' },
   { path: '/xray', icon: Scan, label: 'X-Ray' },
-  { path: '/lab', icon: LabIcon, label: 'Lab' },
   { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
   { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
