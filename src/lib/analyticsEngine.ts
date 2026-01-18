@@ -11,7 +11,25 @@ import {
   ComputeConfig,
   OutputConfig,
 } from '@/types/analyticsLab';
-import { format, subMonths, subDays, startOfYear, parseISO, isAfter, isBefore, endOfMonth, startOfMonth } from 'date-fns';
+import { format, subMonths, startOfYear, parseISO, isBefore } from 'date-fns';
+
+// Types for portfolio data
+export interface ValuationData {
+  ticker: string;
+  assetName: string;
+  month: string;
+  pricePerUnit: number;
+  fxRate?: number;
+}
+
+export interface TransactionData {
+  ticker: string;
+  assetName: string;
+  date: string;
+  pricePerUnit: number;
+  quantity: number;
+  transactionType: 'buy' | 'sell';
+}
 
 interface PipelineContext {
   data: Record<string, number[]>;
@@ -19,35 +37,90 @@ interface PipelineContext {
   assets: string[];
   dateRange: { start: string; end: string };
   computeResult?: any;
+  // Real data from database
+  rawValuations?: ValuationData[];
+  rawTransactions?: TransactionData[];
 }
 
-// Mock price data generator (in production, this would fetch from Supabase)
-function generateMockPrices(assets: string[], dates: string[]): Record<string, number[]> {
-  const priceData: Record<string, number[]> = {};
-  
-  assets.forEach(asset => {
-    const basePrice = 100 + Math.random() * 400;
-    let currentPrice = basePrice;
-    priceData[asset] = dates.map(() => {
-      const change = (Math.random() - 0.5) * 0.04;
-      currentPrice = currentPrice * (1 + change);
-      return Number(currentPrice.toFixed(2));
-    });
+// Get unique tickers from valuations
+export function getAvailableAssets(valuations: ValuationData[]): string[] {
+  const tickers = new Set<string>();
+  valuations.forEach(v => tickers.add(v.ticker));
+  return Array.from(tickers).sort();
+}
+
+// Build price series from real valuations
+function buildPriceSeriesFromValuations(
+  valuations: ValuationData[],
+  assets: string[],
+  dateRange: { start: string; end: string }
+): { data: Record<string, number[]>; dates: string[] } {
+  // Filter valuations within date range
+  const filtered = valuations.filter(v => {
+    const month = v.month;
+    return month >= dateRange.start.substring(0, 7) && month <= dateRange.end.substring(0, 7);
   });
   
-  return priceData;
+  // Get unique months sorted
+  const monthsSet = new Set<string>();
+  filtered.forEach(v => monthsSet.add(v.month));
+  const months = Array.from(monthsSet).sort();
+  
+  if (months.length === 0) {
+    return { data: {}, dates: [] };
+  }
+  
+  // Build price series for each asset
+  const data: Record<string, number[]> = {};
+  
+  assets.forEach(asset => {
+    const assetValuations = filtered.filter(v => v.ticker === asset);
+    const priceByMonth: Record<string, number> = {};
+    assetValuations.forEach(v => {
+      priceByMonth[v.month] = v.pricePerUnit;
+    });
+    
+    // Build array for each month, forward-filling missing values
+    const prices: number[] = [];
+    let lastPrice: number | null = null;
+    
+    months.forEach(month => {
+      if (priceByMonth[month] !== undefined) {
+        lastPrice = priceByMonth[month];
+        prices.push(lastPrice);
+      } else if (lastPrice !== null) {
+        prices.push(lastPrice);
+      } else {
+        // No price yet, skip or use 0
+        prices.push(0);
+      }
+    });
+    
+    data[asset] = prices;
+  });
+  
+  // Convert months to dates (end of month)
+  const dates = months.map(m => `${m}-01`);
+  
+  return { data, dates };
 }
 
 // Calculate returns from prices
 function calculateReturns(prices: number[]): number[] {
   if (prices.length < 2) return [];
-  return prices.slice(1).map((price, i) => (price - prices[i]) / prices[i]);
+  return prices.slice(1).map((price, i) => {
+    if (prices[i] === 0) return 0;
+    return (price - prices[i]) / prices[i];
+  });
 }
 
 // Calculate log returns
 function calculateLogReturns(prices: number[]): number[] {
   if (prices.length < 2) return [];
-  return prices.slice(1).map((price, i) => Math.log(price / prices[i]));
+  return prices.slice(1).map((price, i) => {
+    if (prices[i] <= 0 || price <= 0) return 0;
+    return Math.log(price / prices[i]);
+  });
 }
 
 // Calculate correlation between two series
@@ -183,24 +256,20 @@ function resampleData(
     let bucketKey: string;
     
     if (period === 'weekly') {
-      // Week number
       const weekStart = new Date(dateObj);
       weekStart.setDate(dateObj.getDate() - dateObj.getDay());
       bucketKey = format(weekStart, 'yyyy-MM-dd');
     } else {
-      // Month
       bucketKey = format(dateObj, 'yyyy-MM');
     }
     
     if (bucketKey !== lastBucketKey && lastBucketKey !== '') {
-      // End of bucket - use last value
       resampledDates.push(currentBucket.dates[currentBucket.dates.length - 1]);
       Object.keys(data).forEach(asset => {
         const values = currentBucket.values[asset];
         resampledData[asset].push(values[values.length - 1]);
       });
       
-      // Reset bucket
       currentBucket = { dates: [], values: {} };
       Object.keys(data).forEach(asset => {
         currentBucket.values[asset] = [];
@@ -215,7 +284,6 @@ function resampleData(
     lastBucketKey = bucketKey;
   });
   
-  // Handle last bucket
   if (currentBucket.dates.length > 0) {
     resampledDates.push(currentBucket.dates[currentBucket.dates.length - 1]);
     Object.keys(data).forEach(asset => {
@@ -236,18 +304,38 @@ function processBlock(block: AnalyticsBlock, context: PipelineContext): Pipeline
         return context;
       }
       
-      // Generate mock data (in production, fetch from Supabase)
-      const prices = generateMockPrices(config.assets, context.dates);
+      // Use real data if available
+      if (context.rawValuations && context.rawValuations.length > 0) {
+        const { data: priceData, dates } = buildPriceSeriesFromValuations(
+          context.rawValuations,
+          config.assets,
+          context.dateRange
+        );
+        
+        if (config.sourceType === 'returns') {
+          const returns: Record<string, number[]> = {};
+          Object.keys(priceData).forEach(asset => {
+            returns[asset] = calculateReturns(priceData[asset]);
+          });
+          return { ...context, data: returns, assets: config.assets, dates: dates.slice(1) };
+        }
+        
+        return { ...context, data: priceData, assets: config.assets, dates };
+      }
+      
+      // Fallback to mock data if no real data
+      console.warn('No real valuations data - using mock data');
+      const mockData = generateMockPrices(config.assets, context.dates);
       
       if (config.sourceType === 'returns') {
         const returns: Record<string, number[]> = {};
-        Object.keys(prices).forEach(asset => {
-          returns[asset] = calculateReturns(prices[asset]);
+        Object.keys(mockData).forEach(asset => {
+          returns[asset] = calculateReturns(mockData[asset]);
         });
         return { ...context, data: returns, assets: config.assets };
       }
       
-      return { ...context, data: prices, assets: config.assets };
+      return { ...context, data: mockData, assets: config.assets };
     }
     
     case 'date_range': {
@@ -283,14 +371,14 @@ function processBlock(block: AnalyticsBlock, context: PipelineContext): Pipeline
       
       switch (config.function) {
         case 'price_at_month_end': {
-          // Get last value for each asset
           const result: Record<string, { date: string; price: number }> = {};
           context.assets.forEach(asset => {
             const prices = context.data[asset];
             if (prices && prices.length > 0) {
+              const lastValidIndex = prices.length - 1;
               result[asset] = {
-                date: context.dates[context.dates.length - 1],
-                price: prices[prices.length - 1],
+                date: context.dates[lastValidIndex] || context.dates[context.dates.length - 1],
+                price: prices[lastValidIndex],
               };
             }
           });
@@ -307,7 +395,7 @@ function processBlock(block: AnalyticsBlock, context: PipelineContext): Pipeline
               result[asset] = {
                 startPrice,
                 endPrice,
-                return: (endPrice - startPrice) / startPrice,
+                return: startPrice === 0 ? 0 : (endPrice - startPrice) / startPrice,
               };
             }
           });
@@ -368,7 +456,6 @@ function processBlock(block: AnalyticsBlock, context: PipelineContext): Pipeline
     }
     
     case 'output':
-      // Output block doesn't transform data, just marks how to display
       return context;
     
     default:
@@ -376,11 +463,27 @@ function processBlock(block: AnalyticsBlock, context: PipelineContext): Pipeline
   }
 }
 
+// Mock data fallback
+function generateMockPrices(assets: string[], dates: string[]): Record<string, number[]> {
+  const priceData: Record<string, number[]> = {};
+  
+  assets.forEach(asset => {
+    const basePrice = 100 + Math.random() * 400;
+    let currentPrice = basePrice;
+    priceData[asset] = dates.map(() => {
+      const change = (Math.random() - 0.5) * 0.04;
+      currentPrice = currentPrice * (1 + change);
+      return Number(currentPrice.toFixed(2));
+    });
+  });
+  
+  return priceData;
+}
+
 // Validate pipeline before execution
 export function validatePipeline(blocks: AnalyticsBlock[]): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
-  // Must have at least data source and output
   const hasDataSource = blocks.some(b => b.type === 'data_source');
   const hasOutput = blocks.some(b => b.type === 'output');
   
@@ -392,7 +495,6 @@ export function validatePipeline(blocks: AnalyticsBlock[]): { valid: boolean; er
     errors.push('Pipeline requires an Output block');
   }
   
-  // Check data source has assets
   const dataSource = blocks.find(b => b.type === 'data_source');
   if (dataSource) {
     const config = dataSource.config as DataSourceConfig;
@@ -401,7 +503,6 @@ export function validatePipeline(blocks: AnalyticsBlock[]): { valid: boolean; er
     }
   }
   
-  // Check compute block for correlation needs 2 assets
   const computeBlock = blocks.find(b => b.type === 'compute');
   if (computeBlock && dataSource) {
     const computeConfig = computeBlock.config as ComputeConfig;
@@ -426,8 +527,17 @@ export function validatePipeline(blocks: AnalyticsBlock[]): { valid: boolean; er
   };
 }
 
+// Execute interface for providing real data
+export interface ExecutePipelineOptions {
+  valuations?: ValuationData[];
+  transactions?: TransactionData[];
+}
+
 // Execute the full pipeline
-export function executePipeline(pipeline: AnalyticsPipeline): PipelineResult {
+export function executePipeline(
+  pipeline: AnalyticsPipeline, 
+  options?: ExecutePipelineOptions
+): PipelineResult {
   const validation = validatePipeline(pipeline.blocks);
   
   if (!validation.valid) {
@@ -438,16 +548,16 @@ export function executePipeline(pipeline: AnalyticsPipeline): PipelineResult {
     };
   }
   
-  // Sort blocks by position
   const sortedBlocks = [...pipeline.blocks].sort((a, b) => a.position - b.position);
   
-  // Initialize context with default date range
   const defaultDateRange = generateDateRange({ preset: '6M' });
   let context: PipelineContext = {
     data: {},
     dates: defaultDateRange.dates,
     assets: [],
     dateRange: { start: defaultDateRange.start, end: defaultDateRange.end },
+    rawValuations: options?.valuations,
+    rawTransactions: options?.transactions,
   };
   
   // Process date range first if exists
@@ -463,11 +573,9 @@ export function executePipeline(pipeline: AnalyticsPipeline): PipelineResult {
     }
   }
   
-  // Get output configuration
   const outputBlock = sortedBlocks.find(b => b.type === 'output');
   const outputConfig = outputBlock?.config as OutputConfig | undefined;
   
-  // Format result based on output type
   let data: any = context.computeResult || context.data;
   let chartData: any = undefined;
   
