@@ -42,10 +42,14 @@ import {
   DragOverlay,
   DragStartEvent,
   DragEndEvent,
+  DragOverEvent,
   PointerSensor,
+  KeyboardSensor,
+  closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import {
   Dialog,
   DialogContent,
@@ -105,14 +109,18 @@ export default function Lab() {
   const [savedPipelines, setSavedPipelines] = useState<AnalyticsPipeline[]>([]);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
   const [activeDragBlockType, setActiveDragBlockType] = useState<AnalyticsBlockType | null>(null);
+  const [activeDragBlockId, setActiveDragBlockId] = useState<string | null>(null);
   const [isOverCanvas, setIsOverCanvas] = useState(false);
 
-  // Sensors for DnD
+  // Sensors for DnD - support both pointer and keyboard
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
       },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
@@ -284,10 +292,15 @@ export default function Lab() {
     
     if (data?.type === 'library-block') {
       setActiveDragBlockType(data.blockType);
+      setActiveDragBlockId(null);
+    } else {
+      // It's a pipeline block being reordered
+      setActiveDragBlockId(active.id as string);
+      setActiveDragBlockType(null);
     }
   }, []);
 
-  const handleDragOver = useCallback((event: DragEndEvent) => {
+  const handleDragOver = useCallback((event: DragOverEvent) => {
     const { over } = event;
     setIsOverCanvas(over?.id === 'canvas-drop-zone');
   }, []);
@@ -296,17 +309,24 @@ export default function Lab() {
     const { active, over } = event;
     const data = active.data.current;
     
-    // Check if dropped on canvas
+    // Check if it's a library block dropped on canvas
     if (data?.type === 'library-block' && over?.id === 'canvas-drop-zone') {
       handleAddBlock(data.blockType);
+    } 
+    // Check if it's a reordering operation (pipeline block dropped on another)
+    else if (activeDragBlockId && over && active.id !== over.id) {
+      // Handle reordering
+      handleReorderBlocks(active.id as string, over.id as string);
     }
     
     setActiveDragBlockType(null);
+    setActiveDragBlockId(null);
     setIsOverCanvas(false);
-  }, [handleAddBlock]);
+  }, [handleAddBlock, handleReorderBlocks, activeDragBlockId]);
 
   const handleDragCancel = useCallback(() => {
     setActiveDragBlockType(null);
+    setActiveDragBlockId(null);
     setIsOverCanvas(false);
   }, []);
 
@@ -315,6 +335,14 @@ export default function Lab() {
     ? ANALYTICS_BLOCK_LIBRARY.find(b => b.type === activeDragBlockType)
     : null;
   const ActiveIcon = activeDragBlock ? (LIBRARY_ICON_MAP[activeDragBlock.icon] || Database) : Database;
+  
+  // Get the dragged pipeline block for overlay
+  const activePipelineBlock = activeDragBlockId 
+    ? blocks.find(b => b.id === activeDragBlockId) 
+    : null;
+  const activePipelineBlockMeta = activePipelineBlock 
+    ? ANALYTICS_BLOCK_LIBRARY.find(b => b.type === activePipelineBlock.type)
+    : null;
 
   return (
     <>
@@ -324,6 +352,7 @@ export default function Lab() {
 
       <DndContext
         sensors={sensors}
+        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -456,6 +485,7 @@ export default function Lab() {
                   onRemoveBlock={handleRemoveBlock}
                   onReorderBlocks={handleReorderBlocks}
                   isDropTarget={isOverCanvas}
+                  activeDragId={activeDragBlockId}
                 />
               </div>
 
@@ -479,9 +509,15 @@ export default function Lab() {
         </div>
 
         {/* Drag Overlay */}
-        <DragOverlay>
+        <DragOverlay dropAnimation={{
+          duration: 200,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+        }}>
           {activeDragBlock && (
             <DragOverlayBlock block={activeDragBlock} icon={ActiveIcon} />
+          )}
+          {activePipelineBlockMeta && (
+            <DragOverlayBlock block={activePipelineBlockMeta} icon={LIBRARY_ICON_MAP[activePipelineBlockMeta.icon] || Database} />
           )}
         </DragOverlay>
       </DndContext>
