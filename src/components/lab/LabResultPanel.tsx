@@ -152,12 +152,142 @@ export function LabResultPanel({ result, isRunning }: LabResultPanelProps) {
       );
     }
     
-    // Fallback: render as JSON
+    // Portfolio/Holdings data (currentPrice, marketValue, etc.)
+    if (firstValue?.currentPrice !== undefined || firstValue?.marketValue !== undefined) {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs">Ticker</TableHead>
+              <TableHead className="text-xs text-right">Price</TableHead>
+              <TableHead className="text-xs text-right">Qty</TableHead>
+              <TableHead className="text-xs text-right">Market Value</TableHead>
+              <TableHead className="text-xs text-right">Total Return</TableHead>
+              <TableHead className="text-xs text-right">Return %</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.map(([ticker, data]: [string, any]) => {
+              const hasPosition = data.quantity > 0 || data.marketValue > 0;
+              return (
+                <TableRow key={ticker} className={!hasPosition ? "opacity-50" : ""}>
+                  <TableCell className="text-xs font-medium">{ticker}</TableCell>
+                  <TableCell className="text-xs text-right font-mono">
+                    ${(data.currentPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className="text-xs text-right font-mono">
+                    {(data.quantity || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                  </TableCell>
+                  <TableCell className="text-xs text-right font-mono">
+                    ${(data.marketValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className={cn(
+                    "text-xs text-right font-mono",
+                    (data.totalReturn || 0) > 0 ? "text-green-500" : (data.totalReturn || 0) < 0 ? "text-red-500" : ""
+                  )}>
+                    ${(data.totalReturn || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className={cn(
+                    "text-xs text-right font-mono",
+                    (data.returnPct || 0) > 0 ? "text-green-500" : (data.returnPct || 0) < 0 ? "text-red-500" : ""
+                  )}>
+                    {((data.returnPct || 0) * 100).toFixed(2)}%
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      );
+    }
+    
+    // Generic object with nested properties - render as a structured table
+    if (typeof firstValue === 'object' && firstValue !== null) {
+      // Get all unique keys from all entries
+      const allKeys = new Set<string>();
+      entries.forEach(([_, data]) => {
+        if (typeof data === 'object' && data !== null) {
+          Object.keys(data).forEach(key => allKeys.add(key));
+        }
+      });
+      const columns = Array.from(allKeys);
+      
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs">Key</TableHead>
+              {columns.map(col => (
+                <TableHead key={col} className="text-xs text-right capitalize">
+                  {col.replace(/([A-Z])/g, ' $1').trim()}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.map(([key, data]: [string, any]) => (
+              <TableRow key={key}>
+                <TableCell className="text-xs font-medium">{key}</TableCell>
+                {columns.map(col => {
+                  const value = data?.[col];
+                  const displayValue = formatCellValue(value);
+                  const isNumeric = typeof value === 'number';
+                  const isPositive = isNumeric && value > 0;
+                  const isNegative = isNumeric && value < 0;
+                  
+                  return (
+                    <TableCell 
+                      key={col} 
+                      className={cn(
+                        "text-xs text-right font-mono",
+                        isPositive && "text-green-500",
+                        isNegative && "text-red-500"
+                      )}
+                    >
+                      {displayValue}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+    
+    // Simple key-value pairs
     return (
-      <pre className="text-[10px] bg-muted/30 p-3 rounded-lg overflow-auto">
-        {JSON.stringify(result.data, null, 2)}
-      </pre>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-xs">Key</TableHead>
+            <TableHead className="text-xs text-right">Value</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {entries.map(([key, value]) => (
+            <TableRow key={key}>
+              <TableCell className="text-xs font-medium">{key}</TableCell>
+              <TableCell className="text-xs text-right font-mono">
+                {formatCellValue(value)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     );
+  };
+  
+  // Helper function to format cell values
+  const formatCellValue = (value: any): string => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'number') {
+      if (Number.isInteger(value)) return value.toLocaleString();
+      return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    }
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
   };
 
   const renderLineChart = () => {
