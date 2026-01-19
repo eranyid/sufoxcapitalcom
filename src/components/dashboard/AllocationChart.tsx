@@ -1,5 +1,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Allocation } from '@/types/investment';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PieChartIcon } from 'lucide-react';
 
 interface AllocationChartProps {
   data: Allocation[];
@@ -23,11 +25,11 @@ export function AllocationChart({ data, title }: AllocationChartProps) {
         <div className="bloomberg-header">
           <span className="bloomberg-header-title">{title}</span>
         </div>
-        <div className="p-3">
-          <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs">
-            No data available
-          </div>
-        </div>
+        <EmptyState 
+          icon={PieChartIcon}
+          title="No Allocation Data"
+          description="Add transactions to see portfolio allocation"
+        />
       </div>
     );
   }

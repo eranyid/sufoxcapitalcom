@@ -1,4 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ShieldQuestion } from 'lucide-react';
 
 interface SystematicRiskPieProps {
   systematicPct: number;
@@ -11,6 +13,9 @@ export function SystematicRiskPie({
   specificPct, 
   residualVolatility 
 }: SystematicRiskPieProps) {
+  // Check if there's no meaningful data
+  const hasNoData = systematicPct === 0 && specificPct === 0;
+  
   const data = [
     { name: 'Systematic Risk', value: systematicPct, color: 'hsl(var(--primary))' },
     { name: 'Specific Risk', value: specificPct, color: 'hsl(var(--muted))' }
@@ -21,6 +26,13 @@ export function SystematicRiskPie({
       <div className="bloomberg-header">
         <span className="bloomberg-header-title">Risk Decomposition</span>
       </div>
+      {hasNoData ? (
+        <EmptyState 
+          icon={ShieldQuestion}
+          title="No Risk Data"
+          description="Factor analysis requires sufficient historical returns data"
+        />
+      ) : (
       <div className="p-3">
         <div className="h-[200px] relative">
           <ResponsiveContainer width="100%" height="100%">
@@ -98,6 +110,7 @@ export function SystematicRiskPie({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

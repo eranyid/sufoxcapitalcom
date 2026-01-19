@@ -8,6 +8,7 @@ import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChar
 import { RiskReturnScatter } from '@/components/dashboard/RiskReturnScatter';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RingSegment } from '@/lib/portfolioEngine';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD'];
 
@@ -431,13 +432,11 @@ export default function XRay() {
                   </p>
                 </>
               ) : (
-                <div className="h-48 flex flex-col items-center justify-center text-center">
-                  <Clock className="h-8 w-8 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground font-medium">No Time Horizon Data</p>
-                  <p className="text-[11px] text-muted-foreground/70 mt-1 max-w-xs">
-                    Add time horizon values to companies in the CRM to see the distribution chart
-                  </p>
-                </div>
+                <EmptyState 
+                  icon={Clock}
+                  title="No Time Horizon Data"
+                  description="Add time horizon values to companies in the CRM to see the distribution chart"
+                />
               )}
             </div>
           </div>

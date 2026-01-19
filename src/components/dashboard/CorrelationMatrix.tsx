@@ -1,5 +1,7 @@
 import { calculateCorrelationMatrix } from '@/lib/calculations';
 import { Transaction, MonthlyValuation } from '@/types/investment';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Grid3X3 } from 'lucide-react';
 
 interface CorrelationMatrixProps {
   transactions: Transaction[];
@@ -15,11 +17,11 @@ export function CorrelationMatrix({ transactions, valuations }: CorrelationMatri
         <div className="bloomberg-header">
           <span className="bloomberg-header-title">Correlation Matrix</span>
         </div>
-        <div className="p-4">
-          <p className="text-muted-foreground text-xs text-center py-4">
-            Need at least 2 assets with 3+ months of data
-          </p>
-        </div>
+        <EmptyState 
+          icon={Grid3X3}
+          title="Insufficient Data"
+          description="Need at least 2 assets with 3+ months of data to calculate correlations"
+        />
       </div>
     );
   }
