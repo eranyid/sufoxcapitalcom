@@ -98,6 +98,33 @@ const STATUS_OPTIONS = [
   { value: 'on_hold', label: 'On Hold' },
 ];
 
+const SECTOR_OPTIONS = [
+  { value: 'Technology', label: 'Technology' },
+  { value: 'Healthcare', label: 'Healthcare' },
+  { value: 'Financials', label: 'Financials' },
+  { value: 'Consumer Discretionary', label: 'Consumer Discretionary' },
+  { value: 'Consumer Staples', label: 'Consumer Staples' },
+  { value: 'Energy', label: 'Energy' },
+  { value: 'Industrials', label: 'Industrials' },
+  { value: 'Materials', label: 'Materials' },
+  { value: 'Real Estate', label: 'Real Estate' },
+  { value: 'Utilities', label: 'Utilities' },
+  { value: 'Communication Services', label: 'Communication Services' },
+];
+
+const GEOGRAPHY_OPTIONS = [
+  { value: 'US', label: 'US' },
+  { value: 'Europe', label: 'Europe' },
+  { value: 'UK', label: 'UK' },
+  { value: 'Israel', label: 'Israel' },
+  { value: 'Japan', label: 'Japan' },
+  { value: 'China', label: 'China' },
+  { value: 'Emerging Markets', label: 'Emerging Markets' },
+  { value: 'Global', label: 'Global' },
+  { value: 'LATAM', label: 'LATAM' },
+  { value: 'APAC', label: 'APAC' },
+];
+
 // DECISION_TYPES imported from DecisionLogSection as DECISION_TYPE_OPTIONS
 
 export default function CompanyPage() {
@@ -512,12 +539,16 @@ export default function CompanyPage() {
                 </label>
                 {editMode === 'sector' ? (
                   <div className="flex gap-1">
-                    <Input
-                      value={editValue}
-                      onChange={e => setEditValue(e.target.value)}
-                      className="h-7 text-sm"
-                      autoFocus
-                    />
+                    <Select value={editValue} onValueChange={setEditValue}>
+                      <SelectTrigger className="h-7 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SECTOR_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('sector')}><Save size={12} /></Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
                   </div>
@@ -538,12 +569,16 @@ export default function CompanyPage() {
                 </label>
                 {editMode === 'geography' ? (
                   <div className="flex gap-1">
-                    <Input
-                      value={editValue}
-                      onChange={e => setEditValue(e.target.value)}
-                      className="h-7 text-sm"
-                      autoFocus
-                    />
+                    <Select value={editValue} onValueChange={setEditValue}>
+                      <SelectTrigger className="h-7 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GEOGRAPHY_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('geography')}><Save size={12} /></Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit}><X size={12} /></Button>
                   </div>
