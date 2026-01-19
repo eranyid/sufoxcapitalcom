@@ -75,6 +75,13 @@ export interface RiskReturnData {
   excludedCount: number; // Holdings with insufficient history
 }
 
+export interface TimeHorizonData {
+  years: number;
+  value: number;
+  percentage: number;
+  holdingsCount: number;
+}
+
 export interface ComputedPortfolioData {
   // Core values (FX-normalized to base currency)
   totalPortfolioValue: number;
@@ -91,6 +98,9 @@ export interface ComputedPortfolioData {
   geographyAllocation: Allocation[];
   currencyAllocation: Allocation[];
   sectorAllocation: Allocation[];
+  
+  // Time horizon distribution
+  timeHorizonDistribution: TimeHorizonData[];
   
   // Ring data for charts
   assetClassRings: RingSegment[];
@@ -283,6 +293,7 @@ export function computePortfolioData(
     sectorRings,
     positionRings,
     riskReturnData,
+    timeHorizonDistribution: [], // Populated by context after enrichment
     lastUpdated: new Date()
   };
 }
@@ -496,6 +507,7 @@ function createEmptyPortfolioData(): ComputedPortfolioData {
       portfolio: { annualizedReturn: 0, annualizedVolatility: 0 },
       excludedCount: 0
     },
+    timeHorizonDistribution: [],
     lastUpdated: new Date()
   };
 }

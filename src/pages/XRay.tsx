@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Scan, BarChart3, Target, Layers, TrendingUp, Building2 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Scan, BarChart3, Target, Layers, TrendingUp, Building2, Clock } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
@@ -196,7 +196,8 @@ export default function XRay() {
     geographyRings,
     sectorRings,
     positionRings,
-    riskReturnData
+    riskReturnData,
+    timeHorizonDistribution
   } = computedData;
 
   const hasData = transactions.length > 0 && valuations.length > 0;
@@ -368,6 +369,68 @@ export default function XRay() {
           <DistributionSection title="Asset Class Distribution" data={assetTypeAllocation} />
           <DistributionSection title="Sector Distribution" data={sectorAllocation} />
           <DistributionSection title="Currency Distribution" data={currencyAllocation} />
+          
+          {/* Time Horizon Distribution - Vertical Bar Chart */}
+          {timeHorizonDistribution.length > 0 && (
+            <div className="bg-card border border-border/40 rounded-lg overflow-hidden">
+              <div className="px-4 py-3 border-b border-border/30 bg-secondary">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
+                  <Clock size={14} className="text-primary" />
+                  Investment Time Horizon Distribution
+                </h3>
+              </div>
+              <div className="p-4">
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={timeHorizonDistribution}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis 
+                        dataKey="years" 
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                        tickLine={{ stroke: 'hsl(var(--border))' }}
+                        tickFormatter={(value) => `${value}Y`}
+                        label={{ value: 'Years', position: 'bottom', offset: 0, fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                      />
+                      <YAxis 
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                        tickLine={{ stroke: 'hsl(var(--border))' }}
+                        tickFormatter={(value) => `${value.toFixed(0)}%`}
+                        label={{ value: 'Portfolio %', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                      />
+                      <Tooltip
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--secondary))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontFamily: 'JetBrains Mono, monospace'
+                        }}
+                        formatter={(value: number, _name: string, props: any) => [
+                          `${value.toFixed(1)}% (${props.payload.holdingsCount} holdings)`,
+                          'Weight'
+                        ]}
+                        labelFormatter={(label) => `${label} Year${label > 1 ? 's' : ''} Horizon`}
+                      />
+                      <Bar 
+                        dataKey="percentage" 
+                        fill="hsl(var(--primary))"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={60}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-2 font-mono text-center">
+                  Based on time horizon data from {timeHorizonDistribution.reduce((sum, d) => sum + d.holdingsCount, 0)} holdings
+                </p>
+              </div>
+            </div>
+          )}
           
           {/* Geographic Heat Map */}
           <GeographicHeatMap data={geographyAllocation} />
