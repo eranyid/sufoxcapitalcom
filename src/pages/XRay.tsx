@@ -201,7 +201,7 @@ export default function XRay() {
 
   const hasData = transactions.length > 0 && valuations.length > 0;
 
-  const handleSegmentClick = (segment: RingSegment, _type: 'asset-class' | 'sector' | 'position') => {
+  const handleSegmentClick = (segment: RingSegment, _type: 'asset-class' | 'geography' | 'sector' | 'position') => {
     setSelectedId(prev => prev === segment.id ? null : segment.id);
   };
 
@@ -285,7 +285,8 @@ export default function XRay() {
             <div className="p-4 md:p-6">
               <ConcentricRingsChart
                 assetClasses={assetClassRings}
-                sectors={geographyRings}
+                geographies={geographyRings}
+                sectors={sectorRings}
                 positions={positionRings}
                 selectedId={selectedId}
                 onSegmentClick={handleSegmentClick}
@@ -294,14 +295,18 @@ export default function XRay() {
 
             {/* Legend */}
             <div className="px-4 md:px-6 pb-4 md:pb-6">
-              <div className="flex items-center justify-center gap-6 text-[10px] text-muted-foreground">
+              <div className="flex items-center justify-center flex-wrap gap-4 md:gap-6 text-[10px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full border-2 border-primary/60"></div>
+                  <div className="w-3 h-3 rounded-full border-2 border-primary/70"></div>
                   <span>Asset Classes</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full border-2 border-accent/60"></div>
+                  <div className="w-3 h-3 rounded-full border-2 border-accent/70"></div>
                   <span>Geography</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/70"></div>
+                  <span>Sectors</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary/40 to-accent/40"></div>

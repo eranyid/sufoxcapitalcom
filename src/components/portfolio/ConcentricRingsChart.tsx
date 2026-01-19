@@ -15,31 +15,35 @@ interface RingSegment {
 
 interface ConcentricRingsChartProps {
   assetClasses: RingSegment[];
+  geographies: RingSegment[];
   sectors: RingSegment[];
   positions: RingSegment[];
-  onSegmentClick: (segment: RingSegment, type: 'asset-class' | 'sector' | 'position') => void;
+  onSegmentClick: (segment: RingSegment, type: 'asset-class' | 'geography' | 'sector' | 'position') => void;
   selectedId?: string | null;
   className?: string;
 }
 
 export function ConcentricRingsChart({
   assetClasses,
+  geographies,
   sectors,
   positions,
   onSegmentClick,
   selectedId,
   className
 }: ConcentricRingsChartProps) {
-  const size = 500;
+  const size = 520;
   const center = size / 2;
-  const coreRadius = 60;
-  const innerRingWidth = 50;
-  const middleRingWidth = 45;
-  const outerRingWidth = 40;
+  const coreRadius = 50;
+  const ring1Width = 38; // Asset Classes
+  const ring2Width = 34; // Geographies
+  const ring3Width = 32; // Sectors
+  const ring4Width = 30; // Positions
 
-  const innerRadius = coreRadius + 10;
-  const middleRadius = innerRadius + innerRingWidth + 8;
-  const outerRadius = middleRadius + middleRingWidth + 8;
+  const ring1Radius = coreRadius + 8;
+  const ring2Radius = ring1Radius + ring1Width + 6;
+  const ring3Radius = ring2Radius + ring2Width + 6;
+  const ring4Radius = ring3Radius + ring3Width + 6;
 
   const createArcPath = (
     startAngle: number,
@@ -94,18 +98,27 @@ export function ConcentricRingsChart({
     return label.substring(0, maxChars);
   };
 
-  const innerSegments = useMemo(
-    () => calculateSegments(assetClasses, innerRadius, innerRadius + innerRingWidth),
+  // Ring 1: Asset Classes (innermost)
+  const ring1Segments = useMemo(
+    () => calculateSegments(assetClasses, ring1Radius, ring1Radius + ring1Width),
     [assetClasses]
   );
 
-  const middleSegments = useMemo(
-    () => calculateSegments(sectors, middleRadius, middleRadius + middleRingWidth),
+  // Ring 2: Geographies
+  const ring2Segments = useMemo(
+    () => calculateSegments(geographies, ring2Radius, ring2Radius + ring2Width),
+    [geographies]
+  );
+
+  // Ring 3: Sectors
+  const ring3Segments = useMemo(
+    () => calculateSegments(sectors, ring3Radius, ring3Radius + ring3Width),
     [sectors]
   );
 
-  const outerSegments = useMemo(
-    () => calculateSegments(positions.slice(0, 20), outerRadius, outerRadius + outerRingWidth),
+  // Ring 4: Positions (outermost)
+  const ring4Segments = useMemo(
+    () => calculateSegments(positions.slice(0, 20), ring4Radius, ring4Radius + ring4Width),
     [positions]
   );
 
@@ -140,7 +153,7 @@ export function ConcentricRingsChart({
         <circle
           cx={center}
           cy={center}
-          r={outerRadius + outerRingWidth + 20}
+          r={ring4Radius + ring4Width + 15}
           fill="none"
           stroke="hsl(var(--border))"
           strokeWidth="1"
@@ -148,15 +161,15 @@ export function ConcentricRingsChart({
           opacity="0.3"
         />
 
-        {/* Outer ring - Positions */}
-        {outerSegments.map((segment) => (
+        {/* Ring 4 (Outermost) - Positions */}
+        {ring4Segments.map((segment) => (
           <Tooltip key={segment.id}>
             <TooltipTrigger asChild>
               <path
                 d={segment.path}
                 fill={segment.color}
                 stroke="hsl(var(--background))"
-                strokeWidth="2"
+                strokeWidth="1.5"
                 className={cn(
                   "cursor-pointer transition-all duration-200",
                   selectedId === segment.id ? "opacity-100" : "opacity-70 hover:opacity-100"
@@ -178,9 +191,49 @@ export function ConcentricRingsChart({
             </TooltipContent>
           </Tooltip>
         ))}
-        {/* Position labels */}
-        {outerSegments.map((segment) => (
-          segment.angleSpan > 12 && (
+        {ring4Segments.map((segment) => (
+          segment.angleSpan > 14 && (
+            <text
+              key={`label-${segment.id}`}
+              x={segment.labelX}
+              y={segment.labelY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="fill-white text-[6px] font-mono font-bold pointer-events-none select-none"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
+            >
+              {getShortLabel(segment, 4)}
+            </text>
+          )
+        ))}
+
+        {/* Ring 3 - Sectors */}
+        {ring3Segments.map((segment) => (
+          <Tooltip key={segment.id}>
+            <TooltipTrigger asChild>
+              <path
+                d={segment.path}
+                fill={segment.color}
+                stroke="hsl(var(--background))"
+                strokeWidth="1.5"
+                className={cn(
+                  "cursor-pointer transition-all duration-200",
+                  selectedId === segment.id ? "opacity-100" : "opacity-75 hover:opacity-100"
+                )}
+                onClick={() => onSegmentClick(segment, 'sector')}
+                filter={selectedId === segment.id ? "url(#glow)" : undefined}
+              />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="font-mono text-xs">
+              <div className="space-y-1">
+                <p className="font-semibold">{segment.name}</p>
+                <p className="text-muted-foreground">{segment.weight.toFixed(2)}% | {formatValue(segment.value)}</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+        {ring3Segments.map((segment) => (
+          segment.angleSpan > 18 && (
             <text
               key={`label-${segment.id}`}
               x={segment.labelX}
@@ -195,20 +248,20 @@ export function ConcentricRingsChart({
           )
         ))}
 
-        {/* Middle ring - Sectors */}
-        {middleSegments.map((segment) => (
+        {/* Ring 2 - Geographies */}
+        {ring2Segments.map((segment) => (
           <Tooltip key={segment.id}>
             <TooltipTrigger asChild>
               <path
                 d={segment.path}
                 fill={segment.color}
                 stroke="hsl(var(--background))"
-                strokeWidth="2"
+                strokeWidth="1.5"
                 className={cn(
                   "cursor-pointer transition-all duration-200",
                   selectedId === segment.id ? "opacity-100" : "opacity-80 hover:opacity-100"
                 )}
-                onClick={() => onSegmentClick(segment, 'sector')}
+                onClick={() => onSegmentClick(segment, 'geography')}
                 filter={selectedId === segment.id ? "url(#glow)" : undefined}
               />
             </TooltipTrigger>
@@ -220,32 +273,31 @@ export function ConcentricRingsChart({
             </TooltipContent>
           </Tooltip>
         ))}
-        {/* Sector labels */}
-        {middleSegments.map((segment) => (
-          segment.angleSpan > 18 && (
+        {ring2Segments.map((segment) => (
+          segment.angleSpan > 20 && (
             <text
               key={`label-${segment.id}`}
               x={segment.labelX}
               y={segment.labelY}
               textAnchor="middle"
               dominantBaseline="middle"
-              className="fill-white text-[8px] font-mono font-bold pointer-events-none select-none"
+              className="fill-white text-[7px] font-mono font-bold pointer-events-none select-none"
               style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
             >
-              {getShortLabel(segment, 6)}
+              {getShortLabel(segment, 5)}
             </text>
           )
         ))}
 
-        {/* Inner ring - Asset Classes */}
-        {innerSegments.map((segment) => (
+        {/* Ring 1 (Innermost) - Asset Classes */}
+        {ring1Segments.map((segment) => (
           <Tooltip key={segment.id}>
             <TooltipTrigger asChild>
               <path
                 d={segment.path}
                 fill={segment.color}
                 stroke="hsl(var(--background))"
-                strokeWidth="2"
+                strokeWidth="1.5"
                 className={cn(
                   "cursor-pointer transition-all duration-200",
                   selectedId === segment.id ? "opacity-100" : "opacity-90 hover:opacity-100"
@@ -262,8 +314,7 @@ export function ConcentricRingsChart({
             </TooltipContent>
           </Tooltip>
         ))}
-        {/* Asset class labels */}
-        {innerSegments.map((segment) => (
+        {ring1Segments.map((segment) => (
           segment.angleSpan > 25 && (
             <text
               key={`label-${segment.id}`}
@@ -271,10 +322,10 @@ export function ConcentricRingsChart({
               y={segment.labelY}
               textAnchor="middle"
               dominantBaseline="middle"
-              className="fill-white text-[9px] font-mono font-bold pointer-events-none select-none"
+              className="fill-white text-[8px] font-mono font-bold pointer-events-none select-none"
               style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
             >
-              {getShortLabel(segment, 8)}
+              {getShortLabel(segment, 6)}
             </text>
           )
         ))}
@@ -311,18 +362,22 @@ export function ConcentricRingsChart({
       </svg>
 
       {/* Legend */}
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-6 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-primary/60" />
-          <span>Asset Classes</span>
+      <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-4 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-primary/70" />
+          <span>Assets</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-muted-foreground/60" />
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-accent/70" />
+          <span>Geography</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-muted-foreground/70" />
           <span>Sectors</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-accent/60" />
-          <span>Positions</span>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-primary/40" />
+          <span>Holdings</span>
         </div>
       </div>
     </div>
