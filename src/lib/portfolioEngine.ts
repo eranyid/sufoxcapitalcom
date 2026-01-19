@@ -38,6 +38,7 @@ export interface PortfolioHolding {
   name: string;
   assetType: string;
   geography: string;
+  sector: string;
   currency: string;
   quantity: number;
   avgCost: number;
@@ -89,10 +90,12 @@ export interface ComputedPortfolioData {
   assetTypeAllocation: Allocation[];
   geographyAllocation: Allocation[];
   currencyAllocation: Allocation[];
+  sectorAllocation: Allocation[];
   
   // Ring data for charts
   assetClassRings: RingSegment[];
   geographyRings: RingSegment[];
+  sectorRings: RingSegment[];
   positionRings: RingSegment[];
   
   // Risk/Return scatter data
@@ -119,6 +122,7 @@ export interface ConsistencyCheckResult {
 
 const ASSET_CLASS_COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#9370DB', '#FFD700', '#FF6B6B', '#20B2AA', '#DDA0DD'];
 const GEOGRAPHY_COLORS = ['#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98'];
+const SECTOR_COLORS = ['#4A90D9', '#FF8C00', '#50C878', '#9370DB', '#FF6B6B', '#FFD700', '#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98'];
 const POSITION_COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B', '#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98', '#FFA07A', '#B0C4DE', '#FFDAB9', '#E6E6FA', '#F5DEB3', '#D8BFD8', '#FFFACD', '#E0FFFF'];
 
 // ============================================
@@ -209,6 +213,7 @@ export function computePortfolioData(
       name: tx.assetName,
       assetType: tx.assetType,
       geography: tx.geography,
+      sector: 'Unknown', // Will be enriched from CRM data
       currency: tx.currency,
       quantity: pos.quantity,
       avgCost: pos.avgCost,
@@ -249,8 +254,11 @@ export function computePortfolioData(
   const geographyAllocation = calculateAllocations(transactions, valuations, 'geography');
   const currencyAllocation = calculateAllocations(transactions, valuations, 'currency');
   
+  // Calculate sector allocation from holdings
+  const sectorAllocation = buildSectorAllocation(holdings, totalPortfolioValue);
+  
   // Build ring data for charts
-  const { assetClassRings, geographyRings, positionRings } = buildRingData(
+  const { assetClassRings, geographyRings, sectorRings, positionRings } = buildRingData(
     holdings,
     cashValue,
     totalPortfolioValue
@@ -269,8 +277,10 @@ export function computePortfolioData(
     assetTypeAllocation,
     geographyAllocation,
     currencyAllocation,
+    sectorAllocation,
     assetClassRings,
     geographyRings,
+    sectorRings,
     positionRings,
     riskReturnData,
     lastUpdated: new Date()
@@ -287,6 +297,7 @@ function buildRingData(
 ): {
   assetClassRings: RingSegment[];
   geographyRings: RingSegment[];
+  sectorRings: RingSegment[];
   positionRings: RingSegment[];
 } {
   // Asset class rings
@@ -328,6 +339,21 @@ function buildRingData(
     color: GEOGRAPHY_COLORS[idx % GEOGRAPHY_COLORS.length]
   }));
   
+  // Sector rings
+  const sectorMap = new Map<string, number>();
+  for (const holding of holdings) {
+    const sector = holding.sector || 'Unknown';
+    sectorMap.set(sector, (sectorMap.get(sector) || 0) + holding.currentValue);
+  }
+  
+  const sectorRings: RingSegment[] = Array.from(sectorMap.entries()).map(([name, value], idx) => ({
+    id: `sector-${name}`,
+    name: formatAllocationName(name),
+    value,
+    weight: totalPortfolioValue > 0 ? (value / totalPortfolioValue) * 100 : 0,
+    color: SECTOR_COLORS[idx % SECTOR_COLORS.length]
+  }));
+  
   // Position rings
   const positionRings: RingSegment[] = holdings.map((h, idx) => ({
     id: h.ticker,
@@ -339,7 +365,30 @@ function buildRingData(
     color: POSITION_COLORS[idx % POSITION_COLORS.length]
   }));
   
-  return { assetClassRings, geographyRings, positionRings };
+  return { assetClassRings, geographyRings, sectorRings, positionRings };
+}
+
+/**
+ * Build sector allocation from holdings
+ */
+function buildSectorAllocation(
+  holdings: PortfolioHolding[],
+  totalPortfolioValue: number
+): Allocation[] {
+  const sectorMap = new Map<string, number>();
+  
+  for (const holding of holdings) {
+    const sector = holding.sector || 'Unknown';
+    sectorMap.set(sector, (sectorMap.get(sector) || 0) + holding.currentValue);
+  }
+  
+  return Array.from(sectorMap.entries())
+    .map(([name, value]) => ({
+      name: formatAllocationName(name),
+      value,
+      percentage: totalPortfolioValue > 0 ? (value / totalPortfolioValue) * 100 : 0
+    }))
+    .sort((a, b) => b.percentage - a.percentage);
 }
 
 /**
@@ -437,8 +486,10 @@ function createEmptyPortfolioData(): ComputedPortfolioData {
     assetTypeAllocation: [],
     geographyAllocation: [],
     currencyAllocation: [],
+    sectorAllocation: [],
     assetClassRings: [],
     geographyRings: [],
+    sectorRings: [],
     positionRings: [],
     riskReturnData: {
       holdings: [],

@@ -42,6 +42,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
   const [userValuations, setUserValuations] = useState<MonthlyValuation[]>([]);
+  const [companySectors, setCompanySectors] = useState<Map<string, string>>(new Map());
   const [sampleDataMode, setSampleDataModeState] = useState<boolean>(() => {
     const stored = localStorage.getItem('sampleDataMode');
     return stored === 'true';
@@ -166,6 +167,23 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
             JPY: Number(cashData.jpy ?? 0)
           });
         }
+
+        // Load CRM companies to get sector data
+        const { data: companiesData } = await supabase
+          .from('crm_companies')
+          .select('ticker, sector')
+          .eq('user_id', user.id)
+          .is('deleted_at', null);
+        
+        if (companiesData) {
+          const sectorMap = new Map<string, string>();
+          companiesData.forEach(c => {
+            if (c.ticker && c.sector) {
+              sectorMap.set(c.ticker.toUpperCase(), c.sector);
+            }
+          });
+          setCompanySectors(sectorMap);
+        }
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -177,10 +195,46 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   // SINGLE SOURCE OF TRUTH: Compute all portfolio data centrally
+  // Enrich holdings with sector data from CRM companies
   const computedData = useMemo(() => {
     const baseCurrency = settings.baseCurrency === 'ILS' ? 'ILS' : 'USD';
-    return computePortfolioData(transactions, valuations, cashBalances, baseCurrency);
-  }, [transactions, valuations, cashBalances, settings.baseCurrency]);
+    const data = computePortfolioData(transactions, valuations, cashBalances, baseCurrency);
+    
+    // Enrich holdings with sector from CRM companies
+    data.holdings.forEach(holding => {
+      const sector = companySectors.get(holding.ticker.toUpperCase());
+      if (sector) {
+        holding.sector = sector;
+      }
+    });
+    
+    // Recalculate sector allocation after enrichment
+    const sectorMap = new Map<string, number>();
+    for (const holding of data.holdings) {
+      const sector = holding.sector || 'Unknown';
+      sectorMap.set(sector, (sectorMap.get(sector) || 0) + holding.currentValue);
+    }
+    
+    data.sectorAllocation = Array.from(sectorMap.entries())
+      .map(([name, value]) => ({
+        name: name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        value,
+        percentage: data.totalPortfolioValue > 0 ? (value / data.totalPortfolioValue) * 100 : 0
+      }))
+      .sort((a, b) => b.percentage - a.percentage);
+    
+    // Recalculate sector rings
+    const SECTOR_COLORS = ['#4A90D9', '#FF8C00', '#50C878', '#9370DB', '#FF6B6B', '#FFD700', '#20B2AA', '#DDA0DD', '#87CEEB', '#F0E68C', '#DEB887', '#98FB98'];
+    data.sectorRings = Array.from(sectorMap.entries()).map(([name, value], idx) => ({
+      id: `sector-${name}`,
+      name: name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      value,
+      weight: data.totalPortfolioValue > 0 ? (value / data.totalPortfolioValue) * 100 : 0,
+      color: SECTOR_COLORS[idx % SECTOR_COLORS.length]
+    }));
+    
+    return data;
+  }, [transactions, valuations, cashBalances, settings.baseCurrency, companySectors]);
 
   // Recalculate metrics when data changes
   // Now includes cashBalances in totalValue for unified NAV

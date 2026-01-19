@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Scan, BarChart3, Target, Layers, TrendingUp } from 'lucide-react';
+import { Scan, BarChart3, Target, Layers, TrendingUp, Building2 } from 'lucide-react';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
@@ -191,8 +191,10 @@ export default function XRay() {
     assetTypeAllocation,
     geographyAllocation,
     currencyAllocation,
+    sectorAllocation,
     assetClassRings,
     geographyRings,
+    sectorRings,
     positionRings,
     riskReturnData
   } = computedData;
@@ -317,13 +319,20 @@ export default function XRay() {
           />
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4">
             <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Layers className="h-3.5 w-3.5 text-primary" />
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Asset Classes</span>
               </div>
               <p className="text-lg md:text-xl font-mono font-bold text-foreground">{assetClassRings.length}</p>
+            </div>
+            <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Sectors</span>
+              </div>
+              <p className="text-lg md:text-xl font-mono font-bold text-foreground">{sectorRings.length}</p>
             </div>
             <div className="bg-card/50 border border-border/40 rounded-lg p-3 md:p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -352,6 +361,7 @@ export default function XRay() {
 
           {/* Distribution Sections - Using centralized allocation data */}
           <DistributionSection title="Asset Class Distribution" data={assetTypeAllocation} />
+          <DistributionSection title="Sector Distribution" data={sectorAllocation} />
           <DistributionSection title="Currency Distribution" data={currencyAllocation} />
           
           {/* Geographic Heat Map */}
