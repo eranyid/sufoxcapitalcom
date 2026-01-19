@@ -895,8 +895,8 @@ export default function CompanyPage() {
                       const val = e.target.value.replace(/[^0-9]/g, '');
                       setEditValue(val);
                     }}
-                    placeholder="Years (1-30)"
-                    className="w-24"
+                    placeholder="Years"
+                    className="w-20"
                     autoFocus
                   />
                   <span className="text-sm text-muted-foreground">Years</span>
@@ -908,24 +908,22 @@ export default function CompanyPage() {
                   className="cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2"
                   onClick={() => startEdit('time_horizon', company.time_horizon?.replace(/[^0-9]/g, '') || '')}
                 >
-                  {company.time_horizon ? (
-                    <div className="flex items-center gap-3">
-                      {/* Horizontal bar chart */}
-                      <div className="flex-1 max-w-48">
-                        <div className="h-5 bg-muted/30 rounded-full overflow-hidden relative">
+                  {company.time_horizon ? (() => {
+                    const years = parseInt(company.time_horizon.replace(/[^0-9]/g, '')) || 0;
+                    const maxYears = 15;
+                    const percentage = Math.min((years / maxYears) * 100, 100);
+                    return (
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-sm font-semibold w-16">{years} Years</span>
+                        <div className="flex-1 h-2 bg-muted/30 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min((parseInt(company.time_horizon.replace(/[^0-9]/g, '')) || 0) / 15 * 100, 100)}%` }}
+                            className="h-full bg-primary rounded-full transition-all duration-500"
+                            style={{ width: `${percentage}%` }}
                           />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-xs font-mono font-semibold text-foreground drop-shadow-sm">
-                              {parseInt(company.time_horizon.replace(/[^0-9]/g, '')) || company.time_horizon} {parseInt(company.time_horizon.replace(/[^0-9]/g, '')) ? 'Years' : ''}
-                            </span>
-                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
+                    );
+                  })() : (
                     <span className="text-muted-foreground italic text-sm">Click to add...</span>
                   )}
                 </div>
