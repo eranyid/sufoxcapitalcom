@@ -14,8 +14,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { ArrowUpDown, ArrowUp, ArrowDown, Building2 } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Building2, Briefcase } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface HoldingsTableProps {
   transactions: Transaction[];
@@ -200,7 +201,18 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
   };
 
   if (holdings.length === 0) {
-    return null;
+    return (
+      <div className="bloomberg-panel">
+        <div className="bloomberg-header">
+          <span className="bloomberg-header-title">Current Holdings</span>
+        </div>
+        <EmptyState 
+          icon={Briefcase}
+          title="No Holdings"
+          description="Add transactions to see your current portfolio holdings"
+        />
+      </div>
+    );
   }
 
   return (

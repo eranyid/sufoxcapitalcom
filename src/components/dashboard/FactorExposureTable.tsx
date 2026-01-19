@@ -6,7 +6,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
+import { Info, BarChart2 } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface FactorExposureTableProps {
   exposures: FactorExposure[];
@@ -89,24 +90,38 @@ export function FactorExposureTable({ exposures }: FactorExposureTableProps) {
     </div>
   );
 
+  const hasNoData = styleFactors.length === 0 && macroFactors.length === 0;
+
   return (
     <div className="bloomberg-panel">
       <div className="bloomberg-header">
         <span className="bloomberg-header-title">Factor Exposures</span>
-        <span className="text-[9px] text-muted-foreground ml-auto">
-          *** p&lt;0.01 | ** p&lt;0.05 | * p&lt;0.10
-        </span>
+        {!hasNoData && (
+          <span className="text-[9px] text-muted-foreground ml-auto">
+            *** p&lt;0.01 | ** p&lt;0.05 | * p&lt;0.10
+          </span>
+        )}
       </div>
       <div className="p-3">
-        {styleFactors.length > 0 && renderTable(styleFactors, 'Style Factors')}
-        {macroFactors.length > 0 && renderTable(macroFactors, 'Macro Factors')}
-        
-        <div className="mt-3 pt-3 border-t border-border text-[9px] text-muted-foreground">
-          <p>
-            <strong>β (Beta):</strong> Sensitivity of portfolio returns to factor returns. 
-            β = 1.0 means 1:1 exposure; β = 0.5 means half the factor's impact.
-          </p>
-        </div>
+        {hasNoData ? (
+          <EmptyState 
+            icon={BarChart2}
+            title="No Factor Data"
+            description="Factor exposures require sufficient historical data to calculate"
+          />
+        ) : (
+          <>
+            {styleFactors.length > 0 && renderTable(styleFactors, 'Style Factors')}
+            {macroFactors.length > 0 && renderTable(macroFactors, 'Macro Factors')}
+            
+            <div className="mt-3 pt-3 border-t border-border text-[9px] text-muted-foreground">
+              <p>
+                <strong>β (Beta):</strong> Sensitivity of portfolio returns to factor returns. 
+                β = 1.0 means 1:1 exposure; β = 0.5 means half the factor's impact.
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
