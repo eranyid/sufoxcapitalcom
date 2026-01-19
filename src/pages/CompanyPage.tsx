@@ -885,23 +885,50 @@ export default function CompanyPage() {
                 <Clock size={12} /> Time Horizon
               </label>
               {editMode === 'time_horizon' ? (
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <Input
+                    type="number"
+                    min="1"
+                    max="30"
                     value={editValue}
-                    onChange={e => setEditValue(e.target.value)}
-                    placeholder="e.g., 2-3 years"
+                    onChange={e => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setEditValue(val);
+                    }}
+                    placeholder="Years (1-30)"
+                    className="w-24"
                     autoFocus
                   />
+                  <span className="text-sm text-muted-foreground">Years</span>
                   <Button size="icon" variant="ghost" onClick={() => saveEdit('time_horizon')}><Save size={14} /></Button>
                   <Button size="icon" variant="ghost" onClick={cancelEdit}><X size={14} /></Button>
                 </div>
               ) : (
-                <p 
-                  className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2"
-                  onClick={() => startEdit('time_horizon', company.time_horizon)}
+                <div 
+                  className="cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2"
+                  onClick={() => startEdit('time_horizon', company.time_horizon?.replace(/[^0-9]/g, '') || '')}
                 >
-                  {company.time_horizon || <span className="text-muted-foreground italic">Click to add...</span>}
-                </p>
+                  {company.time_horizon ? (
+                    <div className="flex items-center gap-3">
+                      {/* Horizontal bar chart */}
+                      <div className="flex-1 max-w-48">
+                        <div className="h-5 bg-muted/30 rounded-full overflow-hidden relative">
+                          <div 
+                            className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min((parseInt(company.time_horizon.replace(/[^0-9]/g, '')) || 0) / 15 * 100, 100)}%` }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-xs font-mono font-semibold text-foreground drop-shadow-sm">
+                              {parseInt(company.time_horizon.replace(/[^0-9]/g, '')) || company.time_horizon} {parseInt(company.time_horizon.replace(/[^0-9]/g, '')) ? 'Years' : ''}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground italic text-sm">Click to add...</span>
+                  )}
+                </div>
               )}
             </div>
 
