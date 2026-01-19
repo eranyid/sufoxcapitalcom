@@ -43,6 +43,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
   const [userValuations, setUserValuations] = useState<MonthlyValuation[]>([]);
   const [companySectors, setCompanySectors] = useState<Map<string, string>>(new Map());
+  const [companyTimeHorizons, setCompanyTimeHorizons] = useState<Map<string, number>>(new Map());
   const [sampleDataMode, setSampleDataModeState] = useState<boolean>(() => {
     const stored = localStorage.getItem('sampleDataMode');
     return stored === 'true';
@@ -168,21 +169,31 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
           });
         }
 
-        // Load CRM companies to get sector data
+        // Load CRM companies to get sector and time_horizon data
         const { data: companiesData } = await supabase
           .from('crm_companies')
-          .select('ticker, sector')
+          .select('ticker, sector, time_horizon')
           .eq('user_id', user.id)
           .is('deleted_at', null);
         
         if (companiesData) {
           const sectorMap = new Map<string, string>();
+          const timeHorizonMap = new Map<string, number>();
           companiesData.forEach(c => {
-            if (c.ticker && c.sector) {
-              sectorMap.set(c.ticker.toUpperCase(), c.sector);
+            if (c.ticker) {
+              if (c.sector) {
+                sectorMap.set(c.ticker.toUpperCase(), c.sector);
+              }
+              if (c.time_horizon) {
+                const years = parseInt(c.time_horizon.replace(/[^0-9]/g, ''));
+                if (!isNaN(years) && years > 0) {
+                  timeHorizonMap.set(c.ticker.toUpperCase(), years);
+                }
+              }
             }
           });
           setCompanySectors(sectorMap);
+          setCompanyTimeHorizons(timeHorizonMap);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -233,8 +244,29 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       color: SECTOR_COLORS[idx % SECTOR_COLORS.length]
     }));
     
+    // Calculate time horizon distribution from holdings
+    const timeHorizonMap = new Map<number, { value: number; holdings: string[] }>();
+    for (const holding of data.holdings) {
+      const years = companyTimeHorizons.get(holding.ticker.toUpperCase());
+      if (years && years > 0) {
+        const existing = timeHorizonMap.get(years) || { value: 0, holdings: [] };
+        existing.value += holding.currentValue;
+        existing.holdings.push(holding.ticker);
+        timeHorizonMap.set(years, existing);
+      }
+    }
+    
+    data.timeHorizonDistribution = Array.from(timeHorizonMap.entries())
+      .map(([years, { value, holdings }]) => ({
+        years,
+        value,
+        percentage: data.totalPortfolioValue > 0 ? (value / data.totalPortfolioValue) * 100 : 0,
+        holdingsCount: holdings.length
+      }))
+      .sort((a, b) => a.years - b.years);
+    
     return data;
-  }, [transactions, valuations, cashBalances, settings.baseCurrency, companySectors]);
+  }, [transactions, valuations, cashBalances, settings.baseCurrency, companySectors, companyTimeHorizons]);
 
   // Recalculate metrics when data changes
   // Now includes cashBalances in totalValue for unified NAV
