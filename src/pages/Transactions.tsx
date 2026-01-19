@@ -273,6 +273,12 @@ export default function Transactions() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate BUY has company selected
+    if (form.transactionType === 'buy' && !form.linkedCompanyId) {
+      toast.error('Please select a holding/company');
+      return;
+    }
+    
     // Validate SELL quantity
     if (form.transactionType === 'sell') {
       if (!selectedHolding) {
@@ -405,7 +411,9 @@ export default function Transactions() {
   }).format(value);
 
   const isSellMode = form.transactionType === 'sell';
-  const canSubmitSell = !isSellMode || (isSellMode && selectedHolding && !quantityError);
+  const canSubmitBuy = !isSellMode && form.linkedCompanyId && companies.length > 0;
+  const canSubmitSell = isSellMode && selectedHolding && !quantityError;
+  const canSubmit = canSubmitBuy || canSubmitSell;
 
   return (
     <div className="section-spacing animate-fade-in">
@@ -520,129 +528,115 @@ export default function Transactions() {
                   </div>
                 )}
 
-                {/* BUY Mode: Link to Analysis First (Optional) */}
-                {!isSellMode && companies.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      Link to Analysis (Optional - will auto-fill details)
-                    </Label>
-                    <Select 
-                      value={form.linkedCompanyId} 
-                      onValueChange={(v) => {
-                        if (v === 'none' || !v) {
-                          setForm({ ...form, linkedCompanyId: '' });
-                        } else {
-                          const company = companies.find(c => c.id === v);
-                          if (company) {
-                            // Map geography to valid Geography type
-                            const geographyMap: Record<string, Geography> = {
-                              'north_america': 'north_america',
-                              'europe': 'europe',
-                              'israel': 'israel',
-                              'emerging_markets': 'emerging_markets',
-                              'global': 'global',
-                              'other': 'other',
-                              'North America': 'north_america',
-                              'Europe': 'europe',
-                              'Israel': 'israel',
-                              'Emerging Markets': 'emerging_markets',
-                              'Global': 'global',
-                              'US': 'north_america',
-                              'USA': 'north_america',
-                            };
-                            
-                            setForm(prev => {
-                              const mappedGeography = company.geography ? geographyMap[company.geography] || prev.geography : prev.geography;
-                              const mappedAssetType = company.asset_type as AssetType || prev.assetType;
-                              return {
-                                ...prev,
-                                linkedCompanyId: v,
-                                assetName: company.company_name || prev.assetName,
-                                ticker: company.ticker || prev.ticker,
-                                inceptionYear: company.inception_year?.toString() || prev.inceptionYear,
-                                geography: mappedGeography,
-                                assetType: mappedAssetType,
-                              };
-                            });
-                          }
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an analysis to auto-fill..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">
-                          <span className="text-muted-foreground">No link - manual entry</span>
-                        </SelectItem>
-                        {companies.map(c => (
-                          <SelectItem key={c.id} value={c.id}>
-                            <div className="flex items-center gap-2">
-                              {c.ticker && <span className="font-mono text-xs text-primary">{c.ticker}</span>}
-                              <span>{c.company_name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* BUY Mode: Asset Details */}
+                {/* BUY Mode: Select Holding/Company (Required) */}
                 {!isSellMode && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
                     <div className="space-y-2">
-                      <Label>Asset Name</Label>
-                      <Input 
-                        value={form.assetName}
-                        onChange={(e) => setForm({ ...form, assetName: e.target.value })}
-                        placeholder="Apple Inc."
-                        required
-                        disabled={!!form.linkedCompanyId}
-                        className={form.linkedCompanyId ? 'bg-muted' : ''}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Ticker</Label>
-                      <Input 
-                        value={form.ticker}
-                        onChange={(e) => handleTickerChange(e.target.value)}
-                        placeholder="AAPL"
-                        required
-                        disabled={!!form.linkedCompanyId}
-                        className={form.linkedCompanyId ? 'bg-muted' : ''}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Common Fields - Only show when not in sell mode OR when holding is selected */}
-                {(!isSellMode || selectedHolding) && (
-                  <>
-                    {!isSellMode && (
-                      <div className="space-y-2">
-                        <Label>Asset Type</Label>
+                      <Label className="flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5 text-primary" />
+                        Select Holding / Company <span className="text-destructive">*</span>
+                      </Label>
+                      {companies.length === 0 ? (
+                        <div className="p-4 rounded-lg border border-border bg-muted/30 text-center">
+                          <Building2 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground">No companies found in Back Office</p>
+                          <p className="text-xs text-muted-foreground mt-1">Create a company analysis first to add transactions</p>
+                        </div>
+                      ) : (
                         <Select 
-                          value={form.assetType} 
-                          onValueChange={(v: AssetType) => setForm({ ...form, assetType: v })}
-                          disabled={!!form.linkedCompanyId && !!companies.find(c => c.id === form.linkedCompanyId)?.asset_type}
+                          value={form.linkedCompanyId} 
+                          onValueChange={(v) => {
+                            const company = companies.find(c => c.id === v);
+                            if (company) {
+                              // Map geography to valid Geography type
+                              const geographyMap: Record<string, Geography> = {
+                                'north_america': 'north_america',
+                                'europe': 'europe',
+                                'israel': 'israel',
+                                'emerging_markets': 'emerging_markets',
+                                'global': 'global',
+                                'other': 'other',
+                                'North America': 'north_america',
+                                'Europe': 'europe',
+                                'Israel': 'israel',
+                                'Emerging Markets': 'emerging_markets',
+                                'Global': 'global',
+                                'US': 'north_america',
+                                'USA': 'north_america',
+                              };
+                              
+                              setForm(prev => {
+                                const mappedGeography = company.geography ? geographyMap[company.geography] || prev.geography : prev.geography;
+                                const mappedAssetType = company.asset_type as AssetType || prev.assetType;
+                                return {
+                                  ...prev,
+                                  linkedCompanyId: v,
+                                  assetName: company.company_name || '',
+                                  ticker: company.ticker || '',
+                                  inceptionYear: company.inception_year?.toString() || '',
+                                  geography: mappedGeography,
+                                  assetType: mappedAssetType,
+                                };
+                              });
+                            }
+                          }}
                         >
-                          <SelectTrigger className={form.linkedCompanyId && companies.find(c => c.id === form.linkedCompanyId)?.asset_type ? 'bg-muted' : ''}>
-                            <SelectValue />
+                          <SelectTrigger className={!form.linkedCompanyId ? 'border-muted-foreground/50' : ''}>
+                            <SelectValue placeholder="Choose a company..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {ASSET_TYPES.map(t => (
-                              <SelectItem key={t} value={t}>{t.replace(/_/g, ' ').toUpperCase()}</SelectItem>
+                            {companies.map(c => (
+                              <SelectItem key={c.id} value={c.id}>
+                                <div className="flex items-center gap-2">
+                                  {c.ticker && <span className="font-mono text-xs font-bold text-primary">{c.ticker}</span>}
+                                  <span>{c.company_name}</span>
+                                  {c.sector && <span className="text-xs text-muted-foreground">• {c.sector}</span>}
+                                </div>
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                      )}
+                      {!form.linkedCompanyId && companies.length > 0 && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Please select a holding to continue
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Selected Company Summary (Read-Only) */}
+                    {form.linkedCompanyId && (
+                      <div className="p-3 rounded-lg border border-primary/30 bg-primary/5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Building2 className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-primary">Selected Holding</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                          <span className="font-mono font-bold text-primary">{form.ticker || '—'}</span>
+                          <span className="text-foreground">{form.assetName}</span>
+                          {form.assetType && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                              {form.assetType.replace(/_/g, ' ').toUpperCase()}
+                            </span>
+                          )}
+                          {form.geography && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                              {form.geography.replace(/_/g, ' ').toUpperCase()}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
+                  </div>
+                )}
 
+                {/* Trade Fields - Only show when company is selected (BUY) or holding is selected (SELL) */}
+                {((!isSellMode && form.linkedCompanyId) || (isSellMode && selectedHolding)) && (
+                  <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Date</Label>
+                        <Label>Date <span className="text-destructive">*</span></Label>
                         <Input 
                           type="date"
                           value={form.date}
@@ -650,9 +644,9 @@ export default function Transactions() {
                           required
                         />
                       </div>
-                      {!isSellMode && (
-                        <div className="space-y-2">
-                          <Label>Currency</Label>
+                      <div className="space-y-2">
+                        <Label>Currency <span className="text-destructive">*</span></Label>
+                        {!isSellMode ? (
                           <Select value={form.currency} onValueChange={(v: Currency) => setForm({ ...form, currency: v })}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -661,24 +655,20 @@ export default function Transactions() {
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
-                      )}
-                      {isSellMode && (
-                        <div className="space-y-2">
-                          <Label>Currency</Label>
+                        ) : (
                           <Input 
                             value={form.currency}
                             disabled
                             className="bg-muted"
                           />
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>
-                          Quantity
+                          Quantity <span className="text-destructive">*</span>
                           {isSellMode && selectedHolding && (
                             <span className="text-xs text-muted-foreground ml-2">
                               (max: {selectedHolding.quantity.toLocaleString()})
@@ -702,7 +692,7 @@ export default function Transactions() {
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label>Price per Unit</Label>
+                        <Label>Price per Unit <span className="text-destructive">*</span></Label>
                         <Input 
                           type="number"
                           step="0.01"
@@ -718,44 +708,10 @@ export default function Transactions() {
                           step="0.01"
                           value={form.fees}
                           onChange={(e) => setForm({ ...form, fees: e.target.value })}
+                          placeholder="0"
                         />
                       </div>
                     </div>
-
-                    {!isSellMode && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Geography</Label>
-                          <Select 
-                            value={form.geography} 
-                            onValueChange={(v: Geography) => setForm({ ...form, geography: v })}
-                            disabled={!!form.linkedCompanyId && !!companies.find(c => c.id === form.linkedCompanyId)?.geography}
-                          >
-                            <SelectTrigger className={form.linkedCompanyId && companies.find(c => c.id === form.linkedCompanyId)?.geography ? 'bg-muted' : ''}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {GEOGRAPHIES.map(g => (
-                                <SelectItem key={g} value={g}>{g.replace(/_/g, ' ').toUpperCase()}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Inception Year</Label>
-                          <Input 
-                            type="number"
-                            value={form.inceptionYear}
-                            onChange={(e) => setForm({ ...form, inceptionYear: e.target.value })}
-                            placeholder="e.g. 2009"
-                            min="1900"
-                            max="2025"
-                            disabled={!!form.linkedCompanyId && !!companies.find(c => c.id === form.linkedCompanyId)?.inception_year}
-                            className={form.linkedCompanyId && companies.find(c => c.id === form.linkedCompanyId)?.inception_year ? 'bg-muted' : ''}
-                          />
-                        </div>
-                      </div>
-                    )}
 
                     {/* Real-time Trade Validation Panel */}
                     {user && form.ticker && parseFloat(form.quantity) > 0 && parseFloat(form.pricePerUnit) > 0 && (
@@ -776,7 +732,7 @@ export default function Transactions() {
                     <Button 
                       type="submit" 
                       className="w-full gradient-gold text-primary-foreground"
-                      disabled={!canSubmitSell || (isSellMode && holdings.length === 0)}
+                      disabled={!canSubmit}
                     >
                       {isSellMode ? 'Sell Position' : 'Add Transaction'}
                     </Button>
