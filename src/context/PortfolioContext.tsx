@@ -212,9 +212,27 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [transactions, valuations, settings, cashBalances, computedData]);
 
+  // Trigger metrics recalculation when data changes
+  // Using specific dependencies to avoid infinite loop - don't include refreshMetrics itself
   useEffect(() => {
-    refreshMetrics();
-  }, [refreshMetrics]);
+    if (transactions.length > 0 && valuations.length > 0) {
+      const baseCurrency = settings.baseCurrency === 'ILS' ? 'ILS' : 'USD';
+      const perfMetrics = calculatePerformanceMetrics(
+        transactions, 
+        valuations, 
+        settings.riskFreeRate,
+        cashBalances,
+        baseCurrency
+      );
+      setPerformanceMetrics(perfMetrics);
+      
+      const riskMet = calculateRiskMetrics(transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns);
+      setRiskMetrics(riskMet);
+    } else {
+      setPerformanceMetrics(null);
+      setRiskMetrics(null);
+    }
+  }, [transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns, settings.baseCurrency, cashBalances]);
 
   // Transaction operations
   const addTransaction = async (tx: Omit<Transaction, 'id'>) => {
