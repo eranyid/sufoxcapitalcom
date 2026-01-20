@@ -16,6 +16,12 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  ScatterChart,
+  Scatter,
+  ZAxis,
+  FunnelChart,
+  Funnel,
+  LabelList,
 } from 'recharts';
 import { Download, Image, FileText, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -327,6 +333,65 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
       );
     }
     
+    // Scatter chart
+    if (chartType === 'scatter') {
+      // For scatter, we need to transform data for each asset
+      const scatterData = keys.flatMap((key, keyIdx) => 
+        data.map((d, idx) => ({
+          x: idx,
+          y: d[key] as number,
+          month: d.month,
+          asset: key,
+          fill: CHART_COLORS[keyIdx % CHART_COLORS.length],
+        }))
+      );
+      
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+            <XAxis 
+              type="number"
+              dataKey="x"
+              {...commonAxisProps}
+              tickFormatter={(v) => data[v]?.month?.slice(5) || ''}
+            />
+            <YAxis 
+              type="number"
+              dataKey="y"
+              {...commonAxisProps}
+              tickFormatter={(v) => formatValue(v)}
+              width={60}
+            />
+            <ZAxis range={[60, 60]} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--popover))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '6px',
+                fontSize: '11px',
+              }}
+              labelStyle={{ color: 'hsl(var(--foreground))' }}
+              formatter={(value: number, name: string, props: any) => [
+                formatValue(value),
+                props.payload.asset,
+              ]}
+              labelFormatter={(label, payload) => payload?.[0]?.payload?.month || ''}
+            />
+            <Legend wrapperStyle={{ fontSize: '11px' }} />
+            {keys.map((key, i) => (
+              <Scatter
+                key={key}
+                name={key}
+                data={scatterData.filter(d => d.asset === key)}
+                fill={CHART_COLORS[i % CHART_COLORS.length]}
+              />
+            ))}
+          </ScatterChart>
+        </ResponsiveContainer>
+      );
+    }
+    
     // Default: Line chart
     return (
       <ResponsiveContainer width="100%" height="100%">
@@ -436,7 +501,7 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
     );
   };
   
-  // Allocation chart (Pie or Treemap)
+  // Allocation chart (Pie, Treemap, or Funnel)
   const renderAllocationChart = (data: AllocationData[], chartType: ChartType) => {
     if (data.length === 0) return null;
     
@@ -464,7 +529,54 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
       );
     }
     
-    // Pie chart
+    // Funnel chart
+    if (chartType === 'funnel') {
+      const funnelData = data
+        .sort((a, b) => b.value - a.value)
+        .map((d, i) => ({
+          name: d.ticker,
+          value: d.value,
+          percentage: d.percentage,
+          fill: PIE_COLORS[i % PIE_COLORS.length],
+        }));
+      
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <FunnelChart margin={{ top: 20, right: 80, left: 80, bottom: 20 }}>
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--popover))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '6px',
+                fontSize: '11px',
+              }}
+              formatter={(value: number, name: string, props: any) => [
+                `$${value.toLocaleString()} (${props.payload.percentage.toFixed(1)}%)`,
+                props.payload.name,
+              ]}
+            />
+            <Funnel
+              dataKey="value"
+              data={funnelData}
+              isAnimationActive
+            >
+              <LabelList 
+                position="right" 
+                fill="hsl(var(--foreground))" 
+                stroke="none" 
+                dataKey="name"
+                fontSize={11}
+              />
+              {funnelData.map((entry, i) => (
+                <Cell key={i} fill={entry.fill} />
+              ))}
+            </Funnel>
+          </FunnelChart>
+        </ResponsiveContainer>
+      );
+    }
+    
+    // Pie chart (default)
     return (
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
@@ -505,7 +617,7 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
     );
   };
   
-  // Contribution chart
+  // Contribution chart (Bar, Waterfall, or Funnel)
   const renderContributionChart = (data: ContributionData[], chartType: ChartType) => {
     if (data.length === 0) return null;
     
@@ -514,9 +626,118 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
       contribution: d.contribution,
       weight: d.weight,
       plPercent: d.plPercent,
-      fill: d.contribution >= 0 ? '#22c55e' : '#ef4444',
+      fill: d.contribution >= 0 ? '#01B8AA' : '#FD625E', // Power BI teal/coral
     }));
     
+    // Waterfall chart - show cumulative effect
+    if (chartType === 'waterfall') {
+      let cumulative = 0;
+      const waterfallData = chartData.map((d, i) => {
+        const start = cumulative;
+        cumulative += d.contribution;
+        return {
+          ...d,
+          start,
+          end: cumulative,
+          isPositive: d.contribution >= 0,
+        };
+      });
+      
+      // Add total bar
+      waterfallData.push({
+        name: 'Total',
+        contribution: cumulative,
+        weight: 100,
+        plPercent: 0,
+        fill: cumulative >= 0 ? '#F2C811' : '#FD625E', // Power BI yellow or coral
+        start: 0,
+        end: cumulative,
+        isPositive: cumulative >= 0,
+      });
+      
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={waterfallData}
+            margin={{ top: 20, right: 30, left: 60, bottom: 20 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+            <XAxis 
+              dataKey="name"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+            />
+            <YAxis 
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              tickFormatter={(v) => `$${v.toLocaleString()}`}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--popover))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '6px',
+                fontSize: '11px',
+              }}
+              formatter={(value: number) => [`$${value.toLocaleString()}`, 'Contribution']}
+            />
+            {/* Invisible bar for stacking */}
+            <Bar dataKey="start" stackId="stack" fill="transparent" />
+            <Bar dataKey="contribution" stackId="stack" fill="hsl(var(--primary))">
+              {waterfallData.map((entry, i) => (
+                <Cell key={i} fill={entry.fill} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      );
+    }
+    
+    // Funnel chart for contribution
+    if (chartType === 'funnel') {
+      const funnelData = [...chartData]
+        .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
+        .map((d, i) => ({
+          ...d,
+          value: Math.abs(d.contribution),
+          fill: d.contribution >= 0 ? PIE_COLORS[i % PIE_COLORS.length] : '#FD625E',
+        }));
+      
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <FunnelChart margin={{ top: 20, right: 80, left: 80, bottom: 20 }}>
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--popover))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '6px',
+                fontSize: '11px',
+              }}
+              formatter={(value: number, name: string, props: any) => [
+                `$${props.payload.contribution.toLocaleString()}`,
+                props.payload.name,
+              ]}
+            />
+            <Funnel
+              dataKey="value"
+              data={funnelData}
+              isAnimationActive
+            >
+              <LabelList 
+                position="right" 
+                fill="hsl(var(--foreground))" 
+                stroke="none" 
+                dataKey="name"
+                fontSize={11}
+              />
+              {funnelData.map((entry, i) => (
+                <Cell key={i} fill={entry.fill} />
+              ))}
+            </Funnel>
+          </FunnelChart>
+        </ResponsiveContainer>
+      );
+    }
+    
+    // Default: Horizontal bar chart
     return (
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
@@ -543,10 +764,7 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
               borderRadius: '6px',
               fontSize: '11px',
             }}
-            formatter={(value: number, name: string, props: any) => [
-              `$${value.toLocaleString()}`,
-              'Contribution',
-            ]}
+            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Contribution']}
           />
           <Bar dataKey="contribution" fill="hsl(var(--primary))">
             {chartData.map((entry, i) => (

@@ -10,6 +10,9 @@ import {
   PieChartIcon,
   Info,
   Layers,
+  ScatterChart,
+  Filter,
+  ArrowDownUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -63,7 +66,9 @@ const CHART_TYPE_ICONS: Record<ChartType, React.ReactNode> = {
   pie: <PieChartIcon className="h-3.5 w-3.5" />,
   treemap: <Grid3x3 className="h-3.5 w-3.5" />,
   heatmap: <Grid3x3 className="h-3.5 w-3.5" />,
-  waterfall: <BarChart3 className="h-3.5 w-3.5" />,
+  waterfall: <ArrowDownUp className="h-3.5 w-3.5" />,
+  scatter: <ScatterChart className="h-3.5 w-3.5" />,
+  funnel: <Filter className="h-3.5 w-3.5" />,
 };
 
 const DATE_RANGE_OPTIONS: { value: DateRangePreset; label: string }[] = [
