@@ -678,7 +678,7 @@ export function MonteCarloSimulation({
       {/* Fan Chart */}
       <div className="bloomberg-panel">
         <div className="bloomberg-header">
-          <span className="bloomberg-header-title">Probability Fan Chart • Portfolio Value Projection</span>
+          <span className="bloomberg-header-title">Monte Carlo Projection</span>
           <span className="text-[9px] text-muted-foreground font-mono">65-Year Horizon</span>
         </div>
         <div className="p-3">
