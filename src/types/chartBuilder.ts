@@ -19,7 +19,9 @@ export type ChartType =
   | 'pie'
   | 'treemap'
   | 'heatmap'
-  | 'waterfall';
+  | 'waterfall'
+  | 'scatter'
+  | 'funnel';
 
 export type DateRangePreset = '3M' | '6M' | '1Y' | '3Y' | 'ALL' | 'custom';
 
@@ -65,7 +67,7 @@ export const METRIC_CONFIGS: MetricConfig[] = [
     id: 'price',
     label: 'Price (Historical)',
     description: 'Historical price chart for selected assets',
-    compatibleChartTypes: ['line', 'area'],
+    compatibleChartTypes: ['line', 'area', 'scatter'],
     requiresMultipleAssets: false,
     minAssets: 1,
     showsFrequency: true,
@@ -77,7 +79,7 @@ export const METRIC_CONFIGS: MetricConfig[] = [
     id: 'return_pct',
     label: 'Return % (Periodic)',
     description: 'Periodic returns for selected assets',
-    compatibleChartTypes: ['line', 'bar', 'area'],
+    compatibleChartTypes: ['line', 'bar', 'area', 'scatter'],
     requiresMultipleAssets: false,
     minAssets: 1,
     showsFrequency: true,
@@ -89,7 +91,7 @@ export const METRIC_CONFIGS: MetricConfig[] = [
     id: 'cumulative_return',
     label: 'Cumulative Return',
     description: 'Cumulative performance over time',
-    compatibleChartTypes: ['line', 'area'],
+    compatibleChartTypes: ['line', 'area', 'scatter'],
     requiresMultipleAssets: false,
     minAssets: 1,
     showsFrequency: true,
@@ -163,7 +165,7 @@ export const METRIC_CONFIGS: MetricConfig[] = [
     id: 'allocation',
     label: 'Allocation (Pie/Treemap)',
     description: 'Current portfolio allocation',
-    compatibleChartTypes: ['pie', 'treemap'],
+    compatibleChartTypes: ['pie', 'treemap', 'funnel'],
     requiresMultipleAssets: false,
     minAssets: 1,
     showsFrequency: false,
@@ -175,7 +177,7 @@ export const METRIC_CONFIGS: MetricConfig[] = [
     id: 'contribution',
     label: 'Contribution to Return',
     description: 'Asset contribution breakdown',
-    compatibleChartTypes: ['bar', 'waterfall'],
+    compatibleChartTypes: ['bar', 'waterfall', 'funnel'],
     requiresMultipleAssets: false,
     minAssets: 1,
     showsFrequency: false,
