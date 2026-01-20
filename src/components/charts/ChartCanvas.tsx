@@ -41,21 +41,29 @@ interface ChartCanvasProps {
   isCalculating: boolean;
 }
 
-// Color palette
+// Power BI Color palette - vibrant and professional
 const CHART_COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-gold))',
-  'hsl(142, 71%, 45%)',
-  'hsl(262, 83%, 58%)',
-  'hsl(340, 82%, 52%)',
-  'hsl(43, 96%, 56%)',
-  'hsl(199, 89%, 48%)',
-  'hsl(280, 65%, 60%)',
+  '#F2C811', // Power BI Yellow
+  '#01B8AA', // Teal
+  '#374649', // Dark Gray
+  '#FD625E', // Red/Coral
+  '#5F6B6D', // Medium Gray
+  '#8AD4EB', // Light Blue
+  '#FE9666', // Orange
+  '#A66999', // Purple
+  '#3599B8', // Blue
+  '#DFBFBF', // Light Pink
 ];
 
 const PIE_COLORS = [
-  '#f97316', '#22c55e', '#3b82f6', '#a855f7',
-  '#ec4899', '#eab308', '#06b6d4', '#6366f1',
+  '#F2C811', // Power BI Yellow
+  '#01B8AA', // Teal
+  '#FD625E', // Red/Coral
+  '#374649', // Dark Gray
+  '#8AD4EB', // Light Blue
+  '#FE9666', // Orange
+  '#A66999', // Purple
+  '#3599B8', // Blue
 ];
 
 function getCorrelationColor(value: number): string {
