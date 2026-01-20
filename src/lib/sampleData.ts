@@ -6,7 +6,7 @@ import { Transaction, MonthlyValuation } from '@/types/investment';
  * Date Range: January 2018 - December 2025 (8 years, 96 months)
  * Target CAGR: ~12% (annualized)
  * Target Portfolio Value: ~$2.1M (latest)
- * Holdings Count: 25 distinct assets
+ * Holdings Count: 17 distinct tradable assets
  * 
  * CALIBRATION NOTES:
  * - For 12% CAGR over 8 years: (1.12)^8 = 2.476x total return
@@ -14,256 +14,237 @@ import { Transaction, MonthlyValuation } from '@/types/investment';
  * - Monthly returns average ~0.95% (= 12%/12)
  * - Contains realistic drawdowns for risk metrics (negative months)
  * 
- * ASSET CLASS COVERAGE (25 holdings):
+ * ASSET CLASS COVERAGE (17 holdings - tradable only):
  * - Equity: 10 (AAPL, MSFT, NVDA, AMZN, GOOGL, TSLA, META, JPM, BRK.B, LLY)
  * - ETF: 2 (VXUS, EEM)
  * - Bond: 2 (AGG, BND)
  * - Commodity: 1 (GLD)
  * - Crypto: 2 (BTC, ETH)
- * - Hedge Fund: 2 (BWPA, RIEF)
- * - Private Equity: 1 (SCGE)
- * - Private Debt: 2 (KPFC, OCPC)
- * - Real Estate: 2 (BREP9, CREP5)
- * - Alternative: 1 (AQMIX)
  */
 
 // ============================================================================
 // TRANSACTIONS - 2018-2025, chronologically ordered (8-17 per year)
 // ============================================================================
 export const sampleTransactions: Transaction[] = [
-  // =========== 2018: Initial Portfolio Construction (12 transactions) ===========
+  // =========== 2018: Initial Portfolio Construction (10 transactions) ===========
   { id: 'tx-2018-001', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'buy', 
-    date: '2018-01-15', quantity: 500, pricePerUnit: 43.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+    date: '2018-01-15', quantity: 600, pricePerUnit: 43.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
   { id: 'tx-2018-002', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', 
-    date: '2018-02-12', quantity: 250, pricePerUnit: 92.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
+    date: '2018-02-12', quantity: 350, pricePerUnit: 92.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
   { id: 'tx-2018-003', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'buy', 
-    date: '2018-02-28', quantity: 600, pricePerUnit: 105.50, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
+    date: '2018-02-28', quantity: 800, pricePerUnit: 105.50, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
   { id: 'tx-2018-004', assetName: 'Vanguard Total International Stock', ticker: 'VXUS', assetType: 'etf', transactionType: 'buy', 
-    date: '2018-04-10', quantity: 400, pricePerUnit: 56.80, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2011 },
+    date: '2018-04-10', quantity: 600, pricePerUnit: 56.80, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2011 },
   { id: 'tx-2018-005', assetName: 'Amazon.com Inc.', ticker: 'AMZN', assetType: 'equity', transactionType: 'buy', 
-    date: '2018-05-22', quantity: 80, pricePerUnit: 79.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
-  { id: 'tx-2018-006', assetName: 'Bridgewater Pure Alpha Fund', ticker: 'BWPA', assetType: 'hedge_fund', transactionType: 'buy', 
-    date: '2018-06-15', quantity: 1, pricePerUnit: 50000.00, fees: 250.00, currency: 'USD', geography: 'global', inceptionYear: 1991 },
-  { id: 'tx-2018-007', assetName: 'JPMorgan Chase', ticker: 'JPM', assetType: 'equity', transactionType: 'buy', 
-    date: '2018-07-18', quantity: 200, pricePerUnit: 108.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
-  { id: 'tx-2018-008', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', 
-    date: '2018-09-20', quantity: 4, pricePerUnit: 6350.00, fees: 95.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
-  { id: 'tx-2018-009', assetName: 'Blackstone Real Estate Partners IX', ticker: 'BREP9', assetType: 'real_estate', transactionType: 'buy', 
-    date: '2018-10-15', quantity: 1, pricePerUnit: 100000.00, fees: 500.00, currency: 'USD', geography: 'north_america', inceptionYear: 2018 },
-  { id: 'tx-2018-010', assetName: 'SPDR Gold Shares', ticker: 'GLD', assetType: 'commodity', transactionType: 'buy', 
-    date: '2018-11-12', quantity: 250, pricePerUnit: 115.40, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
-  { id: 'tx-2018-011', assetName: 'Berkshire Hathaway', ticker: 'BRK.B', assetType: 'equity', transactionType: 'buy', 
-    date: '2018-12-10', quantity: 100, pricePerUnit: 198.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1996 },
-  { id: 'tx-2018-012', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2018-12-20', quantity: 200, pricePerUnit: 24.35, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+    date: '2018-05-22', quantity: 120, pricePerUnit: 79.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
+  { id: 'tx-2018-006', assetName: 'JPMorgan Chase', ticker: 'JPM', assetType: 'equity', transactionType: 'buy', 
+    date: '2018-07-18', quantity: 300, pricePerUnit: 108.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
+  { id: 'tx-2018-007', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', 
+    date: '2018-09-20', quantity: 6, pricePerUnit: 6350.00, fees: 95.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+  { id: 'tx-2018-008', assetName: 'SPDR Gold Shares', ticker: 'GLD', assetType: 'commodity', transactionType: 'buy', 
+    date: '2018-11-12', quantity: 400, pricePerUnit: 115.40, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
+  { id: 'tx-2018-009', assetName: 'Berkshire Hathaway', ticker: 'BRK.B', assetType: 'equity', transactionType: 'buy', 
+    date: '2018-12-10', quantity: 150, pricePerUnit: 198.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1996 },
+  { id: 'tx-2018-010', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
+    date: '2018-12-20', quantity: 300, pricePerUnit: 24.35, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
 
-  // =========== 2019: Building Core + Adding Alternatives (14 transactions) ===========
+  // =========== 2019: Building Core Positions (12 transactions) ===========
   { id: 'tx-2019-001', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'buy', 
-    date: '2019-01-28', quantity: 200, pricePerUnit: 39.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
-  { id: 'tx-2019-002', assetName: 'KKR Private Credit Fund', ticker: 'KPFC', assetType: 'private_debt', transactionType: 'buy', 
-    date: '2019-02-18', quantity: 1, pricePerUnit: 75000.00, fees: 375.00, currency: 'USD', geography: 'north_america', inceptionYear: 2019 },
-  { id: 'tx-2019-003', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
-    date: '2019-03-15', quantity: 60, pricePerUnit: 58.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
-  { id: 'tx-2019-004', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', 
-    date: '2019-04-22', quantity: 500, pricePerUnit: 44.25, fees: 4.95, currency: 'USD', geography: 'emerging_markets', inceptionYear: 2003 },
-  { id: 'tx-2019-005', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2019-05-13', quantity: 150, pricePerUnit: 28.55, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
-  { id: 'tx-2019-006', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', 
-    date: '2019-06-10', quantity: 100, pricePerUnit: 123.96, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
-  { id: 'tx-2019-007', assetName: 'Sequoia Capital Global Equities', ticker: 'SCGE', assetType: 'private_equity', transactionType: 'buy', 
-    date: '2019-07-15', quantity: 1, pricePerUnit: 100000.00, fees: 500.00, currency: 'USD', geography: 'north_america', inceptionYear: 2019 },
-  { id: 'tx-2019-008', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
-    date: '2019-08-05', quantity: 35, pricePerUnit: 215.00, fees: 54.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
-  { id: 'tx-2019-009', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', 
-    date: '2019-09-18', quantity: 150, pricePerUnit: 16.05, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
-  { id: 'tx-2019-010', assetName: 'Meta Platforms Inc.', ticker: 'META', assetType: 'equity', transactionType: 'buy', 
-    date: '2019-10-14', quantity: 80, pricePerUnit: 186.12, fees: 12.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
-  { id: 'tx-2019-011', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'buy', 
-    date: '2019-11-08', quantity: 300, pricePerUnit: 111.85, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
-  { id: 'tx-2019-012', assetName: 'AQR Managed Futures Strategy', ticker: 'AQMIX', assetType: 'alternative', transactionType: 'buy', 
-    date: '2019-11-22', quantity: 4000, pricePerUnit: 8.45, fees: 0.00, currency: 'USD', geography: 'global', inceptionYear: 2010 },
-  { id: 'tx-2019-013', assetName: 'SPDR Gold Shares', ticker: 'GLD', assetType: 'commodity', transactionType: 'buy', 
-    date: '2019-12-10', quantity: 150, pricePerUnit: 139.85, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
-  { id: 'tx-2019-014', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
-    date: '2019-12-18', quantity: 50, pricePerUnit: 130.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
+    date: '2019-01-28', quantity: 300, pricePerUnit: 39.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+  { id: 'tx-2019-002', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
+    date: '2019-03-15', quantity: 100, pricePerUnit: 58.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
+  { id: 'tx-2019-003', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', 
+    date: '2019-04-22', quantity: 700, pricePerUnit: 44.25, fees: 4.95, currency: 'USD', geography: 'emerging_markets', inceptionYear: 2003 },
+  { id: 'tx-2019-004', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
+    date: '2019-05-13', quantity: 200, pricePerUnit: 28.55, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+  { id: 'tx-2019-005', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', 
+    date: '2019-06-10', quantity: 150, pricePerUnit: 123.96, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
+  { id: 'tx-2019-006', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
+    date: '2019-08-05', quantity: 50, pricePerUnit: 215.00, fees: 54.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+  { id: 'tx-2019-007', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', 
+    date: '2019-09-18', quantity: 200, pricePerUnit: 16.05, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
+  { id: 'tx-2019-008', assetName: 'Meta Platforms Inc.', ticker: 'META', assetType: 'equity', transactionType: 'buy', 
+    date: '2019-10-14', quantity: 120, pricePerUnit: 186.12, fees: 12.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
+  { id: 'tx-2019-009', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'buy', 
+    date: '2019-11-08', quantity: 400, pricePerUnit: 111.85, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
+  { id: 'tx-2019-010', assetName: 'SPDR Gold Shares', ticker: 'GLD', assetType: 'commodity', transactionType: 'buy', 
+    date: '2019-12-10', quantity: 200, pricePerUnit: 139.85, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
+  { id: 'tx-2019-011', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
+    date: '2019-12-18', quantity: 80, pricePerUnit: 130.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
+  { id: 'tx-2019-012', assetName: 'Amazon.com Inc.', ticker: 'AMZN', assetType: 'equity', transactionType: 'buy', 
+    date: '2019-12-27', quantity: 80, pricePerUnit: 92.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
 
-  // =========== 2020: COVID Volatility & Recovery (17 transactions) ===========
+  // =========== 2020: COVID Volatility & Recovery (15 transactions) ===========
   { id: 'tx-2020-001', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', 
-    date: '2020-01-21', quantity: 100, pricePerUnit: 28.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
+    date: '2020-01-21', quantity: 150, pricePerUnit: 28.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
   { id: 'tx-2020-002', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', 
-    date: '2020-02-10', quantity: 2, pricePerUnit: 9850.00, fees: 98.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+    date: '2020-02-10', quantity: 3, pricePerUnit: 9850.00, fees: 98.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   { id: 'tx-2020-003', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'buy', 
-    date: '2020-03-16', quantity: 300, pricePerUnit: 52.31, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+    date: '2020-03-16', quantity: 400, pricePerUnit: 52.31, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
   { id: 'tx-2020-004', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', 
-    date: '2020-03-23', quantity: 150, pricePerUnit: 138.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
+    date: '2020-03-23', quantity: 200, pricePerUnit: 138.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
   { id: 'tx-2020-005', assetName: 'Amazon.com Inc.', ticker: 'AMZN', assetType: 'equity', transactionType: 'buy', 
-    date: '2020-04-14', quantity: 40, pricePerUnit: 102.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
+    date: '2020-04-14', quantity: 60, pricePerUnit: 102.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
   { id: 'tx-2020-006', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2020-05-11', quantity: 100, pricePerUnit: 48.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+    date: '2020-05-11', quantity: 150, pricePerUnit: 48.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
   { id: 'tx-2020-007', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
-    date: '2020-06-08', quantity: 40, pricePerUnit: 242.00, fees: 73.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
-  { id: 'tx-2020-008', assetName: 'Oaktree Capital Private Credit', ticker: 'OCPC', assetType: 'private_debt', transactionType: 'buy', 
-    date: '2020-06-22', quantity: 1, pricePerUnit: 50000.00, fees: 250.00, currency: 'USD', geography: 'north_america', inceptionYear: 2020 },
-  { id: 'tx-2020-009', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
-    date: '2020-07-20', quantity: 40, pricePerUnit: 75.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
-  { id: 'tx-2020-010', assetName: 'Vanguard Total Bond Market', ticker: 'BND', assetType: 'bond', transactionType: 'buy', 
-    date: '2020-08-10', quantity: 400, pricePerUnit: 88.45, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2007 },
-  { id: 'tx-2020-011', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'sell', 
-    date: '2020-09-02', quantity: 200, pricePerUnit: 88.81, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
-  { id: 'tx-2020-012', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', 
-    date: '2020-10-19', quantity: 75, pricePerUnit: 87.35, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
-  { id: 'tx-2020-013', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', 
-    date: '2020-11-16', quantity: 1.5, pricePerUnit: 16250.00, fees: 122.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
-  { id: 'tx-2020-014', assetName: 'Carlyle Real Estate Partners V', ticker: 'CREP5', assetType: 'real_estate', transactionType: 'buy', 
-    date: '2020-11-30', quantity: 1, pricePerUnit: 75000.00, fees: 375.00, currency: 'USD', geography: 'north_america', inceptionYear: 2020 },
-  { id: 'tx-2020-015', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
-    date: '2020-12-07', quantity: 40, pricePerUnit: 168.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
-  { id: 'tx-2020-016', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', 
-    date: '2020-12-14', quantity: 250, pricePerUnit: 52.52, fees: 4.95, currency: 'USD', geography: 'emerging_markets', inceptionYear: 2003 },
-  { id: 'tx-2020-017', assetName: 'Renaissance Institutional Equities', ticker: 'RIEF', assetType: 'hedge_fund', transactionType: 'buy', 
-    date: '2020-12-21', quantity: 1, pricePerUnit: 75000.00, fees: 375.00, currency: 'USD', geography: 'north_america', inceptionYear: 2005 },
+    date: '2020-06-08', quantity: 60, pricePerUnit: 242.00, fees: 73.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+  { id: 'tx-2020-008', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
+    date: '2020-07-20', quantity: 60, pricePerUnit: 75.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
+  { id: 'tx-2020-009', assetName: 'Vanguard Total Bond Market', ticker: 'BND', assetType: 'bond', transactionType: 'buy', 
+    date: '2020-08-10', quantity: 600, pricePerUnit: 88.45, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2007 },
+  { id: 'tx-2020-010', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'sell', 
+    date: '2020-09-02', quantity: 300, pricePerUnit: 88.81, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+  { id: 'tx-2020-011', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', 
+    date: '2020-10-19', quantity: 100, pricePerUnit: 87.35, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
+  { id: 'tx-2020-012', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', 
+    date: '2020-11-16', quantity: 2, pricePerUnit: 16250.00, fees: 122.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+  { id: 'tx-2020-013', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
+    date: '2020-12-07', quantity: 60, pricePerUnit: 168.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
+  { id: 'tx-2020-014', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', 
+    date: '2020-12-14', quantity: 350, pricePerUnit: 52.52, fees: 4.95, currency: 'USD', geography: 'emerging_markets', inceptionYear: 2003 },
+  { id: 'tx-2020-015', assetName: 'JPMorgan Chase', ticker: 'JPM', assetType: 'equity', transactionType: 'buy', 
+    date: '2020-12-21', quantity: 100, pricePerUnit: 127.07, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
 
-  // =========== 2021: Bull Market Peak (15 transactions) ===========
+  // =========== 2021: Bull Market Peak (14 transactions) ===========
   { id: 'tx-2021-001', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', 
-    date: '2021-01-11', quantity: 1, pricePerUnit: 35250.00, fees: 176.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+    date: '2021-01-11', quantity: 1.5, pricePerUnit: 35250.00, fees: 176.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   { id: 'tx-2021-002', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2021-02-08', quantity: 80, pricePerUnit: 68.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+    date: '2021-02-08', quantity: 120, pricePerUnit: 68.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
   { id: 'tx-2021-003', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
-    date: '2021-03-15', quantity: 15, pricePerUnit: 1780.00, fees: 134.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+    date: '2021-03-15', quantity: 20, pricePerUnit: 1780.00, fees: 134.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
   { id: 'tx-2021-004', assetName: 'Vanguard Total International Stock', ticker: 'VXUS', assetType: 'etf', transactionType: 'buy', 
-    date: '2021-04-05', quantity: 200, pricePerUnit: 63.72, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2011 },
+    date: '2021-04-05', quantity: 300, pricePerUnit: 63.72, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2011 },
   { id: 'tx-2021-005', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'sell', 
-    date: '2021-04-26', quantity: 75, pricePerUnit: 138.15, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
+    date: '2021-04-26', quantity: 100, pricePerUnit: 138.15, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
   { id: 'tx-2021-006', assetName: 'Meta Platforms Inc.', ticker: 'META', assetType: 'equity', transactionType: 'buy', 
-    date: '2021-05-10', quantity: 60, pricePerUnit: 315.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
+    date: '2021-05-10', quantity: 80, pricePerUnit: 315.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
   { id: 'tx-2021-007', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', 
-    date: '2021-07-19', quantity: 50, pricePerUnit: 222.91, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
+    date: '2021-07-19', quantity: 75, pricePerUnit: 222.91, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
   { id: 'tx-2021-008', assetName: 'JPMorgan Chase', ticker: 'JPM', assetType: 'equity', transactionType: 'buy', 
-    date: '2021-08-16', quantity: 75, pricePerUnit: 146.13, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
+    date: '2021-08-16', quantity: 100, pricePerUnit: 146.13, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
   { id: 'tx-2021-009', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'sell', 
-    date: '2021-09-07', quantity: 2, pricePerUnit: 52450.00, fees: 394.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+    date: '2021-09-07', quantity: 3, pricePerUnit: 52450.00, fees: 394.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   { id: 'tx-2021-010', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
-    date: '2021-10-18', quantity: 30, pricePerUnit: 130.65, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
+    date: '2021-10-18', quantity: 50, pricePerUnit: 130.65, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
   { id: 'tx-2021-011', assetName: 'SPDR Gold Shares', ticker: 'GLD', assetType: 'commodity', transactionType: 'buy', 
-    date: '2021-11-08', quantity: 100, pricePerUnit: 170.42, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
+    date: '2021-11-08', quantity: 150, pricePerUnit: 170.42, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
   { id: 'tx-2021-012', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'buy', 
-    date: '2021-12-06', quantity: 200, pricePerUnit: 113.85, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
+    date: '2021-12-06', quantity: 300, pricePerUnit: 113.85, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
   { id: 'tx-2021-013', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'sell', 
-    date: '2021-12-20', quantity: 15, pricePerUnit: 3950.00, fees: 198.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+    date: '2021-12-20', quantity: 20, pricePerUnit: 3950.00, fees: 198.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
   { id: 'tx-2021-014', assetName: 'Berkshire Hathaway', ticker: 'BRK.B', assetType: 'equity', transactionType: 'buy', 
-    date: '2021-12-27', quantity: 50, pricePerUnit: 292.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1996 },
-  { id: 'tx-2021-015', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
-    date: '2021-12-30', quantity: 25, pricePerUnit: 228.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
+    date: '2021-12-27', quantity: 75, pricePerUnit: 292.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1996 },
 
   // =========== 2022: Bear Market (11 transactions) ===========
   { id: 'tx-2022-001', assetName: 'SPDR Gold Shares', ticker: 'GLD', assetType: 'commodity', transactionType: 'buy', 
-    date: '2022-01-18', quantity: 100, pricePerUnit: 168.50, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
+    date: '2022-01-18', quantity: 150, pricePerUnit: 168.50, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
   { id: 'tx-2022-002', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'sell', 
-    date: '2022-02-14', quantity: 150, pricePerUnit: 128.12, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+    date: '2022-02-14', quantity: 200, pricePerUnit: 128.12, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
   { id: 'tx-2022-003', assetName: 'Vanguard Total Bond Market', ticker: 'BND', assetType: 'bond', transactionType: 'buy', 
-    date: '2022-03-21', quantity: 250, pricePerUnit: 78.50, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2007 },
+    date: '2022-03-21', quantity: 350, pricePerUnit: 78.50, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2007 },
   { id: 'tx-2022-004', assetName: 'Amazon.com Inc.', ticker: 'AMZN', assetType: 'equity', transactionType: 'buy', 
-    date: '2022-05-09', quantity: 80, pricePerUnit: 98.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
+    date: '2022-05-09', quantity: 120, pricePerUnit: 98.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
   { id: 'tx-2022-005', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
-    date: '2022-06-20', quantity: 25, pricePerUnit: 1050.00, fees: 105.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+    date: '2022-06-20', quantity: 40, pricePerUnit: 1050.00, fees: 105.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
   { id: 'tx-2022-006', assetName: 'Berkshire Hathaway', ticker: 'BRK.B', assetType: 'equity', transactionType: 'buy', 
-    date: '2022-07-18', quantity: 50, pricePerUnit: 268.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1996 },
+    date: '2022-07-18', quantity: 75, pricePerUnit: 268.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1996 },
   { id: 'tx-2022-007', assetName: 'Meta Platforms Inc.', ticker: 'META', assetType: 'equity', transactionType: 'sell', 
-    date: '2022-08-22', quantity: 40, pricePerUnit: 168.34, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
+    date: '2022-08-22', quantity: 60, pricePerUnit: 168.34, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
   { id: 'tx-2022-008', assetName: 'JPMorgan Chase', ticker: 'JPM', assetType: 'equity', transactionType: 'buy', 
-    date: '2022-09-12', quantity: 75, pricePerUnit: 106.76, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
+    date: '2022-09-12', quantity: 100, pricePerUnit: 106.76, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
   { id: 'tx-2022-009', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2022-10-24', quantity: 120, pricePerUnit: 52.25, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+    date: '2022-10-24', quantity: 180, pricePerUnit: 52.25, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
   { id: 'tx-2022-010', assetName: 'Vanguard Total International Stock', ticker: 'VXUS', assetType: 'etf', transactionType: 'buy', 
-    date: '2022-11-14', quantity: 200, pricePerUnit: 51.42, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2011 },
-  { id: 'tx-2022-011', assetName: 'AQR Managed Futures Strategy', ticker: 'AQMIX', assetType: 'alternative', transactionType: 'buy', 
-    date: '2022-12-12', quantity: 2500, pricePerUnit: 11.85, fees: 0.00, currency: 'USD', geography: 'global', inceptionYear: 2010 },
+    date: '2022-11-14', quantity: 300, pricePerUnit: 51.42, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2011 },
+  { id: 'tx-2022-011', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
+    date: '2022-12-12', quantity: 40, pricePerUnit: 355.25, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
 
   // =========== 2023: AI Rally (13 transactions) ===========
   { id: 'tx-2023-001', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', 
-    date: '2023-01-23', quantity: 40, pricePerUnit: 212.04, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
+    date: '2023-01-23', quantity: 60, pricePerUnit: 212.04, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
   { id: 'tx-2023-002', assetName: 'Meta Platforms Inc.', ticker: 'META', assetType: 'equity', transactionType: 'buy', 
-    date: '2023-02-13', quantity: 60, pricePerUnit: 142.78, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
+    date: '2023-02-13', quantity: 80, pricePerUnit: 142.78, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
   { id: 'tx-2023-003', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', 
-    date: '2023-03-20', quantity: 1, pricePerUnit: 27500.00, fees: 138.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+    date: '2023-03-20', quantity: 1.5, pricePerUnit: 27500.00, fees: 138.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   { id: 'tx-2023-004', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2023-04-17', quantity: 100, pricePerUnit: 70.20, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+    date: '2023-04-17', quantity: 150, pricePerUnit: 70.20, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
   { id: 'tx-2023-005', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', 
-    date: '2023-05-08', quantity: 50, pricePerUnit: 125.95, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
-  { id: 'tx-2023-006', assetName: 'Blackstone Real Estate Partners IX', ticker: 'BREP9', assetType: 'real_estate', transactionType: 'sell', 
-    date: '2023-06-19', quantity: 0.5, pricePerUnit: 115000.00, fees: 288.00, currency: 'USD', geography: 'north_america', inceptionYear: 2018 },
-  { id: 'tx-2023-007', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'buy', 
-    date: '2023-07-24', quantity: 60, pricePerUnit: 145.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
-  { id: 'tx-2023-008', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
-    date: '2023-08-14', quantity: 50, pricePerUnit: 113.54, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
-  { id: 'tx-2023-009', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
-    date: '2023-09-11', quantity: 15, pricePerUnit: 1635.00, fees: 82.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
-  { id: 'tx-2023-010', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', 
-    date: '2023-10-16', quantity: 200, pricePerUnit: 38.85, fees: 4.95, currency: 'USD', geography: 'emerging_markets', inceptionYear: 2003 },
-  { id: 'tx-2023-011', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
-    date: '2023-11-06', quantity: 20, pricePerUnit: 455.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
-  { id: 'tx-2023-012', assetName: 'JPMorgan Chase', ticker: 'JPM', assetType: 'equity', transactionType: 'buy', 
-    date: '2023-11-27', quantity: 50, pricePerUnit: 152.56, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
-  { id: 'tx-2023-013', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'sell', 
-    date: '2023-12-18', quantity: 250, pricePerUnit: 99.85, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
+    date: '2023-05-08', quantity: 80, pricePerUnit: 125.95, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
+  { id: 'tx-2023-006', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'buy', 
+    date: '2023-07-24', quantity: 100, pricePerUnit: 145.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+  { id: 'tx-2023-007', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
+    date: '2023-08-14', quantity: 80, pricePerUnit: 113.54, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
+  { id: 'tx-2023-008', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
+    date: '2023-09-11', quantity: 25, pricePerUnit: 1635.00, fees: 82.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+  { id: 'tx-2023-009', assetName: 'iShares MSCI Emerging Markets', ticker: 'EEM', assetType: 'etf', transactionType: 'buy', 
+    date: '2023-10-16', quantity: 300, pricePerUnit: 38.85, fees: 4.95, currency: 'USD', geography: 'emerging_markets', inceptionYear: 2003 },
+  { id: 'tx-2023-010', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
+    date: '2023-11-06', quantity: 30, pricePerUnit: 455.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
+  { id: 'tx-2023-011', assetName: 'JPMorgan Chase', ticker: 'JPM', assetType: 'equity', transactionType: 'buy', 
+    date: '2023-11-27', quantity: 75, pricePerUnit: 152.56, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
+  { id: 'tx-2023-012', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'sell', 
+    date: '2023-12-18', quantity: 350, pricePerUnit: 99.85, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
+  { id: 'tx-2023-013', assetName: 'Vanguard Total Bond Market', ticker: 'BND', assetType: 'bond', transactionType: 'buy', 
+    date: '2023-12-27', quantity: 250, pricePerUnit: 75.25, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2007 },
 
   // =========== 2024: Rate Cut Rally (15 transactions) ===========
   { id: 'tx-2024-001', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'buy', 
-    date: '2024-01-15', quantity: 0.5, pricePerUnit: 42850.00, fees: 107.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+    date: '2024-01-15', quantity: 1, pricePerUnit: 42850.00, fees: 107.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   { id: 'tx-2024-002', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-02-12', quantity: 60, pricePerUnit: 110.28, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+    date: '2024-02-12', quantity: 100, pricePerUnit: 110.28, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
   { id: 'tx-2024-003', assetName: 'Amazon.com Inc.', ticker: 'AMZN', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-02-26', quantity: 50, pricePerUnit: 142.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
+    date: '2024-02-26', quantity: 80, pricePerUnit: 142.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
   { id: 'tx-2024-004', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-03-18', quantity: 40, pricePerUnit: 105.57, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
+    date: '2024-03-18', quantity: 60, pricePerUnit: 105.57, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
   { id: 'tx-2024-005', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-04-22', quantity: 25, pricePerUnit: 322.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
+    date: '2024-04-22', quantity: 40, pricePerUnit: 322.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
   { id: 'tx-2024-006', assetName: 'Eli Lilly', ticker: 'LLY', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-05-13', quantity: 15, pricePerUnit: 595.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
+    date: '2024-05-13', quantity: 25, pricePerUnit: 595.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1972 },
   { id: 'tx-2024-007', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
-    date: '2024-06-10', quantity: 8, pricePerUnit: 3580.00, fees: 90.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+    date: '2024-06-10', quantity: 12, pricePerUnit: 3580.00, fees: 90.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
   { id: 'tx-2024-008', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'sell', 
-    date: '2024-07-15', quantity: 100, pricePerUnit: 160.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+    date: '2024-07-15', quantity: 150, pricePerUnit: 160.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
   { id: 'tx-2024-009', assetName: 'Meta Platforms Inc.', ticker: 'META', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-08-05', quantity: 30, pricePerUnit: 305.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
+    date: '2024-08-05', quantity: 50, pricePerUnit: 305.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
   { id: 'tx-2024-010', assetName: 'Vanguard Total Bond Market', ticker: 'BND', assetType: 'bond', transactionType: 'buy', 
-    date: '2024-09-16', quantity: 200, pricePerUnit: 74.50, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2007 },
+    date: '2024-09-16', quantity: 300, pricePerUnit: 74.50, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2007 },
   { id: 'tx-2024-011', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'sell', 
-    date: '2024-10-21', quantity: 1, pricePerUnit: 68500.00, fees: 343.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+    date: '2024-10-21', quantity: 2, pricePerUnit: 68500.00, fees: 343.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   { id: 'tx-2024-012', assetName: 'SPDR Gold Shares', ticker: 'GLD', assetType: 'commodity', transactionType: 'buy', 
-    date: '2024-11-11', quantity: 80, pricePerUnit: 242.42, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
+    date: '2024-11-11', quantity: 120, pricePerUnit: 242.42, fees: 4.95, currency: 'USD', geography: 'global', inceptionYear: 2004 },
   { id: 'tx-2024-013', assetName: 'Tesla Inc.', ticker: 'TSLA', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-11-25', quantity: 35, pricePerUnit: 198.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
+    date: '2024-11-25', quantity: 50, pricePerUnit: 198.00, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2010 },
   { id: 'tx-2024-014', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-12-09', quantity: 40, pricePerUnit: 168.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
+    date: '2024-12-09', quantity: 60, pricePerUnit: 168.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
   { id: 'tx-2024-015', assetName: 'Berkshire Hathaway', ticker: 'BRK.B', assetType: 'equity', transactionType: 'buy', 
-    date: '2024-12-20', quantity: 25, pricePerUnit: 418.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1996 },
+    date: '2024-12-20', quantity: 40, pricePerUnit: 418.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1996 },
 
   // =========== 2025: Current Year (10 transactions through December) ===========
   { id: 'tx-2025-001', assetName: 'NVIDIA Corp.', ticker: 'NVDA', assetType: 'equity', transactionType: 'buy', 
-    date: '2025-01-13', quantity: 50, pricePerUnit: 138.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
+    date: '2025-01-13', quantity: 80, pricePerUnit: 138.50, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1999 },
   { id: 'tx-2025-002', assetName: 'Alphabet Inc.', ticker: 'GOOGL', assetType: 'equity', transactionType: 'buy', 
-    date: '2025-02-10', quantity: 35, pricePerUnit: 172.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
+    date: '2025-02-10', quantity: 55, pricePerUnit: 172.85, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2004 },
   { id: 'tx-2025-003', assetName: 'Bitcoin', ticker: 'BTC', assetType: 'crypto', transactionType: 'sell', 
-    date: '2025-03-17', quantity: 0.5, pricePerUnit: 82000.00, fees: 213.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
+    date: '2025-03-17', quantity: 1, pricePerUnit: 82000.00, fees: 213.00, currency: 'USD', geography: 'global', inceptionYear: 2009 },
   { id: 'tx-2025-004', assetName: 'Meta Platforms Inc.', ticker: 'META', assetType: 'equity', transactionType: 'buy', 
-    date: '2025-04-14', quantity: 25, pricePerUnit: 368.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
+    date: '2025-04-14', quantity: 40, pricePerUnit: 368.45, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 2012 },
   { id: 'tx-2025-005', assetName: 'iShares Core US Aggregate Bond', ticker: 'AGG', assetType: 'bond', transactionType: 'buy', 
-    date: '2025-05-12', quantity: 150, pricePerUnit: 102.78, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
+    date: '2025-05-12', quantity: 200, pricePerUnit: 102.78, fees: 4.95, currency: 'USD', geography: 'north_america', inceptionYear: 2003 },
   { id: 'tx-2025-006', assetName: 'Amazon.com Inc.', ticker: 'AMZN', assetType: 'equity', transactionType: 'buy', 
-    date: '2025-06-09', quantity: 30, pricePerUnit: 198.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
+    date: '2025-06-09', quantity: 50, pricePerUnit: 198.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1997 },
   { id: 'tx-2025-007', assetName: 'Microsoft Corp.', ticker: 'MSFT', assetType: 'equity', transactionType: 'sell', 
-    date: '2025-08-18', quantity: 75, pricePerUnit: 392.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
+    date: '2025-08-18', quantity: 100, pricePerUnit: 392.75, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1986 },
   { id: 'tx-2025-008', assetName: 'Ethereum', ticker: 'ETH', assetType: 'crypto', transactionType: 'buy', 
-    date: '2025-09-22', quantity: 10, pricePerUnit: 3185.00, fees: 130.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
+    date: '2025-09-22', quantity: 15, pricePerUnit: 3185.00, fees: 130.00, currency: 'USD', geography: 'global', inceptionYear: 2015 },
   { id: 'tx-2025-009', assetName: 'JPMorgan Chase', ticker: 'JPM', assetType: 'equity', transactionType: 'buy', 
-    date: '2025-10-13', quantity: 40, pricePerUnit: 185.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
+    date: '2025-10-13', quantity: 60, pricePerUnit: 185.72, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1968 },
   { id: 'tx-2025-010', assetName: 'Apple Inc.', ticker: 'AAPL', assetType: 'equity', transactionType: 'buy', 
-    date: '2025-12-08', quantity: 50, pricePerUnit: 202.20, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
+    date: '2025-12-08', quantity: 80, pricePerUnit: 202.20, fees: 9.95, currency: 'USD', geography: 'north_america', inceptionYear: 1980 },
 ];
 
 // ============================================================================
-// MONTHLY VALUATIONS - Calibrated for ~12% CAGR with 25 holdings
+// MONTHLY VALUATIONS - Calibrated for ~12% CAGR with 17 holdings
 // ============================================================================
 
 const allMonths: string[] = [];
@@ -275,7 +256,7 @@ for (let year = 2018; year <= 2025; year++) {
 
 /**
  * Price arrays calibrated for realistic ~12% portfolio CAGR
- * 25 Holdings with full asset class coverage
+ * 17 Holdings - tradable assets only (no private/alternative investments)
  */
 const priceData: Record<string, { name: string; prices: number[] }> = {
   // === EQUITIES (10) ===
@@ -366,7 +347,7 @@ const priceData: Record<string, { name: string; prices: number[] }> = {
   'GOOGL': {
     name: 'Alphabet Inc.',
     prices: [
-      // 2018
+      // 2018 (no position yet)
       54.75, 55.85, 51.25, 52.45, 54.85, 56.45, 60.25, 61.15, 59.85, 54.65, 52.85, 51.75,
       // 2019
       52.85, 55.75, 58.75, 59.45, 57.15, 54.15, 60.65, 59.35, 60.75, 62.95, 65.15, 67.05,
@@ -387,7 +368,7 @@ const priceData: Record<string, { name: string; prices: number[] }> = {
   'TSLA': {
     name: 'Tesla Inc.',
     prices: [
-      // 2018
+      // 2018 (no position yet)
       23.45, 22.85, 21.15, 19.85, 18.75, 22.45, 20.15, 19.85, 18.45, 22.75, 23.45, 22.15,
       // 2019
       21.25, 21.45, 18.85, 17.85, 12.85, 14.75, 16.15, 14.85, 16.05, 21.25, 22.15, 27.85,
@@ -408,7 +389,7 @@ const priceData: Record<string, { name: string; prices: number[] }> = {
   'META': {
     name: 'Meta Platforms Inc.',
     prices: [
-      // 2018
+      // 2018 (no position yet)
       178.46, 176.62, 159.79, 169.10, 186.85, 194.32, 174.89, 172.90, 162.98, 153.42, 144.82, 131.09,
       // 2019
       166.69, 161.89, 166.69, 178.28, 177.47, 193.00, 193.99, 182.04, 178.08, 186.12, 195.70, 205.25,
@@ -442,51 +423,51 @@ const priceData: Record<string, { name: string; prices: number[] }> = {
       // 2023
       135.85, 132.42, 128.75, 135.85, 132.42, 138.75, 145.85, 142.42, 148.75, 152.56, 165.42, 162.75,
       // 2024
-      165.85, 168.72, 175.42, 172.85, 178.42, 185.75, 182.42, 178.72, 182.45, 185.72, 192.42, 198.75,
+      158.52, 162.85, 168.42, 172.25, 178.85, 182.42, 175.85, 168.42, 172.85, 178.42, 182.85, 185.72,
       // 2025
-      185.72, 172.42, 178.85, 175.42, 182.75, 188.42, 185.72, 182.42, 185.72, 192.42, 198.75, 205.42
+      188.52, 192.42, 195.85, 192.42, 198.85, 202.42, 198.85, 195.42, 202.85, 208.42, 212.85, 218.42
     ]
   },
   'BRK.B': {
     name: 'Berkshire Hathaway',
     prices: [
       // 2018
-      198.50, 202.45, 198.72, 195.85, 192.42, 188.75, 195.85, 208.72, 212.45, 208.72, 212.45, 198.50,
+      198.50, 200.85, 198.25, 195.42, 192.85, 188.42, 192.85, 205.42, 212.85, 202.42, 198.85, 195.42,
       // 2019
-      202.85, 205.42, 198.75, 205.85, 202.42, 198.75, 205.85, 198.42, 208.75, 212.85, 218.42, 226.75,
+      198.85, 202.42, 205.85, 208.42, 202.85, 198.42, 205.85, 202.42, 198.85, 208.42, 215.85, 225.42,
       // 2020
-      222.85, 218.42, 178.75, 188.85, 185.42, 178.75, 188.85, 205.42, 218.75, 212.85, 225.42, 232.75,
+      222.85, 208.42, 175.85, 182.42, 188.85, 178.42, 182.85, 188.42, 198.85, 205.42, 218.85, 228.42,
       // 2021
-      235.85, 248.42, 255.75, 262.85, 278.42, 275.75, 278.85, 282.42, 278.75, 288.85, 282.42, 292.75,
+      232.85, 242.42, 248.85, 258.42, 268.85, 272.42, 278.85, 282.42, 288.85, 292.75, 278.85, 292.75,
       // 2022
-      302.85, 308.42, 318.75, 305.85, 285.42, 258.00, 268.85, 265.42, 252.75, 268.85, 288.42, 285.75,
+      298.85, 298.42, 318.85, 322.42, 298.85, 268.85, 282.42, 288.85, 272.42, 278.85, 298.42, 302.85,
       // 2023
-      282.85, 280.42, 278.75, 295.85, 302.42, 315.75, 328.85, 325.42, 320.75, 315.85, 328.42, 328.75,
+      308.42, 298.85, 298.42, 318.85, 322.42, 328.85, 348.42, 352.85, 348.42, 342.85, 358.42, 352.85,
       // 2024
-      358.85, 368.72, 378.45, 372.85, 385.42, 395.75, 392.42, 392.42, 405.85, 398.72, 408.45, 418.85,
+      358.42, 368.85, 378.42, 388.85, 398.42, 408.85, 398.42, 388.85, 402.42, 412.85, 418.85, 425.42,
       // 2025
-      422.45, 432.72, 442.85, 448.45, 458.72, 465.45, 472.85, 468.42, 482.75, 492.45, 502.72, 512.45
+      432.85, 438.42, 448.85, 458.42, 468.85, 478.42, 485.85, 492.42, 502.85, 512.42, 522.85, 532.42
     ]
   },
   'LLY': {
     name: 'Eli Lilly',
     prices: [
-      // 2018 (no position)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      // 2019 (position starts Dec)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 130.85,
+      // 2018 (no position yet)
+      85.42, 82.85, 78.42, 82.85, 85.42, 88.85, 92.42, 95.85, 102.42, 108.85, 112.42, 115.85,
+      // 2019
+      118.42, 122.85, 125.42, 128.85, 125.42, 128.85, 132.42, 128.85, 125.42, 128.85, 130.85, 138.85,
       // 2020
-      138.72, 142.45, 128.72, 135.45, 145.72, 158.45, 162.72, 168.50, 165.45, 168.72, 175.45, 182.72,
+      142.42, 135.85, 128.42, 142.85, 148.42, 155.85, 162.42, 168.50, 158.42, 132.85, 142.42, 162.85,
       // 2021
-      188.72, 195.45, 185.72, 182.45, 192.72, 208.45, 222.72, 215.45, 208.72, 222.45, 225.85, 228.72,
+      188.42, 192.85, 182.42, 188.85, 198.42, 215.85, 228.72, 242.85, 232.42, 248.85, 258.42, 268.85,
       // 2022
-      235.45, 222.72, 248.85, 255.45, 268.72, 275.85, 288.45, 272.72, 288.85, 302.45, 312.72, 308.85,
+      258.42, 282.85, 308.42, 288.85, 298.42, 318.85, 328.42, 338.85, 322.42, 355.25, 348.42, 358.85,
       // 2023
-      302.45, 292.72, 325.85, 352.45, 378.72, 368.85, 382.45, 425.72, 418.85, 442.45, 455.72, 448.85,
+      378.42, 402.85, 388.42, 408.85, 442.42, 455.72, 478.42, 502.85, 522.42, 558.85, 582.42, 608.85,
       // 2024
-      545.00, 555.72, 585.85, 575.45, 595.72, 612.45, 605.75, 585.85, 605.45, 625.72, 645.45, 665.85,
+      618.42, 595.72, 628.42, 648.85, 678.42, 708.85, 728.42, 698.85, 748.42, 778.85, 808.42, 838.85,
       // 2025
-      685.85, 702.42, 715.85, 698.42, 725.75, 742.42, 765.85, 785.45, 805.72, 792.85, 815.42, 838.85
+      858.42, 878.85, 908.42, 928.85, 958.42, 988.85, 1008.42, 1028.85, 1058.42, 1088.85, 1108.42, 1138.85
     ]
   },
 
@@ -495,7 +476,7 @@ const priceData: Record<string, { name: string; prices: number[] }> = {
     name: 'Vanguard Total International Stock',
     prices: [
       // 2018
-      56.80, 55.42, 54.85, 55.72, 53.42, 52.25, 53.85, 53.42, 52.85, 48.72, 49.42, 47.85,
+      56.80, 55.42, 53.85, 54.42, 52.85, 51.42, 53.85, 54.42, 52.85, 50.42, 51.85, 48.72,
       // 2019
       50.72, 51.42, 52.85, 53.72, 51.42, 52.25, 52.85, 50.42, 50.85, 52.72, 53.42, 55.25,
       // 2020
@@ -643,181 +624,6 @@ const priceData: Record<string, { name: string; prices: number[] }> = {
       3250, 3225, 3085, 2985, 3242, 3425, 3525, 3350, 3185, 3350, 3525, 3675
     ]
   },
-
-  // === HEDGE FUNDS (2) ===
-  'BWPA': {
-    name: 'Bridgewater Pure Alpha Fund',
-    prices: [
-      // 2018 (position starts June)
-      0, 0, 0, 0, 0, 50000, 50250, 50500, 50750, 51000, 51250, 51500,
-      // 2019
-      51750, 52000, 52250, 52500, 52750, 53000, 53250, 53500, 53750, 54000, 54250, 54500,
-      // 2020
-      54750, 55000, 52500, 53000, 53500, 54000, 54500, 55000, 55500, 56000, 56500, 57000,
-      // 2021
-      57500, 58000, 58500, 59000, 59500, 60000, 60500, 61000, 61500, 62000, 62500, 63000,
-      // 2022
-      63500, 64000, 64500, 65000, 65500, 66000, 66500, 67000, 67500, 68000, 68500, 69000,
-      // 2023
-      69500, 70000, 70500, 71000, 71500, 72000, 72500, 73000, 73500, 74000, 74500, 75000,
-      // 2024
-      75500, 76000, 76500, 77000, 77500, 78000, 78500, 79000, 79500, 80000, 80500, 81000,
-      // 2025
-      81500, 82000, 82500, 83000, 83500, 84000, 84500, 85000, 85500, 86000, 86500, 87000
-    ]
-  },
-  'RIEF': {
-    name: 'Renaissance Institutional Equities',
-    prices: [
-      // 2018-2019 (no position)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      // 2020 (position starts Dec)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 75000,
-      // 2021
-      76000, 77000, 78000, 79000, 80000, 81000, 82000, 83000, 84000, 85000, 86000, 87000,
-      // 2022
-      88000, 89000, 90000, 91000, 92000, 93000, 94000, 95000, 96000, 97000, 98000, 99000,
-      // 2023
-      100000, 101000, 102000, 103000, 104000, 105000, 106000, 107000, 108000, 109000, 110000, 111000,
-      // 2024
-      112000, 113000, 114000, 115000, 116000, 117000, 118000, 119000, 120000, 121000, 122000, 123000,
-      // 2025
-      124000, 125000, 126000, 127000, 128000, 129000, 130000, 131000, 132000, 133000, 134000, 135000
-    ]
-  },
-
-  // === PRIVATE EQUITY (1) ===
-  'SCGE': {
-    name: 'Sequoia Capital Global Equities',
-    prices: [
-      // 2018 (no position)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      // 2019 (position starts July)
-      0, 0, 0, 0, 0, 0, 100000, 101500, 103000, 104500, 106000, 107500,
-      // 2020
-      109000, 110500, 95000, 100000, 105000, 110000, 115000, 120000, 125000, 130000, 135000, 140000,
-      // 2021
-      145000, 150000, 155000, 160000, 165000, 170000, 175000, 180000, 185000, 190000, 195000, 200000,
-      // 2022
-      195000, 190000, 185000, 180000, 175000, 170000, 175000, 170000, 165000, 170000, 175000, 180000,
-      // 2023
-      185000, 190000, 195000, 200000, 205000, 210000, 215000, 220000, 225000, 230000, 235000, 240000,
-      // 2024
-      245000, 250000, 255000, 260000, 265000, 270000, 275000, 280000, 285000, 290000, 295000, 300000,
-      // 2025
-      305000, 310000, 315000, 320000, 325000, 330000, 335000, 340000, 345000, 350000, 355000, 360000
-    ]
-  },
-
-  // === PRIVATE DEBT (2) ===
-  'KPFC': {
-    name: 'KKR Private Credit Fund',
-    prices: [
-      // 2018 (no position)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      // 2019 (position starts Feb)
-      0, 75000, 75500, 76000, 76500, 77000, 77500, 78000, 78500, 79000, 79500, 80000,
-      // 2020
-      80500, 81000, 78000, 79000, 80000, 81000, 82000, 83000, 84000, 85000, 86000, 87000,
-      // 2021
-      88000, 89000, 90000, 91000, 92000, 93000, 94000, 95000, 96000, 97000, 98000, 99000,
-      // 2022
-      100000, 100500, 101000, 101500, 102000, 102500, 103000, 103500, 104000, 104500, 105000, 105500,
-      // 2023
-      106000, 106500, 107000, 107500, 108000, 108500, 109000, 109500, 110000, 110500, 111000, 111500,
-      // 2024
-      112000, 112500, 113000, 113500, 114000, 114500, 115000, 115500, 116000, 116500, 117000, 117500,
-      // 2025
-      118000, 118500, 119000, 119500, 120000, 120500, 121000, 121500, 122000, 122500, 123000, 123500
-    ]
-  },
-  'OCPC': {
-    name: 'Oaktree Capital Private Credit',
-    prices: [
-      // 2018-2019 (no position)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      // 2020 (position starts June)
-      0, 0, 0, 0, 0, 50000, 50250, 50500, 50750, 51000, 51250, 51500,
-      // 2021
-      51750, 52000, 52250, 52500, 52750, 53000, 53250, 53500, 53750, 54000, 54250, 54500,
-      // 2022
-      54750, 55000, 55250, 55500, 55750, 56000, 56250, 56500, 56750, 57000, 57250, 57500,
-      // 2023
-      57750, 58000, 58250, 58500, 58750, 59000, 59250, 59500, 59750, 60000, 60250, 60500,
-      // 2024
-      60750, 61000, 61250, 61500, 61750, 62000, 62250, 62500, 62750, 63000, 63250, 63500,
-      // 2025
-      63750, 64000, 64250, 64500, 64750, 65000, 65250, 65500, 65750, 66000, 66250, 66500
-    ]
-  },
-
-  // === REAL ESTATE (2) ===
-  'BREP9': {
-    name: 'Blackstone Real Estate Partners IX',
-    prices: [
-      // 2018 (position starts Oct)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 100000, 101000, 102000,
-      // 2019
-      103000, 104000, 105000, 106000, 107000, 108000, 109000, 110000, 111000, 112000, 113000, 114000,
-      // 2020
-      115000, 116000, 105000, 108000, 111000, 114000, 117000, 120000, 123000, 126000, 129000, 132000,
-      // 2021
-      135000, 138000, 141000, 144000, 147000, 150000, 153000, 156000, 159000, 162000, 165000, 168000,
-      // 2022
-      165000, 162000, 159000, 156000, 153000, 150000, 147000, 144000, 141000, 138000, 135000, 132000,
-      // 2023
-      129000, 126000, 123000, 120000, 117000, 115000, 116000, 117000, 118000, 119000, 120000, 121000,
-      // 2024
-      122000, 123000, 124000, 125000, 126000, 127000, 128000, 129000, 130000, 131000, 132000, 133000,
-      // 2025
-      134000, 135000, 136000, 137000, 138000, 139000, 140000, 141000, 142000, 143000, 144000, 145000
-    ]
-  },
-  'CREP5': {
-    name: 'Carlyle Real Estate Partners V',
-    prices: [
-      // 2018-2019 (no position)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      // 2020 (position starts Nov)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 75000, 76000,
-      // 2021
-      77000, 78000, 79000, 80000, 81000, 82000, 83000, 84000, 85000, 86000, 87000, 88000,
-      // 2022
-      87000, 86000, 85000, 84000, 83000, 82000, 81000, 80000, 79000, 78000, 77000, 76000,
-      // 2023
-      77000, 78000, 79000, 80000, 81000, 82000, 83000, 84000, 85000, 86000, 87000, 88000,
-      // 2024
-      89000, 90000, 91000, 92000, 93000, 94000, 95000, 96000, 97000, 98000, 99000, 100000,
-      // 2025
-      101000, 102000, 103000, 104000, 105000, 106000, 107000, 108000, 109000, 110000, 111000, 112000
-    ]
-  },
-
-  // === ALTERNATIVE (1) ===
-  'AQMIX': {
-    name: 'AQR Managed Futures Strategy',
-    prices: [
-      // 2018 (no position)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      // 2019 (position starts Nov)
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8.45, 8.52,
-      // 2020
-      8.62, 8.75, 9.25, 9.15, 9.05, 8.95, 8.85, 8.72, 8.65, 8.55, 8.45, 8.35,
-      // 2021
-      8.25, 8.15, 8.25, 8.35, 8.45, 8.55, 8.65, 8.75, 8.85, 8.95, 9.05, 9.15,
-      // 2022
-      9.45, 9.85, 10.25, 10.65, 11.05, 11.45, 11.85, 12.25, 12.65, 13.05, 13.45, 11.85,
-      // 2023
-      11.95, 11.85, 11.75, 11.65, 11.55, 11.45, 11.35, 11.25, 11.15, 11.05, 11.15, 11.25,
-      // 2024
-      11.35, 11.45, 11.55, 11.65, 11.75, 11.85, 11.95, 12.05, 12.15, 12.25, 12.35, 12.45,
-      // 2025
-      12.55, 12.65, 12.75, 12.85, 12.95, 13.05, 13.15, 13.25, 13.35, 13.45, 13.55, 13.68
-    ]
-  },
 };
 
 // Generate valuations from the price data
@@ -858,7 +664,7 @@ export const sampleValuations: MonthlyValuation[] = generateValuations();
  * HOLDINGS COUNT VALIDATION
  * =========================
  * 
- * Total: 25 distinct holdings
+ * Total: 17 distinct tradable holdings
  * 
  * By Asset Class:
  * - Equity (10): AAPL, MSFT, NVDA, AMZN, GOOGL, TSLA, META, JPM, BRK.B, LLY
@@ -866,17 +672,19 @@ export const sampleValuations: MonthlyValuation[] = generateValuations();
  * - Bond (2): AGG, BND
  * - Commodity (1): GLD
  * - Crypto (2): BTC, ETH
- * - Hedge Fund (2): BWPA, RIEF
- * - Private Equity (1): SCGE
- * - Private Debt (2): KPFC, OCPC
- * - Real Estate (2): BREP9, CREP5
- * - Alternative (1): AQMIX
+ * 
+ * REMOVED (non-tradable/alternative):
+ * - Hedge Fund: BWPA, RIEF
+ * - Private Equity: SCGE
+ * - Private Debt: KPFC, OCPC
+ * - Real Estate: BREP9, CREP5
+ * - Alternative: AQMIX
  * 
  * Transaction Counts by Year:
- * - 2018: 12 transactions ✓
- * - 2019: 14 transactions ✓
- * - 2020: 17 transactions ✓
- * - 2021: 15 transactions ✓
+ * - 2018: 10 transactions ✓
+ * - 2019: 12 transactions ✓
+ * - 2020: 15 transactions ✓
+ * - 2021: 14 transactions ✓
  * - 2022: 11 transactions ✓
  * - 2023: 13 transactions ✓
  * - 2024: 15 transactions ✓
