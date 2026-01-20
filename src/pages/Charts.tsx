@@ -5,6 +5,10 @@ import {
   RefreshCw, 
   Bookmark,
   Database,
+  TrendingUp,
+  TrendingDown,
+  Percent,
+  PieChart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePortfolio } from '@/context/PortfolioContext';
@@ -15,7 +19,7 @@ import {
 } from '@/types/chartBuilder';
 import { calculateChartData, ChartResult } from '@/lib/chartCalculations';
 import { ChartBuilderPanel } from '@/components/charts/ChartBuilderPanel';
-import { ChartCanvas } from '@/components/charts/ChartCanvas';
+import { PowerBIChartDashboard } from '@/components/charts/PowerBIChartDashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,7 +30,7 @@ import {
 import { toast } from 'sonner';
 
 export default function Charts() {
-  const { transactions, valuations, settings } = usePortfolio();
+  const { transactions, valuations, settings, performanceMetrics, riskMetrics } = usePortfolio();
   const isMobile = useIsMobile();
   
   const [state, setState] = useState<ChartBuilderState>(getDefaultChartState);
@@ -124,6 +128,8 @@ export default function Charts() {
     />
   );
   
+  const hasData = transactions.length > 0 || valuations.length > 0;
+  
   return (
     <>
       <Helmet>
@@ -131,16 +137,18 @@ export default function Charts() {
       </Helmet>
       
       <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
-        {/* Toolbar - matching Lab style */}
-        <div className="border-b border-border/50 bg-card px-4 py-2 flex items-center justify-between shrink-0">
+        {/* Header Bar - Power BI style with yellow accent */}
+        <div className="border-b border-border/50 bg-gradient-to-r from-[#F2C811]/10 via-card to-card px-4 py-2 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium tracking-wide">Charts</span>
+              <div className="p-1.5 rounded bg-[#F2C811]">
+                <BarChart3 className="h-4 w-4 text-black" />
+              </div>
+              <span className="text-sm font-semibold tracking-wide">Analytics Dashboard</span>
             </div>
             <Badge 
-              variant={availableAssets.length > 0 ? "default" : "secondary"} 
-              className="text-[10px] gap-1"
+              variant="outline" 
+              className="text-[10px] gap-1 border-[#F2C811]/30 text-[#F2C811]"
             >
               <Database className="h-3 w-3" />
               {availableAssets.length} assets
@@ -151,7 +159,7 @@ export default function Charts() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 text-xs"
+              className="h-8 text-xs border-border/50 hover:border-[#F2C811]/50"
               onClick={handleSaveView}
             >
               <Bookmark className="h-3.5 w-3.5 mr-1.5" />
@@ -160,7 +168,7 @@ export default function Charts() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 text-xs"
+              className="h-8 text-xs border-border/50 hover:border-[#F2C811]/50"
               onClick={handleReset}
             >
               <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
@@ -178,7 +186,7 @@ export default function Charts() {
                   <Button
                     variant="default"
                     size="sm"
-                    className="fixed bottom-20 left-4 z-50 shadow-lg"
+                    className="fixed bottom-20 left-4 z-50 shadow-lg bg-[#F2C811] hover:bg-[#F2C811]/90 text-black"
                   >
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Builder
@@ -189,11 +197,13 @@ export default function Charts() {
                 </SheetContent>
               </Sheet>
               
-              <div className="flex-1 p-4">
-                <ChartCanvas
-                  result={result}
-                  state={state}
-                  isCalculating={isCalculating}
+              <div className="flex-1 p-4 overflow-auto">
+                <PowerBIChartDashboard 
+                  transactions={transactions}
+                  valuations={valuations}
+                  performanceMetrics={performanceMetrics}
+                  riskMetrics={riskMetrics}
+                  availableAssets={availableAssets}
                 />
               </div>
             </>
@@ -201,8 +211,8 @@ export default function Charts() {
             <>
               {/* Left Panel - Compact Builder */}
               <div className="w-64 border-r border-border/50 bg-card flex flex-col shrink-0">
-                <div className="px-3 py-2.5 border-b border-border/30">
-                  <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="px-3 py-2.5 border-b border-border/30 bg-[#F2C811]/5">
+                  <h2 className="text-[10px] font-semibold uppercase tracking-wider text-[#F2C811]">
                     Chart Builder
                   </h2>
                 </div>
@@ -211,19 +221,15 @@ export default function Charts() {
                 </div>
               </div>
               
-              {/* Main Panel - Chart Canvas (dominant) */}
-              <div className="flex-1 flex flex-col min-w-0 p-4 bg-background">
-                {/* Canvas container with Lab-style styling */}
-                <div className="flex-1 relative rounded-xl border border-border/40 bg-card overflow-hidden shadow-[0_0_60px_-15px_hsl(var(--primary)/0.15)]">
-                  {/* Chart content */}
-                  <div className="relative z-10 h-full p-4">
-                    <ChartCanvas
-                      result={result}
-                      state={state}
-                      isCalculating={isCalculating}
-                    />
-                  </div>
-                </div>
+              {/* Main Panel - Power BI Dashboard Style */}
+              <div className="flex-1 flex flex-col min-w-0 p-4 bg-[#F3F2F1] dark:bg-background overflow-auto">
+                <PowerBIChartDashboard 
+                  transactions={transactions}
+                  valuations={valuations}
+                  performanceMetrics={performanceMetrics}
+                  riskMetrics={riskMetrics}
+                  availableAssets={availableAssets}
+                />
               </div>
             </>
           )}
