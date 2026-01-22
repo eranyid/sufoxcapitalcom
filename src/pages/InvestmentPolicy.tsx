@@ -866,16 +866,20 @@ export default function InvestmentPolicy() {
               {isLoadingPdf ? (
                 <div className="flex flex-col items-center gap-4">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                  <p className="text-muted-foreground">Loading PDF...</p>
+                  <p className="text-muted-foreground">Loading PDF (42MB - please wait)...</p>
                 </div>
               ) : prospectusBlob ? (
-                <embed
-                  src={prospectusBlob}
-                  type="application/pdf"
-                  className="w-full h-full"
+                <iframe
+                  src={`${prospectusBlob}#toolbar=1&navpanes=1`}
+                  className="w-full h-full border-0"
                   title="Prospectus PDF"
                 />
-              ) : null}
+              ) : (
+                <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                  <FileText className="h-12 w-12" />
+                  <p>PDF failed to load</p>
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
