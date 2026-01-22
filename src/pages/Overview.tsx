@@ -180,12 +180,12 @@ export default function Overview() {
         {/* Header - Mobile */}
         <div className="sm:hidden flex items-center justify-end gap-2 py-1">
           <FxModeToggle />
-          <ProspectusButton className="h-11 min-w-[44px] px-3" />
+          <ProspectusButton className="h-10 px-4 rounded-full" />
           <Button 
             onClick={() => navigate('/reports')} 
             variant="outline" 
             size="sm" 
-            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 min-w-[44px] px-3"
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-10 px-4 rounded-full"
           >
             <FileText className="h-4 w-4" />
             <span>Report</span>
