@@ -10,9 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2, Upload, X } from 'lucide-react';
+import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2, Upload, X, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface GeographicLimit {
   min: number;
@@ -81,7 +82,9 @@ export default function InvestmentPolicy() {
   const [isUploadingProspectus, setIsUploadingProspectus] = useState(false);
   const [isProspectusOpen, setIsProspectusOpen] = useState(false);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const [isDeletingProspectus, setIsDeletingProspectus] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -197,6 +200,88 @@ export default function InvestmentPolicy() {
       setIsProspectusOpen(false);
     } finally {
       setIsLoadingPdf(false);
+    }
+  };
+
+  const handleDeleteProspectus = async () => {
+    if (!user || !prospectusPath) return;
+    
+    setIsDeletingProspectus(true);
+    try {
+      const { error } = await supabase.storage
+        .from('policy-documents')
+        .remove([prospectusPath]);
+      
+      if (error) throw error;
+      
+      // Cleanup
+      if (prospectusBlob) {
+        URL.revokeObjectURL(prospectusBlob);
+      }
+      setProspectusPath(null);
+      setProspectusBlob(null);
+      setIsProspectusOpen(false);
+      toast.success('Prospectus deleted');
+    } catch (error) {
+      console.error('Error deleting prospectus:', error);
+      toast.error('Failed to delete prospectus');
+    } finally {
+      setIsDeletingProspectus(false);
+    }
+  };
+
+  const handleReplaceProspectus = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file');
+      return;
+    }
+
+    setIsLoadingPdf(true);
+    try {
+      // Delete existing prospectus
+      if (prospectusPath) {
+        await supabase.storage
+          .from('policy-documents')
+          .remove([prospectusPath]);
+      }
+
+      // Upload new file
+      const fileName = `prospectus_${Date.now()}.pdf`;
+      const { error } = await supabase.storage
+        .from('policy-documents')
+        .upload(`${user.id}/${fileName}`, file);
+
+      if (error) throw error;
+
+      const newPath = `${user.id}/${fileName}`;
+      setProspectusPath(newPath);
+
+      // Download and display new PDF
+      const { data, error: downloadError } = await supabase.storage
+        .from('policy-documents')
+        .download(newPath);
+      
+      if (downloadError) throw downloadError;
+
+      // Revoke old blob URL
+      if (prospectusBlob) {
+        URL.revokeObjectURL(prospectusBlob);
+      }
+
+      const blobUrl = URL.createObjectURL(data);
+      setProspectusBlob(blobUrl);
+      toast.success('Prospectus replaced successfully');
+    } catch (error) {
+      console.error('Error replacing prospectus:', error);
+      toast.error('Failed to replace prospectus');
+    } finally {
+      setIsLoadingPdf(false);
+      if (replaceFileInputRef.current) {
+        replaceFileInputRef.current.value = '';
+      }
     }
   };
 
@@ -708,14 +793,74 @@ export default function InvestmentPolicy() {
           <div className="relative w-full h-full flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-border bg-background">
               <h2 className="text-lg font-semibold text-primary">Prospectus</h2>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsProspectusOpen(false)}
-                className="h-10 w-10 rounded-full border-primary/50 hover:bg-primary/10"
-              >
-                <X className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Hidden file input for replace */}
+                <input
+                  type="file"
+                  ref={replaceFileInputRef}
+                  accept=".pdf"
+                  onChange={handleReplaceProspectus}
+                  className="hidden"
+                />
+                
+                {/* Replace button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => replaceFileInputRef.current?.click()}
+                  disabled={isLoadingPdf}
+                  className="border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Replace
+                </Button>
+                
+                {/* Delete button with confirmation */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isDeletingProspectus}
+                      className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                    >
+                      {isDeletingProspectus ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 mr-2" />
+                      )}
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Prospectus?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. The prospectus file will be permanently deleted.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteProspectus}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                
+                {/* Close button */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsProspectusOpen(false)}
+                  className="h-10 w-10 rounded-full border-primary/50 hover:bg-primary/10"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
             <div className="flex-1 w-full flex items-center justify-center bg-muted/30">
               {isLoadingPdf ? (
