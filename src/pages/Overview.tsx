@@ -16,6 +16,7 @@ import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
 import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
 import { StaggeredContainer } from '@/components/StaggeredContainer';
+import { ProspectusButton } from '@/components/ProspectusButton';
 
 
 import { computeFactorModel } from '@/lib/factorModel';
@@ -163,6 +164,7 @@ export default function Overview() {
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <FxModeToggle />
+            <ProspectusButton className="h-7 px-2" />
             <Button 
               onClick={() => navigate('/reports')} 
               variant="outline" 
@@ -183,6 +185,7 @@ export default function Overview() {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <FxModeToggle />
+              <ProspectusButton className="h-11 min-w-[44px] px-3" />
               <Button 
                 onClick={() => navigate('/reports')} 
                 variant="outline" 
