@@ -178,25 +178,18 @@ export default function Overview() {
         </div>
 
         {/* Header - Mobile */}
-        <div className="sm:hidden flex flex-col gap-2 py-1">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <h1 className="terminal-label text-sm">Portfolio Overview</h1>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <FxModeToggle />
-              <ProspectusButton className="h-11 min-w-[44px] px-3" />
-              <Button 
-                onClick={() => navigate('/reports')} 
-                variant="outline" 
-                size="sm" 
-                className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 min-w-[44px] px-3"
-              >
-                <FileText className="h-4 w-4" />
-                <span>Report</span>
-              </Button>
-            </div>
-          </div>
+        <div className="sm:hidden flex items-center justify-end gap-2 py-1">
+          <FxModeToggle />
+          <ProspectusButton className="h-11 min-w-[44px] px-3" />
+          <Button 
+            onClick={() => navigate('/reports')} 
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-11 min-w-[44px] px-3"
+          >
+            <FileText className="h-4 w-4" />
+            <span>Report</span>
+          </Button>
         </div>
 
         {/* Group 1: Total Portfolio Value (NAV = Cash + Holdings) - Always full width */}
