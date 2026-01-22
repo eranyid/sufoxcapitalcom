@@ -862,18 +862,34 @@ export default function InvestmentPolicy() {
                 </Button>
               </div>
             </div>
-            <div className="flex-1 w-full flex items-center justify-center bg-muted/30">
+            <div className="flex-1 w-full flex items-center justify-center bg-muted/30 overflow-hidden">
               {isLoadingPdf ? (
                 <div className="flex flex-col items-center gap-4">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
                   <p className="text-muted-foreground">Loading PDF (42MB - please wait)...</p>
                 </div>
               ) : prospectusBlob ? (
-                <iframe
-                  src={`${prospectusBlob}#toolbar=1&navpanes=1`}
-                  className="w-full h-full border-0"
+                <object
+                  data={prospectusBlob}
+                  type="application/pdf"
+                  className="w-full h-full"
                   title="Prospectus PDF"
-                />
+                >
+                  <div className="flex flex-col items-center gap-4 p-8">
+                    <FileText className="h-16 w-16 text-muted-foreground" />
+                    <p className="text-muted-foreground text-center">
+                      Your browser cannot display this PDF inline.
+                    </p>
+                    <a
+                      href={prospectusBlob}
+                      download="prospectus.pdf"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Download PDF
+                    </a>
+                  </div>
+                </object>
               ) : (
                 <div className="flex flex-col items-center gap-4 text-muted-foreground">
                   <FileText className="h-12 w-12" />
