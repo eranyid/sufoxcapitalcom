@@ -10,8 +10,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2, Upload, ExternalLink } from 'lucide-react';
+import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface GeographicLimit {
   min: number;
@@ -77,6 +78,7 @@ export default function InvestmentPolicy() {
   const [hasExistingPolicy, setHasExistingPolicy] = useState(false);
   const [prospectusUrl, setProspectusUrl] = useState<string | null>(null);
   const [isUploadingProspectus, setIsUploadingProspectus] = useState(false);
+  const [isProspectusOpen, setIsProspectusOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -150,7 +152,7 @@ export default function InvestmentPolicy() {
 
   const openProspectus = () => {
     if (prospectusUrl) {
-      window.open(prospectusUrl, '_blank');
+      setIsProspectusOpen(true);
     }
   };
 
@@ -294,7 +296,7 @@ export default function InvestmentPolicy() {
               onClick={openProspectus}
               className="border-primary/50 text-primary hover:bg-primary/10"
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
+              <FileText className="h-4 w-4 mr-2" />
               Prospectus
             </Button>
           ) : (
@@ -655,6 +657,34 @@ export default function InvestmentPolicy() {
           Save Investment Policy
         </Button>
       </div>
+
+      {/* Prospectus PDF Viewer Modal */}
+      <Dialog open={isProspectusOpen} onOpenChange={setIsProspectusOpen}>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden">
+          <div className="relative w-full h-full flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-border bg-background">
+              <h2 className="text-lg font-semibold text-primary">Prospectus</h2>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsProspectusOpen(false)}
+                className="h-10 w-10 rounded-full border-primary/50 hover:bg-primary/10"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex-1 w-full">
+              {prospectusUrl && (
+                <iframe
+                  src={prospectusUrl}
+                  className="w-full h-full border-0"
+                  title="Prospectus PDF"
+                />
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
