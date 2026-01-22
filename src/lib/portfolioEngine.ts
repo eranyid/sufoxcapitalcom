@@ -64,6 +64,9 @@ export interface RingSegment {
   color: string;
   ticker?: string;
   plPercent?: number;
+  assetType?: string;
+  geography?: string;
+  sector?: string;
 }
 
 export interface RiskReturnData {
@@ -365,7 +368,7 @@ function buildRingData(
     color: SECTOR_COLORS[idx % SECTOR_COLORS.length]
   }));
   
-  // Position rings
+  // Position rings - include hierarchy metadata for sunburst grouping
   const positionRings: RingSegment[] = holdings.map((h, idx) => ({
     id: h.ticker,
     name: h.name,
@@ -373,7 +376,10 @@ function buildRingData(
     value: h.currentValue,
     weight: h.weight,
     plPercent: h.plPercent,
-    color: POSITION_COLORS[idx % POSITION_COLORS.length]
+    color: POSITION_COLORS[idx % POSITION_COLORS.length],
+    assetType: h.assetType,
+    geography: h.geography,
+    sector: h.sector
   }));
   
   return { assetClassRings, geographyRings, sectorRings, positionRings };
