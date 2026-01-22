@@ -155,18 +155,32 @@ export default function InvestmentPolicy() {
   };
 
   const openProspectus = async () => {
-    if (!prospectusPath) return;
+    if (!prospectusPath) {
+      toast.error('No prospectus found');
+      return;
+    }
     
-    setIsLoadingPdf(true);
     setIsProspectusOpen(true);
+    setIsLoadingPdf(true);
     
     try {
+      console.log('Downloading prospectus from path:', prospectusPath);
+      
       // Download PDF as blob to avoid external URL navigation
       const { data, error } = await supabase.storage
         .from('policy-documents')
         .download(prospectusPath);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Download error:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('No data received');
+      }
+      
+      console.log('Download successful, blob size:', data.size);
       
       // Revoke old blob URL if exists
       if (prospectusBlob) {
@@ -175,6 +189,7 @@ export default function InvestmentPolicy() {
       
       // Create local blob URL
       const blobUrl = URL.createObjectURL(data);
+      console.log('Blob URL created:', blobUrl);
       setProspectusBlob(blobUrl);
     } catch (error) {
       console.error('Error loading prospectus:', error);
