@@ -76,9 +76,11 @@ export default function InvestmentPolicy() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasExistingPolicy, setHasExistingPolicy] = useState(false);
-  const [prospectusUrl, setProspectusUrl] = useState<string | null>(null);
+  const [prospectusPath, setProspectusPath] = useState<string | null>(null);
+  const [prospectusBlob, setProspectusBlob] = useState<string | null>(null);
   const [isUploadingProspectus, setIsUploadingProspectus] = useState(false);
   const [isProspectusOpen, setIsProspectusOpen] = useState(false);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -88,6 +90,15 @@ export default function InvestmentPolicy() {
     }
   }, [user]);
 
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (prospectusBlob) {
+        URL.revokeObjectURL(prospectusBlob);
+      }
+    };
+  }, [prospectusBlob]);
+
   const loadProspectus = async () => {
     if (!user) return;
     
@@ -96,10 +107,7 @@ export default function InvestmentPolicy() {
       .list(user.id, { limit: 1, search: 'prospectus' });
     
     if (data && data.length > 0) {
-      const { data: urlData } = supabase.storage
-        .from('policy-documents')
-        .getPublicUrl(`${user.id}/${data[0].name}`);
-      setProspectusUrl(urlData.publicUrl);
+      setProspectusPath(`${user.id}/${data[0].name}`);
     }
   };
 
@@ -133,11 +141,7 @@ export default function InvestmentPolicy() {
 
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage
-        .from('policy-documents')
-        .getPublicUrl(`${user.id}/${fileName}`);
-      
-      setProspectusUrl(urlData.publicUrl);
+      setProspectusPath(`${user.id}/${fileName}`);
       toast.success('Prospectus uploaded successfully');
     } catch (error) {
       console.error('Error uploading prospectus:', error);
@@ -150,9 +154,34 @@ export default function InvestmentPolicy() {
     }
   };
 
-  const openProspectus = () => {
-    if (prospectusUrl) {
-      setIsProspectusOpen(true);
+  const openProspectus = async () => {
+    if (!prospectusPath) return;
+    
+    setIsLoadingPdf(true);
+    setIsProspectusOpen(true);
+    
+    try {
+      // Download PDF as blob to avoid external URL navigation
+      const { data, error } = await supabase.storage
+        .from('policy-documents')
+        .download(prospectusPath);
+      
+      if (error) throw error;
+      
+      // Revoke old blob URL if exists
+      if (prospectusBlob) {
+        URL.revokeObjectURL(prospectusBlob);
+      }
+      
+      // Create local blob URL
+      const blobUrl = URL.createObjectURL(data);
+      setProspectusBlob(blobUrl);
+    } catch (error) {
+      console.error('Error loading prospectus:', error);
+      toast.error('Failed to load prospectus');
+      setIsProspectusOpen(false);
+    } finally {
+      setIsLoadingPdf(false);
     }
   };
 
@@ -290,7 +319,7 @@ export default function InvestmentPolicy() {
             onChange={handleProspectusUpload}
             className="hidden"
           />
-          {prospectusUrl ? (
+          {prospectusPath ? (
             <Button
               variant="outline"
               onClick={openProspectus}
@@ -673,14 +702,20 @@ export default function InvestmentPolicy() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <div className="flex-1 w-full">
-              {prospectusUrl && (
-                <iframe
-                  src={prospectusUrl}
-                  className="w-full h-full border-0"
+            <div className="flex-1 w-full flex items-center justify-center bg-muted/30">
+              {isLoadingPdf ? (
+                <div className="flex flex-col items-center gap-4">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <p className="text-muted-foreground">Loading PDF...</p>
+                </div>
+              ) : prospectusBlob ? (
+                <embed
+                  src={prospectusBlob}
+                  type="application/pdf"
+                  className="w-full h-full"
                   title="Prospectus PDF"
                 />
-              )}
+              ) : null}
             </div>
           </div>
         </DialogContent>
