@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2 } from 'lucide-react';
+import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2, Upload, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GeographicLimit {
@@ -75,12 +75,84 @@ export default function InvestmentPolicy() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasExistingPolicy, setHasExistingPolicy] = useState(false);
+  const [prospectusUrl, setProspectusUrl] = useState<string | null>(null);
+  const [isUploadingProspectus, setIsUploadingProspectus] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
       loadPolicy();
+      loadProspectus();
     }
   }, [user]);
+
+  const loadProspectus = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase.storage
+      .from('policy-documents')
+      .list(user.id, { limit: 1, search: 'prospectus' });
+    
+    if (data && data.length > 0) {
+      const { data: urlData } = supabase.storage
+        .from('policy-documents')
+        .getPublicUrl(`${user.id}/${data[0].name}`);
+      setProspectusUrl(urlData.publicUrl);
+    }
+  };
+
+  const handleProspectusUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file');
+      return;
+    }
+
+    setIsUploadingProspectus(true);
+    try {
+      // Delete existing prospectus if any
+      const { data: existingFiles } = await supabase.storage
+        .from('policy-documents')
+        .list(user.id, { search: 'prospectus' });
+      
+      if (existingFiles && existingFiles.length > 0) {
+        await supabase.storage
+          .from('policy-documents')
+          .remove(existingFiles.map(f => `${user.id}/${f.name}`));
+      }
+
+      // Upload new file
+      const fileName = `prospectus_${Date.now()}.pdf`;
+      const { error } = await supabase.storage
+        .from('policy-documents')
+        .upload(`${user.id}/${fileName}`, file);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('policy-documents')
+        .getPublicUrl(`${user.id}/${fileName}`);
+      
+      setProspectusUrl(urlData.publicUrl);
+      toast.success('Prospectus uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading prospectus:', error);
+      toast.error('Failed to upload prospectus');
+    } finally {
+      setIsUploadingProspectus(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const openProspectus = () => {
+    if (prospectusUrl) {
+      window.open(prospectusUrl, '_blank');
+    }
+  };
 
   const loadPolicy = async () => {
     if (!user) return;
@@ -208,10 +280,43 @@ export default function InvestmentPolicy() {
           <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Investment Policy</h1>
           <p className="text-muted-foreground text-sm mt-1 font-mono">Define your strategy, constraints & compliance rules</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="gradient-gold text-primary-foreground">
-          {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          Save Policy
-        </Button>
+        <div className="flex items-center gap-3">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".pdf"
+            onChange={handleProspectusUpload}
+            className="hidden"
+          />
+          {prospectusUrl ? (
+            <Button
+              variant="outline"
+              onClick={openProspectus}
+              className="border-primary/50 text-primary hover:bg-primary/10"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Prospectus
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingProspectus}
+              className="border-primary/50 text-primary hover:bg-primary/10"
+            >
+              {isUploadingProspectus ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              Upload Prospectus
+            </Button>
+          )}
+          <Button onClick={handleSave} disabled={isSaving} className="gradient-gold text-primary-foreground">
+            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Save Policy
+          </Button>
+        </div>
       </div>
 
       {/* Strategy & Philosophy */}
