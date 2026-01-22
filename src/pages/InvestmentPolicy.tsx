@@ -10,10 +10,16 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2, Upload, X, Trash2, RefreshCw } from 'lucide-react';
+import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2, Upload, X, Trash2, RefreshCw, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface GeographicLimit {
   min: number;
@@ -83,8 +89,22 @@ export default function InvestmentPolicy() {
   const [isProspectusOpen, setIsProspectusOpen] = useState(false);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const [isDeletingProspectus, setIsDeletingProspectus] = useState(false);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pdfScale, setPdfScale] = useState(1.0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setCurrentPage(1);
+  };
+
+  const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, numPages));
+  const zoomIn = () => setPdfScale(prev => Math.min(prev + 0.25, 3));
+  const zoomOut = () => setPdfScale(prev => Math.max(prev - 0.25, 0.5));
 
   useEffect(() => {
     if (user) {
@@ -862,38 +882,76 @@ export default function InvestmentPolicy() {
                 </Button>
               </div>
             </div>
-            <div className="flex-1 w-full flex items-center justify-center bg-muted/30 overflow-hidden">
+            {/* PDF Toolbar */}
+            <div className="flex items-center justify-center gap-4 py-2 border-b border-border bg-muted/50">
+              <Button variant="ghost" size="sm" onClick={zoomOut} disabled={pdfScale <= 0.5}>
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">{Math.round(pdfScale * 100)}%</span>
+              <Button variant="ghost" size="sm" onClick={zoomIn} disabled={pdfScale >= 3}>
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <Button variant="ghost" size="sm" onClick={goToPrevPage} disabled={currentPage <= 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {currentPage} / {numPages || '?'}
+              </span>
+              <Button variant="ghost" size="sm" onClick={goToNextPage} disabled={currentPage >= numPages}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <a
+                href={prospectusBlob || '#'}
+                download="prospectus.pdf"
+                className={!prospectusBlob ? 'pointer-events-none opacity-50' : ''}
+              >
+                <Button variant="ghost" size="sm" disabled={!prospectusBlob}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </a>
+            </div>
+            
+            {/* PDF Content */}
+            <div ref={pdfContainerRef} className="flex-1 w-full overflow-auto bg-muted/30 flex justify-center py-4">
               {isLoadingPdf ? (
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4 pt-20">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
                   <p className="text-muted-foreground">Loading PDF (42MB - please wait)...</p>
                 </div>
               ) : prospectusBlob ? (
-                <object
-                  data={prospectusBlob}
-                  type="application/pdf"
-                  className="w-full h-full"
-                  title="Prospectus PDF"
+                <Document
+                  file={prospectusBlob}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  loading={
+                    <div className="flex flex-col items-center gap-4 pt-20">
+                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                      <p className="text-muted-foreground">Rendering PDF...</p>
+                    </div>
+                  }
+                  error={
+                    <div className="flex flex-col items-center gap-4 text-muted-foreground pt-20">
+                      <FileText className="h-12 w-12" />
+                      <p>Failed to load PDF</p>
+                    </div>
+                  }
                 >
-                  <div className="flex flex-col items-center gap-4 p-8">
-                    <FileText className="h-16 w-16 text-muted-foreground" />
-                    <p className="text-muted-foreground text-center">
-                      Your browser cannot display this PDF inline.
-                    </p>
-                    <a
-                      href={prospectusBlob}
-                      download="prospectus.pdf"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-                    >
-                      <FileText className="h-4 w-4" />
-                      Download PDF
-                    </a>
-                  </div>
-                </object>
+                  <Page 
+                    pageNumber={currentPage} 
+                    scale={pdfScale}
+                    loading={
+                      <div className="flex items-center justify-center p-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    }
+                  />
+                </Document>
               ) : (
-                <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                <div className="flex flex-col items-center gap-4 text-muted-foreground pt-20">
                   <FileText className="h-12 w-12" />
-                  <p>PDF failed to load</p>
+                  <p>No PDF loaded</p>
                 </div>
               )}
             </div>
