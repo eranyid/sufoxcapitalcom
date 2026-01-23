@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Transaction, MonthlyValuation, PortfolioSettings, PerformanceMetrics, RiskMetrics, CashBalances, CashCurrency } from '@/types/investment';
-import { calculatePerformanceMetrics, calculateRiskMetrics } from '@/lib/calculations';
+import { calculatePerformanceMetrics, calculateRiskMetrics, calculateTotalCashInBaseCurrency } from '@/lib/calculations';
 import { computePortfolioData, ComputedPortfolioData, runConsistencyChecks } from '@/lib/portfolioEngine';
 import { sampleTransactions, sampleValuations } from '@/lib/sampleData';
 import { supabase } from '@/integrations/supabase/client';
@@ -301,8 +301,9 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   // Trigger metrics recalculation when data changes
   // Using specific dependencies to avoid infinite loop - don't include refreshMetrics itself
   useEffect(() => {
+    const baseCurrency = settings.baseCurrency === 'ILS' ? 'ILS' : 'USD';
+    
     if (transactions.length > 0 && valuations.length > 0) {
-      const baseCurrency = settings.baseCurrency === 'ILS' ? 'ILS' : 'USD';
       const perfMetrics = calculatePerformanceMetrics(
         transactions, 
         valuations, 
@@ -315,7 +316,33 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       const riskMet = calculateRiskMetrics(transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns);
       setRiskMetrics(riskMet);
     } else {
-      setPerformanceMetrics(null);
+      // Even without holdings, show cash value as Total Portfolio Value
+      const cashValue = calculateTotalCashInBaseCurrency(cashBalances, baseCurrency);
+      if (cashValue > 0) {
+        setPerformanceMetrics({
+          totalValue: cashValue,
+          holdingsValue: 0,
+          cashValue,
+          totalCost: 0,
+          unrealizedPL: 0,
+          realizedPL: 0,
+          totalPL: 0,
+          marketPL: 0,
+          fxPL: 0,
+          totalReturn: 0,
+          volatility: 0,
+          sharpeRatio: 0,
+          maxDrawdown: 0,
+          monthlyReturns: [],
+          cumulativeReturns: [],
+          drawdownSeries: [],
+          irr: 0,
+          twr: 0,
+          winLossRatio: 0,
+        });
+      } else {
+        setPerformanceMetrics(null);
+      }
       setRiskMetrics(null);
     }
   }, [transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns, settings.baseCurrency, cashBalances]);
