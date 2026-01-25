@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, ArrowRightLeft, 
+  LayoutDashboard, 
   ChevronLeft, ChevronRight, LogOut, Users, 
   FlaskConical, HelpCircle, Banknote, BarChart3
 } from 'lucide-react';
@@ -19,11 +19,12 @@ import { RiskIcon } from '@/components/icons/RiskIcon';
 import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { ReportsIcon } from '@/components/icons/ReportsIcon';
 import { PolicyIcon } from '@/components/icons/PolicyIcon';
+import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon | typeof ReportsIcon | typeof PolicyIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon | typeof ReportsIcon | typeof PolicyIcon | typeof TransactionsIcon;
   label: string;
 }
 
@@ -55,7 +56,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'DATA',
     items: [
-      { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
+      { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
       { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
       { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
     ],
