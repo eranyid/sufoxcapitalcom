@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   ChevronLeft, ChevronRight, LogOut, Users, 
-  FlaskConical, HelpCircle, Banknote
+  FlaskConical, HelpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -21,11 +21,12 @@ import { PolicyIcon } from '@/components/icons/PolicyIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { OverviewIcon } from '@/components/icons/OverviewIcon';
+import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon | typeof ReportsIcon | typeof PolicyIcon | typeof TransactionsIcon | typeof ChartsIcon | typeof OverviewIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon | typeof ReportsIcon | typeof PolicyIcon | typeof TransactionsIcon | typeof ChartsIcon | typeof OverviewIcon | typeof FxRatesIcon;
   label: string;
 }
 
@@ -59,7 +60,7 @@ const navGroups: NavGroup[] = [
     items: [
       { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
       { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
-      { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
+      { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
     ],
   },
   {
