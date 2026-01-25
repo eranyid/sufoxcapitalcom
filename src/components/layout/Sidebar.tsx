@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, 
-  ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, 
+  ChevronLeft, ChevronRight, Scan, LogOut, FileCheck, Users, 
   FlaskConical, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,11 +11,12 @@ import { LabIcon } from '@/components/icons/LabIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
 import { MicroscopeIcon } from '@/components/icons/MicroscopeIcon';
+import { CalendarIcon } from '@/components/icons/CalendarIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon;
   label: string;
 }
 
@@ -56,6 +57,7 @@ const navGroups: NavGroup[] = [
     title: 'OPERATIONS',
     items: [
       { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
+      { path: '/calendar', icon: CalendarIcon, label: 'Calendar' },
       { path: '/reports', icon: FileText, label: 'Reports' },
       { path: '/policy', icon: FileCheck, label: 'Policy' },
     ],
