@@ -40,10 +40,11 @@ export function GoogleCalendarSync({ localEvents, onSyncToGoogle }: GoogleCalend
   const [isInitializing, setIsInitializing] = useState(true);
   const [syncingEvents, setSyncingEvents] = useState<Set<string>>(new Set());
 
-  // Check connection and handle OAuth callback on mount - only when authenticated
+  // Check connection on mount - only when authenticated (silent mode to avoid error spam)
   useEffect(() => {
     // Wait for authentication to be established before making any edge function calls
     if (!isAuthenticated) {
+      setIsInitializing(false);
       return;
     }
 
@@ -68,6 +69,7 @@ export function GoogleCalendarSync({ localEvents, onSyncToGoogle }: GoogleCalend
         } catch (err) {
           console.error('Failed to post message to parent:', err);
         }
+        setIsInitializing(false);
         return;
       }
       
@@ -77,18 +79,21 @@ export function GoogleCalendarSync({ localEvents, onSyncToGoogle }: GoogleCalend
         // Clean URL after handling
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (error) {
-        // Handle OAuth error
-        console.error('OAuth error:', error);
+        // Handle OAuth error silently - don't show error toast
+        console.log('OAuth cancelled or error:', error);
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
       
-      await checkConnection();
+      // Use silent mode to avoid showing error toasts for background checks
+      await checkConnection(true);
       setIsInitializing(false);
     };
 
     init();
   }, [checkConnection, connect, isAuthenticated]);
 
-  // Fetch events when connected
+  // Fetch events when connected - only once
   useEffect(() => {
     if (connectionStatus.connected && !isInitializing) {
       fetchEvents();
