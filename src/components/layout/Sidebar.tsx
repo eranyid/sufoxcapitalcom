@@ -10,11 +10,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
+import { MicroscopeIcon } from '@/components/icons/MicroscopeIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon;
   label: string;
 }
 
@@ -40,7 +41,7 @@ const navGroups: NavGroup[] = [
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
       { path: '/charts', icon: BarChart3, label: 'Charts' },
-      { path: '/scenarios', icon: Layers, label: 'Scenarios' },
+      { path: '/scenarios', icon: MicroscopeIcon, label: 'Scenarios' },
     ],
   },
   {
