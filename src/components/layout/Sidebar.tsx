@@ -9,11 +9,12 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
+import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon;
   label: string;
 }
 
@@ -53,7 +54,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'OPERATIONS',
     items: [
-      { path: '/backoffice', icon: AnalysisIcon, label: 'Back Office' },
+      { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
       { path: '/reports', icon: FileText, label: 'Reports' },
       { path: '/policy', icon: FileCheck, label: 'Policy' },
     ],
