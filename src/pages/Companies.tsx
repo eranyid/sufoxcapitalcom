@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search, FlaskConical, Eye, Wrench, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Building2, Plus, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { BoardStatusBadge } from '@/components/crm/BoardStatusBadge';
 
 interface Company {
   id: string;
@@ -30,39 +31,6 @@ interface Company {
   status: string;
   updated_at: string;
 }
-
-const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: string; label: string }> = {
-  research: {
-    icon: <FlaskConical size={14} />,
-    bg: 'bg-blue-500/20',
-    text: 'text-blue-400',
-    label: 'research',
-  },
-  working_on_it: {
-    icon: <Wrench size={14} />,
-    bg: 'bg-amber-500/20',
-    text: 'text-amber-400',
-    label: 'working on it',
-  },
-  monitoring: {
-    icon: <Eye size={14} />,
-    bg: 'bg-purple-500/20',
-    text: 'text-purple-400',
-    label: 'monitoring',
-  },
-  done: {
-    icon: <CheckCircle2 size={14} />,
-    bg: 'bg-emerald-500/20',
-    text: 'text-emerald-400',
-    label: 'done',
-  },
-  stuck: {
-    icon: <AlertCircle size={14} />,
-    bg: 'bg-red-500/20',
-    text: 'text-red-400',
-    label: 'stuck',
-  },
-};
 
 export default function Companies() {
   const navigate = useNavigate();
@@ -212,22 +180,7 @@ export default function Companies() {
                     {company.market_cap || '—'}
                   </TableCell>
                   <TableCell>
-                    {(() => {
-                      const config = STATUS_CONFIG[company.status];
-                      if (!config) {
-                        return (
-                          <span className="text-muted-foreground text-sm">
-                            {company.status.replace(/_/g, ' ')}
-                          </span>
-                        );
-                      }
-                      return (
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md ${config.bg} ${config.text}`}>
-                          {config.icon}
-                          <span className="text-sm font-medium">{config.label}</span>
-                        </div>
-                      );
-                    })()}
+                    <BoardStatusBadge status={company.status} />
                   </TableCell>
                 </TableRow>
               ))}
