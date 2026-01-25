@@ -2,17 +2,18 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, 
   ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, 
-  FlaskConical, Building2, HelpCircle, FileText, Banknote, BarChart3
+  FlaskConical, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { LabIcon } from '@/components/icons/LabIcon';
+import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon;
   label: string;
 }
 
@@ -35,7 +36,7 @@ const navGroups: NavGroup[] = [
     title: 'RESEARCH',
     items: [
       { path: '/research', icon: FlaskConical, label: 'Research' },
-      { path: '/companies', icon: Building2, label: 'Companies' },
+      { path: '/companies', icon: AnalysisIcon, label: 'Companies' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
       { path: '/charts', icon: BarChart3, label: 'Charts' },
       { path: '/scenarios', icon: Layers, label: 'Scenarios' },
@@ -52,7 +53,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'OPERATIONS',
     items: [
-      { path: '/backoffice', icon: Building2, label: 'Back Office' },
+      { path: '/backoffice', icon: AnalysisIcon, label: 'Back Office' },
       { path: '/reports', icon: FileText, label: 'Reports' },
       { path: '/policy', icon: FileCheck, label: 'Policy' },
     ],
