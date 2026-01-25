@@ -28,6 +28,7 @@ export function GoogleCalendarSync({ localEvents, onSyncToGoogle }: GoogleCalend
     connectionStatus,
     isConnecting,
     isLoading,
+    isAuthenticated,
     googleEvents,
     connect,
     disconnect,
@@ -39,8 +40,13 @@ export function GoogleCalendarSync({ localEvents, onSyncToGoogle }: GoogleCalend
   const [isInitializing, setIsInitializing] = useState(true);
   const [syncingEvents, setSyncingEvents] = useState<Set<string>>(new Set());
 
-  // Check connection and handle OAuth callback on mount
+  // Check connection and handle OAuth callback on mount - only when authenticated
   useEffect(() => {
+    // Wait for authentication to be established before making any edge function calls
+    if (!isAuthenticated) {
+      return;
+    }
+
     const init = async () => {
       // Handle OAuth callback
       const urlParams = new URLSearchParams(window.location.search);
@@ -80,7 +86,7 @@ export function GoogleCalendarSync({ localEvents, onSyncToGoogle }: GoogleCalend
     };
 
     init();
-  }, [checkConnection, connect]);
+  }, [checkConnection, connect, isAuthenticated]);
 
   // Fetch events when connected
   useEffect(() => {
