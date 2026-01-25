@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search, Activity, CheckSquare, FlaskConical, Eye, Wrench, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Building2, Plus, Search, FlaskConical, Eye, Wrench, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -65,7 +64,7 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: s
   },
 };
 
-export default function BackOffice() {
+export default function Companies() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -123,7 +122,7 @@ export default function BackOffice() {
     setCreateOpen(false);
     setCreating(false);
     toast.success('Company created');
-    navigate(`/backoffice/company/${data.id}`);
+    navigate(`/companies/${data.id}`);
   };
 
   const filteredCompanies = companies.filter(c => {
@@ -197,7 +196,7 @@ export default function BackOffice() {
                 <TableRow
                   key={company.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => navigate(`/backoffice/company/${company.id}`)}
+                  onClick={() => navigate(`/companies/${company.id}`)}
                 >
                   <TableCell className="font-medium">{company.company_name}</TableCell>
                   <TableCell>

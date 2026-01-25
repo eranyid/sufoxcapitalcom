@@ -30,9 +30,9 @@ const InvestmentPolicy = lazy(() => import("./pages/InvestmentPolicy"));
 const Auth = lazy(() => import("./pages/Auth"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
-const BackOffice = lazy(() => import("./pages/BackOffice"));
-const BackOfficeTasks = lazy(() => import("./pages/BackOfficeTasks"));
+const BackOffice = lazy(() => import("./pages/BackOfficeTasks"));
 const BackOfficeTimeline = lazy(() => import("./pages/BackOfficeTimeline"));
+const Companies = lazy(() => import("./pages/Companies"));
 const CompanyPage = lazy(() => import("./pages/CompanyPage"));
 const Projects = lazy(() => import("./pages/Projects"));
 const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
@@ -104,6 +104,16 @@ const App = () => (
                       <Research />
                     </Suspense>
                   } />
+                  <Route path="/companies" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Companies />
+                    </Suspense>
+                  } />
+                  <Route path="/companies/:companyId" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <CompanyPage />
+                    </Suspense>
+                  } />
                   <Route path="/transactions" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Transactions />
@@ -157,11 +167,6 @@ const App = () => (
                         <BackOffice />
                       </Suspense>
                     } />
-                    <Route path="tasks" element={
-                      <Suspense fallback={<DashboardLoadingSkeleton />}>
-                        <BackOfficeTasks />
-                      </Suspense>
-                    } />
                     <Route path="timeline" element={
                       <Suspense fallback={<DashboardLoadingSkeleton />}>
                         <BackOfficeTimeline />
@@ -175,11 +180,6 @@ const App = () => (
                     <Route path="projects/:id" element={
                       <Suspense fallback={<DashboardLoadingSkeleton />}>
                         <ProjectDetail />
-                      </Suspense>
-                    } />
-                    <Route path="company/:companyId" element={
-                      <Suspense fallback={<DashboardLoadingSkeleton />}>
-                        <CompanyPage />
                       </Suspense>
                     } />
                   </Route>
@@ -211,6 +211,8 @@ const App = () => (
                   <Route path="/crm/*" element={<Navigate to="/backoffice" replace />} />
                   <Route path="/projects" element={<Navigate to="/backoffice/projects" replace />} />
                   <Route path="/projects/:id" element={<Navigate to="/backoffice/projects/:id" replace />} />
+                  <Route path="/backoffice/company/:companyId" element={<Navigate to="/companies/:companyId" replace />} />
+                  <Route path="/backoffice/tasks" element={<Navigate to="/backoffice" replace />} />
                 </Route>
                 {/* Public pages - accessible without auth */}
                 <Route path="/disclaimer" element={

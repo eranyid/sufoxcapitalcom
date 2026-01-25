@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { CheckSquare, Activity, FolderKanban, Building2 } from 'lucide-react';
+import { CheckSquare, Activity, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const tabs = [
-  { path: '/backoffice', label: 'Analysis', icon: Building2, exact: true },
-  { path: '/backoffice/tasks', label: 'Issues', icon: CheckSquare },
+  { path: '/backoffice', label: 'Issues', icon: CheckSquare, exact: true },
   { path: '/backoffice/timeline', label: 'Timeline', icon: Activity },
   { path: '/backoffice/projects', label: 'Projects', icon: FolderKanban },
 ];
