@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, ArrowRightLeft, Calendar, 
+  LayoutDashboard, ArrowRightLeft, 
   ChevronLeft, ChevronRight, LogOut, FileCheck, Users, 
   FlaskConical, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
@@ -16,11 +16,12 @@ import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { XRayIcon } from '@/components/icons/XRayIcon';
 import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
 import { RiskIcon } from '@/components/icons/RiskIcon';
+import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon;
   label: string;
 }
 
@@ -53,7 +54,7 @@ const navGroups: NavGroup[] = [
     title: 'DATA',
     items: [
       { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
-      { path: '/valuations', icon: Calendar, label: 'Valuations' },
+      { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
       { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
     ],
   },
