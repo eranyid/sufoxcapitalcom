@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   ChevronLeft, ChevronRight, LogOut, Users, 
-  FlaskConical, HelpCircle, Banknote, BarChart3
+  FlaskConical, HelpCircle, Banknote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -20,11 +20,12 @@ import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { ReportsIcon } from '@/components/icons/ReportsIcon';
 import { PolicyIcon } from '@/components/icons/PolicyIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
+import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon | typeof ReportsIcon | typeof PolicyIcon | typeof TransactionsIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon | typeof ReportsIcon | typeof PolicyIcon | typeof TransactionsIcon | typeof ChartsIcon;
   label: string;
 }
 
@@ -49,7 +50,7 @@ const navGroups: NavGroup[] = [
       { path: '/research', icon: FlaskConical, label: 'Research' },
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
-      { path: '/charts', icon: BarChart3, label: 'Charts' },
+      { path: '/charts', icon: ChartsIcon, label: 'Charts' },
       { path: '/scenarios', icon: MicroscopeIcon, label: 'Scenarios' },
     ],
   },
