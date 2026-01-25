@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, 
-  ChevronLeft, ChevronRight, Scan, LogOut, FileCheck, Users, 
+  ChevronLeft, ChevronRight, LogOut, FileCheck, Users, 
   FlaskConical, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,11 +13,12 @@ import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
 import { MicroscopeIcon } from '@/components/icons/MicroscopeIcon';
 import { CalendarIcon } from '@/components/icons/CalendarIcon';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
+import { XRayIcon } from '@/components/icons/XRayIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon;
   label: string;
 }
 
@@ -33,7 +34,7 @@ const navGroups: NavGroup[] = [
       { path: '/', icon: LayoutDashboard, label: 'Overview' },
       { path: '/performance', icon: TrendingUp, label: 'Performance' },
       { path: '/risk', icon: Shield, label: 'Risk' },
-      { path: '/xray', icon: Scan, label: 'X-Ray' },
+      { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
     ],
   },
   {
