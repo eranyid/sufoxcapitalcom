@@ -47,6 +47,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const FXRates = lazy(() => import("./pages/FXRates"));
 const Lab = lazy(() => import("./pages/Lab"));
 const Charts = lazy(() => import("./pages/Charts"));
+const CalendarPage = lazy(() => import("./pages/Calendar"));
 
 const queryClient = new QueryClient();
 
@@ -183,6 +184,12 @@ const App = () => (
                       </Suspense>
                     } />
                   </Route>
+                  
+                  <Route path="/calendar" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <CalendarPage />
+                    </Suspense>
+                  } />
                   
                   <Route path="/reports" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
