@@ -12,6 +12,7 @@ interface AuthContextType {
   approvalLoading: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   refreshApprovalStatus: () => Promise<void>;
@@ -185,6 +186,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const signInWithGoogle = async () => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Google sign-in failed",
+        description: error.message
+      });
+      return { error };
+    }
+
+    return { error: null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setIsApproved(false);
@@ -228,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       approvalLoading,
       signUp, 
       signIn, 
+      signInWithGoogle,
       signOut, 
       resetPassword,
       refreshApprovalStatus
