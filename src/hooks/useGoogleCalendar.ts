@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -47,34 +47,52 @@ export function useGoogleCalendar() {
     }
   }, []);
 
-  const connect = useCallback(async () => {
-    setIsConnecting(true);
-    try {
-      // First check if we have a code in the URL (redirect mode)
+  // Handle OAuth callback - detect code in URL on mount
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
-      
-      if (code) {
-        // Exchange the code for tokens
-        const { error: exchangeError } = await supabase.functions.invoke('gcal-auth', {
-          body: {
-            action: 'exchange_code',
-            code,
-            redirectUri: getRedirectUri(),
-          },
-        });
+      const error = urlParams.get('error');
 
-        if (exchangeError) throw exchangeError;
-
+      if (error) {
+        toast.error(error === 'access_denied' ? 'Access was denied' : `OAuth error: ${error}`);
         // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        toast.success('Google Calendar connected successfully');
-        await checkConnection();
-        setIsConnecting(false);
+        window.history.replaceState({}, document.title, '/calendar');
         return;
       }
 
+      if (code) {
+        setIsConnecting(true);
+        try {
+          const { error: exchangeError } = await supabase.functions.invoke('gcal-auth', {
+            body: {
+              action: 'exchange_code',
+              code,
+              redirectUri: getRedirectUri(),
+            },
+          });
+
+          if (exchangeError) throw exchangeError;
+
+          toast.success('Google Calendar connected successfully');
+          await checkConnection();
+        } catch (err) {
+          console.error('Token exchange failed:', err);
+          toast.error('Failed to connect Google Calendar');
+        } finally {
+          setIsConnecting(false);
+          // Clean URL after processing
+          window.history.replaceState({}, document.title, '/calendar');
+        }
+      }
+    };
+
+    handleOAuthCallback();
+  }, [checkConnection]);
+
+  const connect = useCallback(async () => {
+    setIsConnecting(true);
+    try {
       // Get auth URL from server
       const { data, error } = await supabase.functions.invoke('gcal-auth', {
         body: { 
@@ -85,66 +103,14 @@ export function useGoogleCalendar() {
 
       if (error) throw error;
 
-      // Open Google auth in popup window
-      const width = 500;
-      const height = 600;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      const authWindow = window.open(
-        data.authUrl, 
-        'google-auth', 
-        `width=${width},height=${height},left=${left},top=${top},popup=yes`
-      );
-
-      // Listen for the OAuth callback message from popup
-      const handleMessage = async (event: MessageEvent) => {
-        // Verify origin
-        if (event.origin !== window.location.origin) return;
-        
-        if (event.data?.type === 'google-oauth-callback' && event.data?.code) {
-          window.removeEventListener('message', handleMessage);
-          authWindow?.close();
-
-          try {
-            const { error: exchangeError } = await supabase.functions.invoke('gcal-auth', {
-              body: {
-                action: 'exchange_code',
-                code: event.data.code,
-                redirectUri: getRedirectUri(),
-              },
-            });
-
-            if (exchangeError) throw exchangeError;
-
-            toast.success('Google Calendar connected successfully');
-            await checkConnection();
-          } catch (err) {
-            console.error('Token exchange failed:', err);
-            toast.error('Failed to connect Google Calendar');
-          } finally {
-            setIsConnecting(false);
-          }
-        }
-      };
-
-      window.addEventListener('message', handleMessage);
-
-      // Also poll to check if popup was closed without completing
-      const pollTimer = setInterval(() => {
-        if (authWindow?.closed) {
-          clearInterval(pollTimer);
-          window.removeEventListener('message', handleMessage);
-          setIsConnecting(false);
-        }
-      }, 500);
-
+      // Full-page redirect to Google auth (not popup)
+      window.location.href = data.authUrl;
     } catch (error) {
       console.error('Failed to start OAuth:', error);
       toast.error('Failed to start Google authentication');
       setIsConnecting(false);
     }
-  }, [checkConnection]);
+  }, []);
 
   const disconnect = useCallback(async () => {
     try {
