@@ -49,8 +49,9 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: 'REPORTING',
+    title: 'OPERATIONS',
     items: [
+      { path: '/backoffice', icon: Building2, label: 'Back Office' },
       { path: '/reports', icon: FileText, label: 'Reports' },
       { path: '/policy', icon: FileCheck, label: 'Policy' },
     ],
@@ -58,7 +59,6 @@ const navGroups: NavGroup[] = [
   {
     title: 'SYSTEM',
     items: [
-      { path: '/backoffice', icon: Building2, label: 'Back Office' },
       { path: '/settings', icon: Settings, label: 'Settings' },
       { path: '/help', icon: HelpCircle, label: 'Help' },
     ],
