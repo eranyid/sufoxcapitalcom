@@ -50,6 +50,32 @@ export function useGoogleCalendar() {
   const connect = useCallback(async () => {
     setIsConnecting(true);
     try {
+      // First check if we have a code in the URL (redirect mode)
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (code) {
+        // Exchange the code for tokens
+        const { error: exchangeError } = await supabase.functions.invoke('gcal-auth', {
+          body: {
+            action: 'exchange_code',
+            code,
+            redirectUri: getRedirectUri(),
+          },
+        });
+
+        if (exchangeError) throw exchangeError;
+
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        toast.success('Google Calendar connected successfully');
+        await checkConnection();
+        setIsConnecting(false);
+        return;
+      }
+
+      // Get auth URL from server
       const { data, error } = await supabase.functions.invoke('gcal-auth', {
         body: { 
           action: 'get_auth_url',
@@ -59,14 +85,26 @@ export function useGoogleCalendar() {
 
       if (error) throw error;
 
-      // Open Google auth in new window
-      const authWindow = window.open(data.authUrl, 'google-auth', 'width=500,height=600');
+      // Open Google auth in popup window
+      const width = 500;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const authWindow = window.open(
+        data.authUrl, 
+        'google-auth', 
+        `width=${width},height=${height},left=${left},top=${top},popup=yes`
+      );
 
-      // Listen for the OAuth callback
+      // Listen for the OAuth callback message from popup
       const handleMessage = async (event: MessageEvent) => {
+        // Verify origin
+        if (event.origin !== window.location.origin) return;
+        
         if (event.data?.type === 'google-oauth-callback' && event.data?.code) {
-          authWindow?.close();
           window.removeEventListener('message', handleMessage);
+          authWindow?.close();
 
           try {
             const { error: exchangeError } = await supabase.functions.invoke('gcal-auth', {
@@ -84,41 +122,26 @@ export function useGoogleCalendar() {
           } catch (err) {
             console.error('Token exchange failed:', err);
             toast.error('Failed to connect Google Calendar');
+          } finally {
+            setIsConnecting(false);
           }
         }
       };
 
       window.addEventListener('message', handleMessage);
 
-      // Check for URL params on current page (if redirected here)
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      if (code) {
-        try {
-          const { error: exchangeError } = await supabase.functions.invoke('gcal-auth', {
-            body: {
-              action: 'exchange_code',
-              code,
-              redirectUri: getRedirectUri(),
-            },
-          });
-
-          if (exchangeError) throw exchangeError;
-
-          // Clean URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          
-          toast.success('Google Calendar connected successfully');
-          await checkConnection();
-        } catch (err) {
-          console.error('Token exchange failed:', err);
-          toast.error('Failed to connect Google Calendar');
+      // Also poll to check if popup was closed without completing
+      const pollTimer = setInterval(() => {
+        if (authWindow?.closed) {
+          clearInterval(pollTimer);
+          window.removeEventListener('message', handleMessage);
+          setIsConnecting(false);
         }
-      }
+      }, 500);
+
     } catch (error) {
       console.error('Failed to start OAuth:', error);
       toast.error('Failed to start Google authentication');
-    } finally {
       setIsConnecting(false);
     }
   }, [checkConnection]);
