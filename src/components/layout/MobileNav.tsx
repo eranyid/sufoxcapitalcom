@@ -1,9 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  Layers,
   MoreHorizontal,
   Users,
   HelpCircle,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -29,12 +29,12 @@ const primaryNavItems = [
   { path: '/', icon: OverviewIcon, label: 'Overview' },
   { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
   { path: '/risk', icon: RiskIcon, label: 'Risk' },
-  { path: '/research', icon: MicroscopeIcon, label: 'Research' },
+  { path: '/research', icon: FlaskConical, label: 'Research' },
 ];
 
 const moreNavItems = [
   { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
-  { path: '/scenarios', icon: Layers, label: 'Scenarios' },
+  { path: '/scenarios', icon: MicroscopeIcon, label: 'Scenarios' },
   { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
   { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
   { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
