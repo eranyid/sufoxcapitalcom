@@ -26,3 +26,15 @@ verify_jwt = true
 
 [functions.send-report-email]
 verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = false
+
+[functions.gcal-auth]
+verify_jwt = false
+
+[functions.gcal-events]
+verify_jwt = false
+
+[functions.gcal-sync]
+verify_jwt = false
