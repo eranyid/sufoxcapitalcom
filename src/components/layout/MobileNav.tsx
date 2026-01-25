@@ -24,6 +24,9 @@ import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
 import { PolicyIcon } from '@/components/icons/PolicyIcon';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
+import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
+import { LabIcon } from '@/components/icons/LabIcon';
+import { ChartsIcon } from '@/components/icons/ChartsIcon';
 
 const primaryNavItems = [
   { path: '/', icon: OverviewIcon, label: 'Overview' },
@@ -33,13 +36,20 @@ const primaryNavItems = [
 ];
 
 const moreNavItems = [
-  { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
+  // Research section
+  { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
+  { path: '/lab', icon: LabIcon, label: 'Lab' },
+  { path: '/charts', icon: ChartsIcon, label: 'Charts' },
   { path: '/scenarios', icon: MicroscopeIcon, label: 'Scenarios' },
-  { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
+  // Data section
   { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
   { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
   { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
+  // Operations section
+  { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
+  { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
   { path: '/policy', icon: PolicyIcon, label: 'Policy' },
+  // System section
   { path: '/settings', icon: SettingsIcon, label: 'Settings' },
   { path: '/help', icon: HelpCircle, label: 'Help' },
 ];
