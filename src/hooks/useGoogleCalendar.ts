@@ -255,6 +255,7 @@ export function useGoogleCalendar() {
     connectionStatus,
     isConnecting,
     isLoading,
+    isAuthenticated,
     googleEvents,
     connect,
     disconnect,
