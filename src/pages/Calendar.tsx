@@ -6,11 +6,14 @@ import { WeekView } from '@/components/calendar/WeekView';
 import { DayView } from '@/components/calendar/DayView';
 import { AgendaView } from '@/components/calendar/AgendaView';
 import { EventModal } from '@/components/calendar/EventModal';
+import { GoogleCalendarSync } from '@/components/calendar/GoogleCalendarSync';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { CalendarEvent } from '@/types/calendar';
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar as CalendarIcon, Cloud } from 'lucide-react';
 
 export default function Calendar() {
   const isMobile = useIsMobile();
@@ -19,6 +22,7 @@ export default function Calendar() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [defaultModalDate, setDefaultModalDate] = useState<Date | undefined>();
+  const [activeTab, setActiveTab] = useState<'calendar' | 'google'>('calendar');
 
   const {
     events,
@@ -96,57 +100,80 @@ export default function Calendar() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)]">
-      {/* Header */}
-      <div className="shrink-0 mb-4">
-        <CalendarHeader
-          currentDate={currentDate}
-          view={view}
-          onDateChange={setCurrentDate}
-          onViewChange={setView}
-          onAddEvent={handleAddEvent}
-        />
-      </div>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'calendar' | 'google')} className="flex flex-col h-full">
+        <div className="shrink-0 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <TabsList className="bg-card border border-border">
+            <TabsTrigger value="calendar" className="gap-1.5">
+              <CalendarIcon className="h-4 w-4" />
+              Calendar
+            </TabsTrigger>
+            <TabsTrigger value="google" className="gap-1.5">
+              <Cloud className="h-4 w-4" />
+              Google Sync
+            </TabsTrigger>
+          </TabsList>
 
-      {/* Calendar View */}
-      <div className="flex-1 overflow-hidden rounded-lg border border-border bg-card/50">
-        {view === 'month' && (
-          <MonthView
-            currentDate={currentDate}
-            events={visibleEvents}
-            onEventClick={handleEventClick}
-            onDayClick={handleDayClick}
-            selectedEventId={selectedEvent?.id}
-          />
-        )}
-        {view === 'week' && (
-          <WeekView
-            currentDate={currentDate}
-            events={visibleEvents}
-            onEventClick={handleEventClick}
-            onTimeSlotClick={handleTimeSlotClick}
-            selectedEventId={selectedEvent?.id}
-          />
-        )}
-        {view === 'day' && (
-          <DayView
-            currentDate={currentDate}
-            events={visibleEvents}
-            onEventClick={handleEventClick}
-            onTimeSlotClick={handleTimeSlotClick}
-            selectedEventId={selectedEvent?.id}
-          />
-        )}
-        {view === 'agenda' && (
-          <div className="h-full overflow-auto px-4">
-            <AgendaView
+          {activeTab === 'calendar' && (
+            <CalendarHeader
               currentDate={currentDate}
-              events={visibleEvents}
-              onEventClick={handleEventClick}
-              selectedEventId={selectedEvent?.id}
+              view={view}
+              onDateChange={setCurrentDate}
+              onViewChange={setView}
+              onAddEvent={handleAddEvent}
             />
+          )}
+        </div>
+
+        <TabsContent value="calendar" className="flex-1 overflow-hidden m-0">
+          {/* Calendar View */}
+          <div className="h-full overflow-hidden rounded-lg border border-border bg-card/50">
+            {view === 'month' && (
+              <MonthView
+                currentDate={currentDate}
+                events={visibleEvents}
+                onEventClick={handleEventClick}
+                onDayClick={handleDayClick}
+                selectedEventId={selectedEvent?.id}
+              />
+            )}
+            {view === 'week' && (
+              <WeekView
+                currentDate={currentDate}
+                events={visibleEvents}
+                onEventClick={handleEventClick}
+                onTimeSlotClick={handleTimeSlotClick}
+                selectedEventId={selectedEvent?.id}
+              />
+            )}
+            {view === 'day' && (
+              <DayView
+                currentDate={currentDate}
+                events={visibleEvents}
+                onEventClick={handleEventClick}
+                onTimeSlotClick={handleTimeSlotClick}
+                selectedEventId={selectedEvent?.id}
+              />
+            )}
+            {view === 'agenda' && (
+              <div className="h-full overflow-auto px-4">
+                <AgendaView
+                  currentDate={currentDate}
+                  events={visibleEvents}
+                  onEventClick={handleEventClick}
+                  selectedEventId={selectedEvent?.id}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="google" className="flex-1 overflow-auto m-0">
+          <div className="max-w-2xl">
+            <GoogleCalendarSync localEvents={events} />
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Event Modal */}
       <EventModal
