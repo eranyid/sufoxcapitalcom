@@ -27,6 +27,8 @@ import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
+import { CalendarIcon } from '@/components/icons/CalendarIcon';
+import { ReportsIcon } from '@/components/icons/ReportsIcon';
 
 const primaryNavItems = [
   { path: '/', icon: OverviewIcon, label: 'Overview' },
@@ -49,6 +51,8 @@ const moreNavItems = [
   { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
   { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
   // Operations section
+  { path: '/calendar', icon: CalendarIcon, label: 'Calendar' },
+  { path: '/reports', icon: ReportsIcon, label: 'Reports' },
   { path: '/policy', icon: PolicyIcon, label: 'Policy' },
   // System section
   { path: '/settings', icon: SettingsIcon, label: 'Settings' },
