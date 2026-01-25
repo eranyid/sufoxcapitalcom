@@ -25,12 +25,32 @@ export function useGoogleCalendar() {
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ connected: false });
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Listen to auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const getRedirectUri = () => {
     return `${window.location.origin}/calendar`;
   };
 
   const checkConnection = useCallback(async () => {
+    if (!isAuthenticated) {
+      setConnectionStatus({ connected: false });
+      return { connected: false };
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('gcal-auth', {
         body: { action: 'check_status' },
@@ -45,7 +65,7 @@ export function useGoogleCalendar() {
       setConnectionStatus({ connected: false });
       return { connected: false };
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Handle OAuth callback - detect code in URL on mount
   useEffect(() => {
@@ -61,7 +81,7 @@ export function useGoogleCalendar() {
         return;
       }
 
-      if (code) {
+      if (code && isAuthenticated) {
         setIsConnecting(true);
         try {
           const { error: exchangeError } = await supabase.functions.invoke('gcal-auth', {
@@ -87,10 +107,17 @@ export function useGoogleCalendar() {
       }
     };
 
-    handleOAuthCallback();
-  }, [checkConnection]);
+    if (isAuthenticated) {
+      handleOAuthCallback();
+    }
+  }, [checkConnection, isAuthenticated]);
 
   const connect = useCallback(async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in first');
+      return;
+    }
+
     setIsConnecting(true);
     try {
       // Get auth URL from server
@@ -110,7 +137,7 @@ export function useGoogleCalendar() {
       toast.error('Failed to start Google authentication');
       setIsConnecting(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const disconnect = useCallback(async () => {
     try {
