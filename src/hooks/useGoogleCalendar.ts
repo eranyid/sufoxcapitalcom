@@ -45,7 +45,7 @@ export function useGoogleCalendar() {
     return `${window.location.origin}/calendar`;
   };
 
-  const checkConnection = useCallback(async () => {
+  const checkConnection = useCallback(async (silent = false) => {
     if (!isAuthenticated) {
       setConnectionStatus({ connected: false });
       return { connected: false };
@@ -56,12 +56,24 @@ export function useGoogleCalendar() {
         body: { action: 'check_status' },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Don't throw for silent checks - just log and return not connected
+        if (silent) {
+          console.log('Google Calendar check failed (silent):', error.message);
+        } else {
+          console.error('Failed to check connection:', error);
+        }
+        setConnectionStatus({ connected: false });
+        return { connected: false };
+      }
 
       setConnectionStatus(data);
       return data;
     } catch (error) {
-      console.error('Failed to check connection:', error);
+      // Silently handle errors - don't show toast for background checks
+      if (!silent) {
+        console.error('Failed to check connection:', error);
+      }
       setConnectionStatus({ connected: false });
       return { connected: false };
     }
