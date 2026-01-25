@@ -36,6 +36,9 @@ const primaryNavItems = [
 ];
 
 const moreNavItems = [
+  // Priority items
+  { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
+  { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
   // Research section
   { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
   { path: '/lab', icon: LabIcon, label: 'Lab' },
@@ -46,8 +49,6 @@ const moreNavItems = [
   { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
   { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
   // Operations section
-  { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
-  { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
   { path: '/policy', icon: PolicyIcon, label: 'Policy' },
   // System section
   { path: '/settings', icon: SettingsIcon, label: 'Settings' },
