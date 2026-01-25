@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, ArrowRightLeft, 
   ChevronLeft, ChevronRight, LogOut, FileCheck, Users, 
-  FlaskConical, HelpCircle, FileText, Banknote, BarChart3
+  FlaskConical, HelpCircle, Banknote, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -17,11 +17,12 @@ import { XRayIcon } from '@/components/icons/XRayIcon';
 import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
 import { RiskIcon } from '@/components/icons/RiskIcon';
 import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
+import { ReportsIcon } from '@/components/icons/ReportsIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon | typeof ReportsIcon;
   label: string;
 }
 
@@ -63,7 +64,7 @@ const navGroups: NavGroup[] = [
     items: [
       { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
       { path: '/calendar', icon: CalendarIcon, label: 'Calendar' },
-      { path: '/reports', icon: FileText, label: 'Reports' },
+      { path: '/reports', icon: ReportsIcon, label: 'Reports' },
       { path: '/policy', icon: FileCheck, label: 'Policy' },
     ],
   },
