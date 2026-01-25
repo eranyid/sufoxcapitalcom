@@ -45,14 +45,37 @@ export function GoogleCalendarSync({ localEvents, onSyncToGoogle }: GoogleCalend
       // Handle OAuth callback
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
+      const error = urlParams.get('error');
       
-      if (code) {
-        // OAuth callback - connect function will handle it
-        await connect();
-      } else {
-        await checkConnection();
+      // Check if we're in a popup - if so, handle callback differently
+      const isPopup = window.opener && window.opener !== window;
+      
+      if (isPopup && code) {
+        // Post message to parent window
+        try {
+          window.opener.postMessage(
+            { type: 'google-oauth-callback', code },
+            window.location.origin
+          );
+          // Close popup after a short delay
+          setTimeout(() => window.close(), 500);
+        } catch (err) {
+          console.error('Failed to post message to parent:', err);
+        }
+        return;
       }
       
+      if (code && !isPopup) {
+        // Direct redirect mode - exchange code
+        await connect();
+        // Clean URL after handling
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (error) {
+        // Handle OAuth error
+        console.error('OAuth error:', error);
+      }
+      
+      await checkConnection();
       setIsInitializing(false);
     };
 
@@ -268,16 +291,16 @@ export function GoogleCalendarSync({ localEvents, onSyncToGoogle }: GoogleCalend
         </>
       )}
 
-      {/* Setup Instructions */}
-      {!connectionStatus.connected && (
+      {/* Connection Instructions - show only when not connected */}
+      {!connectionStatus.connected && !isConnecting && (
         <div className="rounded-lg border border-border bg-muted/30 p-4">
           <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <CalendarIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="text-sm text-muted-foreground">
-              <p className="font-medium text-foreground mb-1">Setup Required</p>
+              <p className="font-medium text-foreground mb-1">Connect to Google Calendar</p>
               <p>
-                To use Google Calendar sync, ensure the Google OAuth credentials are configured 
-                in Lovable Cloud. You'll need to set up a Google Cloud project with Calendar API enabled.
+                Click the "Connect" button above to sync your calendar events with Google Calendar.
+                You'll be redirected to Google to authorize access.
               </p>
             </div>
           </div>
