@@ -148,7 +148,7 @@ export default function Companies() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Building2 className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Companies</h2>
+          <h2 className="text-lg font-semibold">Analysis</h2>
         </div>
         <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2">
           <Plus size={16} />
