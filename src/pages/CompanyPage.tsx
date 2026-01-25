@@ -284,7 +284,7 @@ export default function CompanyPage() {
 
       if (companyRes.error || !companyRes.data) {
         toast.error('Company not found');
-        navigate('/backoffice');
+        navigate('/companies');
         return;
       }
 
@@ -353,7 +353,7 @@ export default function CompanyPage() {
     }
 
     toast.success('Company deleted');
-    navigate('/backoffice');
+    navigate('/companies');
   };
 
   // handleAddDecision and handleDeleteDecision moved to DecisionLogSection
@@ -444,7 +444,7 @@ export default function CompanyPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/backoffice')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/companies')}>
             <ArrowLeft size={18} />
           </Button>
           <div>

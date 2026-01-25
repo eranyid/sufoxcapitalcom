@@ -35,6 +35,7 @@ const navGroups: NavGroup[] = [
     title: 'RESEARCH',
     items: [
       { path: '/research', icon: FlaskConical, label: 'Research' },
+      { path: '/companies', icon: Building2, label: 'Companies' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
       { path: '/charts', icon: BarChart3, label: 'Charts' },
       { path: '/scenarios', icon: Layers, label: 'Scenarios' },
