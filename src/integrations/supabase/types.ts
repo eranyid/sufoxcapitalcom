@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_integrations: {
+        Row: {
+          created_at: string
+          ics_url: string | null
+          id: string
+          last_synced_at: string | null
+          provider: string
+          sync_error: string | null
+          sync_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ics_url?: string | null
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ics_url?: string | null
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       capital_ledger: {
         Row: {
           amount: number
@@ -653,6 +689,54 @@ export type Database = {
         }
         Relationships: []
       }
+      external_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_at: string
+          external_uid: string
+          id: string
+          is_all_day: boolean | null
+          location: string | null
+          provider: string
+          raw_payload: Json | null
+          start_at: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_at: string
+          external_uid: string
+          id?: string
+          is_all_day?: boolean | null
+          location?: string | null
+          provider?: string
+          raw_payload?: Json | null
+          start_at: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_at?: string
+          external_uid?: string
+          id?: string
+          is_all_day?: boolean | null
+          location?: string | null
+          provider?: string
+          raw_payload?: Json | null
+          start_at?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fx_rates: {
         Row: {
           created_at: string
@@ -730,6 +814,42 @@ export type Database = {
           quantity?: number
           ticker?: string
           total_cost_base?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      internal_events: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          end_at: string
+          id: string
+          start_at: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          end_at: string
+          id?: string
+          start_at: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          end_at?: string
+          id?: string
+          start_at?: string
+          title?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

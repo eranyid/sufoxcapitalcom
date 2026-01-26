@@ -13,10 +13,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
+import { CalendarSettingsSection } from '@/components/calendar/CalendarSettingsSection';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
@@ -478,6 +479,9 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Calendar Integration */}
+      <CalendarSettingsSection />
 
       {/* News Settings */}
       <Card>
