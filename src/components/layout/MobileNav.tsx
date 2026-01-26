@@ -4,7 +4,6 @@ import {
   Layers,
   Contact,
   MoreHorizontal,
-  TrendingUp,
   Shield,
   Calendar,
   FileCheck,
@@ -21,6 +20,7 @@ import { LabIcon } from '@/components/icons/LabIcon';
 import { XRayIcon } from '@/components/icons/XRayIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
+import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
 import {
   Sheet,
   SheetContent,
@@ -29,7 +29,7 @@ import {
 
 const primaryNavItems = [
   { path: '/', icon: LayoutDashboard, label: 'Overview' },
-  { path: '/performance', icon: TrendingUp, label: 'Performance' },
+  { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
   { path: '/risk', icon: Shield, label: 'Risk' },
   { path: '/research', icon: FlaskConical, label: 'Research' },
 ];
