@@ -7,6 +7,7 @@ import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
 import { RiskReturnScatter } from '@/components/dashboard/RiskReturnScatter';
 import { SectorAllocationRangeChart } from '@/components/dashboard/SectorAllocationRangeChart';
+import { ReturnVolatilitySlopeChart } from '@/components/dashboard/ReturnVolatilitySlopeChart';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RingSegment } from '@/lib/portfolioEngine';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -325,6 +326,9 @@ export default function XRay() {
             portfolio={riskReturnData.portfolio}
             excludedCount={riskReturnData.excludedCount}
           />
+
+          {/* Return vs Volatility Slope Chart */}
+          <ReturnVolatilitySlopeChart holdings={riskReturnData.holdings} />
 
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4">
