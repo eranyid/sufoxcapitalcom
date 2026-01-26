@@ -4,8 +4,8 @@ import { CheckSquare, Activity, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const tabs = [
-  { path: '/backoffice', label: 'Issues', icon: CheckSquare, exact: true },
   { path: '/backoffice/timeline', label: 'Timeline', icon: Activity },
+  { path: '/backoffice', label: 'Issues', icon: CheckSquare, exact: true },
   { path: '/backoffice/projects', label: 'Projects', icon: FolderKanban },
 ];
 
