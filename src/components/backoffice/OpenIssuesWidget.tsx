@@ -122,9 +122,6 @@ export function OpenIssuesWidget({ tasks }: OpenIssuesWidgetProps) {
                 key={task.id}
                 className="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-muted/30 transition-colors"
               >
-                <span className="text-muted-foreground font-mono text-xs w-4">
-                  {index + 1}.
-                </span>
                 <Circle 
                   className="h-2 w-2 flex-shrink-0" 
                   fill={statusColor}
