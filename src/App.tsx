@@ -30,7 +30,8 @@ const InvestmentPolicy = lazy(() => import("./pages/InvestmentPolicy"));
 const Auth = lazy(() => import("./pages/Auth"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AlpacaTest = lazy(() => import("./pages/AlpacaTest"));
-const BackOffice = lazy(() => import("./pages/BackOfficeTasks"));
+const BackOfficeOverview = lazy(() => import("./pages/BackOfficeOverview"));
+const BackOfficeIssues = lazy(() => import("./pages/BackOfficeTasks"));
 const BackOfficeTimeline = lazy(() => import("./pages/BackOfficeTimeline"));
 const Companies = lazy(() => import("./pages/Companies"));
 const CompanyPage = lazy(() => import("./pages/CompanyPage"));
@@ -170,7 +171,12 @@ const App = () => (
                   <Route path="/backoffice" element={<BackOfficeLayout />}>
                     <Route index element={
                       <Suspense fallback={<DashboardLoadingSkeleton />}>
-                        <BackOffice />
+                        <BackOfficeOverview />
+                      </Suspense>
+                    } />
+                    <Route path="issues" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <BackOfficeIssues />
                       </Suspense>
                     } />
                     <Route path="timeline" element={
@@ -220,7 +226,7 @@ const App = () => (
                   <Route path="/backoffice/company/:companyId" element={<Navigate to="/analysis/:companyId" replace />} />
                   <Route path="/companies" element={<Navigate to="/analysis" replace />} />
                   <Route path="/companies/:companyId" element={<Navigate to="/analysis/:companyId" replace />} />
-                  <Route path="/backoffice/tasks" element={<Navigate to="/backoffice" replace />} />
+                  <Route path="/backoffice/tasks" element={<Navigate to="/backoffice/issues" replace />} />
                 </Route>
                 {/* Public pages - accessible without auth */}
                 <Route path="/disclaimer" element={

@@ -7,8 +7,6 @@ import { useProjects } from '@/hooks/useProjects';
 import { TaskStatusBadge } from '@/components/crm/TaskStatusBadge';
 import { TaskUrgencyBadge } from '@/components/crm/TaskUrgencyBadge';
 import { TaskDetailsPanel } from '@/components/crm/TaskDetailsPanel';
-import { StatusDistributionBattery } from '@/components/crm/StatusDistributionBattery';
-import { BackOfficeDashboard } from '@/components/backoffice/BackOfficeDashboard';
 import { TaskKanbanBoard } from '@/components/backoffice/TaskKanbanBoard';
 import { QuickAddTask } from '@/components/backoffice/QuickAddTask';
 import { TagsDisplay } from '@/components/backoffice/TagsDisplay';
@@ -133,12 +131,6 @@ export default function BackOfficeTasks() {
 
   return (
     <div className="space-y-4">
-      {/* Dashboard Summary */}
-      <BackOfficeDashboard tasks={tasks} />
-
-      {/* Status Distribution Battery */}
-      <StatusDistributionBattery tasks={filteredTasks} />
-
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
