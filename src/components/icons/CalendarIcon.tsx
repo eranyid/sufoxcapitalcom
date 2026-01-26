@@ -1,11 +1,15 @@
 import { SVGProps } from 'react';
 
-export function CalendarIcon(props: SVGProps<SVGSVGElement>) {
+interface CalendarIconProps extends SVGProps<SVGSVGElement> {
+  size?: number | string;
+}
+
+export function CalendarIcon({ size = 24, ...props }: CalendarIconProps) {
   return (
     <svg
       stroke="currentColor"
-      width="24"
-      height="24"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
