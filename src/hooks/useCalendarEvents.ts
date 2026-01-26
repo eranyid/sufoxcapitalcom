@@ -13,6 +13,9 @@ export interface CalendarEvent {
   source: 'internal' | 'google';
   color?: string;
   location?: string;
+  recurrenceType?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurrenceEndDate?: Date;
+  reminderMinutes?: number;
 }
 
 export interface InternalEventInput {
@@ -21,6 +24,11 @@ export interface InternalEventInput {
   start_at: string;
   end_at: string;
   color?: string;
+  location?: string;
+  is_all_day?: boolean;
+  recurrence_type?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurrence_end_date?: string;
+  reminder_minutes?: number;
 }
 
 export function useCalendarEvents() {
@@ -44,9 +52,13 @@ export function useCalendarEvents() {
         description: e.description,
         start: new Date(e.start_at),
         end: new Date(e.end_at),
-        isAllDay: false,
+        isAllDay: e.is_all_day || false,
         source: 'internal' as const,
-        color: e.color || '#3b82f6'
+        color: e.color || '#3b82f6',
+        location: e.location || undefined,
+        recurrenceType: (e.recurrence_type as CalendarEvent['recurrenceType']) || 'none',
+        recurrenceEndDate: e.recurrence_end_date ? new Date(e.recurrence_end_date) : undefined,
+        reminderMinutes: e.reminder_minutes || undefined
       }));
     },
     enabled: !!user

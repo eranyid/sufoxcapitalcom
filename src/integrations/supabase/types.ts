@@ -825,6 +825,11 @@ export type Database = {
           description: string | null
           end_at: string
           id: string
+          is_all_day: boolean | null
+          location: string | null
+          recurrence_end_date: string | null
+          recurrence_type: string | null
+          reminder_minutes: number | null
           start_at: string
           title: string
           updated_at: string
@@ -836,6 +841,11 @@ export type Database = {
           description?: string | null
           end_at: string
           id?: string
+          is_all_day?: boolean | null
+          location?: string | null
+          recurrence_end_date?: string | null
+          recurrence_type?: string | null
+          reminder_minutes?: number | null
           start_at: string
           title: string
           updated_at?: string
@@ -847,6 +857,11 @@ export type Database = {
           description?: string | null
           end_at?: string
           id?: string
+          is_all_day?: boolean | null
+          location?: string | null
+          recurrence_end_date?: string | null
+          recurrence_type?: string | null
+          reminder_minutes?: number | null
           start_at?: string
           title?: string
           updated_at?: string
