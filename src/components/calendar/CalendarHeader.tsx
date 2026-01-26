@@ -61,17 +61,18 @@ export function CalendarHeader({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToToday}
-          className="text-xs font-medium"
-        >
-          Today
-        </Button>
+    <div className="flex flex-col gap-3">
+      {/* Top row: Date navigation */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToToday}
+            className="text-xs font-medium h-8 px-2"
+          >
+            Today
+          </Button>
           <Button variant="ghost" size="icon" onClick={goPrev} className="h-8 w-8">
             <ChevronLeft size={16} />
           </Button>
@@ -79,17 +80,18 @@ export function CalendarHeader({
             <ChevronRight size={16} />
           </Button>
         </div>
-        <h2 className="text-lg font-semibold text-foreground ml-2">{getTitle()}</h2>
+        <h2 className="text-base sm:text-lg font-semibold text-foreground">{getTitle()}</h2>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Bottom row: View toggle + New Event */}
+      <div className="flex items-center justify-between gap-2">
         {/* View Toggle */}
-        <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+        <div className="flex items-center bg-muted/50 rounded-lg p-0.5 flex-1 sm:flex-none">
           {(['day', 'week', 'month'] as ViewType[]).map((v) => (
             <button
               key={v}
               onClick={() => onViewChange(v)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
+              className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
                 view === v
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -100,7 +102,7 @@ export function CalendarHeader({
           ))}
         </div>
 
-        <Button onClick={onNewEvent} size="sm" className="gap-1.5">
+        <Button onClick={onNewEvent} size="sm" className="gap-1.5 h-8">
           <Plus size={14} />
           <span className="hidden sm:inline">New Event</span>
         </Button>

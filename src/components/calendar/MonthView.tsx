@@ -41,24 +41,26 @@ export function MonthView({ currentDate, events, onEventClick, onDayClick }: Mon
     });
   };
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const weekDaysFull = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="flex-1 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Week day headers */}
-      <div className="grid grid-cols-7 border-b border-border">
-        {weekDays.map((day) => (
+      <div className="grid grid-cols-7 border-b border-border flex-shrink-0">
+        {weekDaysFull.map((day, i) => (
           <div
             key={day}
-            className="py-2 text-center text-xs font-medium text-muted-foreground"
+            className="py-1 md:py-2 text-center text-[10px] md:text-xs font-medium text-muted-foreground"
           >
-            {day}
+            <span className="hidden md:inline">{day}</span>
+            <span className="md:hidden">{weekDays[i]}</span>
           </div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 flex-1">
+      <div className="grid grid-cols-7 flex-1 auto-rows-fr">
         {days.map((day, idx) => {
           const dayEvents = getEventsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
@@ -69,15 +71,15 @@ export function MonthView({ currentDate, events, onEventClick, onDayClick }: Mon
               key={day.toISOString()}
               onClick={() => onDayClick(day)}
               className={cn(
-                "min-h-[100px] border-b border-r border-border p-1.5 cursor-pointer transition-colors hover:bg-muted/30",
+                "min-h-[60px] md:min-h-[80px] border-b border-r border-border p-0.5 md:p-1.5 cursor-pointer transition-colors hover:bg-muted/30 flex flex-col",
                 !isCurrentMonth && "bg-muted/10",
                 idx % 7 === 0 && "border-l-0",
               )}
             >
-              <div className="flex items-center justify-center mb-1">
+              <div className="flex items-center justify-center mb-0.5">
                 <span
                   className={cn(
-                    "text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full",
+                    "text-[10px] md:text-xs font-medium w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full",
                     isCurrentDay && "bg-primary text-primary-foreground",
                     !isCurrentMonth && "text-muted-foreground"
                   )}
@@ -86,8 +88,8 @@ export function MonthView({ currentDate, events, onEventClick, onDayClick }: Mon
                 </span>
               </div>
 
-              <div className="space-y-0.5 overflow-hidden">
-                {dayEvents.slice(0, 3).map((event) => (
+              <div className="space-y-0.5 overflow-hidden flex-1">
+                {dayEvents.slice(0, 2).map((event) => (
                   <div
                     key={event.id}
                     onClick={(e) => {
@@ -95,19 +97,24 @@ export function MonthView({ currentDate, events, onEventClick, onDayClick }: Mon
                       onEventClick(event);
                     }}
                     className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded truncate cursor-pointer transition-opacity hover:opacity-80",
+                      "text-[8px] md:text-[10px] px-1 md:px-1.5 py-0.5 rounded truncate cursor-pointer transition-opacity hover:opacity-80",
                       event.source === 'google' 
                         ? "bg-red-500/20 text-red-400 border-l-2 border-red-500"
-                        : "bg-blue-500/20 text-blue-400 border-l-2 border-blue-500"
+                        : "text-white border-l-2"
                     )}
+                    style={{ 
+                      backgroundColor: event.source === 'google' ? undefined : `${event.color || '#3b82f6'}30`,
+                      borderColor: event.source === 'google' ? undefined : event.color || '#3b82f6',
+                      color: event.source === 'google' ? undefined : event.color || '#3b82f6'
+                    }}
                     title={event.title}
                   >
                     {event.title}
                   </div>
                 ))}
-                {dayEvents.length > 3 && (
-                  <div className="text-[10px] text-muted-foreground px-1.5">
-                    +{dayEvents.length - 3} more
+                {dayEvents.length > 2 && (
+                  <div className="text-[8px] md:text-[10px] text-muted-foreground px-1">
+                    +{dayEvents.length - 2} more
                   </div>
                 )}
               </div>
