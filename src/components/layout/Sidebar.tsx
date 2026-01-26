@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, TrendingUp, Shield, Calendar as CalendarLucide, Settings, 
+  LayoutDashboard, TrendingUp, Shield, Calendar as CalendarLucide, 
   ChevronLeft, ChevronRight, LogOut, Layers, FileCheck, Users, 
   FlaskConical, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
@@ -13,11 +13,12 @@ import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
 import { CalendarIcon } from '@/components/icons/CalendarIcon';
 import { XRayIcon } from '@/components/icons/XRayIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
+import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon;
   label: string;
 }
 
@@ -66,7 +67,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'SYSTEM',
     items: [
-      { path: '/settings', icon: Settings, label: 'Settings' },
+      { path: '/settings', icon: SettingsIcon, label: 'Settings' },
       { path: '/help', icon: HelpCircle, label: 'Help' },
     ],
   },
