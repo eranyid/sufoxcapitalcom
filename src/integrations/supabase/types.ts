@@ -582,48 +582,57 @@ export type Database = {
       }
       crm_tasks: {
         Row: {
+          actual_hours: number | null
           company_id: string | null
           created_at: string
           deleted_at: string | null
           description: string | null
           due_date: string | null
+          estimated_hours: number | null
           id: string
           linked_project_id: string | null
           owner: string | null
           project_id: string | null
           status: string
+          tags: string[] | null
           task_name: string
           updated_at: string
           urgency: string
           user_id: string
         }
         Insert: {
+          actual_hours?: number | null
           company_id?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
           due_date?: string | null
+          estimated_hours?: number | null
           id?: string
           linked_project_id?: string | null
           owner?: string | null
           project_id?: string | null
           status?: string
+          tags?: string[] | null
           task_name: string
           updated_at?: string
           urgency?: string
           user_id: string
         }
         Update: {
+          actual_hours?: number | null
           company_id?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
           due_date?: string | null
+          estimated_hours?: number | null
           id?: string
           linked_project_id?: string | null
           owner?: string | null
           project_id?: string | null
           status?: string
+          tags?: string[] | null
           task_name?: string
           updated_at?: string
           urgency?: string
@@ -1460,6 +1469,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "task_files_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "crm_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_subtasks: {
+        Row: {
+          created_at: string
+          id: string
+          is_completed: boolean
+          order_index: number
+          task_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          order_index?: number
+          task_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          order_index?: number
+          task_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_subtasks_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "crm_tasks"
