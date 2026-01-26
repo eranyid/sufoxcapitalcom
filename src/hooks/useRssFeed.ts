@@ -25,21 +25,6 @@ export function useRssFeed(rssUrl: string | null, options: UseRssFeedOptions = {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Listen to auth state changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-    });
-
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const formatTime = (date: Date): string => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -51,12 +36,9 @@ export function useRssFeed(rssUrl: string | null, options: UseRssFeedOptions = {
   };
 
   const fetchRss = useCallback(async () => {
-    // Only fetch if we have a URL and user is authenticated
-    if (!rssUrl || !isAuthenticated) {
-      if (!isAuthenticated) {
-        // Don't set error for unauthenticated users, just return empty
-        setItems([]);
-      }
+    if (!rssUrl) {
+      setItems([]);
+      setError(null);
       return;
     }
 
@@ -111,22 +93,20 @@ export function useRssFeed(rssUrl: string | null, options: UseRssFeedOptions = {
     } finally {
       setLoading(false);
     }
-  }, [rssUrl, maxAgeHours, minItems, isAuthenticated]);
+  }, [rssUrl, maxAgeHours, minItems]);
 
-  // Fetch when authenticated or URL changes
+  // Initial fetch
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchRss();
-    }
-  }, [fetchRss, isAuthenticated]);
+    fetchRss();
+  }, [fetchRss]);
 
   // Auto-refresh
   useEffect(() => {
-    if (!rssUrl || !isAuthenticated) return;
+    if (!rssUrl) return;
 
     const intervalId = setInterval(fetchRss, refreshInterval);
     return () => clearInterval(intervalId);
-  }, [rssUrl, refreshInterval, fetchRss, isAuthenticated]);
+  }, [rssUrl, refreshInterval, fetchRss]);
 
   return { items, loading, error, refetch: fetchRss };
 }

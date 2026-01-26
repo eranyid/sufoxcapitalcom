@@ -47,7 +47,6 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const FXRates = lazy(() => import("./pages/FXRates"));
 const Lab = lazy(() => import("./pages/Lab"));
 const Charts = lazy(() => import("./pages/Charts"));
-const CalendarPage = lazy(() => import("./pages/Calendar"));
 
 const queryClient = new QueryClient();
 
@@ -105,12 +104,12 @@ const App = () => (
                       <Research />
                     </Suspense>
                   } />
-                  <Route path="/analysis" element={
+                  <Route path="/companies" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Companies />
                     </Suspense>
                   } />
-                  <Route path="/analysis/:companyId" element={
+                  <Route path="/companies/:companyId" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <CompanyPage />
                     </Suspense>
@@ -185,12 +184,6 @@ const App = () => (
                     } />
                   </Route>
                   
-                  <Route path="/calendar" element={
-                    <Suspense fallback={<DashboardLoadingSkeleton />}>
-                      <CalendarPage />
-                    </Suspense>
-                  } />
-                  
                   <Route path="/reports" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Reports />
@@ -218,10 +211,8 @@ const App = () => (
                   <Route path="/crm/*" element={<Navigate to="/backoffice" replace />} />
                   <Route path="/projects" element={<Navigate to="/backoffice/projects" replace />} />
                   <Route path="/projects/:id" element={<Navigate to="/backoffice/projects/:id" replace />} />
-                  <Route path="/backoffice/company/:companyId" element={<Navigate to="/analysis/:companyId" replace />} />
+                  <Route path="/backoffice/company/:companyId" element={<Navigate to="/companies/:companyId" replace />} />
                   <Route path="/backoffice/tasks" element={<Navigate to="/backoffice" replace />} />
-                  <Route path="/companies" element={<Navigate to="/analysis" replace />} />
-                  <Route path="/companies/:companyId" element={<Navigate to="/analysis/:companyId" replace />} />
                 </Route>
                 {/* Public pages - accessible without auth */}
                 <Route path="/disclaimer" element={

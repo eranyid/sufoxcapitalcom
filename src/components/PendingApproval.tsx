@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,12 +5,6 @@ import { Clock, LogOut } from 'lucide-react';
 
 export function PendingApproval() {
   const { signOut } = useAuth();
-  const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
 
   return (
     <div className="min-h-screen min-h-dvh bg-background flex items-center justify-center p-4 safe-area-inset">
@@ -41,7 +34,7 @@ export function PendingApproval() {
 
           <Button 
             variant="outline" 
-            onClick={handleSignOut}
+            onClick={signOut}
             className="w-full h-12 text-base border-border hover:bg-secondary"
           >
             <LogOut className="h-5 w-5 mr-2" />

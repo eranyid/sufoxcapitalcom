@@ -10,12 +10,9 @@ import {
   AlertCircle,
   Undo2,
   Redo2,
-  Blocks,
-  Settings2,
 } from 'lucide-react';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   AnalyticsBlock, 
   AnalyticsPipeline,
@@ -75,16 +72,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
 
 export default function Lab() {
   // Get real portfolio data
   const { valuations, transactions } = usePortfolio();
-  const isMobile = useIsMobile();
   
   // Convert to analytics engine format
   const valuationData: ValuationData[] = useMemo(() => 
@@ -138,8 +129,6 @@ export default function Lab() {
   const [activeDragBlockId, setActiveDragBlockId] = useState<string | null>(null);
   const [isOverCanvas, setIsOverCanvas] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [librarySheetOpen, setLibrarySheetOpen] = useState(false);
-  const [inspectorSheetOpen, setInspectorSheetOpen] = useState(false);
   
   // Compute validation errors whenever blocks change
   useEffect(() => {
@@ -448,23 +437,23 @@ export default function Lab() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] flex flex-col bg-background">
+        <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
           {/* Toolbar */}
-          <div className="border-b border-border bg-card px-3 md:px-4 py-2 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
-              <div className="flex items-center gap-2 min-w-0">
-                <LabIcon className="h-5 w-5 text-primary shrink-0" />
+          <div className="border-b border-border bg-card px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <LabIcon className="h-5 w-5 text-primary" />
                 <Input
                   value={pipelineName}
                   onChange={(e) => setPipelineName(e.target.value)}
-                  className="h-8 w-32 md:w-48 text-sm font-medium bg-transparent border-none focus-visible:ring-1"
+                  className="h-8 w-48 text-sm font-medium bg-transparent border-none focus-visible:ring-1"
                   placeholder="Pipeline name..."
                 />
               </div>
-              {/* Data source indicator - hide on mobile */}
+              {/* Data source indicator */}
               <Badge 
                 variant={availableAssets.length > 0 ? "default" : "secondary"} 
-                className="text-[10px] gap-1 hidden md:flex"
+                className="text-[10px] gap-1"
               >
                 <Database className="h-3 w-3" />
                 {availableAssets.length > 0 
@@ -474,9 +463,9 @@ export default function Lab() {
               </Badge>
             </div>
 
-            <div className="flex items-center gap-1 md:gap-2 shrink-0">
-              {/* Undo/Redo buttons - hide on mobile */}
-              <div className="hidden md:flex items-center border-r border-border pr-2 mr-1">
+            <div className="flex items-center gap-2">
+              {/* Undo/Redo buttons */}
+              <div className="flex items-center border-r border-border pr-2 mr-1">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -498,75 +487,73 @@ export default function Lab() {
                   <Redo2 className="h-4 w-4" />
                 </Button>
               </div>
-              
-              {/* Desktop-only buttons */}
-              <div className="hidden md:flex items-center gap-2">
-                <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8">
-                      <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
-                      Load
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Load Pipeline</DialogTitle>
-                      <DialogDescription>
-                        Select a saved pipeline to load
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-2 mt-4">
-                      {savedPipelines.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-8">
-                          No saved pipelines yet
-                        </p>
-                      ) : (
-                        savedPipelines.map((pipeline) => (
-                          <div 
-                            key={pipeline.id}
-                            className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+              <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8">
+                    <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
+                    Load
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Load Pipeline</DialogTitle>
+                    <DialogDescription>
+                      Select a saved pipeline to load
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2 mt-4">
+                    {savedPipelines.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        No saved pipelines yet
+                      </p>
+                    ) : (
+                      savedPipelines.map((pipeline) => (
+                        <div 
+                          key={pipeline.id}
+                          className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        >
+                          <button
+                            onClick={() => handleLoad(pipeline)}
+                            className="flex-1 text-left"
                           >
-                            <button
-                              onClick={() => handleLoad(pipeline)}
-                              className="flex-1 text-left"
-                            >
-                              <div className="text-sm font-medium">{pipeline.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {pipeline.blocks.length} blocks • Updated {new Date(pipeline.updatedAt).toLocaleDateString()}
-                              </div>
-                            </button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSaved(pipeline.id)}
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                            <div className="text-sm font-medium">{pipeline.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {pipeline.blocks.length} blocks • Updated {new Date(pipeline.updatedAt).toLocaleDateString()}
+                            </div>
+                          </button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteSaved(pipeline.id)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
 
-                <Button variant="outline" size="sm" className="h-8" onClick={handleSave}>
-                  <Save className="h-3.5 w-3.5 mr-1.5" />
-                  Save
-                </Button>
+              <Button variant="outline" size="sm" className="h-8" onClick={handleSave}>
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                Save
+              </Button>
 
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-8 text-muted-foreground hover:text-destructive hover:border-destructive/50" 
-                  onClick={handleClear}
-                  disabled={blocks.length === 0 && !result}
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  Clear
-                </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-muted-foreground hover:text-destructive hover:border-destructive/50" 
+                onClick={handleClear}
+                disabled={blocks.length === 0 && !result}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Clear
+              </Button>
 
-                {/* Validation indicator */}
+              {/* Run button with validation indicator */}
+              <div className="flex items-center gap-2">
                 {validationErrors.length > 0 && (
                   <div className={cn(
                     "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium",
@@ -581,151 +568,64 @@ export default function Lab() {
                     }
                   </div>
                 )}
+                <Button 
+                  size="sm" 
+                  className={cn(
+                    "h-8",
+                    validationErrors.some(e => e.severity === 'error') && "opacity-80"
+                  )}
+                  onClick={handleRun}
+                  disabled={blocks.length === 0 || isRunning || validationErrors.some(e => e.severity === 'error')}
+                >
+                  <Play className="h-3.5 w-3.5 mr-1.5" />
+                  Run
+                </Button>
               </div>
-              
-              {/* Run button - always visible */}
-              <Button 
-                size="sm" 
-                className={cn(
-                  "h-8",
-                  validationErrors.some(e => e.severity === 'error') && "opacity-80"
-                )}
-                onClick={handleRun}
-                disabled={blocks.length === 0 || isRunning || validationErrors.some(e => e.severity === 'error')}
-              >
-                <Play className="h-3.5 w-3.5 md:mr-1.5" />
-                <span className="hidden md:inline">Run</span>
-              </Button>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex overflow-hidden relative">
-            {isMobile ? (
-              <>
-                {/* Mobile: Canvas with floating action buttons */}
-                <div className="flex-1 flex flex-col min-w-0">
-                  <div className="flex-1 overflow-hidden">
-                    <LabCanvas
-                      blocks={blocks}
-                      selectedBlockId={selectedBlockId}
-                      onSelectBlock={(id) => {
-                        setSelectedBlockId(id);
-                        if (id) setInspectorSheetOpen(true);
-                      }}
-                      onRemoveBlock={handleRemoveBlock}
-                      onDuplicateBlock={handleDuplicateBlock}
-                      onReorderBlocks={handleReorderBlocks}
-                      isDropTarget={isOverCanvas}
-                      activeDragId={activeDragBlockId}
-                      validationErrors={validationErrors}
-                    />
-                  </div>
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left Panel - Block Library */}
+            <div className="w-56 shrink-0">
+              <LabBlockLibrary 
+                onAddBlock={handleAddBlock}
+                onLoadPreset={handleLoadPreset}
+              />
+            </div>
 
-                  {/* Bottom - Results */}
-                  <LabResultPanel 
-                    result={result}
-                    isRunning={isRunning}
-                  />
-                </div>
+            {/* Center - Canvas */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <div className="flex-1 overflow-hidden">
+                <LabCanvas
+                  blocks={blocks}
+                  selectedBlockId={selectedBlockId}
+                  onSelectBlock={setSelectedBlockId}
+                  onRemoveBlock={handleRemoveBlock}
+                  onDuplicateBlock={handleDuplicateBlock}
+                  onReorderBlocks={handleReorderBlocks}
+                  isDropTarget={isOverCanvas}
+                  activeDragId={activeDragBlockId}
+                  validationErrors={validationErrors}
+                />
+              </div>
 
-                {/* Mobile FABs */}
-                <div className="fixed bottom-24 left-4 z-50 flex flex-col gap-2">
-                  {/* Library Button */}
-                  <Sheet open={librarySheetOpen} onOpenChange={setLibrarySheetOpen}>
-                    <SheetTrigger asChild>
-                      <Button
-                        size="sm"
-                        className="shadow-lg bg-primary hover:bg-primary/90"
-                      >
-                        <Blocks className="h-4 w-4 mr-2" />
-                        Blocks
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="w-[280px] p-0">
-                      <LabBlockLibrary 
-                        onAddBlock={(type) => {
-                          handleAddBlock(type);
-                          setLibrarySheetOpen(false);
-                        }}
-                        onLoadPreset={(id) => {
-                          handleLoadPreset(id);
-                          setLibrarySheetOpen(false);
-                        }}
-                      />
-                    </SheetContent>
-                  </Sheet>
+              {/* Bottom - Results */}
+              <LabResultPanel 
+                result={result}
+                isRunning={isRunning}
+              />
+            </div>
 
-                  {/* Inspector Button - only show if block selected */}
-                  {selectedBlock && (
-                    <Sheet open={inspectorSheetOpen} onOpenChange={setInspectorSheetOpen}>
-                      <SheetTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="shadow-lg bg-card"
-                        >
-                          <Settings2 className="h-4 w-4 mr-2" />
-                          Config
-                        </Button>
-                      </SheetTrigger>
-                      <SheetContent side="right" className="w-[280px] p-0">
-                        <LabInspector
-                          selectedBlock={selectedBlock}
-                          onUpdateBlock={handleUpdateBlock}
-                          availableAssets={availableAssets}
-                          pipelineBlocks={blocks}
-                        />
-                      </SheetContent>
-                    </Sheet>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Desktop: Three-panel layout */}
-                {/* Left Panel - Block Library */}
-                <div className="w-56 shrink-0">
-                  <LabBlockLibrary 
-                    onAddBlock={handleAddBlock}
-                    onLoadPreset={handleLoadPreset}
-                  />
-                </div>
-
-                {/* Center - Canvas */}
-                <div className="flex-1 flex flex-col min-w-0">
-                  <div className="flex-1 overflow-hidden">
-                    <LabCanvas
-                      blocks={blocks}
-                      selectedBlockId={selectedBlockId}
-                      onSelectBlock={setSelectedBlockId}
-                      onRemoveBlock={handleRemoveBlock}
-                      onDuplicateBlock={handleDuplicateBlock}
-                      onReorderBlocks={handleReorderBlocks}
-                      isDropTarget={isOverCanvas}
-                      activeDragId={activeDragBlockId}
-                      validationErrors={validationErrors}
-                    />
-                  </div>
-
-                  {/* Bottom - Results */}
-                  <LabResultPanel 
-                    result={result}
-                    isRunning={isRunning}
-                  />
-                </div>
-
-                {/* Right Panel - Inspector */}
-                <div className="w-52 shrink-0">
-                  <LabInspector
-                    selectedBlock={selectedBlock}
-                    onUpdateBlock={handleUpdateBlock}
-                    availableAssets={availableAssets}
-                    pipelineBlocks={blocks}
-                  />
-                </div>
-              </>
-            )}
+            {/* Right Panel - Inspector */}
+            <div className="w-52 shrink-0">
+              <LabInspector
+                selectedBlock={selectedBlock}
+                onUpdateBlock={handleUpdateBlock}
+                availableAssets={availableAssets}
+                pipelineBlocks={blocks}
+              />
+            </div>
           </div>
         </div>
 

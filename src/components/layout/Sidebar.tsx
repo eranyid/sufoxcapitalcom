@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  ChevronLeft, ChevronRight, LogOut, Users, 
-  FlaskConical, HelpCircle
+  LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, 
+  ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, 
+  FlaskConical, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -9,24 +10,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
-import { MicroscopeIcon } from '@/components/icons/MicroscopeIcon';
-import { CalendarIcon } from '@/components/icons/CalendarIcon';
-import { SettingsIcon } from '@/components/icons/SettingsIcon';
-import { XRayIcon } from '@/components/icons/XRayIcon';
-import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
-import { RiskIcon } from '@/components/icons/RiskIcon';
-import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
-import { ReportsIcon } from '@/components/icons/ReportsIcon';
-import { PolicyIcon } from '@/components/icons/PolicyIcon';
-import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
-import { ChartsIcon } from '@/components/icons/ChartsIcon';
-import { OverviewIcon } from '@/components/icons/OverviewIcon';
-import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof MicroscopeIcon | typeof CalendarIcon | typeof SettingsIcon | typeof XRayIcon | typeof PerformanceIcon | typeof RiskIcon | typeof ValuationsIcon | typeof ReportsIcon | typeof PolicyIcon | typeof TransactionsIcon | typeof ChartsIcon | typeof OverviewIcon | typeof FxRatesIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon;
   label: string;
 }
 
@@ -39,43 +27,42 @@ const navGroups: NavGroup[] = [
   {
     title: 'ANALYTICS',
     items: [
-      { path: '/', icon: OverviewIcon, label: 'Overview' },
-      { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
-      { path: '/risk', icon: RiskIcon, label: 'Risk' },
-      { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
+      { path: '/', icon: LayoutDashboard, label: 'Overview' },
+      { path: '/performance', icon: TrendingUp, label: 'Performance' },
+      { path: '/risk', icon: Shield, label: 'Risk' },
+      { path: '/xray', icon: Scan, label: 'X-Ray' },
     ],
   },
   {
     title: 'RESEARCH',
     items: [
       { path: '/research', icon: FlaskConical, label: 'Research' },
-      { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
+      { path: '/companies', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
-      { path: '/charts', icon: ChartsIcon, label: 'Charts' },
-      { path: '/scenarios', icon: MicroscopeIcon, label: 'Scenarios' },
+      { path: '/charts', icon: BarChart3, label: 'Charts' },
+      { path: '/scenarios', icon: Layers, label: 'Scenarios' },
     ],
   },
   {
     title: 'DATA',
     items: [
-      { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
-      { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
-      { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
+      { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
+      { path: '/valuations', icon: Calendar, label: 'Valuations' },
+      { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
     ],
   },
   {
     title: 'OPERATIONS',
     items: [
       { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
-      { path: '/calendar', icon: CalendarIcon, label: 'Calendar' },
-      { path: '/reports', icon: ReportsIcon, label: 'Reports' },
-      { path: '/policy', icon: PolicyIcon, label: 'Policy' },
+      { path: '/reports', icon: FileText, label: 'Reports' },
+      { path: '/policy', icon: FileCheck, label: 'Policy' },
     ],
   },
   {
     title: 'SYSTEM',
     items: [
-      { path: '/settings', icon: SettingsIcon, label: 'Settings' },
+      { path: '/settings', icon: Settings, label: 'Settings' },
       { path: '/help', icon: HelpCircle, label: 'Help' },
     ],
   },

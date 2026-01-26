@@ -1,61 +1,48 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
+  LayoutDashboard, 
+  Layers,
+  Contact,
+  Settings,
   MoreHorizontal,
+  TrendingUp,
+  Shield,
+  Scan,
+  ArrowRightLeft,
+  Calendar,
+  FileCheck,
   Users,
-  HelpCircle,
   FlaskConical,
+  HelpCircle,
+  Banknote,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { LabIcon } from '@/components/icons/LabIcon';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { OverviewIcon } from '@/components/icons/OverviewIcon';
-import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
-import { RiskIcon } from '@/components/icons/RiskIcon';
-import { MicroscopeIcon } from '@/components/icons/MicroscopeIcon';
-import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
-import { XRayIcon } from '@/components/icons/XRayIcon';
-import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
-import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
-import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
-import { PolicyIcon } from '@/components/icons/PolicyIcon';
-import { SettingsIcon } from '@/components/icons/SettingsIcon';
-import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
-import { LabIcon } from '@/components/icons/LabIcon';
-import { ChartsIcon } from '@/components/icons/ChartsIcon';
-import { CalendarIcon } from '@/components/icons/CalendarIcon';
-import { ReportsIcon } from '@/components/icons/ReportsIcon';
 
 const primaryNavItems = [
-  { path: '/', icon: OverviewIcon, label: 'Overview' },
-  { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
-  { path: '/risk', icon: RiskIcon, label: 'Risk' },
+  { path: '/', icon: LayoutDashboard, label: 'Overview' },
+  { path: '/performance', icon: TrendingUp, label: 'Performance' },
+  { path: '/risk', icon: Shield, label: 'Risk' },
   { path: '/research', icon: FlaskConical, label: 'Research' },
 ];
 
 const moreNavItems = [
-  // Priority items
-  { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
-  { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
-  // Research section
-  { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
-  { path: '/lab', icon: LabIcon, label: 'Lab' },
-  { path: '/charts', icon: ChartsIcon, label: 'Charts' },
-  { path: '/scenarios', icon: MicroscopeIcon, label: 'Scenarios' },
-  // Data section
-  { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
-  { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
-  { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
-  // Operations section
-  { path: '/calendar', icon: CalendarIcon, label: 'Calendar' },
-  { path: '/reports', icon: ReportsIcon, label: 'Reports' },
-  { path: '/policy', icon: PolicyIcon, label: 'Policy' },
-  // System section
-  { path: '/settings', icon: SettingsIcon, label: 'Settings' },
+  { path: '/backoffice', icon: Contact, label: 'Back Office' },
+  { path: '/scenarios', icon: Layers, label: 'Scenarios' },
+  { path: '/xray', icon: Scan, label: 'X-Ray' },
+  { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
+  { path: '/valuations', icon: Calendar, label: 'Valuations' },
+  { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
+  { path: '/policy', icon: FileCheck, label: 'Policy' },
+  { path: '/settings', icon: Settings, label: 'Settings' },
   { path: '/help', icon: HelpCircle, label: 'Help' },
 ];
 
