@@ -7,7 +7,6 @@ import {
   MoreHorizontal,
   TrendingUp,
   Shield,
-  ArrowRightLeft,
   Calendar,
   FileCheck,
   Users,
@@ -21,6 +20,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { XRayIcon } from '@/components/icons/XRayIcon';
+import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import {
   Sheet,
   SheetContent,
@@ -39,7 +39,7 @@ const moreNavItems = [
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/scenarios', icon: Layers, label: 'Scenarios' },
   { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
-  { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
+  { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
   { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },

@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar as CalendarLucide, Settings, 
+  LayoutDashboard, TrendingUp, Shield, Calendar as CalendarLucide, Settings, 
   ChevronLeft, ChevronRight, LogOut, Layers, FileCheck, Users, 
   FlaskConical, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
@@ -12,11 +12,12 @@ import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
 import { CalendarIcon } from '@/components/icons/CalendarIcon';
 import { XRayIcon } from '@/components/icons/XRayIcon';
+import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon;
   label: string;
 }
 
@@ -48,7 +49,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'DATA',
     items: [
-      { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
+      { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
       { path: '/valuations', icon: CalendarLucide, label: 'Valuations' },
       { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
     ],
