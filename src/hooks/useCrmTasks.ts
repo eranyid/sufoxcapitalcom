@@ -71,6 +71,11 @@ export function useCrmTasks() {
         due_date: task.due_date || null,
         status: task.status || 'in_progress',
         urgency: task.urgency || 'none',
+        company_id: task.company_id || null,
+        linked_project_id: task.linked_project_id || null,
+        tags: task.tags || [],
+        estimated_hours: task.estimated_hours || null,
+        actual_hours: task.actual_hours || null,
       })
       .select()
       .single();

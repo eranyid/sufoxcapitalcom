@@ -31,6 +31,10 @@ export interface CrmTask {
   deleted_at?: string | null;
   created_at: string;
   updated_at: string;
+  // New Monday.com style fields
+  estimated_hours?: number | null;
+  actual_hours?: number | null;
+  tags?: string[];
 }
 
 export interface CrmCompany {

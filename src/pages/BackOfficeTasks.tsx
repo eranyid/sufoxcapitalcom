@@ -8,6 +8,11 @@ import { TaskStatusBadge } from '@/components/crm/TaskStatusBadge';
 import { TaskUrgencyBadge } from '@/components/crm/TaskUrgencyBadge';
 import { TaskDetailsPanel } from '@/components/crm/TaskDetailsPanel';
 import { StatusDistributionBattery } from '@/components/crm/StatusDistributionBattery';
+import { BackOfficeDashboard } from '@/components/backoffice/BackOfficeDashboard';
+import { TaskKanbanBoard } from '@/components/backoffice/TaskKanbanBoard';
+import { QuickAddTask } from '@/components/backoffice/QuickAddTask';
+import { TagsDisplay } from '@/components/backoffice/TagsDisplay';
+import { ViewToggle, ViewMode } from '@/components/backoffice/ViewToggle';
 import { CrmTask, TaskStatus, TaskUrgency, STATUS_OPTIONS, URGENCY_OPTIONS } from '@/types/crm';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function BackOfficeTasks() {
@@ -30,6 +35,7 @@ export default function BackOfficeTasks() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   
   // Create task dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -83,8 +89,8 @@ export default function BackOfficeTasks() {
     setPanelOpen(true);
   };
 
-  const handleTaskUpdate = async (id: string, field: keyof CrmTask, value: string | null) => {
-    await updateTask(id, { [field]: value });
+  const handleTaskUpdate = async (id: string, field: keyof CrmTask, value: string | null | string[]) => {
+    await updateTask(id, { [field]: value } as Partial<CrmTask>);
     // Update local selected task
     if (selectedTask?.id === id) {
       setSelectedTask(prev => prev ? { ...prev, [field]: value } : null);
@@ -117,13 +123,24 @@ export default function BackOfficeTasks() {
     setIsCreating(false);
   };
 
+  const handleQuickAdd = async (name: string) => {
+    await createTask({ task_name: name });
+  };
+
+  const handleTagsUpdate = async (taskId: string, tags: string[]) => {
+    await updateTask(taskId, { tags } as Partial<CrmTask>);
+  };
+
   return (
     <div className="space-y-4">
+      {/* Dashboard Summary */}
+      <BackOfficeDashboard tasks={tasks} />
+
       {/* Status Distribution Battery */}
       <StatusDistributionBattery tasks={filteredTasks} />
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <CheckSquare className="h-5 w-5 text-primary" />
           <div>
@@ -134,105 +151,110 @@ export default function BackOfficeTasks() {
           </div>
         </div>
         
-        {/* Add Task Button */}
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus size={16} />
-              <span className="hidden sm:inline">New Issue</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create New Issue</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="task-name">Issue Name *</Label>
-                <Input
-                  id="task-name"
-                  placeholder="Enter issue name..."
-                  value={newTaskName}
-                  onChange={(e) => setNewTaskName(e.target.value)}
-                  disabled={isCreating}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="task-description">Description</Label>
-                <Textarea
-                  id="task-description"
-                  placeholder="Optional description..."
-                  value={newTaskDescription}
-                  onChange={(e) => setNewTaskDescription(e.target.value)}
-                  disabled={isCreating}
-                  rows={3}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <ViewToggle value={viewMode} onChange={setViewMode} />
+          
+          {/* Add Task Button */}
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2">
+                <Plus size={16} />
+                <span className="hidden sm:inline">New Issue</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create New Issue</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label>Urgency</Label>
-                  <Select value={newTaskUrgency} onValueChange={setNewTaskUrgency} disabled={isCreating}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select urgency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {URGENCY_OPTIONS.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="task-name">Issue Name *</Label>
+                  <Input
+                    id="task-name"
+                    placeholder="Enter issue name..."
+                    value={newTaskName}
+                    onChange={(e) => setNewTaskName(e.target.value)}
+                    disabled={isCreating}
+                  />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Project</Label>
-                  <Select value={newTaskProject} onValueChange={setNewTaskProject} disabled={isCreating}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Project</SelectItem>
-                      {projects.map(project => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="task-description">Description</Label>
+                  <Textarea
+                    id="task-description"
+                    placeholder="Optional description..."
+                    value={newTaskDescription}
+                    onChange={(e) => setNewTaskDescription(e.target.value)}
+                    disabled={isCreating}
+                    rows={3}
+                  />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label>Company</Label>
-                  <Select value={newTaskCompany} onValueChange={setNewTaskCompany} disabled={isCreating}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select company" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Company</SelectItem>
-                      {companies.map(company => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.company_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Urgency</Label>
+                    <Select value={newTaskUrgency} onValueChange={setNewTaskUrgency} disabled={isCreating}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select urgency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {URGENCY_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Project</Label>
+                    <Select value={newTaskProject} onValueChange={setNewTaskProject} disabled={isCreating}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Project</SelectItem>
+                        {projects.map(project => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Company</Label>
+                    <Select value={newTaskCompany} onValueChange={setNewTaskCompany} disabled={isCreating}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Company</SelectItem>
+                        {companies.map(company => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.company_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={isCreating}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateTask} disabled={isCreating || !newTaskName.trim()}>
+                    {isCreating ? 'Creating...' : 'Create Issue'}
+                  </Button>
                 </div>
               </div>
-              
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={isCreating}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateTask} disabled={isCreating || !newTaskName.trim()}>
-                  {isCreating ? 'Creating...' : 'Create Issue'}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
@@ -277,80 +299,108 @@ export default function BackOfficeTasks() {
         </div>
       </div>
 
-      {/* Tasks Table */}
-      <div className="border border-border rounded-lg overflow-hidden bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Issue</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Project</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Urgency</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Due Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border">
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-48" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-5 w-16" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
-                  </tr>
-                ))
-              ) : filteredTasks.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    {tasks.length === 0 ? 'No issues yet' : 'No issues match your filters'}
-                  </td>
+      {/* Content - Table or Kanban View */}
+      {viewMode === 'kanban' ? (
+        <TaskKanbanBoard
+          tasks={filteredTasks}
+          onUpdateTask={updateTask}
+          onDeleteTask={deleteTask}
+        />
+      ) : (
+        /* Tasks Table */
+        <div className="border border-border rounded-lg overflow-hidden bg-card">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/50 border-b border-border">
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Issue</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Project</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Urgency</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tags</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Due Date</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Updated</th>
                 </tr>
-              ) : (
-                filteredTasks.map(task => {
-                  const project = task.linked_project_id ? projectMap[task.linked_project_id] : null;
-                  return (
-                    <tr
-                      key={task.id}
-                      onClick={() => handleRowClick(task)}
-                      className="border-b border-border hover:bg-muted/30 cursor-pointer transition-colors"
-                    >
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {task.task_name}
-                      </td>
-                      <td className="px-4 py-3">
-                        {project ? (
-                          <Link
-                            to={`/backoffice/projects/${project.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs"
-                          >
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-                              {project.name}
-                            </Badge>
-                          </Link>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <TaskStatusBadge status={task.status as TaskStatus} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <TaskUrgencyBadge urgency={task.urgency as TaskUrgency} />
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : '—'}
-                      </td>
+              </thead>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="border-b border-border">
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-48" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-5 w-16" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ))
+                ) : filteredTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      {tasks.length === 0 ? 'No issues yet' : 'No issues match your filters'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTasks.map(task => {
+                    const project = task.linked_project_id ? projectMap[task.linked_project_id] : null;
+                    const taskTags = (task as CrmTask & { tags?: string[] }).tags || [];
+                    return (
+                      <tr
+                        key={task.id}
+                        onClick={() => handleRowClick(task)}
+                        className="border-b border-border hover:bg-muted/30 cursor-pointer transition-colors"
+                      >
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {task.task_name}
+                        </td>
+                        <td className="px-4 py-3">
+                          {project ? (
+                            <Link
+                              to={`/backoffice/projects/${project.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs"
+                            >
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                                {project.name}
+                              </Badge>
+                            </Link>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <TaskStatusBadge status={task.status as TaskStatus} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <TaskUrgencyBadge urgency={task.urgency as TaskUrgency} />
+                        </td>
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <TagsDisplay
+                            tags={taskTags}
+                            editable
+                            onUpdate={(newTags) => handleTagsUpdate(task.id, newTags)}
+                            maxVisible={2}
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {formatDistanceToNow(new Date(task.updated_at), { addSuffix: true })}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Quick Add Task */}
+          <QuickAddTask onAdd={handleQuickAdd} />
         </div>
-      </div>
+      )}
 
       {/* Task Details Panel */}
       <TaskDetailsPanel
