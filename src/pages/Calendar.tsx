@@ -115,10 +115,7 @@ export default function Calendar() {
         setSidebarOpen(false);
       }}
       showInternal={showInternal}
-      showGoogle={showGoogle}
       onToggleInternal={setShowInternal}
-      onToggleGoogle={setShowGoogle}
-      hasGoogleIntegration={!!integration?.ics_url}
     />
   );
 
