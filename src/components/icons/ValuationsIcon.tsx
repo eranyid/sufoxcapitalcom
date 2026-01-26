@@ -11,35 +11,33 @@ export function ValuationsIcon({ size = 24, ...props }: SVGProps<SVGSVGElement> 
       stroke="currentColor"
       {...props}
     >
-      <g opacity="0.4">
-        <path 
-          d="M9.5 13.7502C9.5 14.7202 10.25 15.5002 11.17 15.5002H13.05C13.85 15.5002 14.5 14.8202 14.5 13.9702C14.5 13.0602 14.1 12.7302 13.51 12.5202L10.5 11.4702C9.91 11.2602 9.51001 10.9402 9.51001 10.0202C9.51001 9.18023 10.16 8.49023 10.96 8.49023H12.84C13.76 8.49023 14.51 9.27023 14.51 10.2402" 
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-        <path 
-          d="M12 7.5V16.5" 
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-      </g>
       <path 
-        d="M22 12C22 17.52 17.52 22 12 22C6.48 22 2 17.52 2 12C2 6.48 6.48 2 12 2" 
+        d="M20.0105 18.5101L15.0605 13.5601" 
         strokeWidth="1.5" 
+        strokeMiterlimit="10" 
         strokeLinecap="round" 
         strokeLinejoin="round"
       />
       <path 
-        d="M17 3V7H21" 
+        d="M15.0602 13.56L11.5202 17.1C10.7402 17.88 9.47024 17.88 8.69024 17.1L4.45023 12.86C3.67023 12.08 3.67023 10.81 4.45023 10.03L11.5202 2.96C12.3002 2.18 13.5702 2.18 14.3502 2.96L18.5902 7.20002C19.3702 7.98002 19.3702 9.25001 18.5902 10.03L15.0602 13.56Z" 
         strokeWidth="1.5" 
+        strokeMiterlimit="10" 
         strokeLinecap="round" 
         strokeLinejoin="round"
       />
       <path 
-        d="M22 2L17 7" 
+        opacity="0.4" 
+        d="M2 21H8" 
         strokeWidth="1.5" 
+        strokeMiterlimit="10" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
+      <path 
+        opacity="0.4" 
+        d="M6.56055 7.91992L13.6306 14.9899" 
+        strokeWidth="1.5" 
+        strokeMiterlimit="10" 
         strokeLinecap="round" 
         strokeLinejoin="round"
       />
