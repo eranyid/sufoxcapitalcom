@@ -158,7 +158,7 @@ export function RiskReturnScatter({ holdings, portfolio, excludedCount }: RiskRe
       
       {/* Chart - takes most space */}
       <div className={`flex-1 min-h-0 ${isMobile ? 'px-1 pt-1 pb-0' : 'px-2 pt-2 pb-0'}`}>
-        <div className={`w-full ${isMobile ? 'h-[260px]' : 'h-[320px]'}`}>
+        <div className={`w-full ${isMobile ? 'h-[280px]' : 'h-[420px]'}`}>
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart 
               margin={{ 
