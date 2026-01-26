@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar, Settings, 
+  LayoutDashboard, TrendingUp, Shield, ArrowRightLeft, Calendar as CalendarLucide, Settings, 
   ChevronLeft, ChevronRight, Scan, LogOut, Layers, FileCheck, Users, 
   FlaskConical, HelpCircle, FileText, Banknote, BarChart3
 } from 'lucide-react';
@@ -10,11 +10,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
+import { CalendarIcon } from '@/components/icons/CalendarIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon;
   label: string;
 }
 
@@ -47,7 +48,7 @@ const navGroups: NavGroup[] = [
     title: 'DATA',
     items: [
       { path: '/transactions', icon: ArrowRightLeft, label: 'Transactions' },
-      { path: '/valuations', icon: Calendar, label: 'Valuations' },
+      { path: '/valuations', icon: CalendarLucide, label: 'Valuations' },
       { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
     ],
   },
@@ -55,6 +56,7 @@ const navGroups: NavGroup[] = [
     title: 'OPERATIONS',
     items: [
       { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
+      { path: '/calendar', icon: CalendarIcon, label: 'Calendar' },
       { path: '/reports', icon: FileText, label: 'Reports' },
       { path: '/policy', icon: FileCheck, label: 'Policy' },
     ],
