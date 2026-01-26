@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Shield, Calendar as CalendarLucide, 
   ChevronLeft, ChevronRight, LogOut, Layers, FileCheck, Users, 
-  FlaskConical, HelpCircle, FileText, Banknote, BarChart3
+  FlaskConical, HelpCircle, FileText, Banknote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -15,11 +15,12 @@ import { XRayIcon } from '@/components/icons/XRayIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
+import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon | typeof ChartsIcon;
   label: string;
 }
 
@@ -44,7 +45,7 @@ const navGroups: NavGroup[] = [
       { path: '/research', icon: FlaskConical, label: 'Research' },
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
-      { path: '/charts', icon: BarChart3, label: 'Charts' },
+      { path: '/charts', icon: ChartsIcon, label: 'Charts' },
       { path: '/scenarios', icon: Layers, label: 'Scenarios' },
     ],
   },
