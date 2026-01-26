@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine, ZAxis, PieChart, Pie } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine, ZAxis } from 'recharts';
 import { Building2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -173,229 +173,170 @@ export function SectorAllocationRangeChart({ sectorData, holdings }: SectorAlloc
         </p>
       </div>
       
-      {/* Content - Two columns layout */}
+      {/* Content - Range Chart takes full width, table below */}
       <div className="p-4">
-        <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-2 gap-6'}`}>
-          
-          {/* Left side: Pie Chart + Table */}
-          <div className="space-y-4">
-            {/* Donut Chart */}
-            <div className="flex justify-center">
-              <div className="h-40 w-40">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={sectorData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={70}
-                      paddingAngle={2}
-                      dataKey="percentage"
-                    >
-                      {sectorData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={SECTOR_COLORS[index % SECTOR_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--secondary))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontFamily: 'JetBrains Mono, monospace'
-                      }}
-                      formatter={(value: number) => [`${value.toFixed(2)}%`, 'Weight']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            
-            {/* Data Table */}
-            <div>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border/30">
-                    <th className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-left py-1.5">Sector</th>
-                    <th className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right py-1.5">Value</th>
-                    <th className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right py-1.5">Weight</th>
-                    <th className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right py-1.5 w-20"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sectorData.map((item, index) => (
-                    <tr key={item.name} className="border-b border-border/10 hover:bg-primary/5 transition-colors">
-                      <td className="py-1.5 flex items-center gap-2">
-                        <span 
-                          className="w-2 h-2 rounded-full flex-shrink-0" 
-                          style={{ backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }}
-                        />
-                        <span className="font-mono text-[11px] text-foreground">{item.name}</span>
-                      </td>
-                      <td className="font-mono text-[11px] text-right tabular-nums text-muted-foreground">
-                        ${item.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </td>
-                      <td className="font-mono text-[11px] text-right tabular-nums font-medium text-foreground">
-                        {item.percentage.toFixed(1)}%
-                      </td>
-                      <td className="py-1.5 pl-3">
-                        <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ 
-                              width: `${item.percentage}%`,
-                              backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length]
-                            }}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="text-[9px] text-muted-foreground mt-2 font-mono">
-                Total: ${total.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </p>
-            </div>
-          </div>
-          
-          {/* Right side: Dot Plot (Range Chart) */}
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">
-              Allocation Range by Sector
-            </p>
-            <div className="w-full" style={{ height: `${chartHeight}px` }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart
-                  margin={{
-                    top: 10,
-                    right: isMobile ? 15 : 20,
-                    bottom: 30,
-                    left: isMobile ? 70 : 85
+        {/* Primary: Dot Plot (Range Chart) - Full Width */}
+        <div className="mb-6">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">
+            Allocation Range by Sector
+          </p>
+          <div className="w-full" style={{ height: `${Math.max(280, chartHeight)}px` }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart
+                margin={{
+                  top: 10,
+                  right: isMobile ? 15 : 30,
+                  bottom: 40,
+                  left: isMobile ? 80 : 100
+                }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                  opacity={0.25}
+                  horizontal={true}
+                  vertical={true}
+                />
+                <XAxis
+                  type="number"
+                  dataKey="value"
+                  domain={xDomain}
+                  tick={{ fontSize: isMobile ? 10 : 11, fontFamily: 'JetBrains Mono', fill: 'hsl(var(--muted-foreground))' }}
+                  tickFormatter={(v) => `${v.toFixed(0)}%`}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  label={{
+                    value: 'Allocation %',
+                    position: 'bottom',
+                    offset: 15,
+                    fontSize: isMobile ? 10 : 11,
+                    fontFamily: 'JetBrains Mono',
+                    fill: 'hsl(var(--muted-foreground))'
                   }}
+                />
+                <YAxis
+                  type="number"
+                  dataKey="sectorIndex"
+                  domain={[-0.5, chartData.length - 0.5]}
+                  tick={{ fontSize: isMobile ? 10 : 11, fontFamily: 'JetBrains Mono', fill: 'hsl(var(--muted-foreground))' }}
+                  tickFormatter={(index) => {
+                    const sector = chartData[index]?.sector;
+                    if (!sector) return '';
+                    return sector.length > 12 ? sector.substring(0, 12) + '…' : sector;
+                  }}
+                  ticks={chartData.map((_, i) => i)}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  width={isMobile ? 70 : 90}
+                  reversed
+                />
+                <ZAxis range={[70, 70]} />
+                <Tooltip content={<CustomTooltip />} />
+                
+                {/* Connecting lines between Min-Max for each sector */}
+                {chartData.map((d, i) => (
+                  <ReferenceLine
+                    key={`range-line-${i}`}
+                    segment={[
+                      { x: d.low, y: d.sectorIndex },
+                      { x: d.high, y: d.sectorIndex }
+                    ]}
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeWidth={2}
+                    opacity={0.4}
+                  />
+                ))}
+                
+                {/* Low allocation dots (Orange) */}
+                <Scatter
+                  name="Min"
+                  data={lowDots}
+                  fill={LOW_COLOR}
                 >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(var(--border))"
-                    opacity={0.25}
-                    horizontal={true}
-                    vertical={true}
-                  />
-                  <XAxis
-                    type="number"
-                    dataKey="value"
-                    domain={xDomain}
-                    tick={{ fontSize: isMobile ? 9 : 10, fontFamily: 'JetBrains Mono', fill: 'hsl(var(--muted-foreground))' }}
-                    tickFormatter={(v) => `${v.toFixed(0)}%`}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
-                    label={{
-                      value: 'Allocation %',
-                      position: 'bottom',
-                      offset: 12,
-                      fontSize: isMobile ? 9 : 10,
-                      fontFamily: 'JetBrains Mono',
-                      fill: 'hsl(var(--muted-foreground))'
-                    }}
-                  />
-                  <YAxis
-                    type="number"
-                    dataKey="sectorIndex"
-                    domain={[-0.5, chartData.length - 0.5]}
-                    tick={{ fontSize: isMobile ? 9 : 10, fontFamily: 'JetBrains Mono', fill: 'hsl(var(--muted-foreground))' }}
-                    tickFormatter={(index) => {
-                      const sector = chartData[index]?.sector;
-                      if (!sector) return '';
-                      return sector.length > 10 ? sector.substring(0, 10) + '…' : sector;
-                    }}
-                    ticks={chartData.map((_, i) => i)}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
-                    width={isMobile ? 60 : 75}
-                    reversed
-                  />
-                  <ZAxis range={[50, 50]} />
-                  <Tooltip content={<CustomTooltip />} />
-                  
-                  {/* Connecting lines between Min-Max for each sector */}
-                  {chartData.map((d, i) => (
-                    <ReferenceLine
-                      key={`range-line-${i}`}
-                      segment={[
-                        { x: d.low, y: d.sectorIndex },
-                        { x: d.high, y: d.sectorIndex }
-                      ]}
-                      stroke="hsl(var(--muted-foreground))"
-                      strokeWidth={2}
-                      opacity={0.4}
+                  {lowDots.map((_, index) => (
+                    <Cell
+                      key={`low-${index}`}
+                      fill={LOW_COLOR}
+                      r={isMobile ? 6 : 8}
                     />
                   ))}
-                  
-                  {/* Low allocation dots (Orange) */}
-                  <Scatter
-                    name="Min"
-                    data={lowDots}
-                    fill={LOW_COLOR}
-                  >
-                    {lowDots.map((_, index) => (
-                      <Cell
-                        key={`low-${index}`}
-                        fill={LOW_COLOR}
-                        r={isMobile ? 5 : 6}
-                      />
-                    ))}
-                  </Scatter>
-                  
-                  {/* Avg allocation dots (Purple) */}
-                  <Scatter
-                    name="Avg"
-                    data={avgDots}
-                    fill={AVG_COLOR}
-                  >
-                    {avgDots.map((_, index) => (
-                      <Cell
-                        key={`avg-${index}`}
-                        fill={AVG_COLOR}
-                        r={isMobile ? 5 : 6}
-                      />
-                    ))}
-                  </Scatter>
-                  
-                  {/* High allocation dots (Dark) */}
-                  <Scatter
-                    name="Max"
-                    data={highDots}
-                    fill={HIGH_COLOR}
-                  >
-                    {highDots.map((_, index) => (
-                      <Cell
-                        key={`high-${index}`}
-                        fill={HIGH_COLOR}
-                        stroke="hsl(var(--muted-foreground))"
-                        strokeWidth={1}
-                        r={isMobile ? 5 : 6}
-                      />
-                    ))}
-                  </Scatter>
-                </ScatterChart>
-              </ResponsiveContainer>
+                </Scatter>
+                
+                {/* Avg allocation dots (Purple) */}
+                <Scatter
+                  name="Avg"
+                  data={avgDots}
+                  fill={AVG_COLOR}
+                >
+                  {avgDots.map((_, index) => (
+                    <Cell
+                      key={`avg-${index}`}
+                      fill={AVG_COLOR}
+                      r={isMobile ? 6 : 8}
+                    />
+                  ))}
+                </Scatter>
+                
+                {/* High allocation dots (Dark) */}
+                <Scatter
+                  name="Max"
+                  data={highDots}
+                  fill={HIGH_COLOR}
+                >
+                  {highDots.map((_, index) => (
+                    <Cell
+                      key={`high-${index}`}
+                      fill={HIGH_COLOR}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeWidth={1}
+                      r={isMobile ? 6 : 8}
+                    />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6 mt-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: LOW_COLOR }} />
+              <span className="text-[10px] font-mono text-muted-foreground">Min</span>
             </div>
-            
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-4 mt-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: LOW_COLOR }} />
-                <span className="text-[9px] font-mono text-muted-foreground">Min</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: AVG_COLOR }} />
-                <span className="text-[9px] font-mono text-muted-foreground">Avg</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full border border-muted-foreground/50" style={{ backgroundColor: HIGH_COLOR }} />
-                <span className="text-[9px] font-mono text-muted-foreground">Max</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: AVG_COLOR }} />
+              <span className="text-[10px] font-mono text-muted-foreground">Avg</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full border border-muted-foreground/50" style={{ backgroundColor: HIGH_COLOR }} />
+              <span className="text-[10px] font-mono text-muted-foreground">Max</span>
             </div>
           </div>
+        </div>
+        
+        {/* Secondary: Compact Data Table */}
+        <div className="border-t border-border/30 pt-4">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">
+            Sector Breakdown
+          </p>
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-x-6`}>
+            {sectorData.map((item, index) => (
+              <div key={item.name} className="flex items-center gap-2 py-1.5 border-b border-border/10">
+                <span 
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                  style={{ backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }}
+                />
+                <span className="font-mono text-[11px] text-foreground flex-1 truncate">{item.name}</span>
+                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                  ${(item.value / 1000).toFixed(0)}K
+                </span>
+                <span className="font-mono text-[11px] tabular-nums font-medium text-foreground w-12 text-right">
+                  {item.percentage.toFixed(1)}%
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[9px] text-muted-foreground mt-2 font-mono">
+            Total: ${total.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          </p>
         </div>
       </div>
     </div>
