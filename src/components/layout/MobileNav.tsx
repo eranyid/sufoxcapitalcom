@@ -1,6 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  Layers,
   Contact,
   MoreHorizontal,
   Calendar,
@@ -22,6 +21,7 @@ import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { RiskIcon } from '@/components/icons/RiskIcon';
 import { OverviewIcon } from '@/components/icons/OverviewIcon';
 import { PolicyIcon } from '@/components/icons/PolicyIcon';
+import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
 import {
   Sheet,
   SheetContent,
@@ -38,7 +38,7 @@ const primaryNavItems = [
 const moreNavItems = [
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
-  { path: '/scenarios', icon: Layers, label: 'Scenarios' },
+  { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
   { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
   { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
   { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },

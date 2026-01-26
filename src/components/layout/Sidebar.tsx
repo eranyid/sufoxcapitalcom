@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  ChevronLeft, ChevronRight, LogOut, Layers, Users, 
+  ChevronLeft, ChevronRight, LogOut, Users, 
   FlaskConical, HelpCircle, FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,11 +20,12 @@ import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { RiskIcon } from '@/components/icons/RiskIcon';
 import { OverviewIcon } from '@/components/icons/OverviewIcon';
 import { PolicyIcon } from '@/components/icons/PolicyIcon';
+import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon | typeof ChartsIcon | typeof FxRatesIcon | typeof ValuationsIcon | typeof RiskIcon | typeof OverviewIcon | typeof PolicyIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon | typeof ChartsIcon | typeof FxRatesIcon | typeof ValuationsIcon | typeof RiskIcon | typeof OverviewIcon | typeof PolicyIcon | typeof ScenariosIcon;
   label: string;
 }
 
@@ -50,7 +51,7 @@ const navGroups: NavGroup[] = [
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
       { path: '/charts', icon: ChartsIcon, label: 'Charts' },
-      { path: '/scenarios', icon: Layers, label: 'Scenarios' },
+      { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
     ],
   },
   {
