@@ -12,42 +12,22 @@ export function PolicyIcon({ size = 24, ...props }: SVGProps<SVGSVGElement> & { 
       {...props}
     >
       <path 
-        d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" 
+        d="M12.92 2.25984L19.43 5.76984C20.19 6.17984 20.19 7.34984 19.43 7.75984L12.92 11.2698C12.34 11.5798 11.66 11.5798 11.08 11.2698L4.57 7.75984C3.81 7.34984 3.81 6.17984 4.57 5.76984L11.08 2.25984C11.66 1.94984 12.34 1.94984 12.92 2.25984Z" 
         strokeWidth="1.5" 
         strokeLinecap="round" 
         strokeLinejoin="round"
       />
-      <g opacity="0.4">
-        <path 
-          d="M8 19H16C18 19 19 18 19 16V8C19 6 18 5 16 5H8C6 5 5 6 5 8V16C5 18 6 19 8 19Z" 
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-        <path 
-          d="M5 9.5H7.48C8.86 9.5 9.98 10.62 9.98 12C9.98 13.38 8.86 14.5 7.48 14.5H5" 
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-        <path 
-          d="M19 9.99023H16" 
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-        <path 
-          d="M19 14H16" 
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-      </g>
       <path 
         opacity="0.4" 
-        d="M7.19922 12H7.29922" 
-        strokeWidth="2" 
-        strokeMiterlimit="10" 
+        d="M3.61 10.1302L9.66 13.1602C10.41 13.5402 10.89 14.3102 10.89 15.1502V20.8702C10.89 21.7002 10.02 22.2302 9.28 21.8602L3.23 18.8302C2.48 18.4502 2 17.6802 2 16.8402V11.1202C2 10.2902 2.87 9.76017 3.61 10.1302Z" 
+        strokeWidth="1.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
+      <path 
+        opacity="0.4" 
+        d="M20.3894 10.1302L14.3394 13.1602C13.5894 13.5402 13.1094 14.3102 13.1094 15.1502V20.8702C13.1094 21.7002 13.9794 22.2302 14.7194 21.8602L20.7694 18.8302C21.5194 18.4502 21.9994 17.6802 21.9994 16.8402V11.1202C21.9994 10.2902 21.1294 9.76017 20.3894 10.1302Z" 
+        strokeWidth="1.5" 
         strokeLinecap="round" 
         strokeLinejoin="round"
       />
