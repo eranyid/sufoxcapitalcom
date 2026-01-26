@@ -21,6 +21,7 @@ import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
 import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
+import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import {
   Sheet,
   SheetContent,
@@ -40,7 +41,7 @@ const moreNavItems = [
   { path: '/scenarios', icon: Layers, label: 'Scenarios' },
   { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
   { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
-  { path: '/valuations', icon: Calendar, label: 'Valuations' },
+  { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
   { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },
   { path: '/settings', icon: SettingsIcon, label: 'Settings' },
