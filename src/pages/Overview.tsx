@@ -13,7 +13,8 @@ import { HoldingsTable } from '@/components/dashboard/HoldingsTable';
 import { CashManagement } from '@/components/dashboard/CashManagement';
 import { PolicyFitCheck } from '@/components/dashboard/PolicyFitCheck';
 import { NewsTicker } from '@/components/dashboard/NewsTicker';
-import CrmSummaryWidget from '@/components/dashboard/CrmSummaryWidget';
+import { OpenIssuesWidget } from '@/components/backoffice/OpenIssuesWidget';
+import { useCrmTasks } from '@/hooks/useCrmTasks';
 import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
 import { StaggeredContainer } from '@/components/StaggeredContainer';
 import { ProspectusButton } from '@/components/ProspectusButton';
@@ -72,6 +73,7 @@ export default function Overview() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [rssFeedUrl, setRssFeedUrl] = useState<string | null>(null);
+  const { tasks } = useCrmTasks();
 
   // Calculate Real vs Nominal metrics
   const adjustedMetrics = useMemo(() => {
@@ -325,11 +327,11 @@ export default function Overview() {
         />
       )}
 
-      {/* Cash Management, Policy Check & CRM Summary - Stack on mobile */}
+      {/* Cash Management, Policy Check & Open Issues - Stack on mobile */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         <CashManagement />
         <PolicyFitCheck />
-        <CrmSummaryWidget />
+        <OpenIssuesWidget tasks={tasks} />
       </div>
 
       {/* Capital Ledger - Audit Trail */}
