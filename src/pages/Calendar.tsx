@@ -2,16 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { useCalendarEvents, CalendarEvent, InternalEventInput } from '@/hooks/useCalendarEvents';
 import { useCalendarIntegration } from '@/hooks/useCalendarIntegration';
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
-import { CalendarSidebar } from '@/components/calendar/CalendarSidebar';
 import { MonthView } from '@/components/calendar/MonthView';
 import { WeekView } from '@/components/calendar/WeekView';
 import { DayView } from '@/components/calendar/DayView';
 import { EventModal } from '@/components/calendar/EventModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
 
 type ViewType = 'month' | 'week' | 'day';
 
@@ -19,9 +15,8 @@ export default function Calendar() {
   const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<ViewType>(isMobile ? 'day' : 'month');
-  const [showInternal, setShowInternal] = useState(true);
-  const [showGoogle, setShowGoogle] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showInternal] = useState(true);
+  const [showGoogle] = useState(true);
   
   // Event modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -107,18 +102,6 @@ export default function Calendar() {
     deleteEvent.mutate(id);
   };
 
-  const sidebarContent = (
-    <CalendarSidebar
-      currentDate={currentDate}
-      onDateChange={(date) => {
-        setCurrentDate(date);
-        setSidebarOpen(false);
-      }}
-      showInternal={showInternal}
-      onToggleInternal={setShowInternal}
-    />
-  );
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -143,68 +126,48 @@ export default function Calendar() {
           <h1 className="text-xl font-semibold text-primary">Calendar</h1>
           <p className="text-sm text-muted-foreground">Manage your schedule and events</p>
         </div>
-        {isMobile && (
-          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu size={18} />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-4">
-              {sidebarContent}
-            </SheetContent>
-          </Sheet>
-        )}
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Full Width Calendar */}
       <div className="bloomberg-panel overflow-hidden">
-        <div className="flex h-[calc(100vh-220px)] min-h-[500px]">
-          {/* Desktop Sidebar */}
-          {!isMobile && (
-            <div className="w-64 border-r border-border p-4 flex-shrink-0 overflow-y-auto">
-              {sidebarContent}
-            </div>
-          )}
+        <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
+          {/* Calendar Header */}
+          <div className="p-4 border-b border-border">
+            <CalendarHeader
+              currentDate={currentDate}
+              view={view}
+              onDateChange={setCurrentDate}
+              onViewChange={setView}
+              onNewEvent={handleNewEvent}
+            />
+          </div>
 
-          {/* Calendar Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-border">
-              <CalendarHeader
+          {/* Calendar Content - Full Width */}
+          <div className="flex-1 overflow-auto">
+            {view === 'month' && (
+              <MonthView
                 currentDate={currentDate}
-                view={view}
-                onDateChange={setCurrentDate}
-                onViewChange={setView}
-                onNewEvent={handleNewEvent}
+                events={filteredEvents}
+                onEventClick={handleEventClick}
+                onDayClick={handleDayClick}
               />
-            </div>
-
-            <div className="flex-1 overflow-auto">
-              {view === 'month' && (
-                <MonthView
-                  currentDate={currentDate}
-                  events={filteredEvents}
-                  onEventClick={handleEventClick}
-                  onDayClick={handleDayClick}
-                />
-              )}
-              {view === 'week' && (
-                <WeekView
-                  currentDate={currentDate}
-                  events={filteredEvents}
-                  onEventClick={handleEventClick}
-                  onTimeSlotClick={handleTimeSlotClick}
-                />
-              )}
-              {view === 'day' && (
-                <DayView
-                  currentDate={currentDate}
-                  events={filteredEvents}
-                  onEventClick={handleEventClick}
-                  onTimeSlotClick={handleTimeSlotClick}
-                />
-              )}
-            </div>
+            )}
+            {view === 'week' && (
+              <WeekView
+                currentDate={currentDate}
+                events={filteredEvents}
+                onEventClick={handleEventClick}
+                onTimeSlotClick={handleTimeSlotClick}
+              />
+            )}
+            {view === 'day' && (
+              <DayView
+                currentDate={currentDate}
+                events={filteredEvents}
+                onEventClick={handleEventClick}
+                onTimeSlotClick={handleTimeSlotClick}
+              />
+            )}
           </div>
         </div>
       </div>
