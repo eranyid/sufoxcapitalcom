@@ -104,12 +104,12 @@ const App = () => (
                       <Research />
                     </Suspense>
                   } />
-                  <Route path="/companies" element={
+                  <Route path="/analysis" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Companies />
                     </Suspense>
                   } />
-                  <Route path="/companies/:companyId" element={
+                  <Route path="/analysis/:companyId" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <CompanyPage />
                     </Suspense>
@@ -211,7 +211,9 @@ const App = () => (
                   <Route path="/crm/*" element={<Navigate to="/backoffice" replace />} />
                   <Route path="/projects" element={<Navigate to="/backoffice/projects" replace />} />
                   <Route path="/projects/:id" element={<Navigate to="/backoffice/projects/:id" replace />} />
-                  <Route path="/backoffice/company/:companyId" element={<Navigate to="/companies/:companyId" replace />} />
+                  <Route path="/backoffice/company/:companyId" element={<Navigate to="/analysis/:companyId" replace />} />
+                  <Route path="/companies" element={<Navigate to="/analysis" replace />} />
+                  <Route path="/companies/:companyId" element={<Navigate to="/analysis/:companyId" replace />} />
                   <Route path="/backoffice/tasks" element={<Navigate to="/backoffice" replace />} />
                 </Route>
                 {/* Public pages - accessible without auth */}

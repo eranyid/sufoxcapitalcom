@@ -301,7 +301,7 @@ export default function BackOfficeTimeline() {
                         <>
                           <span>•</span>
                           <Link
-                            to={`/companies/${event.companyId}`}
+                            to={`/analysis/${event.companyId}`}
                             className="text-primary hover:underline"
                           >
                             {event.companyName}
