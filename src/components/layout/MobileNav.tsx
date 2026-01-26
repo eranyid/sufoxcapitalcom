@@ -1,6 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
   Layers,
   Contact,
   MoreHorizontal,
@@ -22,6 +21,7 @@ import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
 import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
 import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { RiskIcon } from '@/components/icons/RiskIcon';
+import { OverviewIcon } from '@/components/icons/OverviewIcon';
 import {
   Sheet,
   SheetContent,
@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/sheet';
 
 const primaryNavItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Overview' },
+  { path: '/', icon: OverviewIcon, label: 'Overview' },
   { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
   { path: '/risk', icon: RiskIcon, label: 'Risk' },
   { path: '/research', icon: FlaskConical, label: 'Research' },

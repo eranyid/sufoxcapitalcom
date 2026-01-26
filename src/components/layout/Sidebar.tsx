@@ -1,6 +1,5 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
   ChevronLeft, ChevronRight, LogOut, Layers, FileCheck, Users, 
   FlaskConical, HelpCircle, FileText
 } from 'lucide-react';
@@ -19,11 +18,12 @@ import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
 import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { RiskIcon } from '@/components/icons/RiskIcon';
+import { OverviewIcon } from '@/components/icons/OverviewIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon | typeof ChartsIcon | typeof FxRatesIcon | typeof ValuationsIcon | typeof RiskIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon | typeof ChartsIcon | typeof FxRatesIcon | typeof ValuationsIcon | typeof RiskIcon | typeof OverviewIcon;
   label: string;
 }
 
@@ -36,7 +36,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'ANALYTICS',
     items: [
-      { path: '/', icon: LayoutDashboard, label: 'Overview' },
+      { path: '/', icon: OverviewIcon, label: 'Overview' },
       { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
       { path: '/risk', icon: RiskIcon, label: 'Risk' },
       { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
