@@ -3,7 +3,6 @@ import {
   LayoutDashboard, 
   Layers,
   Contact,
-  Settings,
   MoreHorizontal,
   TrendingUp,
   Shield,
@@ -21,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { XRayIcon } from '@/components/icons/XRayIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
+import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import {
   Sheet,
   SheetContent,
@@ -43,7 +43,7 @@ const moreNavItems = [
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
   { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/settings', icon: SettingsIcon, label: 'Settings' },
   { path: '/help', icon: HelpCircle, label: 'Help' },
 ];
 
