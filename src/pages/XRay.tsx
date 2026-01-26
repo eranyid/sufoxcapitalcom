@@ -383,7 +383,6 @@ export default function XRay() {
 
           {/* Distribution Sections - Using centralized allocation data */}
           <DistributionSection title="Asset Class Distribution" data={assetTypeAllocation} />
-          <DistributionSection title="Sector Distribution" data={sectorAllocation} />
           <DistributionSection title="Currency Distribution" data={currencyAllocation} />
           
           {/* Time Horizon Distribution - Vertical Bar Chart */}
