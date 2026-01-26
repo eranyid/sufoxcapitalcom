@@ -4,7 +4,6 @@ import {
   Layers,
   Contact,
   MoreHorizontal,
-  Shield,
   Calendar,
   FileCheck,
   Users,
@@ -22,6 +21,7 @@ import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
 import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
 import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
+import { RiskIcon } from '@/components/icons/RiskIcon';
 import {
   Sheet,
   SheetContent,
@@ -31,7 +31,7 @@ import {
 const primaryNavItems = [
   { path: '/', icon: LayoutDashboard, label: 'Overview' },
   { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
-  { path: '/risk', icon: Shield, label: 'Risk' },
+  { path: '/risk', icon: RiskIcon, label: 'Risk' },
   { path: '/research', icon: FlaskConical, label: 'Research' },
 ];
 
