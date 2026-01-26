@@ -119,20 +119,20 @@ export default function Calendar() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
+    <div className="h-[calc(100vh-120px)] flex flex-col">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between px-1 pb-2">
         <div>
-          <h1 className="text-xl font-semibold text-primary">Calendar</h1>
-          <p className="text-sm text-muted-foreground">Manage your schedule and events</p>
+          <h1 className="text-lg font-semibold text-primary">Calendar</h1>
+          <p className="text-xs text-muted-foreground">Manage your schedule and events</p>
         </div>
       </div>
 
-      {/* Main Content - Full Width Calendar */}
-      <div className="bloomberg-panel overflow-hidden">
-        <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
+      {/* Full Height Calendar */}
+      <div className="bloomberg-panel overflow-hidden flex-1">
+        <div className="flex flex-col h-full">
           {/* Calendar Header */}
-          <div className="p-4 border-b border-border">
+          <div className="px-3 py-2 border-b border-border">
             <CalendarHeader
               currentDate={currentDate}
               view={view}
@@ -142,7 +142,7 @@ export default function Calendar() {
             />
           </div>
 
-          {/* Calendar Content - Full Width */}
+          {/* Calendar Content - Full Height */}
           <div className="flex-1 overflow-auto">
             {view === 'month' && (
               <MonthView
