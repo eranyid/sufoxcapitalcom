@@ -234,6 +234,20 @@ export function SectorAllocationRangeChart({ sectorData, holdings }: SectorAlloc
                 />
               ))}
               
+              {/* Connecting lines between Min-Avg-Max for each sector */}
+              {chartData.map((d, i) => (
+                <ReferenceLine
+                  key={`range-line-${i}`}
+                  segment={[
+                    { x: d.low, y: d.sectorIndex },
+                    { x: d.high, y: d.sectorIndex }
+                  ]}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeWidth={2}
+                  opacity={0.5}
+                />
+              ))}
+              
               {/* Low allocation dots (Orange) */}
               <Scatter
                 name="Min"
