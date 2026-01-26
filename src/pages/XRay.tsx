@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Scan, BarChart3, Target, Layers, TrendingUp, Building2, Clock } from 'lucide-react';
+import { BarChart3, Target, Layers, TrendingUp, Building2, Clock } from 'lucide-react';
+import { XRayIcon } from '@/components/icons/XRayIcon';
 import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
@@ -215,7 +216,7 @@ export default function XRay() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-sm md:text-base font-semibold flex items-center gap-2 text-foreground">
-            <Scan className="h-4 w-4 text-primary" />
+            <XRayIcon size={16} className="text-primary" />
             Portfolio X-RAY
           </h1>
           <p className="text-muted-foreground text-[10px] font-mono mt-0.5">
@@ -463,7 +464,7 @@ export default function XRay() {
         </>
       ) : (
         <div className="bloomberg-panel p-8 text-center">
-          <Scan className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <XRayIcon size={48} className="mx-auto text-muted-foreground mb-4" />
           <h3 className="text-base font-semibold mb-2 text-foreground">No Data Available</h3>
           <p className="text-muted-foreground text-sm max-w-md mx-auto">
             Add transactions and monthly valuations to see the portfolio X-Ray analysis.
