@@ -1,6 +1,7 @@
 import { useCrmTasks } from '@/hooks/useCrmTasks';
 import { BackOfficeDashboard } from '@/components/backoffice/BackOfficeDashboard';
 import { StatusDistributionBattery } from '@/components/crm/StatusDistributionBattery';
+import { OpenIssuesWidget } from '@/components/backoffice/OpenIssuesWidget';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LayoutDashboard } from 'lucide-react';
 
@@ -36,6 +37,9 @@ export default function BackOfficeOverview() {
           </p>
         </div>
       </div>
+
+      {/* Open Issues Widget with task list */}
+      <OpenIssuesWidget tasks={tasks} />
 
       {/* Dashboard Summary */}
       <BackOfficeDashboard tasks={tasks} />
