@@ -10,7 +10,6 @@ import {
   Users,
   FlaskConical,
   HelpCircle,
-  Banknote,
   FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +20,7 @@ import { XRayIcon } from '@/components/icons/XRayIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
+import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
 import {
   Sheet,
   SheetContent,
@@ -41,7 +41,7 @@ const moreNavItems = [
   { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
   { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
   { path: '/valuations', icon: Calendar, label: 'Valuations' },
-  { path: '/fx-rates', icon: Banknote, label: 'FX Rates' },
+  { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
   { path: '/policy', icon: FileCheck, label: 'Policy' },
   { path: '/settings', icon: SettingsIcon, label: 'Settings' },
   { path: '/help', icon: HelpCircle, label: 'Help' },
