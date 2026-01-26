@@ -46,7 +46,7 @@ export default function Help() {
   const commandBarCommands = [
     { command: 'overview', description: 'Go to dashboard overview' },
     { command: 'crm', description: 'Open CRM system' },
-    { command: 'crm companies', description: 'CRM Companies board' },
+    { command: 'analysis', description: 'Analysis board' },
     { command: 'crm tasks', description: 'CRM Tasks board' },
     { command: 'crm timeline', description: 'CRM Timeline view' },
     { command: 'performance', description: 'Portfolio performance analytics' },

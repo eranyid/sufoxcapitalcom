@@ -275,7 +275,7 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
-                            onClick={() => navigate(`/companies/${holding.linkedCompany!.id}`)}
+                            onClick={() => navigate(`/analysis/${holding.linkedCompany!.id}`)}
                             className="flex items-center gap-1 text-primary hover:underline cursor-pointer"
                           >
                             <Building2 className="h-3 w-3" />

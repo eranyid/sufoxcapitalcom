@@ -122,7 +122,7 @@ export default function Companies() {
     setCreateOpen(false);
     setCreating(false);
     toast.success('Company created');
-    navigate(`/companies/${data.id}`);
+    navigate(`/analysis/${data.id}`);
   };
 
   const filteredCompanies = companies.filter(c => {
@@ -196,7 +196,7 @@ export default function Companies() {
                 <TableRow
                   key={company.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => navigate(`/companies/${company.id}`)}
+                  onClick={() => navigate(`/analysis/${company.id}`)}
                 >
                   <TableCell className="font-medium">{company.company_name}</TableCell>
                   <TableCell>

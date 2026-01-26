@@ -237,7 +237,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
             </Select>
             {linkedCompany && (
               <Link 
-                to={`/companies/${linkedCompany.id}`}
+                to={`/analysis/${linkedCompany.id}`}
                 onClick={(e) => e.stopPropagation()}
                 className="text-xs text-primary hover:underline whitespace-nowrap"
               >
