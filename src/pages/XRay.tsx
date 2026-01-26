@@ -6,6 +6,7 @@ import { CorrelationMatrix } from '@/components/dashboard/CorrelationMatrix';
 import { GeographicHeatMap } from '@/components/dashboard/GeographicHeatMap';
 import { ConcentricRingsChart } from '@/components/portfolio/ConcentricRingsChart';
 import { RiskReturnScatter } from '@/components/dashboard/RiskReturnScatter';
+import { SectorAllocationRangeChart } from '@/components/dashboard/SectorAllocationRangeChart';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RingSegment } from '@/lib/portfolioEngine';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -365,6 +366,16 @@ export default function XRay() {
               </p>
             </div>
           </div>
+
+          {/* Sector Allocation Range (Dot Plot) */}
+          <SectorAllocationRangeChart
+            sectorData={sectorAllocation}
+            holdings={holdings.map(h => ({
+              ticker: h.ticker,
+              sector: h.sector,
+              weight: h.weight
+            }))}
+          />
 
           {/* Distribution Sections - Using centralized allocation data */}
           <DistributionSection title="Asset Class Distribution" data={assetTypeAllocation} />
