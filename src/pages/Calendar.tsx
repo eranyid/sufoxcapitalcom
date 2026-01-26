@@ -119,20 +119,12 @@ export default function Calendar() {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between px-1 pb-2">
-        <div>
-          <h1 className="text-lg font-semibold text-primary">Calendar</h1>
-          <p className="text-xs text-muted-foreground">Manage your schedule and events</p>
-        </div>
-      </div>
-
+    <div className="h-[calc(100vh-70px)] md:h-[calc(100vh-120px)] flex flex-col -mx-4 md:mx-0 -mt-2 md:mt-0">
       {/* Full Height Calendar */}
-      <div className="bloomberg-panel overflow-hidden flex-1">
+      <div className="bloomberg-panel overflow-hidden flex-1 rounded-none md:rounded-lg">
         <div className="flex flex-col h-full">
           {/* Calendar Header */}
-          <div className="px-3 py-2 border-b border-border">
+          <div className="px-2 md:px-3 py-2 border-b border-border">
             <CalendarHeader
               currentDate={currentDate}
               view={view}
