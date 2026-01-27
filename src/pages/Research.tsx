@@ -4,6 +4,7 @@ import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
+import { BlackLittermanOptimizer } from '@/components/research/BlackLittermanOptimizer';
 import { usePortfolio } from '@/context/PortfolioContext';
 
 const Research = () => {
@@ -28,20 +29,27 @@ const Research = () => {
           <h1 className="text-xl font-mono text-foreground tracking-tight">RESEARCH</h1>
         </div>
 
+        {/* Black-Litterman Optimizer - NEW */}
+        <BlackLittermanOptimizer />
+
         {/* Monte Carlo Simulation */}
         {hasData && (
-          <MonteCarloSimulation 
-            monthlyReturns={performanceMetrics.monthlyReturns.map(m => m.return)} 
-            currentValue={performanceMetrics.totalValue}
-            portfolioCAGR={performanceMetrics.twr > 0 ? performanceMetrics.twr : undefined}
-            portfolioVolatility={riskMetrics.volatility}
-            portfolioSharpe={riskMetrics.sharpeRatio}
-            riskFreeRate={settings.riskFreeRate}
-          />
+          <div className="mt-4">
+            <MonteCarloSimulation 
+              monthlyReturns={performanceMetrics.monthlyReturns.map(m => m.return)} 
+              currentValue={performanceMetrics.totalValue}
+              portfolioCAGR={performanceMetrics.twr > 0 ? performanceMetrics.twr : undefined}
+              portfolioVolatility={riskMetrics.volatility}
+              portfolioSharpe={riskMetrics.sharpeRatio}
+              riskFreeRate={settings.riskFreeRate}
+            />
+          </div>
         )}
 
         {/* Efficient Frontier Module */}
-        <EfficientFrontier />
+        <div className="mt-4">
+          <EfficientFrontier />
+        </div>
 
         {/* Rebalance Tool (Unified with Tax Optimization) */}
         <div className="mt-4">
