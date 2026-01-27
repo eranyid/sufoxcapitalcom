@@ -29,26 +29,26 @@ const Research = () => {
           <h1 className="text-xl font-mono text-foreground tracking-tight">RESEARCH</h1>
         </div>
 
-        {/* Black-Litterman Optimizer - NEW */}
-        <BlackLittermanOptimizer />
-
         {/* Monte Carlo Simulation */}
         {hasData && (
-          <div className="mt-4">
-            <MonteCarloSimulation 
-              monthlyReturns={performanceMetrics.monthlyReturns.map(m => m.return)} 
-              currentValue={performanceMetrics.totalValue}
-              portfolioCAGR={performanceMetrics.twr > 0 ? performanceMetrics.twr : undefined}
-              portfolioVolatility={riskMetrics.volatility}
-              portfolioSharpe={riskMetrics.sharpeRatio}
-              riskFreeRate={settings.riskFreeRate}
-            />
-          </div>
+          <MonteCarloSimulation 
+            monthlyReturns={performanceMetrics.monthlyReturns.map(m => m.return)} 
+            currentValue={performanceMetrics.totalValue}
+            portfolioCAGR={performanceMetrics.twr > 0 ? performanceMetrics.twr : undefined}
+            portfolioVolatility={riskMetrics.volatility}
+            portfolioSharpe={riskMetrics.sharpeRatio}
+            riskFreeRate={settings.riskFreeRate}
+          />
         )}
 
         {/* Efficient Frontier Module */}
         <div className="mt-4">
           <EfficientFrontier />
+        </div>
+
+        {/* Black-Litterman Optimizer */}
+        <div className="mt-4">
+          <BlackLittermanOptimizer />
         </div>
 
         {/* Rebalance Tool (Unified with Tax Optimization) */}
