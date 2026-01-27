@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar, TrendingUp, Rss, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
@@ -23,6 +23,19 @@ const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD',
 
 const emailSchema = z.string().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
+
+// Section Header Component
+function SectionHeader({ icon: Icon, title }: { icon: typeof User; title: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-8 pb-4 first:pt-0">
+      <div className="p-2 rounded-lg bg-primary/10">
+        <Icon className="h-5 w-5 text-primary" />
+      </div>
+      <h2 className="text-lg font-semibold text-foreground uppercase tracking-wide">{title}</h2>
+      <div className="flex-1 h-px bg-border ml-2" />
+    </div>
+  );
+}
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -93,7 +106,6 @@ export default function Settings() {
     if (!user) return;
     setIsSavingRss(true);
     try {
-      // Check if settings exist
       const { data: existing } = await supabase
         .from('portfolio_settings')
         .select('id')
@@ -142,13 +154,11 @@ export default function Settings() {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error('Image must be less than 2MB');
       return;
@@ -159,21 +169,18 @@ export default function Settings() {
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
 
-      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
       const newAvatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
-      // Update profile
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: newAvatarUrl })
@@ -198,15 +205,12 @@ export default function Settings() {
 
     setIsDeletingAccount(true);
     try {
-      // Clear all user data first
       await clearAllData();
       
-      // Delete profile
       if (user) {
         await supabase.from('profiles').delete().eq('id', user.id);
       }
 
-      // Sign out
       await signOut();
       
       toast.success('Account deleted. Goodbye!');
@@ -293,477 +297,369 @@ export default function Settings() {
   };
 
   return (
-    <div className="section-spacing animate-fade-in max-w-3xl">
-      <div className="border-b border-border pb-4">
+    <div className="section-spacing animate-fade-in max-w-4xl mx-auto">
+      {/* Page Header */}
+      <div className="border-b border-border pb-4 mb-6">
         <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide">Settings</h1>
         <p className="text-muted-foreground text-sm mt-1 font-mono">Configure portfolio and account preferences</p>
       </div>
 
-      {/* Account Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            Account Preferences
-          </CardTitle>
-          <CardDescription>
-            Manage your profile, avatar, email, and password
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Avatar */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20 border-2 border-primary">
-              <AvatarImage src={avatarUrl || undefined} alt="Profile" />
-              <AvatarFallback className="bg-muted text-primary text-xl">
-                {displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
+      {/* ==================== ACCOUNT SECTION ==================== */}
+      <SectionHeader icon={User} title="Account" />
+      
+      <div className="grid gap-4">
+        {/* Profile Card */}
+        <Card className="bg-card/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Profile</CardTitle>
+            <CardDescription className="text-xs">Your public profile information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16 border-2 border-primary">
+                <AvatarImage src={avatarUrl || undefined} alt="Profile" />
+                <AvatarFallback className="bg-muted text-primary text-lg">
+                  {displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploadingAvatar}>
+                  {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                  Upload
+                </Button>
+                <p className="text-xs text-muted-foreground">Max 2MB</p>
+              </div>
+            </div>
             <div className="space-y-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
-              <Button 
-                variant="outline" 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingAvatar}
-              >
-                {isUploadingAvatar ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                Upload Avatar
-              </Button>
-              <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG</p>
+              <Label className="text-xs">Display Name</Label>
+              <div className="flex gap-2">
+                <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your display name" className="h-9" />
+                <Button size="sm" onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
+                  {isUpdatingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Display Name */}
-          <div className="space-y-2 pt-4 border-t border-border">
-            <Label>Display Name</Label>
-            <div className="flex gap-2">
-              <Input 
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your display name"
-              />
-              <Button onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
-                {isUpdatingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              </Button>
+        {/* Security Card */}
+        <Card className="bg-card/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Lock className="h-4 w-4" /> Security
+            </CardTitle>
+            <CardDescription className="text-xs">Manage your email and password</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5" /> Email
+              </Label>
+              <p className="text-xs text-muted-foreground">Current: {user?.email}</p>
+              <div className="flex gap-2">
+                <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="New email address" className="h-9" />
+                <Button size="sm" onClick={handleUpdateEmail} disabled={isUpdatingEmail || !newEmail}>
+                  {isUpdatingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+                </Button>
+              </div>
             </div>
-          </div>
-
-          {/* Email */}
-          <div className="space-y-2 pt-4 border-t border-border">
-            <Label className="flex items-center gap-2">
-              <Mail className="h-4 w-4" /> Change Email
-            </Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Current: {user?.email}
-            </p>
-            <div className="flex gap-2">
-              <Input 
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="New email address"
-              />
-              <Button onClick={handleUpdateEmail} disabled={isUpdatingEmail || !newEmail}>
-                {isUpdatingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+            <div className="space-y-2 pt-3 border-t border-border">
+              <Label className="text-xs">Password</Label>
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="h-9" />
+              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="h-9" />
+              <Button size="sm" onClick={handleUpdatePassword} disabled={isUpdatingPassword || !newPassword || !confirmPassword}>
+                {isUpdatingPassword && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Update Password
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              A confirmation email will be sent to your new address
-            </p>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Password */}
-          <div className="space-y-3 pt-4 border-t border-border">
-            <Label className="flex items-center gap-2">
-              <Lock className="h-4 w-4" /> Change Password
-            </Label>
-            <Input 
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="New password"
-            />
-            <Input 
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-            />
-            <Button onClick={handleUpdatePassword} disabled={isUpdatingPassword || !newPassword || !confirmPassword}>
-              {isUpdatingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Update Password
-            </Button>
-          </div>
-
-          {/* Sign Out */}
-          <div className="space-y-3 pt-4 border-t border-border">
-            <Label className="flex items-center gap-2">
-              <LogOut className="h-4 w-4" /> Sign Out
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Sign out of your account on this device.
-            </p>
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                await signOut();
-                navigate('/auth');
-              }}
-            >
+        {/* Session Card */}
+        <Card className="bg-card/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <LogOut className="h-4 w-4" /> Session
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" size="sm" onClick={async () => { await signOut(); navigate('/auth'); }}>
               <LogOut className="h-4 w-4 mr-2" /> Sign Out
             </Button>
-          </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Delete Account */}
-          <div className="space-y-3 pt-4 border-t border-destructive/30">
-            <Label className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-4 w-4" /> Delete Account
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              This will permanently delete your account and all associated data. This action cannot be undone.
-            </p>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete My Account
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-                    <AlertTriangle className="h-5 w-5" />
-                    Delete Account Permanently?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="space-y-3">
-                    <p>This action cannot be undone. All your data will be permanently deleted:</p>
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      <li>All transactions and valuations</li>
-                      <li>Portfolio settings and cash balances</li>
-                      <li>Custom scenarios</li>
-                      <li>Profile information</li>
-                    </ul>
-                    <div className="pt-2">
-                      <Label className="text-sm font-medium">Type DELETE to confirm:</Label>
-                      <Input 
-                        value={deleteConfirmText}
-                        onChange={(e) => setDeleteConfirmText(e.target.value)}
-                        placeholder="DELETE"
-                        className="mt-2"
-                      />
-                    </div>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setDeleteConfirmText('')}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleDeleteAccount}
-                    disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    {isDeletingAccount ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Delete Forever
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </CardContent>
-      </Card>
+      {/* ==================== PORTFOLIO SECTION ==================== */}
+      <SectionHeader icon={TrendingUp} title="Portfolio" />
+      
+      <div className="grid gap-4">
+        {/* Risk Parameters */}
+        <Card className="bg-card/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Risk Parameters</CardTitle>
+            <CardDescription className="text-xs">Configure risk-free rate and benchmark for calculations</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Risk-Free Rate (%)</Label>
+                <Input type="number" step="0.1" value={riskFreeRate} onChange={(e) => setRiskFreeRate(e.target.value)} placeholder="4.5" className="h-9" />
+                <p className="text-xs text-muted-foreground">Annual rate (e.g., 10Y Treasury)</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Base Currency</Label>
+                <Select value={baseCurrency} onValueChange={(v: Currency) => setBaseCurrency(v)}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Reporting currency</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Benchmark Monthly Returns (%)</Label>
+              <Textarea value={benchmarkReturns} onChange={(e) => setBenchmarkReturns(e.target.value)} placeholder="1.2, 0.8, -0.5, 2.1, 1.5..." rows={2} className="text-sm" />
+              <p className="text-xs text-muted-foreground">Comma-separated monthly returns for Beta calculation</p>
+            </div>
+            <Button size="sm" onClick={handleSave} className="gradient-gold text-primary-foreground">
+              <Save className="h-4 w-4 mr-2" /> Save Parameters
+            </Button>
+          </CardContent>
+        </Card>
 
-      {/* Calendar Integration */}
-      <CalendarSettingsSection />
+        {/* Sample Data */}
+        <Card className="bg-card/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Database className="h-4 w-4" /> Sample Data Mode
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div>
+                <p className="text-sm font-medium">{sampleDataMode ? 'Sample Data Active' : 'Your Data Active'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {sampleDataMode ? 'Demo portfolio with equities, bonds & crypto' : 'Your personal portfolio data'}
+                </p>
+              </div>
+              <Switch checked={sampleDataMode} onCheckedChange={handleSampleDataToggle} className="data-[state=checked]:bg-primary" />
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* News Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SettingsIcon className="h-5 w-5 text-primary" />
-            News Ticker Settings
-          </CardTitle>
-          <CardDescription>
-            Configure the RSS feed for the live news ticker on the Overview page
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>RSS Feed URL</Label>
+        {/* Data Summary */}
+        <Card className="bg-card/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Data Summary {sampleDataMode && <span className="text-xs text-primary ml-2">(Sample)</span>}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-3 bg-muted/30 rounded-lg">
+                <p className="text-2xl font-bold text-primary">{transactions.length}</p>
+                <p className="text-xs text-muted-foreground">Transactions</p>
+              </div>
+              <div className="text-center p-3 bg-muted/30 rounded-lg">
+                <p className="text-2xl font-bold text-primary">{valuations.length}</p>
+                <p className="text-xs text-muted-foreground">Valuations</p>
+              </div>
+              <div className="text-center p-3 bg-muted/30 rounded-lg">
+                <p className="text-2xl font-bold text-primary">{new Set(transactions.map(t => t.ticker)).size}</p>
+                <p className="text-xs text-muted-foreground">Assets</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                <RefreshCw className="h-4 w-4 mr-2" /> Reload
+              </Button>
+              <Button variant="outline" size="sm" onClick={refreshMetrics}>
+                <RefreshCw className="h-4 w-4 mr-2" /> Recalculate
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleClearData} disabled={sampleDataMode}>
+                <Trash2 className="h-4 w-4 mr-2" /> Clear Data
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ==================== INTEGRATIONS SECTION ==================== */}
+      <SectionHeader icon={Calendar} title="Integrations" />
+      
+      <div className="grid gap-4">
+        {/* Calendar */}
+        <CalendarSettingsSection />
+
+        {/* News Ticker */}
+        <Card className="bg-card/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Rss className="h-4 w-4" /> News Ticker
+            </CardTitle>
+            <CardDescription className="text-xs">RSS feed for the Overview page ticker</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
             <div className="flex gap-2">
-              <Input 
-                type="url"
-                value={rssFeedUrl}
-                onChange={(e) => setRssFeedUrl(e.target.value)}
-                placeholder="https://feeds.reuters.com/reuters/businessNews"
-              />
-              <Button onClick={handleSaveRssFeed} disabled={isSavingRss}>
+              <Input type="url" value={rssFeedUrl} onChange={(e) => setRssFeedUrl(e.target.value)} placeholder="https://feeds.reuters.com/..." className="h-9" />
+              <Button size="sm" onClick={handleSaveRssFeed} disabled={isSavingRss}>
                 {isSavingRss ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Enter an RSS feed URL for financial news. Leave empty to disable the ticker.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+            <p className="text-xs text-muted-foreground">Leave empty to disable the ticker</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Risk Parameters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SettingsIcon className="h-5 w-5 text-primary" />
-            Risk Parameters
-          </CardTitle>
-          <CardDescription>
-            Configure risk-free rate and benchmark for Sharpe ratio and Beta calculations
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Risk-Free Rate (%)</Label>
-              <Input 
-                type="number"
-                step="0.1"
-                value={riskFreeRate}
-                onChange={(e) => setRiskFreeRate(e.target.value)}
-                placeholder="4.5"
-              />
-              <p className="text-xs text-muted-foreground">
-                Annual risk-free rate (e.g., 10Y Treasury yield)
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>Base Currency</Label>
-              <Select value={baseCurrency} onValueChange={(v: Currency) => setBaseCurrency(v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Reporting currency for all metrics
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Benchmark Monthly Returns (%)</Label>
-            <Textarea 
-              value={benchmarkReturns}
-              onChange={(e) => setBenchmarkReturns(e.target.value)}
-              placeholder="1.2, 0.8, -0.5, 2.1, 1.5..."
-              rows={3}
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter comma-separated monthly benchmark returns for Beta calculation (e.g., S&P 500 monthly returns)
-            </p>
-          </div>
-
-          <Button onClick={handleSave} className="gradient-gold text-primary-foreground">
-            <Save className="h-4 w-4 mr-2" /> Save Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Sample Data Toggle */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-primary" />
-            Sample Data Mode
-          </CardTitle>
-          <CardDescription>
-            Toggle to view sample portfolio data. Your own data is preserved and will return when you turn this off.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-            <div>
-              <p className="font-medium">{sampleDataMode ? 'Sample Data Active' : 'Your Data Active'}</p>
-              <p className="text-sm text-muted-foreground">
-                {sampleDataMode 
-                  ? 'Viewing demo portfolio with 14 transactions across equities, bonds & crypto' 
-                  : 'Viewing your personal portfolio data'}
-              </p>
-            </div>
-            <Switch 
-              checked={sampleDataMode} 
-              onCheckedChange={handleSampleDataToggle}
-              className="data-[state=checked]:bg-primary"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Data Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Summary {sampleDataMode && <span className="text-xs text-primary ml-2">(Sample)</span>}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-muted/30 rounded-lg">
-              <p className="text-3xl font-bold text-primary">{transactions.length}</p>
-              <p className="text-sm text-muted-foreground">Transactions</p>
-            </div>
-            <div className="text-center p-4 bg-muted/30 rounded-lg">
-              <p className="text-3xl font-bold text-primary">{valuations.length}</p>
-              <p className="text-sm text-muted-foreground">Valuations</p>
-            </div>
-            <div className="text-center p-4 bg-muted/30 rounded-lg">
-              <p className="text-3xl font-bold text-primary">
-                {new Set(transactions.map(t => t.ticker)).size}
-              </p>
-              <p className="text-sm text-muted-foreground">Unique Assets</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-4 mt-6">
-            <Button variant="outline" onClick={() => window.location.reload()}>
-              <RefreshCw className="h-4 w-4 mr-2" /> Reload App
-            </Button>
-            <Button variant="outline" onClick={refreshMetrics}>
-              <RefreshCw className="h-4 w-4 mr-2" /> Recalculate Metrics
-            </Button>
-            <Button variant="destructive" onClick={handleClearData} disabled={sampleDataMode}>
-              <Trash2 className="h-4 w-4 mr-2" /> Clear Your Data
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Data Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-primary" />
-            Data Management
-          </CardTitle>
-          <CardDescription>
-            Advanced data recovery and maintenance options
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <button
-            onClick={() => navigate('/trash')}
-            className="w-full flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-destructive/10 rounded-lg">
-                <Trash2 className="h-5 w-5 text-destructive" />
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Trash (Deleted Items)</p>
-                <p className="text-sm text-muted-foreground">
-                  View and restore deleted records (retained for 30 days)
-                </p>
-              </div>
-            </div>
-            <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
-          </button>
-        </CardContent>
-      </Card>
-
-      {/* Help */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-muted-foreground">
-          <div>
-            <h4 className="font-medium text-foreground mb-1">1. Add Transactions</h4>
-            <p>Record all buy and sell transactions with date, quantity, price, and fees.</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-foreground mb-1">2. Add Monthly Valuations</h4>
-            <p>At month-end, record the NAV or market price for each asset. Include FX rates if applicable.</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-foreground mb-1">3. Set Risk Parameters</h4>
-            <p>Configure the risk-free rate (current Treasury yield) and optionally add benchmark returns for Beta calculation.</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-foreground mb-1">4. Review Analytics</h4>
-            <p>The dashboard automatically calculates P/L, returns, volatility, Sharpe, drawdowns, VaR, and more.</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notification Settings */}
-      <Card className="border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Bell className="h-5 w-5 text-primary" />
-            Notifications
-          </CardTitle>
-          <CardDescription>
-            Configure which notifications you receive
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      {/* ==================== NOTIFICATIONS SECTION ==================== */}
+      <SectionHeader icon={Bell} title="Notifications" />
+      
+      <Card className="bg-card/50">
+        <CardContent className="pt-4">
           <NotificationSettings />
         </CardContent>
       </Card>
 
-      {/* Legal */}
-      <Card className="border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Scale className="h-5 w-5 text-primary" />
-            Legal
-          </CardTitle>
-          <CardDescription>
-            Legal information and disclosures
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <button 
-            onClick={() => navigate('/terms')}
-            className="w-full flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group text-left"
+      {/* ==================== DATA MANAGEMENT SECTION ==================== */}
+      <SectionHeader icon={Database} title="Data Management" />
+      
+      <Card className="bg-card/50">
+        <CardContent className="pt-4">
+          <button
+            onClick={() => navigate('/trash')}
+            className="w-full flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors text-left group"
           >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-destructive/10 rounded-lg">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Trash (Deleted Items)</p>
+                <p className="text-xs text-muted-foreground">View and restore deleted records (30-day retention)</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+          </button>
+        </CardContent>
+      </Card>
+
+      {/* ==================== HELP SECTION ==================== */}
+      <SectionHeader icon={HelpCircle} title="Getting Started" />
+      
+      <Card className="bg-card/50">
+        <CardContent className="pt-4 space-y-3 text-sm">
+          <div className="flex gap-3">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-bold">1</span>
+            <div>
+              <p className="font-medium text-foreground">Add Transactions</p>
+              <p className="text-xs text-muted-foreground">Record buy/sell with date, quantity, price, and fees</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-bold">2</span>
+            <div>
+              <p className="font-medium text-foreground">Add Monthly Valuations</p>
+              <p className="text-xs text-muted-foreground">Record NAV or market price for each asset at month-end</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-bold">3</span>
+            <div>
+              <p className="font-medium text-foreground">Set Risk Parameters</p>
+              <p className="text-xs text-muted-foreground">Configure risk-free rate and benchmark returns</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-bold">4</span>
+            <div>
+              <p className="font-medium text-foreground">Review Analytics</p>
+              <p className="text-xs text-muted-foreground">Dashboard auto-calculates P/L, Sharpe, VaR, and more</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ==================== LEGAL SECTION ==================== */}
+      <SectionHeader icon={Scale} title="Legal" />
+      
+      <Card className="bg-card/50">
+        <CardContent className="pt-4 space-y-2">
+          <button onClick={() => navigate('/terms')} className="w-full flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group text-left">
             <div>
               <p className="text-sm font-medium text-foreground">Terms of Service</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                User agreement and service terms
-              </p>
+              <p className="text-xs text-muted-foreground">User agreement and service terms</p>
             </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
           </button>
-          <button 
-            onClick={() => navigate('/privacy')}
-            className="w-full flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group text-left"
-          >
+          <button onClick={() => navigate('/privacy')} className="w-full flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group text-left">
             <div>
               <p className="text-sm font-medium text-foreground">Privacy Policy</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Data collection, usage, and protection
-              </p>
+              <p className="text-xs text-muted-foreground">Data collection, usage, and protection</p>
             </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
           </button>
-          <button 
-            onClick={() => navigate('/disclaimer')}
-            className="w-full flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group text-left"
-          >
+          <button onClick={() => navigate('/disclaimer')} className="w-full flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group text-left">
             <div>
               <p className="text-sm font-medium text-foreground">Legal Disclaimer</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Important legal notices and disclaimers
-              </p>
+              <p className="text-xs text-muted-foreground">Important legal notices</p>
             </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
           </button>
+        </CardContent>
+      </Card>
+
+      {/* ==================== DANGER ZONE ==================== */}
+      <SectionHeader icon={AlertTriangle} title="Danger Zone" />
+      
+      <Card className="bg-card/50 border-destructive/30">
+        <CardContent className="pt-4">
+          <div className="p-4 bg-destructive/5 rounded-lg border border-destructive/20">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-destructive">Delete Account</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="mt-3">
+                      <Trash2 className="h-4 w-4 mr-2" /> Delete My Account
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5" />
+                        Delete Account Permanently?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-3">
+                        <p>This action cannot be undone. All your data will be permanently deleted:</p>
+                        <ul className="list-disc list-inside text-sm space-y-1">
+                          <li>All transactions and valuations</li>
+                          <li>Portfolio settings and cash balances</li>
+                          <li>Custom scenarios</li>
+                          <li>Profile information</li>
+                        </ul>
+                        <div className="pt-2">
+                          <Label className="text-sm font-medium">Type DELETE to confirm:</Label>
+                          <Input value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="DELETE" className="mt-2" />
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setDeleteConfirmText('')}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount} className="bg-destructive hover:bg-destructive/90">
+                        {isDeletingAccount && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                        Delete Forever
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
