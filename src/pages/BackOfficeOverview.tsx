@@ -2,6 +2,7 @@ import { useCrmTasks } from '@/hooks/useCrmTasks';
 import { BackOfficeDashboard } from '@/components/backoffice/BackOfficeDashboard';
 import { StatusDistributionBattery } from '@/components/crm/StatusDistributionBattery';
 import { OpenIssuesWidget } from '@/components/backoffice/OpenIssuesWidget';
+import { AIWatchdogPanel } from '@/components/backoffice/AIWatchdogPanel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LayoutDashboard } from 'lucide-react';
 
@@ -37,6 +38,9 @@ export default function BackOfficeOverview() {
           </p>
         </div>
       </div>
+
+      {/* AI Watchdog Panel */}
+      <AIWatchdogPanel />
 
       {/* Open Issues Widget with task list */}
       <OpenIssuesWidget tasks={tasks} />
