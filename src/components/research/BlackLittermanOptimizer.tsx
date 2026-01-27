@@ -1,18 +1,18 @@
 import { useState, useMemo, useCallback } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { calculateBlackLitterman, getAvailableAssets, AnalystView, BlackLittermanInputs, BlackLittermanResult } from '@/lib/blackLitterman';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
-import { Brain, Plus, Trash2, TrendingUp, TrendingDown, AlertTriangle, Info, Target, Scale, RefreshCw } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
+import { Brain, Plus, Trash2, TrendingUp, TrendingDown, AlertTriangle, Info, Target, Scale, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BloombergPanel } from '@/components/ui/bloomberg-panel';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // ============= View Card Component =============
 interface ViewCardProps {
@@ -114,12 +114,15 @@ function AddViewDialog({ assets, onAdd }: AddViewDialogProps) {
           Add View
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[400px]" aria-describedby="add-view-description">
         <DialogHeader>
           <DialogTitle className="text-sm font-mono flex items-center gap-2">
             <Brain className="h-4 w-4 text-primary" />
             Add Analyst View
           </DialogTitle>
+          <DialogDescription id="add-view-description" className="text-[10px]">
+            Express your investment thesis by specifying expected returns or relative performance.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
@@ -638,6 +641,23 @@ export function BlackLittermanOptimizer() {
                   </div>
                 </CardContent>
               </Card>
+              
+              {/* Methodology Disclaimer */}
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 text-[10px] text-muted-foreground hover:text-foreground transition-colors w-full">
+                  <ShieldAlert className="h-3 w-3" />
+                  <span className="font-mono">Model Assumptions & Limitations</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 p-2 bg-muted/30 rounded-sm">
+                  <ul className="space-y-1 text-[9px] text-muted-foreground font-mono">
+                    <li>• Returns are annualized from monthly data</li>
+                    <li>• Long-only constraint applied (no short positions)</li>
+                    <li>• Covariance matrix regularized for numerical stability</li>
+                    <li>• Optimal weights use simplex projection</li>
+                    <li>• This is not investment advice</li>
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
             </>
           )}
           
