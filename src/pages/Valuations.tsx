@@ -705,20 +705,22 @@ function QuickAddForm({
   onAdd: (val: Omit<MonthlyValuation, 'id'>) => Promise<void>;
 }) {
   const currentMonth = new Date().toISOString().slice(0, 7);
-  const [values, setValues] = useState<Record<string, { price: string; fx: string }>>({});
+  const [values, setValues] = useState<Record<string, { price: string; value: string; fx: string }>>({});
 
   const handleQuickAdd = async (ticker: string, name: string) => {
     const val = values[ticker];
-    if (val?.price) {
+    // Use price if provided, otherwise use value (they're alternative inputs)
+    const priceValue = val?.price ? parseFloat(val.price) : (val?.value ? parseFloat(val.value) : 0);
+    if (priceValue > 0) {
       await onAdd({
         assetId: ticker,
         ticker,
         assetName: name,
         month: currentMonth,
-        pricePerUnit: parseFloat(val.price),
-        fxRate: val.fx ? parseFloat(val.fx) : undefined
+        pricePerUnit: priceValue,
+        fxRate: val?.fx ? parseFloat(val.fx) : undefined
       });
-      setValues(prev => ({ ...prev, [ticker]: { price: '', fx: '' } }));
+      setValues(prev => ({ ...prev, [ticker]: { price: '', value: '', fx: '' } }));
       toast.success(`Added ${ticker} valuation`);
     }
   };
@@ -728,38 +730,58 @@ function QuickAddForm({
       <p className="text-sm text-muted-foreground mb-4">
         Quickly add valuations for <strong>{currentMonth}</strong>
       </p>
+      {/* Column Headers */}
       <div className="grid gap-3">
+        <div className="flex items-center gap-3 px-3 text-xs text-muted-foreground font-medium">
+          <div className="w-20">Ticker</div>
+          <div className="w-28">Price</div>
+          <div className="w-28">Value</div>
+          <div className="w-24">FX Rate</div>
+          <div className="w-16"></div>
+        </div>
         {assets.map(asset => (
-          <div key={asset.ticker} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
-            <div className="w-32">
-              <span className="font-medium text-primary">{asset.ticker}</span>
+          <div key={asset.ticker} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+            <div className="w-20">
+              <span className="font-medium text-primary text-sm">{asset.ticker}</span>
             </div>
             <Input 
               type="number"
               step="0.01"
-              placeholder="Price/NAV"
+              placeholder="Price"
               value={values[asset.ticker]?.price || ''}
               onChange={(e) => setValues(prev => ({
                 ...prev,
-                [asset.ticker]: { ...prev[asset.ticker], price: e.target.value }
+                [asset.ticker]: { ...prev[asset.ticker], price: e.target.value, value: '' }
               }))}
-              className="w-32"
+              className="w-28 h-9"
+            />
+            <Input 
+              type="number"
+              step="0.01"
+              placeholder="Value"
+              value={values[asset.ticker]?.value || ''}
+              onChange={(e) => setValues(prev => ({
+                ...prev,
+                [asset.ticker]: { ...prev[asset.ticker], value: e.target.value, price: '' }
+              }))}
+              className="w-28 h-9"
             />
             <Input 
               type="number"
               step="0.0001"
-              placeholder="FX Rate"
+              placeholder="FX"
               value={values[asset.ticker]?.fx || ''}
               onChange={(e) => setValues(prev => ({
                 ...prev,
                 [asset.ticker]: { ...prev[asset.ticker], fx: e.target.value }
               }))}
-              className="w-28"
+              className="w-24 h-9"
             />
             <Button 
               size="sm"
               onClick={() => handleQuickAdd(asset.ticker, asset.name)}
-              disabled={!values[asset.ticker]?.price}
+              disabled={!values[asset.ticker]?.price && !values[asset.ticker]?.value}
+              className="w-16"
             >
               Add
             </Button>
