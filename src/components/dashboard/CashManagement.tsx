@@ -49,6 +49,7 @@ export function CashManagement() {
   const [fromCurrency, setFromCurrency] = useState<CashCurrency>('USD');
   const [toCurrency, setToCurrency] = useState<CashCurrency>('ILS');
   const [convertAmount, setConvertAmount] = useState<string>('');
+  const [receivedAmount, setReceivedAmount] = useState<string>('');
 
   const handleAddCash = async () => {
     const amount = parseFloat(addAmount);
@@ -62,19 +63,26 @@ export function CashManagement() {
 
   const handleConvert = async () => {
     const amount = parseFloat(convertAmount);
-    if (!isNaN(amount) && amount > 0 && fromCurrency !== toCurrency) {
+    const received = parseFloat(receivedAmount);
+    if (!isNaN(amount) && amount > 0 && !isNaN(received) && received > 0 && fromCurrency !== toCurrency) {
       if (cashBalances[fromCurrency] < amount) {
         return; // Not enough balance
       }
-      const rate = EXCHANGE_RATES[fromCurrency][toCurrency];
-      const convertedAmount = amount * rate;
       
-      // Subtract from source currency and add to target
+      // Subtract from source currency and add received amount to target
       await addCash(fromCurrency, -amount);
-      await addCash(toCurrency, convertedAmount);
+      await addCash(toCurrency, received);
       setConvertAmount('');
+      setReceivedAmount('');
       setIsAddOpen(false);
     }
+  };
+
+  const getImpliedRate = () => {
+    const amount = parseFloat(convertAmount);
+    const received = parseFloat(receivedAmount);
+    if (isNaN(amount) || amount <= 0 || isNaN(received) || received <= 0 || fromCurrency === toCurrency) return null;
+    return (received / amount).toFixed(4);
   };
 
   const handleSetBalance = async (currency: CashCurrency) => {
@@ -87,13 +95,6 @@ export function CashManagement() {
   };
 
   const totalInUSD = cashBalances.USD + (cashBalances.EUR * 1.08) + (cashBalances.ILS * 0.27);
-  
-  const getConvertedPreview = () => {
-    const amount = parseFloat(convertAmount);
-    if (isNaN(amount) || amount <= 0 || fromCurrency === toCurrency) return null;
-    const rate = EXCHANGE_RATES[fromCurrency][toCurrency];
-    return (amount * rate).toFixed(2);
-  };
 
   return (
     <div className="bloomberg-panel">
@@ -203,17 +204,28 @@ export function CashManagement() {
                     placeholder="e.g. 1000"
                     className="h-8"
                   />
-                  {getConvertedPreview() && (
+                </div>
+                <div>
+                  <label className="terminal-label mb-1 block">Amount Received</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={receivedAmount}
+                    onChange={(e) => setReceivedAmount(e.target.value)}
+                    placeholder="e.g. 3700"
+                    className="h-8"
+                  />
+                  {getImpliedRate() && (
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       <ArrowRightLeft className="h-3 w-3" />
-                      You'll receive: {CURRENCY_SYMBOLS[toCurrency]}{getConvertedPreview()}
+                      Implied rate: 1 {fromCurrency} = {getImpliedRate()} {toCurrency}
                     </p>
                   )}
                 </div>
                 <Button 
                   onClick={handleConvert} 
                   className="w-full h-8 text-xs"
-                  disabled={fromCurrency === toCurrency || !convertAmount || parseFloat(convertAmount) > cashBalances[fromCurrency]}
+                  disabled={fromCurrency === toCurrency || !convertAmount || !receivedAmount || parseFloat(convertAmount) > cashBalances[fromCurrency]}
                 >
                   Convert Currency
                 </Button>
