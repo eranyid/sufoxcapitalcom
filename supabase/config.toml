@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.sync-calendar]
 verify_jwt = false
+
+[functions.ai-data-watchdog]
+verify_jwt = false
