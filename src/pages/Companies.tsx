@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search, FlaskConical, Eye, Wrench, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Building2, Plus, Search, FlaskConical, Eye, Wrench, CheckCircle2, AlertCircle, Pause, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -61,6 +61,18 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: s
     bg: 'bg-red-500/20',
     text: 'text-red-400',
     label: 'stuck',
+  },
+  on_hold: {
+    icon: <Pause size={14} />,
+    bg: 'bg-slate-500/20',
+    text: 'text-slate-400',
+    label: 'on hold',
+  },
+  exited: {
+    icon: <LogOut size={14} />,
+    bg: 'bg-emerald-500/20',
+    text: 'text-emerald-400',
+    label: 'exited',
   },
 };
 
