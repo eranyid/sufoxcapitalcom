@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePortfolio } from '@/context/PortfolioContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,10 +11,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Banknote, Plus, Pencil, Trash2, Loader2, ArrowRightLeft, RefreshCw, Calendar } from 'lucide-react';
+import { Banknote, Plus, Pencil, Trash2, Loader2, ArrowRightLeft, RefreshCw, Calendar, Repeat } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getSupportedCurrencies, getDefaultFxRate, FxRate } from '@/lib/fxService';
+import { CashCurrency } from '@/types/investment';
+
+const CURRENCY_SYMBOLS: Record<CashCurrency, string> = {
+  USD: '$',
+  EUR: '€',
+  ILS: '₪',
+  GBP: '£',
+  CHF: 'Fr',
+  JPY: '¥'
+};
+
+const CURRENCY_NAMES: Record<CashCurrency, string> = {
+  USD: 'US Dollar',
+  EUR: 'Euro',
+  ILS: 'Israeli Shekel',
+  GBP: 'British Pound',
+  CHF: 'Swiss Franc',
+  JPY: 'Japanese Yen'
+};
 
 interface FxRateFormData {
   fromCurrency: string;
@@ -33,12 +53,21 @@ const initialFormData: FxRateFormData = {
 
 export default function FXRates() {
   const { user } = useAuth();
+  const { cashBalances, convertCurrency } = usePortfolio();
   const [rates, setRates] = useState<FxRate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRate, setEditingRate] = useState<FxRate | null>(null);
   const [formData, setFormData] = useState<FxRateFormData>(initialFormData);
+  
+  // Currency conversion state
+  const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
+  const [convertFrom, setConvertFrom] = useState<CashCurrency>('USD');
+  const [convertTo, setConvertTo] = useState<CashCurrency>('ILS');
+  const [convertAmount, setConvertAmount] = useState('');
+  const [receivedAmount, setReceivedAmount] = useState('');
+  const [isConverting, setIsConverting] = useState(false);
 
   const currencies = getSupportedCurrencies();
 
@@ -101,6 +130,55 @@ export default function FXRates() {
     setIsDialogOpen(false);
     setEditingRate(null);
     setFormData(initialFormData);
+  };
+
+  // Currency conversion handlers
+  const impliedRate = useMemo(() => {
+    const from = parseFloat(convertAmount);
+    const to = parseFloat(receivedAmount);
+    if (!isNaN(from) && from > 0 && !isNaN(to) && to > 0) {
+      return to / from;
+    }
+    return null;
+  }, [convertAmount, receivedAmount]);
+
+  const handleConvertCurrency = async () => {
+    const fromAmt = parseFloat(convertAmount);
+    const toAmt = parseFloat(receivedAmount);
+    
+    if (isNaN(fromAmt) || fromAmt <= 0) {
+      toast.error('Enter a valid amount to convert');
+      return;
+    }
+    if (isNaN(toAmt) || toAmt <= 0) {
+      toast.error('Enter a valid received amount');
+      return;
+    }
+    if (convertFrom === convertTo) {
+      toast.error('Currencies must be different');
+      return;
+    }
+    if (cashBalances[convertFrom] < fromAmt) {
+      toast.error(`Insufficient ${convertFrom} balance`);
+      return;
+    }
+
+    setIsConverting(true);
+    try {
+      const success = await convertCurrency(convertFrom, convertTo, fromAmt, toAmt);
+      if (success) {
+        toast.success(`Converted ${CURRENCY_SYMBOLS[convertFrom]}${fromAmt.toLocaleString()} to ${CURRENCY_SYMBOLS[convertTo]}${toAmt.toLocaleString()}`);
+        setIsConvertDialogOpen(false);
+        setConvertAmount('');
+        setReceivedAmount('');
+      } else {
+        toast.error('Conversion failed');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Conversion failed');
+    } finally {
+      setIsConverting(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -326,6 +404,110 @@ export default function FXRates() {
                 <Button onClick={handleSubmit} disabled={isSaving}>
                   {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   {editingRate ? 'Update' : 'Add'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Convert Currency Dialog */}
+          <Dialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="default" className="bg-primary">
+                <Repeat className="h-4 w-4 mr-2" />
+                Convert
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Repeat className="h-5 w-5 text-primary" />
+                  Convert Currency
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                {/* From Currency */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>From</Label>
+                    <Select value={convertFrom} onValueChange={(v) => setConvertFrom(v as CashCurrency)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(CURRENCY_NAMES) as CashCurrency[]).map((cur) => (
+                          <SelectItem key={cur} value={cur}>
+                            {cur} - {CURRENCY_NAMES[cur]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Balance: {CURRENCY_SYMBOLS[convertFrom]}{cashBalances[convertFrom].toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>To</Label>
+                    <Select value={convertTo} onValueChange={(v) => setConvertTo(v as CashCurrency)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(CURRENCY_NAMES) as CashCurrency[]).map((cur) => (
+                          <SelectItem key={cur} value={cur}>
+                            {cur} - {CURRENCY_NAMES[cur]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Balance: {CURRENCY_SYMBOLS[convertTo]}{cashBalances[convertTo].toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Amount to convert */}
+                <div className="space-y-2">
+                  <Label>Amount to Convert ({convertFrom})</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={convertAmount}
+                    onChange={(e) => setConvertAmount(e.target.value)}
+                    placeholder={`Amount in ${convertFrom}`}
+                  />
+                </div>
+
+                {/* Received amount */}
+                <div className="space-y-2">
+                  <Label>Amount Received ({convertTo})</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={receivedAmount}
+                    onChange={(e) => setReceivedAmount(e.target.value)}
+                    placeholder={`Amount in ${convertTo}`}
+                  />
+                </div>
+
+                {/* Implied rate */}
+                {impliedRate && (
+                  <div className="p-3 bg-muted/50 rounded-md">
+                    <p className="text-sm text-muted-foreground">Implied Rate</p>
+                    <p className="text-lg font-mono font-medium text-primary">
+                      1 {convertFrom} = {impliedRate.toFixed(4)} {convertTo}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsConvertDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleConvertCurrency} disabled={isConverting || convertFrom === convertTo}>
+                  {isConverting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Convert
                 </Button>
               </DialogFooter>
             </DialogContent>
