@@ -523,28 +523,63 @@ export function calculateIRR(cashFlows: { date: string; amount: number }[]): num
   return rate * 100;
 }
 
-// Cash balance type for calculations
+// Support interface for extended cash balances (all 6 currencies)
 interface CashBalancesInput {
   USD: number;
   EUR: number;
   ILS: number;
+  GBP?: number;
+  CHF?: number;
+  JPY?: number;
 }
 
-// Convert cash to base currency (USD by default)
+// FX rates type for dynamic rate support
+export type FxRatesMap = Record<string, number>;
+
+// Default FX rates (fallback when no user rates exist)
+const DEFAULT_FX_RATES_TO_USD: FxRatesMap = {
+  USD: 1,
+  EUR: 1.08,
+  ILS: 0.27,
+  GBP: 1.27,
+  CHF: 1.14,
+  JPY: 0.0067
+};
+
+/**
+ * Convert cash to base currency (USD by default)
+ * Now accepts optional dynamic FX rates from user entries
+ */
 export function calculateTotalCashInBaseCurrency(
   cashBalances: CashBalancesInput,
-  baseCurrency: 'USD' | 'ILS' = 'USD'
+  baseCurrency: 'USD' | 'ILS' = 'USD',
+  fxRates?: FxRatesMap
 ): number {
-  // Approximate FX rates for conversion
-  const EUR_TO_USD = 1.08;
-  const ILS_TO_USD = 1 / 3.6;
-  const USD_TO_ILS = 3.6;
-  const EUR_TO_ILS = 3.9;
+  // Use provided rates or defaults
+  const rates = fxRates || DEFAULT_FX_RATES_TO_USD;
+  
+  // Helper to get rate to USD
+  const toUSD = (currency: string, amount: number): number => {
+    if (currency === 'USD') return amount;
+    const rate = rates[currency] ?? DEFAULT_FX_RATES_TO_USD[currency] ?? 0;
+    return amount * rate;
+  };
+  
+  // Convert all currencies to USD first
+  const totalUSD = 
+    toUSD('USD', cashBalances.USD) +
+    toUSD('EUR', cashBalances.EUR) +
+    toUSD('ILS', cashBalances.ILS) +
+    toUSD('GBP', cashBalances.GBP ?? 0) +
+    toUSD('CHF', cashBalances.CHF ?? 0) +
+    toUSD('JPY', cashBalances.JPY ?? 0);
   
   if (baseCurrency === 'USD') {
-    return cashBalances.USD + (cashBalances.EUR * EUR_TO_USD) + (cashBalances.ILS * ILS_TO_USD);
+    return totalUSD;
   } else {
-    return cashBalances.ILS + (cashBalances.USD * USD_TO_ILS) + (cashBalances.EUR * EUR_TO_ILS);
+    // Convert to ILS: USD / (ILS_TO_USD rate)
+    const ilsRate = rates['ILS'] ?? DEFAULT_FX_RATES_TO_USD['ILS'] ?? 0.27;
+    return ilsRate > 0 ? totalUSD / ilsRate : totalUSD * 3.7;
   }
 }
 
