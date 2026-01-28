@@ -37,7 +37,7 @@ const EXCHANGE_RATES: Record<CashCurrency, Record<CashCurrency, number>> = {
 };
 
 export function CashManagement() {
-  const { cashBalances, updateCashBalance, addCash } = usePortfolio();
+  const { cashBalances, updateCashBalance, addCash, convertCurrency } = usePortfolio();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdraw'>('deposit');
   const [addCurrency, setAddCurrency] = useState<CashCurrency>('USD');
@@ -65,16 +65,13 @@ export function CashManagement() {
     const amount = parseFloat(convertAmount);
     const received = parseFloat(receivedAmount);
     if (!isNaN(amount) && amount > 0 && !isNaN(received) && received > 0 && fromCurrency !== toCurrency) {
-      if (cashBalances[fromCurrency] < amount) {
-        return; // Not enough balance
+      // Use the atomic convertCurrency function that updates both balances in one operation
+      const success = await convertCurrency(fromCurrency, toCurrency, amount, received);
+      if (success) {
+        setConvertAmount('');
+        setReceivedAmount('');
+        setIsAddOpen(false);
       }
-      
-      // Subtract from source currency and add received amount to target
-      await addCash(fromCurrency, -amount);
-      await addCash(toCurrency, received);
-      setConvertAmount('');
-      setReceivedAmount('');
-      setIsAddOpen(false);
     }
   };
 
@@ -171,9 +168,9 @@ export function CashManagement() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                        <SelectItem value="ILS">ILS</SelectItem>
+                        {(Object.keys(CURRENCY_NAMES) as CashCurrency[]).map((cur) => (
+                          <SelectItem key={cur} value={cur}>{cur} - {CURRENCY_NAMES[cur]}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <p className="text-[10px] text-muted-foreground mt-1">
@@ -187,9 +184,9 @@ export function CashManagement() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                        <SelectItem value="ILS">ILS</SelectItem>
+                        {(Object.keys(CURRENCY_NAMES) as CashCurrency[]).map((cur) => (
+                          <SelectItem key={cur} value={cur}>{cur} - {CURRENCY_NAMES[cur]}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
