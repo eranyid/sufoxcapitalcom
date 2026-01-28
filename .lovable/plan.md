@@ -1,162 +1,121 @@
 
-# Back Office Enhancement Plan - Monday.com Style
+# Monthly FX Rate Entry and Portfolio Recalculation
 
 ## Overview
-Transform the Back Office section into a more comprehensive work management hub similar to Monday.com, with enhanced visualization, dashboard widgets, and improved workflows.
+Adding a monthly FX rate entry interface (similar to stock valuations) to the FX Rates page, and integrating these user-entered rates into portfolio value calculations instead of using hardcoded rates.
 
----
+## Current Problem
+The system uses hardcoded exchange rates for portfolio calculations:
+- `ILS_TO_USD = 1 / 3.6`
+- `EUR_TO_USD = 1.08`
+- Missing GBP, CHF, JPY support entirely
 
-## New Features to Add
+User-entered rates in the `fx_rates` table are stored but **not used** for portfolio calculations.
 
-### 1. Dashboard Summary Section (New Component)
-Add a summary dashboard at the top of the Back Office that provides at-a-glance insights:
+## Solution Components
 
-**Widgets to include:**
-- **Task Overview Numbers**: Total issues, overdue count, completed this week
-- **Urgency Distribution Chart**: Donut/pie chart showing urgent vs high vs medium vs low
-- **Upcoming Due Dates**: Mini timeline of next 7 days with task counts
-- **Recent Activity Feed**: Last 5 activities across all issues
-- **My Tasks Quick Filter**: Button to show only tasks assigned to "Me"
+### 1. Quick FX Rate Entry Panel on FX Page
+Add a "Monthly FX Rates" quick-entry panel similar to the Valuations page QuickAddForm:
+- Shows all currency pairs vs base currency (USD)
+- Month selector (defaults to current month)
+- Single input per currency for that month's rate
+- "Save All" button to batch-save rates
 
-### 2. Enhanced Issues Table with Additional Columns
-Extend the current table with more Monday.com-style columns:
-
-**New columns:**
-- **Owner/Assignee Column**: Avatar + name display (currently just text)
-- **Time Tracking Column**: Estimated hours / actual hours
-- **Tags/Labels Column**: Colored tags for categorization
-- **Subtasks Progress**: Mini progress bar showing subtask completion (e.g., "2/5")
-- **Last Updated Column**: "2h ago" style relative timestamps
-
-### 3. Kanban Board View Toggle
-Add ability to switch between Table view and Kanban board view:
-
-**Implementation:**
-- Toggle button in header: Table | Kanban
-- Kanban columns: Backlog, Planned, In Progress, Completed, Canceled
-- Drag-and-drop using existing `@dnd-kit` dependency
-- Cards show: title, urgency badge, due date, owner avatar
-
-### 4. Quick Actions & Bulk Operations
-Add multi-select and bulk actions:
-
-**Features:**
-- Checkbox column for multi-select
-- Bulk actions bar: Change Status, Change Urgency, Delete, Assign
-- Quick add row at bottom of table (inline creation)
-
-### 5. Timeline View Enhancements
-Improve the existing Timeline with:
-
-**Additions:**
-- Group events by day with date headers
-- Expand/collapse day sections
-- Quick filters as toggle chips (not just dropdown)
-- Activity type icons with color coding
-
-### 6. Projects List Improvements
-Enhance the Projects tab:
-
-**New elements:**
-- Circular progress indicator (like Monday.com)
-- Owner avatars on project cards
-- Quick status update inline
-- Color-coded project labels
-
----
-
-## Technical Implementation
-
-### Database Changes
-Add new columns to `crm_tasks`:
-- `estimated_hours` (numeric, nullable)
-- `actual_hours` (numeric, nullable)  
-- `tags` (text array)
-
-Create new table `task_subtasks`:
-- `id`, `task_id`, `user_id`, `title`, `is_completed`, `order_index`, `created_at`
-
-### New Components to Create
-
-```text
-src/components/backoffice/
-  BackOfficeDashboard.tsx     -- Summary widgets section
-  TaskKanbanBoard.tsx         -- Kanban view component
-  TaskKanbanCard.tsx          -- Individual draggable card
-  TaskOverviewStats.tsx       -- Numbers widget
-  UrgencyDistributionChart.tsx-- Donut chart widget
-  UpcomingDueDates.tsx        -- Mini timeline widget
-  BulkActionsBar.tsx          -- Multi-select actions
-  SubtasksProgress.tsx        -- Subtasks mini progress
-  TagsColumn.tsx              -- Tags display/edit
+Layout:
 ```
+Month: [2026-01]  [Use Last Month's Rates]
+
+Currency    Rate vs USD    Last Rate
+EUR         [1.0850]       1.0800
+ILS         [0.2700]       0.2750
+GBP         [1.2700]       1.2650
+CHF         [1.1400]       1.1350
+JPY         [0.0067]       0.0068
+
+[Save All Rates]
+```
+
+### 2. Dynamic FX Rate Loading in PortfolioContext
+Modify `PortfolioContext.tsx` to:
+- Load latest FX rates from `fx_rates` table on mount
+- Store rates in context state: `fxRates: Record<CashCurrency, number>`
+- Provide fallback to default rates from `fxService.ts` if no database rates exist
+
+### 3. Update Calculation Functions
+Modify `calculateTotalCashInBaseCurrency` in `calculations.ts`:
+- Add optional `fxRates` parameter
+- If provided, use dynamic rates; otherwise use defaults
+- Support all 6 currencies (USD, EUR, ILS, GBP, CHF, JPY)
+
+### 4. Update Portfolio Engine
+Modify `computePortfolioData` in `portfolioEngine.ts`:
+- Accept optional `fxRates` parameter
+- Pass rates to `calculateTotalCashInBaseCurrency`
+- Ensure cash value is calculated with user-defined rates
+
+### 5. Update CashManagement Component
+Modify `CashManagement.tsx`:
+- Use dynamic FX rates from context for "Total (approx. USD)" calculation
+- Include all 6 currencies in the total
+- Show which rates are being used
+
+---
+
+## Technical Details
+
+### Files to Create
+- `src/components/fx/MonthlyFxRatesForm.tsx` - Quick entry component for monthly rates
 
 ### Files to Modify
+1. **`src/pages/FXRates.tsx`**
+   - Add MonthlyFxRatesForm component
+   - Pass callbacks for saving rates and refreshing
 
-1. **`src/pages/BackOfficeTasks.tsx`**
-   - Add view toggle (Table/Kanban)
-   - Add bulk select functionality
-   - Add quick filters
-   - Integrate dashboard component
+2. **`src/context/PortfolioContext.tsx`**
+   - Add `fxRates` state with type `Record<CashCurrency, number>`
+   - Load rates from database in useEffect (fetch latest rate for each currency pair)
+   - Expose `fxRates` in context value
+   - Refresh rates after FX updates
 
-2. **`src/components/layout/BackOfficeLayout.tsx`**
-   - Update layout to support dashboard header area
+3. **`src/lib/calculations.ts`**
+   - Update `calculateTotalCashInBaseCurrency` signature to accept optional rates
+   - Support all 6 currencies with proper cross-rate calculation
 
-3. **`src/types/crm.ts`**
-   - Add new types for subtasks, tags
+4. **`src/lib/portfolioEngine.ts`**
+   - Pass fxRates to calculation function
 
-4. **`src/hooks/useCrmTasks.ts`**
-   - Add support for new fields
-   - Add bulk update operations
+5. **`src/components/dashboard/CashManagement.tsx`**
+   - Use context fxRates for total calculation
+   - Display all 6 currencies in USD equivalent
 
-5. **`src/pages/BackOfficeTimeline.tsx`**
-   - Add day grouping
-   - Add chip-style filters
+### Database
+No schema changes required - `fx_rates` table already exists with:
+- `from_currency`, `to_currency`, `rate`, `rate_date`, `user_id`
 
----
-
-## UI/UX Design Details
-
-### Color Scheme (Monday.com inspired, adapted to dark theme)
-- Keep existing status colors from `TaskStatusBadge`
-- Use consistent urgency colors from `TaskUrgencyBadge`
-- Dashboard cards: `bg-card` with subtle border
-
-### Widget Layout
-```text
-+----------------------------------+
-|  [Summary Stats Row]             |
-|  [Tasks] [Overdue] [Done] [Rate] |
-+----------------------------------+
-|  [Status Battery]                |
-+----------------------------------+
-|  [Filters Row]                   |
-|  View: [Table][Kanban] + filters |
-+----------------------------------+
-|  [Main Content - Table/Kanban]   |
-+----------------------------------+
+### Data Flow
+```
+User enters rates on FX page
+        ↓
+Saves to fx_rates table
+        ↓
+PortfolioContext fetches latest rates
+        ↓
+computePortfolioData uses dynamic rates
+        ↓
+Dashboard shows correct Total Value
 ```
 
-### Mobile Considerations
-- Dashboard widgets stack vertically
-- Kanban board scrolls horizontally
-- Bulk actions as bottom sheet
+### Fallback Strategy
+If no user rates exist for a currency pair:
+1. Check fx_rates table for any historical rate
+2. Fall back to DEFAULT_FX_RATES in fxService.ts
+3. Display indicator showing which source is being used
 
----
-
-## Implementation Priority
-
-**Phase 1 (Core)**
-1. Summary stats row with key metrics
-2. Enhanced table with new columns (tags, last updated)
-3. Quick inline task creation
-
-**Phase 2 (Visual)**
-4. Kanban board view toggle
-5. Day-grouped timeline
-6. Bulk actions support
-
-**Phase 3 (Advanced)**
-7. Subtasks with progress
-8. Time tracking columns
-9. Advanced filters & saved views
+## User Experience
+1. Navigate to FX Rates page
+2. See "Monthly FX Rates" panel at top
+3. Select month (defaults to current)
+4. Enter rates for each currency vs USD
+5. Click "Save All Rates"
+6. Dashboard immediately reflects updated portfolio value
+7. Historical rates preserved for accurate historical analysis
