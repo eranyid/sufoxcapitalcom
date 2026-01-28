@@ -30,6 +30,7 @@ interface PortfolioContextType {
   updateCashBalance: (currency: CashCurrency, amount: number) => Promise<void>;
   addCash: (currency: CashCurrency, amount: number, description?: string) => Promise<void>;
   addCashWithType: (currency: CashCurrency, amount: number, entryType: LedgerEntryType, description?: string) => Promise<void>;
+  convertCurrency: (fromCurrency: CashCurrency, toCurrency: CashCurrency, fromAmount: number, toAmount: number) => Promise<boolean>;
   importTransactions: (txs: Transaction[]) => Promise<void>;
   importValuations: (vals: MonthlyValuation[]) => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -762,6 +763,72 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // ATOMIC currency conversion - updates both currencies in a single operation to avoid race conditions
+  const convertCurrency = async (
+    fromCurrency: CashCurrency, 
+    toCurrency: CashCurrency, 
+    fromAmount: number, 
+    toAmount: number
+  ): Promise<boolean> => {
+    if (!user) return false;
+    if (fromCurrency === toCurrency) return false;
+    if (cashBalances[fromCurrency] < fromAmount) return false;
+    
+    // Calculate new balances ATOMICALLY from current state
+    const newFromBalance = cashBalances[fromCurrency] - fromAmount;
+    const newToBalance = cashBalances[toCurrency] + toAmount;
+    
+    // Create new balances object with both updates
+    const newBalances = { 
+      ...cashBalances, 
+      [fromCurrency]: newFromBalance,
+      [toCurrency]: newToBalance
+    };
+    
+    // Single database update with both currencies
+    const { error } = await supabase
+      .from('cash_balances')
+      .upsert({
+        user_id: user.id,
+        usd: newBalances.USD,
+        eur: newBalances.EUR,
+        ils: newBalances.ILS,
+        gbp: newBalances.GBP,
+        chf: newBalances.CHF,
+        jpy: newBalances.JPY
+      }, { onConflict: 'user_id' });
+    
+    if (error) {
+      console.error('Error converting currency:', error);
+      return false;
+    }
+    
+    // Update local state with new balances
+    setCashBalances(newBalances);
+    
+    // Calculate implied rate for ledger
+    const impliedRate = toAmount / fromAmount;
+    
+    // Record in Capital Ledger - two entries for audit trail
+    await createLedgerEntry({
+      userId: user.id,
+      entryType: 'FX_CONVERSION',
+      currency: fromCurrency,
+      amount: -fromAmount,
+      description: `FX Convert: ${fromAmount.toFixed(2)} ${fromCurrency} → ${toAmount.toFixed(2)} ${toCurrency} @ ${impliedRate.toFixed(4)}`
+    });
+    
+    await createLedgerEntry({
+      userId: user.id,
+      entryType: 'FX_CONVERSION',
+      currency: toCurrency,
+      amount: toAmount,
+      description: `FX Convert: ${fromAmount.toFixed(2)} ${fromCurrency} → ${toAmount.toFixed(2)} ${toCurrency} @ ${impliedRate.toFixed(4)}`
+    });
+    
+    return true;
+  };
+
   return (
     <PortfolioContext.Provider value={{
       transactions,
@@ -784,6 +851,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       updateCashBalance,
       addCash,
       addCashWithType,
+      convertCurrency,
       importTransactions,
       importValuations,
       clearAllData,
