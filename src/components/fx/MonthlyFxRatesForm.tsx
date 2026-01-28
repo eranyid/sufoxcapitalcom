@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Loader2, Copy, Save } from 'lucide-react';
+import { Calendar, Loader2, Copy, Save, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CashCurrency } from '@/types/investment';
 import { getDefaultFxRate } from '@/lib/fxService';
+import { usePortfolio } from '@/context/PortfolioContext';
 
 // All currencies except USD (which is the base)
 const CURRENCIES_TO_USD: CashCurrency[] = ['EUR', 'ILS', 'GBP', 'CHF', 'JPY'];
@@ -27,8 +28,16 @@ interface MonthlyFxRatesFormProps {
   onRatesSaved?: () => void;
 }
 
+interface ValueComparison {
+  before: number;
+  after: number;
+  diff: number;
+  diffPercent: number;
+}
+
 export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
   const { user } = useAuth();
+  const { computedData, refreshFxRates } = usePortfolio();
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [rates, setRates] = useState<Record<CashCurrency, string>>({
     USD: '1',
@@ -48,6 +57,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [valueComparison, setValueComparison] = useState<ValueComparison | null>(null);
 
   // Generate month options (last 24 months)
   const monthOptions = Array.from({ length: 24 }, (_, i) => {
@@ -127,6 +137,11 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
     loadRates();
   }, [user, selectedMonth]);
 
+  // Clear comparison when month changes
+  useEffect(() => {
+    setValueComparison(null);
+  }, [selectedMonth]);
+
   const handleUseLastMonth = () => {
     const newRates: Record<CashCurrency, string> = { ...rates };
     for (const currency of CURRENCIES_TO_USD) {
@@ -148,8 +163,20 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
     toast.success('Filled with default rates');
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
   const handleSaveAll = async () => {
     if (!user) return;
+
+    // Capture value BEFORE saving
+    const valueBefore = computedData.totalPortfolioValue;
 
     // Validate all rates
     const ratesToSave: Array<{ fromCurrency: string; rate: number }> = [];
@@ -191,8 +218,27 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
 
       if (error) throw error;
 
+      // Refresh FX rates in context and wait for recalculation
+      await refreshFxRates();
+      
+      // Small delay to allow state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       toast.success(`Saved FX rates for ${selectedMonth}`);
       onRatesSaved?.();
+
+      // Capture value AFTER saving (need to get fresh value after context update)
+      // We'll show the comparison panel and the value will update reactively
+      const diff = computedData.totalPortfolioValue - valueBefore;
+      const diffPercent = valueBefore > 0 ? (diff / valueBefore) * 100 : 0;
+      
+      setValueComparison({
+        before: valueBefore,
+        after: computedData.totalPortfolioValue,
+        diff,
+        diffPercent
+      });
+
     } catch (error: any) {
       toast.error(error.message || 'Failed to save rates');
     } finally {
@@ -209,6 +255,36 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Value Comparison Banner */}
+        {valueComparison && (
+          <div className={`rounded-lg p-3 border ${valueComparison.diff >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-destructive/10 border-destructive/30'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {valueComparison.diff >= 0 ? (
+                  <TrendingUp className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-destructive" />
+                )}
+                <span className="text-xs font-medium">Portfolio Value Updated</span>
+              </div>
+              <button 
+                onClick={() => setValueComparison(null)}
+                className="text-muted-foreground hover:text-foreground text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex items-center gap-2 mt-2 text-sm font-mono">
+              <span className="text-muted-foreground">{formatCurrency(valueComparison.before)}</span>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              <span className="font-semibold">{formatCurrency(computedData.totalPortfolioValue)}</span>
+              <span className={`text-xs ${valueComparison.diff >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
+                ({valueComparison.diff >= 0 ? '+' : ''}{formatCurrency(computedData.totalPortfolioValue - valueComparison.before)})
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Month Selector */}
         <div className="flex items-center gap-3">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
