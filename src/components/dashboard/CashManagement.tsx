@@ -124,7 +124,23 @@ export function CashManagement() {
     }
   };
 
-  const totalInUSD = cashBalances.USD + (cashBalances.EUR * 1.08) + (cashBalances.ILS * 0.27);
+  // Calculate total using all currencies with rates from context or defaults
+  const { fxRates } = usePortfolio();
+  
+  // Helper to convert to USD
+  const toUSD = (currency: CashCurrency, amount: number): number => {
+    if (currency === 'USD') return amount;
+    const rate = fxRates[currency] ?? 0;
+    return amount * rate;
+  };
+  
+  const totalInUSD = 
+    toUSD('USD', cashBalances.USD) +
+    toUSD('EUR', cashBalances.EUR) +
+    toUSD('ILS', cashBalances.ILS) +
+    toUSD('GBP', cashBalances.GBP) +
+    toUSD('CHF', cashBalances.CHF) +
+    toUSD('JPY', cashBalances.JPY);
 
   return (
     <div className="bloomberg-panel">

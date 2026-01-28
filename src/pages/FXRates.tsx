@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { getSupportedCurrencies, getDefaultFxRate, FxRate } from '@/lib/fxService';
 import { CashCurrency } from '@/types/investment';
 import { FxRateTrendChart } from '@/components/fx/FxRateTrendChart';
+import { MonthlyFxRatesForm } from '@/components/fx/MonthlyFxRatesForm';
 
 const CURRENCY_SYMBOLS: Record<CashCurrency, string> = {
   USD: '$',
@@ -54,7 +55,7 @@ const initialFormData: FxRateFormData = {
 
 export default function FXRates() {
   const { user } = useAuth();
-  const { cashBalances, convertCurrency } = usePortfolio();
+  const { cashBalances, convertCurrency, refreshFxRates } = usePortfolio();
   const [rates, setRates] = useState<FxRate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -300,8 +301,18 @@ export default function FXRates() {
     return acc;
   }, {} as Record<string, FxRate[]>);
 
+  const handleFxRatesSaved = async () => {
+    await fetchRates();
+    await refreshFxRates();
+  };
+
   return (
     <div className="section-spacing animate-fade-in">
+      {/* Monthly FX Rates Quick Entry */}
+      <div className="mb-6">
+        <MonthlyFxRatesForm onRatesSaved={handleFxRatesSaved} />
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4 gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide flex items-center gap-2">

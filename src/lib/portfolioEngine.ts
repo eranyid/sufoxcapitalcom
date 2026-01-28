@@ -147,7 +147,8 @@ export function computePortfolioData(
   transactions: Transaction[],
   valuations: MonthlyValuation[],
   cashBalances: CashBalances,
-  baseCurrency: 'USD' | 'ILS' = 'USD'
+  baseCurrency: 'USD' | 'ILS' = 'USD',
+  fxRates?: Record<string, number>
 ): ComputedPortfolioData {
   const hasData = transactions.length > 0 && valuations.length > 0;
   
@@ -242,8 +243,8 @@ export function computePortfolioData(
     });
   }
   
-  // Calculate cash value using centralized FX conversion
-  const cashValue = calculateTotalCashInBaseCurrency(cashBalances, baseCurrency);
+  // Calculate cash value using centralized FX conversion with dynamic rates
+  const cashValue = calculateTotalCashInBaseCurrency(cashBalances, baseCurrency, fxRates);
   
   // Total portfolio value = Holdings + Cash (NAV)
   const totalPortfolioValue = holdingsValue + cashValue;

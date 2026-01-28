@@ -1,13 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Transaction, MonthlyValuation, PortfolioSettings, PerformanceMetrics, RiskMetrics, CashBalances, CashCurrency } from '@/types/investment';
-import { calculatePerformanceMetrics, calculateRiskMetrics, calculateTotalCashInBaseCurrency } from '@/lib/calculations';
+import { calculatePerformanceMetrics, calculateRiskMetrics, calculateTotalCashInBaseCurrency, FxRatesMap } from '@/lib/calculations';
 import { computePortfolioData, ComputedPortfolioData, runConsistencyChecks } from '@/lib/portfolioEngine';
 import { sampleTransactions, sampleValuations } from '@/lib/sampleData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { syncCrmFromTransaction } from '@/hooks/useCrmSync';
 import { createLedgerEntry, LedgerEntryType } from '@/lib/capitalLedger';
-import { getFxRate } from '@/lib/fxService';
+import { getFxRate, getDefaultFxRate } from '@/lib/fxService';
+
+// Default FX rates to USD
+const DEFAULT_FX_RATES: FxRatesMap = {
+  USD: 1,
+  EUR: 1.08,
+  ILS: 0.27,
+  GBP: 1.27,
+  CHF: 1.14,
+  JPY: 0.0067
+};
+
 interface PortfolioContextType {
   transactions: Transaction[];
   valuations: MonthlyValuation[];
@@ -19,6 +30,8 @@ interface PortfolioContextType {
   loading: boolean;
   // NEW: Computed portfolio data - Single Source of Truth
   computedData: ComputedPortfolioData;
+  // NEW: Dynamic FX rates from user entries
+  fxRates: FxRatesMap;
   setSampleDataMode: (enabled: boolean) => void;
   addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   updateTransaction: (id: string, tx: Partial<Transaction>) => Promise<void>;
@@ -35,6 +48,7 @@ interface PortfolioContextType {
   importValuations: (vals: MonthlyValuation[]) => Promise<void>;
   clearAllData: () => Promise<void>;
   refreshMetrics: () => void;
+  refreshFxRates: () => Promise<void>;
 }
 
 const PortfolioContext = createContext<PortfolioContextType | null>(null);
@@ -58,6 +72,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fxRates, setFxRates] = useState<FxRatesMap>(DEFAULT_FX_RATES);
 
   // Active data based on mode
   const transactions = useMemo(() => 
@@ -206,11 +221,50 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     loadData();
   }, [user]);
 
+  // Load FX rates from database
+  const refreshFxRates = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      // Get the latest rate for each currency pair to USD
+      const currencies: CashCurrency[] = ['EUR', 'ILS', 'GBP', 'CHF', 'JPY'];
+      const newRates: FxRatesMap = { USD: 1 };
+      
+      for (const currency of currencies) {
+        const { data } = await supabase
+          .from('fx_rates')
+          .select('rate')
+          .eq('user_id', user.id)
+          .eq('from_currency', currency)
+          .eq('to_currency', 'USD')
+          .order('rate_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (data) {
+          newRates[currency] = Number(data.rate);
+        } else {
+          // Fallback to default
+          newRates[currency] = getDefaultFxRate(currency, 'USD');
+        }
+      }
+      
+      setFxRates(newRates);
+    } catch (error) {
+      console.error('Failed to load FX rates:', error);
+    }
+  }, [user]);
+
+  // Load FX rates when user changes
+  useEffect(() => {
+    refreshFxRates();
+  }, [refreshFxRates]);
+
   // SINGLE SOURCE OF TRUTH: Compute all portfolio data centrally
   // Enrich holdings with sector data from CRM companies
   const computedData = useMemo(() => {
     const baseCurrency = settings.baseCurrency === 'ILS' ? 'ILS' : 'USD';
-    const data = computePortfolioData(transactions, valuations, cashBalances, baseCurrency);
+    const data = computePortfolioData(transactions, valuations, cashBalances, baseCurrency, fxRates);
     
     // Enrich holdings with sector from CRM companies
     data.holdings.forEach(holding => {
@@ -267,7 +321,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       .sort((a, b) => a.years - b.years);
     
     return data;
-  }, [transactions, valuations, cashBalances, settings.baseCurrency, companySectors, companyTimeHorizons]);
+  }, [transactions, valuations, cashBalances, settings.baseCurrency, companySectors, companyTimeHorizons, fxRates]);
 
   // Recalculate metrics when data changes
   // Now includes cashBalances in totalValue for unified NAV
@@ -318,7 +372,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       setRiskMetrics(riskMet);
     } else {
       // Even without holdings, show cash value as Total Portfolio Value
-      const cashValue = calculateTotalCashInBaseCurrency(cashBalances, baseCurrency);
+      const cashValue = calculateTotalCashInBaseCurrency(cashBalances, baseCurrency, fxRates);
       if (cashValue > 0) {
         setPerformanceMetrics({
           totalValue: cashValue,
@@ -346,7 +400,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       }
       setRiskMetrics(null);
     }
-  }, [transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns, settings.baseCurrency, cashBalances]);
+  }, [transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns, settings.baseCurrency, cashBalances, fxRates]);
 
   // Transaction operations
   const addTransaction = async (tx: Omit<Transaction, 'id'>) => {
@@ -855,7 +909,9 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       importTransactions,
       importValuations,
       clearAllData,
-      refreshMetrics
+      refreshMetrics,
+      fxRates,
+      refreshFxRates
     }}>
       {children}
     </PortfolioContext.Provider>
