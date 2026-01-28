@@ -50,7 +50,7 @@ export function CashManagement() {
   const [toCurrency, setToCurrency] = useState<CashCurrency>('ILS');
   const [convertAmount, setConvertAmount] = useState<string>('');
   const [receivedAmount, setReceivedAmount] = useState<string>('');
-
+  const [exchangeRate, setExchangeRate] = useState<string>('');
   const handleAddCash = async () => {
     const amount = parseFloat(addAmount);
     if (!isNaN(amount) && amount > 0) {
@@ -61,6 +61,8 @@ export function CashManagement() {
     }
   };
 
+
+
   const handleConvert = async () => {
     const amount = parseFloat(convertAmount);
     const received = parseFloat(receivedAmount);
@@ -70,8 +72,39 @@ export function CashManagement() {
       if (success) {
         setConvertAmount('');
         setReceivedAmount('');
+        setExchangeRate('');
         setIsAddOpen(false);
       }
+    }
+  };
+
+  // When exchange rate changes, calculate received amount
+  const handleExchangeRateChange = (value: string) => {
+    setExchangeRate(value);
+    const rate = parseFloat(value);
+    const amount = parseFloat(convertAmount);
+    if (!isNaN(rate) && rate > 0 && !isNaN(amount) && amount > 0) {
+      setReceivedAmount((amount * rate).toFixed(2));
+    }
+  };
+
+  // When convert amount changes, recalculate received if rate is set
+  const handleConvertAmountChange = (value: string) => {
+    setConvertAmount(value);
+    const rate = parseFloat(exchangeRate);
+    const amount = parseFloat(value);
+    if (!isNaN(rate) && rate > 0 && !isNaN(amount) && amount > 0) {
+      setReceivedAmount((amount * rate).toFixed(2));
+    }
+  };
+
+  // When received amount changes manually, calculate implied rate
+  const handleReceivedAmountChange = (value: string) => {
+    setReceivedAmount(value);
+    const received = parseFloat(value);
+    const amount = parseFloat(convertAmount);
+    if (!isNaN(received) && received > 0 && !isNaN(amount) && amount > 0) {
+      setExchangeRate((received / amount).toFixed(4));
     }
   };
 
@@ -197,10 +230,25 @@ export function CashManagement() {
                     type="number"
                     min="0"
                     value={convertAmount}
-                    onChange={(e) => setConvertAmount(e.target.value)}
+                    onChange={(e) => handleConvertAmountChange(e.target.value)}
                     placeholder="e.g. 1000"
                     className="h-8"
                   />
+                </div>
+                <div>
+                  <label className="terminal-label mb-1 block">Exchange Rate</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.0001"
+                    value={exchangeRate}
+                    onChange={(e) => handleExchangeRateChange(e.target.value)}
+                    placeholder={`1 ${fromCurrency} = ? ${toCurrency}`}
+                    className="h-8"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Enter the rate at which the conversion was executed
+                  </p>
                 </div>
                 <div>
                   <label className="terminal-label mb-1 block">Amount Received</label>
@@ -208,14 +256,14 @@ export function CashManagement() {
                     type="number"
                     min="0"
                     value={receivedAmount}
-                    onChange={(e) => setReceivedAmount(e.target.value)}
+                    onChange={(e) => handleReceivedAmountChange(e.target.value)}
                     placeholder="e.g. 3700"
                     className="h-8"
                   />
                   {getImpliedRate() && (
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       <ArrowRightLeft className="h-3 w-3" />
-                      Implied rate: 1 {fromCurrency} = {getImpliedRate()} {toCurrency}
+                      Rate: 1 {fromCurrency} = {getImpliedRate()} {toCurrency}
                     </p>
                   )}
                 </div>

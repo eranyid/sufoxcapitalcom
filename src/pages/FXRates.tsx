@@ -67,6 +67,7 @@ export default function FXRates() {
   const [convertTo, setConvertTo] = useState<CashCurrency>('ILS');
   const [convertAmount, setConvertAmount] = useState('');
   const [receivedAmount, setReceivedAmount] = useState('');
+  const [exchangeRate, setExchangeRate] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
   const currencies = getSupportedCurrencies();
@@ -132,7 +133,36 @@ export default function FXRates() {
     setFormData(initialFormData);
   };
 
-  // Currency conversion handlers
+  // When exchange rate changes, calculate received amount
+  const handleExchangeRateChange = (value: string) => {
+    setExchangeRate(value);
+    const rate = parseFloat(value);
+    const amount = parseFloat(convertAmount);
+    if (!isNaN(rate) && rate > 0 && !isNaN(amount) && amount > 0) {
+      setReceivedAmount((amount * rate).toFixed(2));
+    }
+  };
+
+  // When convert amount changes, recalculate received if rate is set
+  const handleConvertAmountChange = (value: string) => {
+    setConvertAmount(value);
+    const rate = parseFloat(exchangeRate);
+    const amount = parseFloat(value);
+    if (!isNaN(rate) && rate > 0 && !isNaN(amount) && amount > 0) {
+      setReceivedAmount((amount * rate).toFixed(2));
+    }
+  };
+
+  // When received amount changes manually, calculate implied rate
+  const handleReceivedAmountChange = (value: string) => {
+    setReceivedAmount(value);
+    const received = parseFloat(value);
+    const amount = parseFloat(convertAmount);
+    if (!isNaN(received) && received > 0 && !isNaN(amount) && amount > 0) {
+      setExchangeRate((received / amount).toFixed(4));
+    }
+  };
+
   const impliedRate = useMemo(() => {
     const from = parseFloat(convertAmount);
     const to = parseFloat(receivedAmount);
@@ -171,6 +201,7 @@ export default function FXRates() {
         setIsConvertDialogOpen(false);
         setConvertAmount('');
         setReceivedAmount('');
+        setExchangeRate('');
       } else {
         toast.error('Conversion failed');
       }
@@ -473,9 +504,25 @@ export default function FXRates() {
                     step="0.01"
                     min="0"
                     value={convertAmount}
-                    onChange={(e) => setConvertAmount(e.target.value)}
+                    onChange={(e) => handleConvertAmountChange(e.target.value)}
                     placeholder={`Amount in ${convertFrom}`}
                   />
+                </div>
+
+                {/* Exchange Rate */}
+                <div className="space-y-2">
+                  <Label>Exchange Rate</Label>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={exchangeRate}
+                    onChange={(e) => handleExchangeRateChange(e.target.value)}
+                    placeholder={`1 ${convertFrom} = ? ${convertTo}`}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter the rate at which the conversion was executed
+                  </p>
                 </div>
 
                 {/* Received amount */}
@@ -486,7 +533,7 @@ export default function FXRates() {
                     step="0.01"
                     min="0"
                     value={receivedAmount}
-                    onChange={(e) => setReceivedAmount(e.target.value)}
+                    onChange={(e) => handleReceivedAmountChange(e.target.value)}
                     placeholder={`Amount in ${convertTo}`}
                   />
                 </div>
@@ -494,7 +541,7 @@ export default function FXRates() {
                 {/* Implied rate */}
                 {impliedRate && (
                   <div className="p-3 bg-muted/50 rounded-md">
-                    <p className="text-sm text-muted-foreground">Implied Rate</p>
+                    <p className="text-sm text-muted-foreground">Final Rate</p>
                     <p className="text-lg font-mono font-medium text-primary">
                       1 {convertFrom} = {impliedRate.toFixed(4)} {convertTo}
                     </p>
