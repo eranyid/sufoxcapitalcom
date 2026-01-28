@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getSupportedCurrencies, getDefaultFxRate, FxRate } from '@/lib/fxService';
 import { CashCurrency } from '@/types/investment';
+import { FxRateTrendChart } from '@/components/fx/FxRateTrendChart';
 
 const CURRENCY_SYMBOLS: Record<CashCurrency, string> = {
   USD: '$',
@@ -590,6 +591,14 @@ export default function FXRates() {
             <div className="text-xs text-muted-foreground">Latest Rate</div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* FX Rate Trend Chart */}
+      <div className="mt-6">
+        <FxRateTrendChart 
+          rates={rates} 
+          availablePairs={Object.keys(groupedByPair)} 
+        />
       </div>
 
       {/* Rates Table */}
