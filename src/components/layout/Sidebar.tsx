@@ -22,11 +22,12 @@ import { OverviewIcon } from '@/components/icons/OverviewIcon';
 import { PolicyIcon } from '@/components/icons/PolicyIcon';
 import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
 import { ReportsIcon } from '@/components/icons/ReportsIcon';
+import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon | typeof ChartsIcon | typeof FxRatesIcon | typeof ValuationsIcon | typeof RiskIcon | typeof OverviewIcon | typeof PolicyIcon | typeof ScenariosIcon | typeof ReportsIcon;
+  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon | typeof ChartsIcon | typeof FxRatesIcon | typeof ValuationsIcon | typeof RiskIcon | typeof OverviewIcon | typeof PolicyIcon | typeof ScenariosIcon | typeof ReportsIcon | typeof ConstructionIcon;
   label: string;
 }
 
@@ -43,6 +44,7 @@ const navGroups: NavGroup[] = [
       { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
       { path: '/risk', icon: RiskIcon, label: 'Risk' },
       { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
+      { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
     ],
   },
   {
