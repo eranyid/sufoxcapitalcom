@@ -491,6 +491,27 @@ export default function InvestmentPolicy() {
         </CardContent>
       </Card>
 
+      {/* Special Constraints */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Scale className="h-5 w-5 text-primary" />
+            Special Constraints
+          </CardTitle>
+          <CardDescription>
+            Any additional rules, exclusions, or requirements (e.g., no crypto, ESG requirements, no small caps, etc.)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={policy.special_constraints}
+            onChange={(e) => setPolicy(prev => ({ ...prev, special_constraints: e.target.value }))}
+            placeholder="Example: No cryptocurrency positions. Avoid tobacco and weapons manufacturers. Prefer companies with strong ESG scores. Minimum market cap $1B for individual stocks..."
+            className="min-h-[100px] font-mono text-sm"
+          />
+        </CardContent>
+      </Card>
+
       {/* Asset Allocation Constraints */}
       <Card>
         <CardHeader>
@@ -775,27 +796,6 @@ export default function InvestmentPolicy() {
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Special Constraints */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-primary" />
-            Special Constraints
-          </CardTitle>
-          <CardDescription>
-            Any additional rules, exclusions, or requirements (e.g., no crypto, ESG requirements, no small caps, etc.)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={policy.special_constraints}
-            onChange={(e) => setPolicy(prev => ({ ...prev, special_constraints: e.target.value }))}
-            placeholder="Example: No cryptocurrency positions. Avoid tobacco and weapons manufacturers. Prefer companies with strong ESG scores. Minimum market cap $1B for individual stocks..."
-            className="min-h-[100px] font-mono text-sm"
-          />
         </CardContent>
       </Card>
 
