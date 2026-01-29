@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.ai-data-watchdog]
 verify_jwt = false
+
+[functions.fetch-fx-rates-ai]
+verify_jwt = false

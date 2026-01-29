@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Loader2, Copy, Save, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { Calendar, Loader2, Copy, Save, TrendingUp, TrendingDown, ArrowRight, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +11,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { CashCurrency } from '@/types/investment';
 import { getDefaultFxRate } from '@/lib/fxService';
 import { usePortfolio } from '@/context/PortfolioContext';
-
 // All currencies except USD (which is the base)
 const CURRENCIES_TO_USD: CashCurrency[] = ['EUR', 'ILS', 'GBP', 'CHF', 'JPY'];
 
@@ -57,6 +56,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingAI, setIsFetchingAI] = useState(false);
   const [valueComparison, setValueComparison] = useState<ValueComparison | null>(null);
 
   // Generate month options (last 24 months)
@@ -161,6 +161,37 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
     }
     setRates(newRates);
     toast.success('Filled with default rates');
+  };
+
+  const handleFetchAI = async () => {
+    setIsFetchingAI(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-fx-rates-ai');
+      
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch rates');
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (data?.rates) {
+        const newRates: Record<CashCurrency, string> = { ...rates };
+        for (const currency of CURRENCIES_TO_USD) {
+          if (data.rates[currency]) {
+            newRates[currency] = Number(data.rates[currency]).toFixed(4);
+          }
+        }
+        setRates(newRates);
+        toast.success('Filled with AI-suggested rates');
+      }
+    } catch (error: any) {
+      console.error('AI fetch error:', error);
+      toast.error(error.message || 'Failed to fetch AI rates');
+    } finally {
+      setIsFetchingAI(false);
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -317,6 +348,20 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
             className="h-8 text-xs"
           >
             Defaults
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleFetchAI}
+            disabled={isLoading || isFetchingAI}
+            className="h-8 text-xs bg-primary/10 border-primary/30 hover:bg-primary/20"
+          >
+            {isFetchingAI ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <Sparkles className="h-3 w-3 mr-1" />
+            )}
+            AI Rates
           </Button>
         </div>
 
