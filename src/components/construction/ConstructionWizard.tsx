@@ -3,11 +3,24 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, Save, Check } from 'lucide-react';
-import { WizardData, DEFAULT_WIZARD_DATA, GeographyAllocation, AssetClassAllocation, TargetConstraints, ObjectiveType, RiskLevel, HorizonType, BucketConfig } from '@/types/construction';
+import { 
+  WizardData, 
+  DEFAULT_WIZARD_DATA, 
+  GeographyAllocation, 
+  AssetClassAllocation, 
+  TargetConstraints, 
+  ObjectiveType, 
+  RiskLevel, 
+  HorizonType, 
+  BucketConfig,
+  AlternativesAllocation,
+  AlternativeConfig 
+} from '@/types/construction';
 import { useTargetAllocation } from '@/hooks/useTargetAllocation';
 import { ObjectiveStep } from './steps/ObjectiveStep';
 import { GeographyStep } from './steps/GeographyStep';
 import { AssetClassStep } from './steps/AssetClassStep';
+import { AlternativesStep } from './steps/AlternativesStep';
 import { BucketsStep } from './steps/BucketsStep';
 import { ReviewStep } from './steps/ReviewStep';
 
@@ -15,8 +28,9 @@ const STEPS = [
   { id: 1, title: 'Objective & Constraints' },
   { id: 2, title: 'Geography Allocation' },
   { id: 3, title: 'Asset Classes' },
-  { id: 4, title: 'Implementation Buckets' },
-  { id: 5, title: 'Review & Save' },
+  { id: 4, title: 'Alternative Investments' },
+  { id: 5, title: 'Implementation Buckets' },
+  { id: 6, title: 'Review & Save' },
 ];
 
 export function ConstructionWizard() {
@@ -56,6 +70,14 @@ export function ConstructionWizard() {
     setWizardData(prev => ({ ...prev, buckets: value }));
   };
 
+  const updateAlternatives = (value: AlternativesAllocation) => {
+    setWizardData(prev => ({ ...prev, alternatives: value }));
+  };
+
+  const updateAlternativeConfigs = (value: AlternativeConfig[]) => {
+    setWizardData(prev => ({ ...prev, alternativeConfigs: value }));
+  };
+
   const canProceed = (): boolean => {
     switch (currentStep) {
       case 2: {
@@ -67,6 +89,10 @@ export function ConstructionWizard() {
         return Math.abs(sum - 100) < 0.01;
       }
       case 4: {
+        const sum = Object.values(wizardData.alternatives).reduce((a, b) => a + b, 0);
+        return Math.abs(sum - 100) < 0.01;
+      }
+      case 5: {
         const sum = wizardData.buckets.reduce((a, b) => a + b.targetWeight, 0);
         return Math.abs(sum - 100) < 0.01;
       }
@@ -127,12 +153,21 @@ export function ConstructionWizard() {
         );
       case 4:
         return (
+          <AlternativesStep
+            alternatives={wizardData.alternatives}
+            configs={wizardData.alternativeConfigs}
+            onUpdateAlternatives={updateAlternatives}
+            onUpdateConfigs={updateAlternativeConfigs}
+          />
+        );
+      case 5:
+        return (
           <BucketsStep
             buckets={wizardData.buckets}
             onUpdate={updateBuckets}
           />
         );
-      case 5:
+      case 6:
         return <ReviewStep data={wizardData} isSaved={isSaved} />;
       default:
         return null;
@@ -276,7 +311,7 @@ export function ConstructionWizard() {
       </div>
 
       {/* Validation Message */}
-      {!canProceed() && currentStep >= 2 && currentStep <= 4 && (
+      {!canProceed() && currentStep >= 2 && currentStep <= 5 && (
         <div className="flex items-center justify-center gap-2 p-2 bg-destructive/10 border border-destructive/30 rounded-lg">
           <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
           <p className="text-xs text-destructive font-mono">

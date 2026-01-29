@@ -4,7 +4,7 @@ export type ObjectiveType = 'absolute_return' | 'balanced' | 'growth' | 'aggress
 export type HorizonType = 'short_term' | 'medium_term' | 'long_term';
 export type RiskLevel = 'low' | 'medium' | 'high';
 export type LiquidityRequirement = 'low' | 'medium' | 'high';
-export type DimensionType = 'geography' | 'asset_class' | 'bucket';
+export type DimensionType = 'geography' | 'asset_class' | 'alternatives' | 'bucket';
 
 export interface TargetConstraints {
   minEquities: number;
@@ -28,6 +28,40 @@ export interface AssetClassAllocation {
   cash: number;
 }
 
+// Alternative Investment Classes based on J.P. Morgan Guide to Alternatives
+export interface AlternativesAllocation {
+  privateEquity: number;
+  ventureCapital: number;
+  realEstate: number;
+  infrastructure: number;
+  privateCredit: number;
+  hedgeFunds: number;
+}
+
+export interface AlternativeConfig {
+  key: keyof AlternativesAllocation;
+  label: string;
+  targetWeight: number;
+  strategy: AlternativeStrategy;
+  geography: 'global' | 'us' | 'europe' | 'asia' | 'israel';
+  vintage?: string; // For PE/VC funds
+  lockupYears?: number;
+}
+
+export type AlternativeStrategy = 
+  // Private Equity
+  | 'buyout' | 'growth_equity' | 'distressed' | 'secondaries'
+  // Venture Capital  
+  | 'early_stage' | 'late_stage' | 'sector_focused'
+  // Real Estate
+  | 'core' | 'core_plus' | 'value_add' | 'opportunistic'
+  // Infrastructure
+  | 'core_infra' | 'transport' | 'digital_infra' | 'energy_transition'
+  // Private Credit
+  | 'direct_lending' | 'mezzanine' | 'distressed_credit' | 'specialty_finance'
+  // Hedge Funds
+  | 'long_short' | 'relative_value' | 'macro' | 'multi_strategy' | 'event_driven';
+
 export interface BucketConfig {
   key: string;
   label: string;
@@ -49,7 +83,11 @@ export interface WizardData {
   // Step 3 - Asset Classes
   assetClasses: AssetClassAllocation;
   
-  // Step 4 - Implementation Buckets
+  // Step 4 - Alternatives (NEW)
+  alternatives: AlternativesAllocation;
+  alternativeConfigs: AlternativeConfig[];
+  
+  // Step 5 - Implementation Buckets
   buckets: BucketConfig[];
 }
 
@@ -104,6 +142,63 @@ export const LIQUIDITY_LABELS: Record<LiquidityRequirement, string> = {
   high: 'High',
 };
 
+export const ALTERNATIVE_LABELS: Record<keyof AlternativesAllocation, string> = {
+  privateEquity: 'Private Equity',
+  ventureCapital: 'Venture Capital',
+  realEstate: 'Real Estate',
+  infrastructure: 'Infrastructure',
+  privateCredit: 'Private Credit',
+  hedgeFunds: 'Hedge Funds',
+};
+
+export const ALTERNATIVE_STRATEGIES: Record<keyof AlternativesAllocation, { value: AlternativeStrategy; label: string }[]> = {
+  privateEquity: [
+    { value: 'buyout', label: 'Buyout' },
+    { value: 'growth_equity', label: 'Growth Equity' },
+    { value: 'distressed', label: 'Distressed' },
+    { value: 'secondaries', label: 'Secondaries' },
+  ],
+  ventureCapital: [
+    { value: 'early_stage', label: 'Early Stage' },
+    { value: 'late_stage', label: 'Late Stage' },
+    { value: 'sector_focused', label: 'Sector Focused' },
+  ],
+  realEstate: [
+    { value: 'core', label: 'Core' },
+    { value: 'core_plus', label: 'Core Plus' },
+    { value: 'value_add', label: 'Value Add' },
+    { value: 'opportunistic', label: 'Opportunistic' },
+  ],
+  infrastructure: [
+    { value: 'core_infra', label: 'Core Infrastructure' },
+    { value: 'transport', label: 'Transport' },
+    { value: 'digital_infra', label: 'Digital Infrastructure' },
+    { value: 'energy_transition', label: 'Energy Transition' },
+  ],
+  privateCredit: [
+    { value: 'direct_lending', label: 'Direct Lending' },
+    { value: 'mezzanine', label: 'Mezzanine' },
+    { value: 'distressed_credit', label: 'Distressed Credit' },
+    { value: 'specialty_finance', label: 'Specialty Finance' },
+  ],
+  hedgeFunds: [
+    { value: 'long_short', label: 'Equity Long/Short' },
+    { value: 'relative_value', label: 'Relative Value' },
+    { value: 'macro', label: 'Global Macro' },
+    { value: 'multi_strategy', label: 'Multi-Strategy' },
+    { value: 'event_driven', label: 'Event Driven' },
+  ],
+};
+
+export const DEFAULT_ALTERNATIVES: AlternativesAllocation = {
+  privateEquity: 25,
+  ventureCapital: 10,
+  realEstate: 25,
+  infrastructure: 15,
+  privateCredit: 15,
+  hedgeFunds: 10,
+};
+
 export const DEFAULT_WIZARD_DATA: WizardData = {
   objective: 'balanced',
   horizon: 'long_term',
@@ -127,6 +222,15 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
     alternatives: 10,
     cash: 5,
   },
+  alternatives: DEFAULT_ALTERNATIVES,
+  alternativeConfigs: [
+    { key: 'privateEquity', label: 'Private Equity', targetWeight: 25, strategy: 'buyout', geography: 'global' },
+    { key: 'realEstate', label: 'Real Estate', targetWeight: 25, strategy: 'core', geography: 'us' },
+    { key: 'infrastructure', label: 'Infrastructure', targetWeight: 15, strategy: 'core_infra', geography: 'global' },
+    { key: 'privateCredit', label: 'Private Credit', targetWeight: 15, strategy: 'direct_lending', geography: 'us' },
+    { key: 'ventureCapital', label: 'Venture Capital', targetWeight: 10, strategy: 'late_stage', geography: 'us' },
+    { key: 'hedgeFunds', label: 'Hedge Funds', targetWeight: 10, strategy: 'multi_strategy', geography: 'global' },
+  ],
   buckets: [
     { key: 'core_equities', label: 'Core Equities', targetWeight: 50, implementation: 'stocks', benchmark: 'S&P 500' },
     { key: 'satellite', label: 'Satellite / Alpha', targetWeight: 25, implementation: 'stocks' },

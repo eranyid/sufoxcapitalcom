@@ -1918,7 +1918,11 @@ export type Database = {
       app_role: "admin" | "user"
       project_health: "on_track" | "at_risk" | "off_track"
       project_priority: "low" | "medium" | "high"
-      target_dimension_type: "geography" | "asset_class" | "bucket"
+      target_dimension_type:
+        | "geography"
+        | "asset_class"
+        | "bucket"
+        | "alternatives"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2049,7 +2053,12 @@ export const Constants = {
       app_role: ["admin", "user"],
       project_health: ["on_track", "at_risk", "off_track"],
       project_priority: ["low", "medium", "high"],
-      target_dimension_type: ["geography", "asset_class", "bucket"],
+      target_dimension_type: [
+        "geography",
+        "asset_class",
+        "bucket",
+        "alternatives",
+      ],
     },
   },
 } as const
