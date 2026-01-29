@@ -23,7 +23,6 @@ export interface GeographyAllocation {
 export interface AssetClassAllocation {
   equities: number;
   bonds: number;
-  funds: number;
   hedging: number;
   alternatives: number;
   cash: number;
@@ -122,11 +121,10 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
     other: 10,
   },
   assetClasses: {
-    equities: 60,
+    equities: 65,
     bonds: 15,
-    funds: 10,
     hedging: 5,
-    alternatives: 5,
+    alternatives: 10,
     cash: 5,
   },
   buckets: [

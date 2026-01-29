@@ -1,12 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { WizardData, OBJECTIVE_LABELS, RISK_LABELS, LIQUIDITY_LABELS } from '@/types/construction';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, 
   BarChart, Bar, XAxis, YAxis, Tooltip 
 } from 'recharts';
-import { Check, AlertCircle, Target, Globe, Layers, Briefcase, Shield, Clock, Droplets } from 'lucide-react';
+import { Check, AlertCircle, Target, Globe, Layers, Briefcase, Shield, Clock, Droplets, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 interface ReviewStepProps {
   data: WizardData;
@@ -23,13 +29,16 @@ const GEOGRAPHY_COLORS = {
 const ASSET_COLORS = {
   equities: 'hsl(var(--primary))',
   bonds: 'hsl(210, 80%, 55%)',
-  funds: 'hsl(45, 100%, 50%)',
-  options: 'hsl(280, 60%, 50%)',
+  hedging: 'hsl(280, 60%, 50%)',
   alternatives: 'hsl(160, 60%, 45%)',
   cash: 'hsl(0, 0%, 60%)',
 };
 
 export function ReviewStep({ data, isSaved }: ReviewStepProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isApplying, setIsApplying] = useState(false);
+
   // Health checks
   const geoTotal = Object.values(data.geography).reduce((a, b) => a + b, 0);
   const assetTotal = Object.values(data.assetClasses).reduce((a, b) => a + b, 0);
@@ -75,25 +84,99 @@ export function ReviewStep({ data, isSaved }: ReviewStepProps) {
     fill: `hsl(${(i * 60) % 360}, 70%, 50%)`,
   }));
 
+  const handleApplyToPolicy = async () => {
+    if (!user) {
+      toast.error('Please login first');
+      return;
+    }
+
+    setIsApplying(true);
+    try {
+      // Map construction data to policy format
+      const policyPayload = {
+        user_id: user.id,
+        equity_min_pct: Math.max(0, data.assetClasses.equities - 10),
+        equity_max_pct: Math.min(100, data.assetClasses.equities + 15),
+        fixed_income_min_pct: Math.max(0, data.assetClasses.bonds - 10),
+        fixed_income_max_pct: Math.min(100, data.assetClasses.bonds + 15),
+        alternatives_min_pct: Math.max(0, data.assetClasses.alternatives - 10),
+        alternatives_max_pct: Math.min(100, data.assetClasses.alternatives + 20),
+        cash_min_pct: data.constraints.minCash,
+        cash_max_pct: Math.min(100, data.assetClasses.cash + 20),
+        risk_tolerance: data.riskLevel === 'low' ? 'low' : 
+                        data.riskLevel === 'medium' ? 'medium' : 'high',
+        investment_horizon_years: data.horizon === 'short_term' ? 3 : 
+                                   data.horizon === 'medium_term' ? 7 : 10,
+        min_liquid_assets_pct: data.constraints.liquidityRequirement === 'high' ? 30 :
+                               data.constraints.liquidityRequirement === 'medium' ? 20 : 10,
+        geographic_limits: {
+          north_america: { min: Math.max(0, data.geography.usa - 20), max: Math.min(100, data.geography.usa + 30) },
+          europe: { min: Math.max(0, data.geography.europe - 15), max: Math.min(100, data.geography.europe + 25) },
+          israel: { min: Math.max(0, data.geography.israel - 15), max: Math.min(100, data.geography.israel + 25) },
+          emerging_markets: { min: 0, max: Math.min(100, data.geography.other + 20) },
+        },
+      };
+
+      // Check if policy exists
+      const { data: existingPolicy } = await supabase
+        .from('investment_policies')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingPolicy) {
+        const { error } = await supabase
+          .from('investment_policies')
+          .update(policyPayload as any)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('investment_policies')
+          .insert(policyPayload as any);
+        if (error) throw error;
+      }
+
+      toast.success('Policy updated from construction target');
+      navigate('/policy');
+    } catch (error) {
+      console.error('Error applying to policy:', error);
+      toast.error('Failed to apply to policy');
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Success Banner */}
       {isSaved && (
         <div className="relative overflow-hidden p-4 bg-primary/10 border border-primary/30 rounded-lg">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 animate-pulse" />
-          <div className="relative flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/40 blur-md animate-pulse" />
-              <div className="relative w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Check className="text-primary" size={20} />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/40 blur-md animate-pulse" />
+                <div className="relative w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <Check className="text-primary" size={20} />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-mono font-medium text-primary">TARGET DEPLOYED</h3>
+                <p className="text-xs text-muted-foreground">
+                  Active allocation synchronized with analytics engine
+                </p>
               </div>
             </div>
-            <div>
-              <h3 className="text-sm font-mono font-medium text-primary">TARGET DEPLOYED</h3>
-              <p className="text-xs text-muted-foreground">
-                Active allocation synchronized with analytics engine
-              </p>
-            </div>
+            <Button 
+              onClick={handleApplyToPolicy}
+              disabled={isApplying}
+              variant="outline"
+              className="border-primary/50 text-primary hover:bg-primary/10 gap-2"
+            >
+              <FileCheck size={16} />
+              {isApplying ? 'Applying...' : 'Apply to Investment Policy'}
+            </Button>
           </div>
         </div>
       )}
