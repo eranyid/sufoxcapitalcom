@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { CompanyValueChart } from '@/components/crm/CompanyValueChart';
 import { DecisionLogSection, Decision, DECISION_TYPE_OPTIONS } from '@/components/crm/DecisionLogSection';
+import { ASSET_TYPE_OPTIONS } from '@/pages/Companies';
 import { BoardStatusBadge } from '@/components/crm/BoardStatusBadge';
 import { CompanyFilesSection } from '@/components/crm/CompanyFilesSection';
 import { CompanyActivityLog } from '@/components/crm/CompanyActivityLog';
@@ -657,16 +658,9 @@ export default function CompanyPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="equity">Equity</SelectItem>
-                        <SelectItem value="etf">ETF</SelectItem>
-                        <SelectItem value="bond">Bond</SelectItem>
-                        <SelectItem value="mutual_fund">Mutual Fund</SelectItem>
-                        <SelectItem value="private_equity">Private Equity</SelectItem>
-                        <SelectItem value="hedge_fund">Hedge Fund</SelectItem>
-                        <SelectItem value="real_estate">Real Estate</SelectItem>
-                        <SelectItem value="commodity">Commodity</SelectItem>
-                        <SelectItem value="crypto">Crypto</SelectItem>
-                        <SelectItem value="alternative">Alternative</SelectItem>
+                        {ASSET_TYPE_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit('asset_type')}><Save size={12} /></Button>
