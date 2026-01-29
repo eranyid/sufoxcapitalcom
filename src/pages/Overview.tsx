@@ -238,14 +238,6 @@ export default function Overview() {
           tooltip="Year-to-date return: (Realized + Unrealized P/L since Jan 1) / Portfolio Value at Jan 1"
         />
         <KPICard
-          title="YTD P/L"
-          value={hasData ? formatCurrency(ytdData.ytdPL) : '$0'}
-          trend={ytdData.ytdPL >= 0 ? 'up' : 'down'}
-          subLabel={fxLabel}
-          trendValue={ytdData.ytdFxPL !== 0 ? `FX: ${ytdData.ytdFxPL >= 0 ? '+' : ''}${formatCurrency(ytdData.ytdFxPL)}` : undefined}
-          tooltip="Realized + Unrealized profit/loss since January 1st. FX shows the currency impact portion."
-        />
-        <KPICard
           title="Unrealized %"
           value={hasData && adjustedMetrics && performanceMetrics.totalCost > 0 
             ? formatPercent((adjustedMetrics.unrealizedPL / performanceMetrics.totalCost) * 100) 
