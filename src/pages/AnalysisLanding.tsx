@@ -1,10 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
-  Building2, 
-  Landmark, 
+  Layers,
   Gem, 
-  Coins, 
   BarChart3,
   ArrowRight,
   Sparkles
@@ -14,9 +12,12 @@ import { cn } from '@/lib/utils';
 interface AssetClassCard {
   id: string;
   title: string;
+  subtitle: string;
   description: string;
+  items: string[];
   icon: React.ReactNode;
   gradient: string;
+  borderGlow: string;
   accentColor: string;
   path: string;
 }
@@ -24,57 +25,39 @@ interface AssetClassCard {
 const ASSET_CLASSES: AssetClassCard[] = [
   {
     id: 'equities',
-    title: 'Public Equities',
-    description: 'Stocks, ETFs, and publicly traded securities',
-    icon: <TrendingUp className="w-8 h-8" />,
-    gradient: 'from-emerald-500/20 via-emerald-500/5 to-transparent',
-    accentColor: 'text-emerald-400 group-hover:text-emerald-300',
+    title: 'Equities',
+    subtitle: 'Public Companies',
+    description: 'Track and analyze publicly traded stocks and securities',
+    items: ['Large Cap', 'Mid Cap', 'Small Cap', 'International'],
+    icon: <TrendingUp className="w-10 h-10" />,
+    gradient: 'from-emerald-500/30 via-emerald-500/10 to-transparent',
+    borderGlow: 'group-hover:shadow-emerald-500/20',
+    accentColor: 'text-emerald-400',
     path: '/analysis/equities',
   },
   {
-    id: 'fixed_income',
-    title: 'Fixed Income',
-    description: 'Bonds, treasuries, and credit instruments',
-    icon: <Landmark className="w-8 h-8" />,
-    gradient: 'from-blue-500/20 via-blue-500/5 to-transparent',
-    accentColor: 'text-blue-400 group-hover:text-blue-300',
-    path: '/analysis/fixed-income',
-  },
-  {
-    id: 'private_equity',
-    title: 'Private Equity',
-    description: 'Venture capital, buyouts, and growth equity',
-    icon: <Building2 className="w-8 h-8" />,
-    gradient: 'from-purple-500/20 via-purple-500/5 to-transparent',
-    accentColor: 'text-purple-400 group-hover:text-purple-300',
-    path: '/analysis/private-equity',
-  },
-  {
-    id: 'real_estate',
-    title: 'Real Estate',
-    description: 'Commercial, residential, and REITs',
-    icon: <Building2 className="w-8 h-8" />,
-    gradient: 'from-amber-500/20 via-amber-500/5 to-transparent',
-    accentColor: 'text-amber-400 group-hover:text-amber-300',
-    path: '/analysis/real-estate',
+    id: 'funds',
+    title: 'Funds',
+    subtitle: 'Mutual Funds & ETFs',
+    description: 'Investment vehicles for diversified market exposure',
+    items: ['Index Funds', 'Sector ETFs', 'Bond Funds', 'Thematic'],
+    icon: <Layers className="w-10 h-10" />,
+    gradient: 'from-blue-500/30 via-blue-500/10 to-transparent',
+    borderGlow: 'group-hover:shadow-blue-500/20',
+    accentColor: 'text-blue-400',
+    path: '/analysis/funds',
   },
   {
     id: 'alternatives',
     title: 'Alternatives',
-    description: 'Hedge funds, commodities, and crypto',
-    icon: <Gem className="w-8 h-8" />,
-    gradient: 'from-pink-500/20 via-pink-500/5 to-transparent',
-    accentColor: 'text-pink-400 group-hover:text-pink-300',
+    subtitle: 'Private & Alternative Assets',
+    description: 'Hedge funds, private equity, real estate, and more',
+    items: ['Hedge Funds', 'Private Equity', 'Real Estate', 'Commodities'],
+    icon: <Gem className="w-10 h-10" />,
+    gradient: 'from-purple-500/30 via-purple-500/10 to-transparent',
+    borderGlow: 'group-hover:shadow-purple-500/20',
+    accentColor: 'text-purple-400',
     path: '/analysis/alternatives',
-  },
-  {
-    id: 'cash',
-    title: 'Cash & Equivalents',
-    description: 'Money markets, deposits, and short-term',
-    icon: <Coins className="w-8 h-8" />,
-    gradient: 'from-cyan-500/20 via-cyan-500/5 to-transparent',
-    accentColor: 'text-cyan-400 group-hover:text-cyan-300',
-    path: '/analysis/cash',
   },
 ];
 
@@ -118,61 +101,90 @@ export default function AnalysisLanding() {
         </div>
       </div>
 
-      {/* Asset Class Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
+      {/* Asset Class Grid - 3 Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1">
         {ASSET_CLASSES.map((assetClass) => (
           <button
             key={assetClass.id}
             onClick={() => navigate(assetClass.path)}
             className={cn(
               "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm",
-              "p-6 text-left transition-all duration-300",
-              "hover:border-border hover:bg-card hover:shadow-2xl hover:shadow-black/20",
-              "hover:-translate-y-1 hover:scale-[1.02]",
-              "focus:outline-none focus:ring-2 focus:ring-primary/50"
+              "p-8 text-left transition-all duration-500",
+              "hover:border-border hover:bg-card hover:shadow-2xl",
+              "hover:-translate-y-2 hover:scale-[1.02]",
+              "focus:outline-none focus:ring-2 focus:ring-primary/50",
+              assetClass.borderGlow
             )}
           >
             {/* Gradient Background */}
             <div className={cn(
-              "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+              "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-700",
               assetClass.gradient
             )} />
             
-            {/* Animated Border Glow */}
-            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute inset-[-1px] rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
-            </div>
+            {/* Animated top line */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
             {/* Content */}
             <div className="relative z-10">
-              {/* Icon */}
-              <div className={cn(
-                "mb-4 transition-all duration-300",
-                assetClass.accentColor
-              )}>
-                {assetClass.icon}
+              {/* Icon with glow */}
+              <div className="relative mb-6">
+                <div className={cn(
+                  "absolute inset-0 blur-xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500",
+                  assetClass.accentColor.replace('text-', 'bg-')
+                )} />
+                <div className={cn(
+                  "relative transition-all duration-300 transform group-hover:scale-110",
+                  assetClass.accentColor
+                )}>
+                  {assetClass.icon}
+                </div>
               </div>
 
-              {/* Title */}
-              <h3 className="text-xl font-semibold mb-2 transition-colors group-hover:text-foreground">
-                {assetClass.title}
-              </h3>
+              {/* Title & Subtitle */}
+              <div className="mb-4">
+                <h3 className="text-2xl font-bold mb-1 transition-colors group-hover:text-foreground">
+                  {assetClass.title}
+                </h3>
+                <p className={cn("text-sm font-medium", assetClass.accentColor)}>
+                  {assetClass.subtitle}
+                </p>
+              </div>
 
               {/* Description */}
-              <p className="text-sm text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 {assetClass.description}
               </p>
 
-              {/* Arrow indicator */}
-              <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors">
-                <span>Explore</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+              {/* Items Grid */}
+              <div className="grid grid-cols-2 gap-2 mb-6">
+                {assetClass.items.map((item) => (
+                  <div
+                    key={item}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground border border-border/30 group-hover:border-border/50 transition-colors"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <div className="flex items-center justify-between pt-4 border-t border-border/30">
+                <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  Explore
+                </span>
+                <div className={cn(
+                  "p-2 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors",
+                  assetClass.accentColor
+                )}>
+                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                </div>
               </div>
             </div>
 
-            {/* Corner Decoration */}
-            <div className="absolute top-0 right-0 w-32 h-32 opacity-5 group-hover:opacity-10 transition-opacity">
-              <div className="absolute top-4 right-4">
+            {/* Large Background Icon */}
+            <div className="absolute -bottom-8 -right-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500">
+              <div className="w-48 h-48">
                 {assetClass.icon}
               </div>
             </div>

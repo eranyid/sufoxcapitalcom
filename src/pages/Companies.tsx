@@ -35,11 +35,8 @@ interface Company {
 // Map URL params to asset_type values
 const ASSET_CLASS_MAP: Record<string, { label: string; dbValue: string }> = {
   'equities': { label: 'Public Equities', dbValue: 'equities' },
-  'fixed-income': { label: 'Fixed Income', dbValue: 'fixed_income' },
-  'private-equity': { label: 'Private Equity', dbValue: 'private_equity' },
-  'real-estate': { label: 'Real Estate', dbValue: 'real_estate' },
+  'funds': { label: 'Funds (ETFs & Mutual Funds)', dbValue: 'funds' },
   'alternatives': { label: 'Alternatives', dbValue: 'alternatives' },
-  'cash': { label: 'Cash & Equivalents', dbValue: 'cash' },
   'all': { label: 'All Companies', dbValue: 'all' },
 };
 
