@@ -3,82 +3,68 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { Save, FileText, Shield, Globe, Percent, Clock, Scale, Loader2, Upload, X, Trash2, RefreshCw, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Save, FileText, Scale, Loader2, Upload, X, Trash2, RefreshCw, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, Target, MapPin, PieChart, ArrowRight, Sparkles, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { useTargetAllocation } from '@/hooks/useTargetAllocation';
+import { useNavigate } from 'react-router-dom';
+import { OBJECTIVE_LABELS, RISK_LABELS } from '@/types/construction';
+import { cn } from '@/lib/utils';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-interface GeographicLimit {
-  min: number;
-  max: number;
-}
-
 interface PolicyFormData {
   strategy_philosophy: string;
-  equity_min_pct: number;
-  equity_max_pct: number;
-  fixed_income_min_pct: number;
-  fixed_income_max_pct: number;
-  alternatives_min_pct: number;
-  alternatives_max_pct: number;
-  cash_min_pct: number;
-  cash_max_pct: number;
-  max_single_position_pct: number;
-  max_sector_allocation_pct: number;
-  max_volatility_pct: number | null;
-  geographic_limits: Record<string, GeographicLimit>;
-  risk_tolerance: 'low' | 'medium' | 'high';
-  investment_horizon_years: number;
-  leverage_allowed: boolean;
-  max_leverage_ratio: number;
-  min_liquid_assets_pct: number;
   special_constraints: string;
 }
 
 const defaultPolicy: PolicyFormData = {
   strategy_philosophy: '',
-  equity_min_pct: 0,
-  equity_max_pct: 100,
-  fixed_income_min_pct: 0,
-  fixed_income_max_pct: 100,
-  alternatives_min_pct: 0,
-  alternatives_max_pct: 100,
-  cash_min_pct: 5,
-  cash_max_pct: 100,
-  max_single_position_pct: 25,
-  max_sector_allocation_pct: 40,
-  max_volatility_pct: null,
-  geographic_limits: {
-    north_america: { min: 0, max: 100 },
-    europe: { min: 0, max: 100 },
-    israel: { min: 0, max: 100 },
-    emerging_markets: { min: 0, max: 100 },
-  },
-  risk_tolerance: 'medium',
-  investment_horizon_years: 10,
-  leverage_allowed: false,
-  max_leverage_ratio: 1.0,
-  min_liquid_assets_pct: 20,
   special_constraints: '',
 };
 
-const GEOGRAPHIES = ['north_america', 'europe', 'israel', 'emerging_markets', 'global', 'other'];
+const HORIZON_LABELS: Record<string, string> = {
+  short_term: '1-3 Years',
+  medium_term: '3-7 Years',
+  long_term: '7+ Years',
+};
+
+const GEO_LABELS: Record<string, string> = {
+  israel: 'Israel',
+  usa: 'USA',
+  europe: 'Europe',
+  other: 'Other',
+};
+
+const ASSET_CLASS_LABELS: Record<string, string> = {
+  equities: 'Equities',
+  bonds: 'Bonds',
+  hedging: 'Hedging',
+  alternatives: 'Alternatives',
+  cash: 'Cash',
+};
+
+const ASSET_CLASS_COLORS: Record<string, string> = {
+  equities: 'bg-primary',
+  bonds: 'bg-blue-500',
+  hedging: 'bg-amber-500',
+  alternatives: 'bg-purple-500',
+  cash: 'bg-emerald-500',
+};
 
 export default function InvestmentPolicy() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [policy, setPolicy] = useState<PolicyFormData>(defaultPolicy);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,6 +81,8 @@ export default function InvestmentPolicy() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
+
+  const { activeTarget, targetLines, isLoading: isLoadingTarget } = useTargetAllocation();
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -145,7 +133,6 @@ export default function InvestmentPolicy() {
 
     setIsUploadingProspectus(true);
     try {
-      // Delete existing prospectus if any
       const { data: existingFiles } = await supabase.storage
         .from('policy-documents')
         .list(user.id, { search: 'prospectus' });
@@ -156,7 +143,6 @@ export default function InvestmentPolicy() {
           .remove(existingFiles.map(f => `${user.id}/${f.name}`));
       }
 
-      // Upload new file
       const fileName = `prospectus_${Date.now()}.pdf`;
       const { error } = await supabase.storage
         .from('policy-documents')
@@ -187,32 +173,18 @@ export default function InvestmentPolicy() {
     setIsLoadingPdf(true);
     
     try {
-      console.log('Downloading prospectus from path:', prospectusPath);
-      
-      // Download PDF as blob to avoid external URL navigation
       const { data, error } = await supabase.storage
         .from('policy-documents')
         .download(prospectusPath);
       
-      if (error) {
-        console.error('Download error:', error);
-        throw error;
-      }
+      if (error) throw error;
+      if (!data) throw new Error('No data received');
       
-      if (!data) {
-        throw new Error('No data received');
-      }
-      
-      console.log('Download successful, blob size:', data.size);
-      
-      // Revoke old blob URL if exists
       if (prospectusBlob) {
         URL.revokeObjectURL(prospectusBlob);
       }
       
-      // Create local blob URL
       const blobUrl = URL.createObjectURL(data);
-      console.log('Blob URL created:', blobUrl);
       setProspectusBlob(blobUrl);
     } catch (error) {
       console.error('Error loading prospectus:', error);
@@ -234,7 +206,6 @@ export default function InvestmentPolicy() {
       
       if (error) throw error;
       
-      // Cleanup
       if (prospectusBlob) {
         URL.revokeObjectURL(prospectusBlob);
       }
@@ -261,14 +232,12 @@ export default function InvestmentPolicy() {
 
     setIsLoadingPdf(true);
     try {
-      // Delete existing prospectus
       if (prospectusPath) {
         await supabase.storage
           .from('policy-documents')
           .remove([prospectusPath]);
       }
 
-      // Upload new file
       const fileName = `prospectus_${Date.now()}.pdf`;
       const { error } = await supabase.storage
         .from('policy-documents')
@@ -279,14 +248,12 @@ export default function InvestmentPolicy() {
       const newPath = `${user.id}/${fileName}`;
       setProspectusPath(newPath);
 
-      // Download and display new PDF
       const { data, error: downloadError } = await supabase.storage
         .from('policy-documents')
         .download(newPath);
       
       if (downloadError) throw downloadError;
 
-      // Revoke old blob URL
       if (prospectusBlob) {
         URL.revokeObjectURL(prospectusBlob);
       }
@@ -322,23 +289,6 @@ export default function InvestmentPolicy() {
         setHasExistingPolicy(true);
         setPolicy({
           strategy_philosophy: data.strategy_philosophy || '',
-          equity_min_pct: data.equity_min_pct || 0,
-          equity_max_pct: data.equity_max_pct || 100,
-          fixed_income_min_pct: data.fixed_income_min_pct || 0,
-          fixed_income_max_pct: data.fixed_income_max_pct || 100,
-          alternatives_min_pct: data.alternatives_min_pct || 0,
-          alternatives_max_pct: data.alternatives_max_pct || 100,
-          cash_min_pct: data.cash_min_pct || 0,
-          cash_max_pct: (data as any).cash_max_pct ?? 100,
-          max_single_position_pct: data.max_single_position_pct || 100,
-          max_sector_allocation_pct: data.max_sector_allocation_pct || 100,
-          max_volatility_pct: (data as any).max_volatility_pct ?? null,
-          geographic_limits: (data.geographic_limits as unknown as Record<string, GeographicLimit>) || defaultPolicy.geographic_limits,
-          risk_tolerance: (data.risk_tolerance as 'low' | 'medium' | 'high') || 'medium',
-          investment_horizon_years: data.investment_horizon_years || 10,
-          leverage_allowed: data.leverage_allowed || false,
-          max_leverage_ratio: data.max_leverage_ratio || 1.0,
-          min_liquid_assets_pct: data.min_liquid_assets_pct || 0,
           special_constraints: data.special_constraints || '',
         });
       }
@@ -358,23 +308,6 @@ export default function InvestmentPolicy() {
       const payload = {
         user_id: user.id,
         strategy_philosophy: policy.strategy_philosophy,
-        equity_min_pct: policy.equity_min_pct,
-        equity_max_pct: policy.equity_max_pct,
-        fixed_income_min_pct: policy.fixed_income_min_pct,
-        fixed_income_max_pct: policy.fixed_income_max_pct,
-        alternatives_min_pct: policy.alternatives_min_pct,
-        alternatives_max_pct: policy.alternatives_max_pct,
-        cash_min_pct: policy.cash_min_pct,
-        cash_max_pct: policy.cash_max_pct,
-        max_single_position_pct: policy.max_single_position_pct,
-        max_sector_allocation_pct: policy.max_sector_allocation_pct,
-        max_volatility_pct: policy.max_volatility_pct,
-        geographic_limits: JSON.parse(JSON.stringify(policy.geographic_limits)),
-        risk_tolerance: policy.risk_tolerance,
-        investment_horizon_years: policy.investment_horizon_years,
-        leverage_allowed: policy.leverage_allowed,
-        max_leverage_ratio: policy.max_leverage_ratio,
-        min_liquid_assets_pct: policy.min_liquid_assets_pct,
         special_constraints: policy.special_constraints,
       };
 
@@ -403,20 +336,25 @@ export default function InvestmentPolicy() {
     }
   };
 
-  const updateGeoLimit = (geo: string, field: 'min' | 'max', value: number) => {
-    setPolicy(prev => ({
-      ...prev,
-      geographic_limits: {
-        ...prev.geographic_limits,
-        [geo]: {
-          ...prev.geographic_limits[geo],
-          [field]: value,
-        },
-      },
-    }));
-  };
+  // Parse target lines into geography and asset class maps
+  const geographyData = targetLines
+    .filter(l => l.dimension_type === 'geography')
+    .reduce((acc, l) => ({ ...acc, [l.key]: l.target_weight }), {} as Record<string, number>);
+    
+  const assetClassData = targetLines
+    .filter(l => l.dimension_type === 'asset_class')
+    .reduce((acc, l) => ({ ...acc, [l.key]: l.target_weight }), {} as Record<string, number>);
 
-  if (isLoading) {
+  const bucketsData = targetLines
+    .filter(l => l.dimension_type === 'bucket')
+    .map(l => ({
+      key: l.key,
+      label: (l.metadata_json?.label as string) || l.key,
+      weight: l.target_weight,
+      implementation: l.metadata_json?.implementation as string,
+    }));
+
+  if (isLoading || isLoadingTarget) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -512,290 +450,132 @@ export default function InvestmentPolicy() {
         </CardContent>
       </Card>
 
-      {/* Asset Allocation Constraints */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Percent className="h-5 w-5 text-primary" />
-            Asset Allocation Limits
-          </CardTitle>
-          <CardDescription>
-            Define minimum and maximum allocation percentages by asset class
-          </CardDescription>
+      {/* Target Allocation Summary */}
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Target Allocation
+              </CardTitle>
+              <CardDescription>
+                {activeTarget ? `Active: ${activeTarget.name}` : 'No target allocation configured'}
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/construction')}
+              className="gap-2"
+            >
+              <Settings2 className="h-4 w-4" />
+              {activeTarget ? 'Edit' : 'Configure'}
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Equity */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Equity Allocation</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Min %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={policy.equity_min_pct}
-                    onChange={(e) => setPolicy(prev => ({ ...prev, equity_min_pct: Number(e.target.value) }))}
-                  />
+        <CardContent className="pt-6">
+          {activeTarget ? (
+            <div className="space-y-6">
+              {/* Overview Badges */}
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge variant="secondary" className="gap-1.5 px-3 py-1">
+                  <Sparkles className="h-3 w-3" />
+                  {OBJECTIVE_LABELS[activeTarget.objective as keyof typeof OBJECTIVE_LABELS] || activeTarget.objective}
+                </Badge>
+                <Badge variant="secondary" className="gap-1.5 px-3 py-1">
+                  <Target className="h-3 w-3" />
+                  {RISK_LABELS[activeTarget.risk_level as keyof typeof RISK_LABELS] || activeTarget.risk_level} Risk
+                </Badge>
+                <Badge variant="secondary" className="gap-1.5 px-3 py-1">
+                  {HORIZON_LABELS[activeTarget.horizon] || activeTarget.horizon}
+                </Badge>
+              </div>
+
+              <Separator />
+
+              {/* Asset Class Allocation */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <PieChart className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Asset Allocation</Label>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Max %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={policy.equity_max_pct}
-                    onChange={(e) => setPolicy(prev => ({ ...prev, equity_max_pct: Number(e.target.value) }))}
-                  />
+                
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                  {Object.entries(assetClassData).map(([key, weight]) => (
+                    <div key={key} className="p-4 rounded-xl bg-card border border-border/50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">{ASSET_CLASS_LABELS[key] || key}</span>
+                        <span className="font-mono text-lg font-semibold text-foreground">{weight}%</span>
+                      </div>
+                      <Progress 
+                        value={weight} 
+                        className={cn("h-1.5", ASSET_CLASS_COLORS[key])}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            {/* Fixed Income */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Fixed Income Allocation</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Min %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={policy.fixed_income_min_pct}
-                    onChange={(e) => setPolicy(prev => ({ ...prev, fixed_income_min_pct: Number(e.target.value) }))}
-                  />
+              <Separator />
+
+              {/* Geographic Allocation */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Geographic Allocation</Label>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Max %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={policy.fixed_income_max_pct}
-                    onChange={(e) => setPolicy(prev => ({ ...prev, fixed_income_max_pct: Number(e.target.value) }))}
-                  />
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {Object.entries(geographyData).map(([key, weight]) => (
+                    <div key={key} className="p-4 rounded-xl bg-card border border-border/50 text-center">
+                      <span className="text-xs text-muted-foreground block mb-1">{GEO_LABELS[key] || key}</span>
+                      <span className="font-mono text-2xl font-semibold text-foreground">{weight}%</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            {/* Alternatives */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Alternatives (PE, HF, etc.)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Min %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={policy.alternatives_min_pct}
-                    onChange={(e) => setPolicy(prev => ({ ...prev, alternatives_min_pct: Number(e.target.value) }))}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Max %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={policy.alternatives_max_pct}
-                    onChange={(e) => setPolicy(prev => ({ ...prev, alternatives_max_pct: Number(e.target.value) }))}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Minimum Cash %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={policy.cash_min_pct}
-                onChange={(e) => setPolicy(prev => ({ ...prev, cash_min_pct: Number(e.target.value) }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Maximum Cash %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={policy.cash_max_pct}
-                onChange={(e) => setPolicy(prev => ({ ...prev, cash_max_pct: Number(e.target.value) }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Max Single Position %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={policy.max_single_position_pct}
-                onChange={(e) => setPolicy(prev => ({ ...prev, max_single_position_pct: Number(e.target.value) }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Max Sector Allocation %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={policy.max_sector_allocation_pct}
-                onChange={(e) => setPolicy(prev => ({ ...prev, max_sector_allocation_pct: Number(e.target.value) }))}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Geographic Limits */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-primary" />
-            Geographic Allocation Limits
-          </CardTitle>
-          <CardDescription>
-            Set min/max allocation percentages by region
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {GEOGRAPHIES.slice(0, 4).map((geo) => (
-              <div key={geo} className="space-y-2 p-3 bg-muted/30 rounded-lg">
-                <Label className="text-sm font-medium capitalize">{geo.replace(/_/g, ' ')}</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Min %</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={policy.geographic_limits[geo]?.min || 0}
-                      onChange={(e) => updateGeoLimit(geo, 'min', Number(e.target.value))}
-                    />
+              {/* Buckets (if any) */}
+              {bucketsData.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <PieChart className="h-4 w-4 text-primary" />
+                      <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Implementation Buckets</Label>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                      {bucketsData.map((bucket) => (
+                        <div key={bucket.key} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-foreground truncate">{bucket.label}</span>
+                            <span className="font-mono text-sm font-semibold text-primary">{bucket.weight}%</span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground capitalize">{bucket.implementation?.replace(/_/g, ' ')}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Max %</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={policy.geographic_limits[geo]?.max || 100}
-                      onChange={(e) => updateGeoLimit(geo, 'max', Number(e.target.value))}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Risk & Horizon */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            Risk Profile & Time Horizon
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Risk Tolerance</Label>
-              <Select
-                value={policy.risk_tolerance}
-                onValueChange={(v: 'low' | 'medium' | 'high') => setPolicy(prev => ({ ...prev, risk_tolerance: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low - Capital preservation focus</SelectItem>
-                  <SelectItem value="medium">Medium - Balanced growth & safety</SelectItem>
-                  <SelectItem value="high">High - Aggressive growth</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Investment Horizon (years)</Label>
-              <Input
-                type="number"
-                min={1}
-                max={50}
-                value={policy.investment_horizon_years}
-                onChange={(e) => setPolicy(prev => ({ ...prev, investment_horizon_years: Number(e.target.value) }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Min Liquid Assets %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={policy.min_liquid_assets_pct}
-                onChange={(e) => setPolicy(prev => ({ ...prev, min_liquid_assets_pct: Number(e.target.value) }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Max Volatility % (Std Dev)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                step={0.1}
-                placeholder="e.g., 15"
-                value={policy.max_volatility_pct ?? ''}
-                onChange={(e) => setPolicy(prev => ({ 
-                  ...prev, 
-                  max_volatility_pct: e.target.value === '' ? null : Number(e.target.value) 
-                }))}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium">Leverage Allowed</Label>
-                  <p className="text-xs text-muted-foreground">Enable use of margin or borrowed funds</p>
-                </div>
-                <Switch
-                  checked={policy.leverage_allowed}
-                  onCheckedChange={(v) => setPolicy(prev => ({ ...prev, leverage_allowed: v }))}
-                />
-              </div>
-              {policy.leverage_allowed && (
-                <div className="space-y-2">
-                  <Label className="text-sm">Max Leverage Ratio</Label>
-                  <div className="flex items-center gap-4">
-                    <Slider
-                      value={[policy.max_leverage_ratio]}
-                      onValueChange={([v]) => setPolicy(prev => ({ ...prev, max_leverage_ratio: v }))}
-                      min={1}
-                      max={5}
-                      step={0.1}
-                      className="flex-1"
-                    />
-                    <span className="text-sm font-mono w-12">{policy.max_leverage_ratio.toFixed(1)}x</span>
-                  </div>
-                </div>
+                </>
               )}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <Target className="h-8 w-8 text-primary/60" />
+              </div>
+              <h3 className="text-sm font-semibold mb-2">No Target Allocation</h3>
+              <p className="text-muted-foreground text-xs max-w-sm mx-auto mb-4">
+                Create a target allocation using the Portfolio Construction wizard to define your investment structure.
+              </p>
+              <Button onClick={() => navigate('/construction')} className="gap-2">
+                Configure Target
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -814,7 +594,6 @@ export default function InvestmentPolicy() {
             <div className="flex items-center justify-between p-4 border-b border-border bg-background">
               <h2 className="text-lg font-semibold text-primary">Prospectus</h2>
               <div className="flex items-center gap-2">
-                {/* Hidden file input for replace */}
                 <input
                   type="file"
                   ref={replaceFileInputRef}
@@ -823,7 +602,6 @@ export default function InvestmentPolicy() {
                   className="hidden"
                 />
                 
-                {/* Replace button */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -835,7 +613,6 @@ export default function InvestmentPolicy() {
                   Replace
                 </Button>
                 
-                {/* Delete button with confirmation */}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
@@ -871,7 +648,6 @@ export default function InvestmentPolicy() {
                   </AlertDialogContent>
                 </AlertDialog>
                 
-                {/* Close button */}
                 <Button
                   variant="outline"
                   size="icon"
@@ -919,7 +695,7 @@ export default function InvestmentPolicy() {
               {isLoadingPdf ? (
                 <div className="flex flex-col items-center gap-4 pt-20">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                  <p className="text-muted-foreground">Loading PDF (42MB - please wait)...</p>
+                  <p className="text-muted-foreground">Loading PDF...</p>
                 </div>
               ) : prospectusBlob ? (
                 <Document
