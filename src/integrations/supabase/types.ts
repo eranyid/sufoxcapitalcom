@@ -956,6 +956,36 @@ export type Database = {
         }
         Relationships: []
       }
+      needs_profile: {
+        Row: {
+          answers_json: Json
+          created_at: string
+          id: string
+          profile_type: string
+          risk_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers_json?: Json
+          created_at?: string
+          id?: string
+          profile_type?: string
+          risk_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers_json?: Json
+          created_at?: string
+          id?: string
+          profile_type?: string
+          risk_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       news_sources: {
         Row: {
           created_at: string
@@ -1396,6 +1426,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          needs_profile_id: string | null
           objective: string
           risk_level: string
           status: string
@@ -1409,6 +1440,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          needs_profile_id?: string | null
           objective?: string
           risk_level?: string
           status?: string
@@ -1422,13 +1454,22 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          needs_profile_id?: string | null
           objective?: string
           risk_level?: string
           status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "target_allocations_needs_profile_id_fkey"
+            columns: ["needs_profile_id"]
+            isOneToOne: false
+            referencedRelation: "needs_profile"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_activity_log: {
         Row: {
