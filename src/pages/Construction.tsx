@@ -43,7 +43,7 @@ export default function Construction() {
                 Portfolio Construction
               </h1>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                בחר את הדרך שלך לבניית תיק השקעות מותאם אישית
+                Choose your path to build a personalized investment portfolio
               </p>
             </div>
 
@@ -87,7 +87,7 @@ export default function Construction() {
                   <Sparkles size={16} className="text-primary" />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  שאלון אפיון צרכים מקיף שמנתח את הפרופיל שלך ומספק המלצת מערכת חכמה לבניית תיק יעד מותאם אישית.
+                  A comprehensive needs assessment questionnaire that analyzes your profile and provides smart system recommendations for building a personalized target portfolio.
                 </p>
               </div>
 
@@ -95,11 +95,11 @@ export default function Construction() {
               <div className="space-y-2 mb-6">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 size={14} className="text-primary" />
-                  <span>אפיון התנהגות פיננסית</span>
+                  <span>Behavioral finance profiling</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 size={14} className="text-primary" />
-                  <span>המלצת Risk Profile אוטומטית</span>
+                  <span>Automatic risk profile recommendation</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 size={14} className="text-primary" />
@@ -112,20 +112,20 @@ export default function Construction() {
                 {profile ? (
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/40 hover:bg-green-500/30">
                     <CheckCircle2 size={12} className="mr-1" />
-                    פרופיל קיים: {profile.profile_type}
+                    Profile: {profile.profile_type}
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="text-muted-foreground border-muted-foreground/40">
                     <Circle size={12} className="mr-1" />
-                    לא הוגדר פרופיל
+                    No profile defined
                   </Badge>
                 )}
               </div>
               
               {/* CTA */}
               <Button className="w-full group-hover:bg-primary/90" size="lg">
-                התחל אפיון צרכים
-                <ChevronRight size={16} className="mr-2 group-hover:translate-x-1 transition-transform" />
+                Start Needs Profiling
+                <ChevronRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </CardContent>
           </Card>
@@ -160,7 +160,7 @@ export default function Construction() {
                   <Target size={16} className="text-primary" />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  בנה תיק יעד ישירות עם הגדרות מותאמות אישית לגיאוגרפיה, סוגי נכסים ו-buckets לפי בחירתך.
+                  Build a target portfolio directly with custom settings for geography, asset classes and buckets based on your preferences.
                 </p>
               </div>
 
@@ -168,15 +168,15 @@ export default function Construction() {
               <div className="space-y-2 mb-6">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 size={14} className="text-primary" />
-                  <span>הגדרת אלוקציה גיאוגרפית</span>
+                  <span>Geographic allocation setup</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 size={14} className="text-primary" />
-                  <span>פילוח סוגי נכסים</span>
+                  <span>Asset class breakdown</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 size={14} className="text-primary" />
-                  <span>מעקב drift מול יעד</span>
+                  <span>Drift tracking vs target</span>
                 </div>
               </div>
 
@@ -185,20 +185,20 @@ export default function Construction() {
                 {activeTarget ? (
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/40 hover:bg-green-500/30">
                     <CheckCircle2 size={12} className="mr-1" />
-                    תיק פעיל: {activeTarget.name}
+                    Active: {activeTarget.name}
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="text-muted-foreground border-muted-foreground/40">
                     <Circle size={12} className="mr-1" />
-                    אין תיק יעד פעיל
+                    No active target
                   </Badge>
                 )}
               </div>
               
               {/* CTA */}
               <Button className="w-full group-hover:bg-primary/90" size="lg">
-                בנה תיק יעד
-                <ChevronRight size={16} className="mr-2 group-hover:translate-x-1 transition-transform" />
+                Build Target Portfolio
+                <ChevronRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </CardContent>
           </Card>
