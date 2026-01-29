@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search, FlaskConical, Eye, TrendingUp, Pause, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { Building2, Plus, Search, FlaskConical, Eye, TrendingUp, Pause, LogOut, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -28,8 +28,20 @@ interface Company {
   ticker: string | null;
   market_cap: string | null;
   status: string;
+  asset_type: string | null;
   updated_at: string;
 }
+
+// Map URL params to asset_type values
+const ASSET_CLASS_MAP: Record<string, { label: string; dbValue: string }> = {
+  'equities': { label: 'Public Equities', dbValue: 'equities' },
+  'fixed-income': { label: 'Fixed Income', dbValue: 'fixed_income' },
+  'private-equity': { label: 'Private Equity', dbValue: 'private_equity' },
+  'real-estate': { label: 'Real Estate', dbValue: 'real_estate' },
+  'alternatives': { label: 'Alternatives', dbValue: 'alternatives' },
+  'cash': { label: 'Cash & Equivalents', dbValue: 'cash' },
+  'all': { label: 'All Companies', dbValue: 'all' },
+};
 
 // Aligned with BoardStatusBadge labels
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: string; label: string }> = {
@@ -68,6 +80,7 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: s
 export default function Companies() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { assetClass } = useParams<{ assetClass: string }>();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,13 +88,16 @@ export default function Companies() {
   const [newCompanyName, setNewCompanyName] = useState('');
   const [creating, setCreating] = useState(false);
 
+  const assetClassConfig = assetClass ? ASSET_CLASS_MAP[assetClass] : null;
+  const pageTitle = assetClassConfig?.label || 'All Companies';
+
   useEffect(() => {
     const fetchCompanies = async () => {
       if (!user) return;
 
       const { data, error } = await supabase
         .from('crm_companies')
-        .select('id, company_name, ticker, market_cap, status, updated_at')
+        .select('id, company_name, ticker, market_cap, status, asset_type, updated_at')
         .is('deleted_at', null)
         .order('updated_at', { ascending: false });
 
@@ -89,7 +105,7 @@ export default function Companies() {
         toast.error('Failed to load companies');
         console.error(error);
       } else {
-        setCompanies(data || []);
+        setCompanies((data as Company[]) || []);
       }
       setLoading(false);
     };
@@ -101,14 +117,19 @@ export default function Companies() {
     if (!user || !newCompanyName.trim()) return;
 
     setCreating(true);
+    const assetTypeValue = assetClassConfig && assetClassConfig.dbValue !== 'all' 
+      ? assetClassConfig.dbValue 
+      : null;
+    
     const { data, error } = await supabase
       .from('crm_companies')
       .insert({
         user_id: user.id,
         company_name: newCompanyName.trim(),
         status: 'research',
+        asset_type: assetTypeValue,
       })
-      .select('id, company_name, ticker, market_cap, status, updated_at')
+      .select('id, company_name, ticker, market_cap, status, asset_type, updated_at')
       .single();
 
     if (error) {
@@ -118,24 +139,30 @@ export default function Companies() {
       return;
     }
 
-    setCompanies(prev => [data, ...prev]);
+    setCompanies(prev => [data as Company, ...prev]);
     setNewCompanyName('');
     setCreateOpen(false);
     setCreating(false);
     toast.success('Company created');
-    navigate(`/analysis/${data.id}`);
+    navigate(`/analysis/company/${data.id}`);
   };
 
-  // Status order: active → research → monitoring → on_hold → exited
-  const STATUS_ORDER = ['working_on_it', 'research', 'monitoring', 'on_hold', 'done'];
+  // Filter by asset class if specified
+  const assetFilteredCompanies = assetClassConfig && assetClassConfig.dbValue !== 'all'
+    ? companies.filter(c => c.asset_type === assetClassConfig.dbValue)
+    : companies;
 
-  const filteredCompanies = companies.filter(c => {
+  // Filter by search query
+  const filteredCompanies = assetFilteredCompanies.filter(c => {
     const query = searchQuery.toLowerCase();
     return (
       c.company_name.toLowerCase().includes(query) ||
       (c.ticker && c.ticker.toLowerCase().includes(query))
     );
   });
+
+  // Status order: active → research → monitoring → on_hold → exited
+  const STATUS_ORDER = ['working_on_it', 'research', 'monitoring', 'on_hold', 'done'];
 
   // Group companies by status
   const groupedCompanies = STATUS_ORDER.map(status => ({
@@ -157,8 +184,14 @@ export default function Companies() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <Link 
+            to="/analysis" 
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 text-muted-foreground" />
+          </Link>
           <Building2 className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Analysis</h2>
+          <h2 className="text-lg font-semibold">{pageTitle}</h2>
         </div>
         <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2">
           <Plus size={16} />
@@ -183,7 +216,9 @@ export default function Companies() {
           <Building2 size={48} className="text-muted-foreground mb-4" />
           <h2 className="text-lg font-medium">No companies yet</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            Add your first company to start tracking investments.
+            {assetClassConfig && assetClassConfig.dbValue !== 'all'
+              ? `Add your first ${assetClassConfig.label.toLowerCase()} company.`
+              : 'Add your first company to start tracking investments.'}
           </p>
           <Button onClick={() => setCreateOpen(true)} className="mt-4 gap-2">
             <Plus size={16} />
@@ -205,7 +240,7 @@ export default function Companies() {
               {groupedCompanies.map((group, groupIndex) => {
                 const config = STATUS_CONFIG[group.status];
                 return (
-                  <>
+                  <React.Fragment key={group.status}>
                     {/* Spacer row between groups */}
                     {groupIndex > 0 && (
                       <TableRow key={`spacer-${group.status}`} className="hover:bg-transparent">
@@ -216,7 +251,7 @@ export default function Companies() {
                       <TableRow
                         key={company.id}
                         className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => navigate(`/analysis/${company.id}`)}
+                        onClick={() => navigate(`/analysis/company/${company.id}`)}
                       >
                         <TableCell className="font-medium">{company.company_name}</TableCell>
                         <TableCell>
@@ -245,7 +280,7 @@ export default function Companies() {
                         </TableCell>
                       </TableRow>
                     ))}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </TableBody>
