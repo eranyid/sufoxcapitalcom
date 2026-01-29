@@ -10,7 +10,11 @@ import type {
   TargetConstraints,
   GeographyAllocation,
   AssetClassAllocation,
+  AlternativesAllocation,
+  AlternativeConfig,
+  DEFAULT_ALTERNATIVES,
 } from '@/types/construction';
+import { DEFAULT_WIZARD_DATA } from '@/types/construction';
 import type { Json } from '@/integrations/supabase/types';
 
 interface UseTargetAllocationReturn {
@@ -116,7 +120,7 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
       // Create allocation lines
       const lines: Array<{
         target_id: string;
-        dimension_type: 'geography' | 'asset_class' | 'bucket';
+        dimension_type: 'geography' | 'asset_class' | 'alternatives' | 'bucket';
         key: string;
         parent_key: string | null;
         target_weight: number;
@@ -144,6 +148,24 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
           parent_key: null,
           target_weight: weight,
           metadata_json: {} as Json,
+        });
+      });
+
+      // Alternatives lines
+      data.alternativeConfigs.forEach((alt) => {
+        lines.push({
+          target_id: newTarget.id,
+          dimension_type: 'alternatives',
+          key: alt.key,
+          parent_key: null,
+          target_weight: alt.targetWeight,
+          metadata_json: {
+            label: alt.label,
+            strategy: alt.strategy,
+            geography: alt.geography,
+            vintage: alt.vintage || null,
+            lockupYears: alt.lockupYears || null,
+          } as Json,
         });
       });
 
@@ -198,6 +220,8 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
 
       const geography: GeographyAllocation = { israel: 0, usa: 0, europe: 0, other: 0 };
       const assetClasses: AssetClassAllocation = { equities: 0, bonds: 0, hedging: 0, alternatives: 0, cash: 0 };
+      const alternatives: AlternativesAllocation = { privateEquity: 0, ventureCapital: 0, realEstate: 0, infrastructure: 0, privateCredit: 0, hedgeFunds: 0 };
+      const alternativeConfigs: AlternativeConfig[] = [];
       const buckets: WizardData['buckets'] = [];
 
       lines?.forEach(line => {
@@ -209,6 +233,20 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
           if (line.key in assetClasses) {
             assetClasses[line.key as keyof AssetClassAllocation] = Number(line.target_weight);
           }
+        } else if (line.dimension_type === 'alternatives') {
+          const meta = (line.metadata_json || {}) as Record<string, unknown>;
+          if (line.key in alternatives) {
+            alternatives[line.key as keyof AlternativesAllocation] = Number(line.target_weight);
+          }
+          alternativeConfigs.push({
+            key: line.key as keyof AlternativesAllocation,
+            label: (meta.label as string) || line.key,
+            targetWeight: Number(line.target_weight),
+            strategy: (meta.strategy as AlternativeConfig['strategy']) || 'buyout',
+            geography: (meta.geography as AlternativeConfig['geography']) || 'global',
+            vintage: meta.vintage as string | undefined,
+            lockupYears: meta.lockupYears as number | undefined,
+          });
         } else if (line.dimension_type === 'bucket') {
           const meta = (line.metadata_json || {}) as Record<string, unknown>;
           buckets.push({
@@ -235,6 +273,8 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
         },
         geography,
         assetClasses,
+        alternatives: Object.values(alternatives).some(v => v > 0) ? alternatives : DEFAULT_WIZARD_DATA.alternatives,
+        alternativeConfigs: alternativeConfigs.length > 0 ? alternativeConfigs : DEFAULT_WIZARD_DATA.alternativeConfigs,
         buckets,
       };
     } catch (error) {
