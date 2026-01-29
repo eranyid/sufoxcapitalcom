@@ -6,7 +6,7 @@ import { NeedsBasedWizard } from '@/components/construction/NeedsBasedWizard';
 import { ConstructionWizard } from '@/components/construction/ConstructionWizard';
 import { useTargetAllocation } from '@/hooks/useTargetAllocation';
 import { useNeedsProfile } from '@/hooks/useNeedsProfile';
-import { Activity, Brain, Layers, Target, ArrowLeft, Sparkles, Crosshair } from 'lucide-react';
+import { Activity, Brain, Layers, Target, ArrowLeft, Sparkles, Crosshair, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
 
 type ViewMode = 'selection' | 'needs' | 'target';
 
@@ -20,144 +20,195 @@ export default function Construction() {
   // Selection Landing Page
   if (viewMode === 'selection') {
     return (
-      <div className="p-4 md:p-5 space-y-4">
-        {/* Header */}
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/30 blur-md animate-pulse" />
-              <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
-                <Layers className="text-primary" size={20} />
+      <div className="p-4 md:p-6 space-y-6 min-h-[calc(100vh-4rem)]">
+        {/* Hero Header */}
+        <div className="relative text-center py-8 md:py-12">
+          {/* Background glow effect */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+          </div>
+          
+          <div className="relative space-y-4">
+            <div className="inline-flex items-center justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/40 blur-xl animate-pulse" />
+                <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/40 flex items-center justify-center">
+                  <Layers className="text-primary" size={32} />
+                </div>
               </div>
             </div>
             
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight flex items-center gap-2">
+            <div className="space-y-2">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
                 Portfolio Construction
-                <Activity size={14} className="text-primary animate-pulse" />
               </h1>
-              <p className="text-[10px] text-muted-foreground font-mono">
-                STRATEGIC ALLOCATION PIPELINE v3.0
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                בחר את הדרך שלך לבניית תיק השקעות מותאם אישית
               </p>
             </div>
-          </div>
 
-          {activeTarget && !isLoading && (
-            <Card className="bg-card/80 backdrop-blur-sm border-primary/20">
-              <CardContent className="py-2 px-3 flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                  <span className="text-[10px] font-mono font-medium">{activeTarget.name}</span>
-                </div>
-                <Badge variant="outline" className="text-[9px] border-primary/40 text-primary">
-                  {activeTarget.objective.toUpperCase().replace('_', ' ')}
-                </Badge>
-              </CardContent>
-            </Card>
-          )}
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <div className="h-px w-12 bg-gradient-to-r from-transparent to-border" />
+              <span className="text-[10px] font-mono text-muted-foreground/60">STRATEGIC ALLOCATION PIPELINE</span>
+              <div className="h-px w-12 bg-gradient-to-l from-transparent to-border" />
+            </div>
+          </div>
         </div>
 
         {/* Selection Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto">
           {/* Needs Profiling Card */}
           <Card 
-            className="relative overflow-hidden bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all cursor-pointer group"
+            className="relative overflow-hidden bg-card border-border hover:border-primary/60 transition-all duration-300 cursor-pointer group"
             onClick={() => setViewMode('needs')}
           >
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* Top accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60 opacity-0 group-hover:opacity-100 transition-opacity" />
             
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
+            {/* Corner decorations */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-primary/30 rounded-tl-lg" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-primary/30 rounded-tr-lg" />
+            
+            <CardContent className="p-6 md:p-8">
+              {/* Icon */}
+              <div className="flex justify-center mb-6">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
-                    <Brain className="text-primary" size={28} />
-                  </div>
-                </div>
-                
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold">Needs Profiling</h2>
-                    <Sparkles size={14} className="text-primary" />
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    השתמש בשאלון אפיון הצרכים כדי לקבל המלצת מערכת מותאמת אישית לבניית תיק יעד.
-                  </p>
-                  
-                  <div className="flex items-center gap-2 pt-2">
-                    {profile ? (
-                      <Badge variant="outline" className="text-[10px] border-green-500/40 text-green-500">
-                        פרופיל קיים: {profile.profile_type}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] border-muted-foreground/40">
-                        לא הוגדר פרופיל
-                      </Badge>
-                    )}
+                  <div className="absolute inset-0 bg-primary/30 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Brain className="text-primary" size={40} />
                   </div>
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-border/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-muted-foreground">BEHAVIORAL FINANCE LAYER</span>
-                  <Button size="sm" variant="ghost" className="text-xs text-primary hover:text-primary">
-                    התחל אפיון →
-                  </Button>
+              {/* Content */}
+              <div className="text-center space-y-3 mb-6">
+                <div className="flex items-center justify-center gap-2">
+                  <h2 className="text-lg font-semibold">Needs Profiling</h2>
+                  <Sparkles size={16} className="text-primary" />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  שאלון אפיון צרכים מקיף שמנתח את הפרופיל שלך ומספק המלצת מערכת חכמה לבניית תיק יעד מותאם אישית.
+                </p>
+              </div>
+
+              {/* Features list */}
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 size={14} className="text-primary" />
+                  <span>אפיון התנהגות פיננסית</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 size={14} className="text-primary" />
+                  <span>המלצת Risk Profile אוטומטית</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 size={14} className="text-primary" />
+                  <span>Suggested allocation bands</span>
                 </div>
               </div>
+
+              {/* Status */}
+              <div className="flex items-center justify-center mb-4">
+                {profile ? (
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/40 hover:bg-green-500/30">
+                    <CheckCircle2 size={12} className="mr-1" />
+                    פרופיל קיים: {profile.profile_type}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground border-muted-foreground/40">
+                    <Circle size={12} className="mr-1" />
+                    לא הוגדר פרופיל
+                  </Badge>
+                )}
+              </div>
+              
+              {/* CTA */}
+              <Button className="w-full group-hover:bg-primary/90" size="lg">
+                התחל אפיון צרכים
+                <ChevronRight size={16} className="mr-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </CardContent>
           </Card>
 
           {/* Direct Target Builder Card */}
           <Card 
-            className="relative overflow-hidden bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all cursor-pointer group"
+            className="relative overflow-hidden bg-card border-border hover:border-primary/60 transition-all duration-300 cursor-pointer group"
             onClick={() => setViewMode('target')}
           >
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* Top accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60 opacity-0 group-hover:opacity-100 transition-opacity" />
             
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
+            {/* Corner decorations */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-primary/30 rounded-tl-lg" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-primary/30 rounded-tr-lg" />
+            
+            <CardContent className="p-6 md:p-8">
+              {/* Icon */}
+              <div className="flex justify-center mb-6">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
-                    <Crosshair className="text-primary" size={28} />
-                  </div>
-                </div>
-                
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold">Target Allocation</h2>
-                    <Target size={14} className="text-primary" />
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    בנה תיק יעד ישירות עם הגדרות גיאוגרפיה, סוגי נכסים ו-buckets לפי בחירתך.
-                  </p>
-                  
-                  <div className="flex items-center gap-2 pt-2">
-                    {activeTarget ? (
-                      <Badge variant="outline" className="text-[10px] border-green-500/40 text-green-500">
-                        תיק פעיל: {activeTarget.name}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] border-muted-foreground/40">
-                        אין תיק יעד פעיל
-                      </Badge>
-                    )}
+                  <div className="absolute inset-0 bg-primary/30 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Crosshair className="text-primary" size={40} />
                   </div>
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-border/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-muted-foreground">DIRECT ALLOCATION BUILDER</span>
-                  <Button size="sm" variant="ghost" className="text-xs text-primary hover:text-primary">
-                    בנה תיק יעד →
-                  </Button>
+              {/* Content */}
+              <div className="text-center space-y-3 mb-6">
+                <div className="flex items-center justify-center gap-2">
+                  <h2 className="text-lg font-semibold">Target Allocation</h2>
+                  <Target size={16} className="text-primary" />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  בנה תיק יעד ישירות עם הגדרות מותאמות אישית לגיאוגרפיה, סוגי נכסים ו-buckets לפי בחירתך.
+                </p>
+              </div>
+
+              {/* Features list */}
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 size={14} className="text-primary" />
+                  <span>הגדרת אלוקציה גיאוגרפית</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 size={14} className="text-primary" />
+                  <span>פילוח סוגי נכסים</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 size={14} className="text-primary" />
+                  <span>מעקב drift מול יעד</span>
                 </div>
               </div>
+
+              {/* Status */}
+              <div className="flex items-center justify-center mb-4">
+                {activeTarget ? (
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/40 hover:bg-green-500/30">
+                    <CheckCircle2 size={12} className="mr-1" />
+                    תיק פעיל: {activeTarget.name}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground border-muted-foreground/40">
+                    <Circle size={12} className="mr-1" />
+                    אין תיק יעד פעיל
+                  </Badge>
+                )}
+              </div>
+              
+              {/* CTA */}
+              <Button className="w-full group-hover:bg-primary/90" size="lg">
+                בנה תיק יעד
+                <ChevronRight size={16} className="mr-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Footer info */}
+        <div className="text-center pt-4">
+          <p className="text-[10px] font-mono text-muted-foreground/50">
+            SUFOX CAPITAL • STRATEGIC ALLOCATION PIPELINE v3.0
+          </p>
         </div>
       </div>
     );
