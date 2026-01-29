@@ -6,6 +6,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -102,6 +110,7 @@ export default function Companies() {
   const [searchQuery, setSearchQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
+  const [newAssetType, setNewAssetType] = useState<string>('');
   const [creating, setCreating] = useState(false);
 
   const assetClassConfig = assetClass ? ASSET_CLASS_MAP[assetClass] : null;
@@ -133,10 +142,11 @@ export default function Companies() {
     if (!user || !newCompanyName.trim()) return;
 
     setCreating(true);
-    // Use first dbValue as default when creating from a filtered view
-    const assetTypeValue = assetClassConfig && assetClassConfig.dbValues.length > 0 
-      ? assetClassConfig.dbValues[0] 
-      : null;
+    // Use selected asset type, or fallback to first dbValue from filtered view
+    const assetTypeValue = newAssetType || 
+      (assetClassConfig && assetClassConfig.dbValues.length > 0 
+        ? assetClassConfig.dbValues[0] 
+        : null);
     
     const { data, error } = await supabase
       .from('crm_companies')
@@ -158,6 +168,7 @@ export default function Companies() {
 
     setCompanies(prev => [data as Company, ...prev]);
     setNewCompanyName('');
+    setNewAssetType('');
     setCreateOpen(false);
     setCreating(false);
     toast.success('Company created');
@@ -311,16 +322,38 @@ export default function Companies() {
           <DialogHeader>
             <DialogTitle>Add New Company</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newCompanyName}
-              onChange={e => setNewCompanyName(e.target.value)}
-              placeholder="Company name"
-              autoFocus
-              onKeyDown={e => {
-                if (e.key === 'Enter' && newCompanyName.trim()) handleCreate();
-              }}
-            />
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="company-name">Company Name</Label>
+              <Input
+                id="company-name"
+                value={newCompanyName}
+                onChange={e => setNewCompanyName(e.target.value)}
+                placeholder="Enter company name"
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newCompanyName.trim()) handleCreate();
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="asset-type">Asset Class</Label>
+              <Select 
+                value={newAssetType} 
+                onValueChange={setNewAssetType}
+              >
+                <SelectTrigger id="asset-type">
+                  <SelectValue placeholder="Select asset class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSET_TYPE_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
