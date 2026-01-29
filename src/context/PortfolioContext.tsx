@@ -334,7 +334,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         valuations, 
         settings.riskFreeRate,
         cashBalances,
-        baseCurrency
+        baseCurrency,
+        fxRates
       );
       setPerformanceMetrics(perfMetrics);
       
@@ -352,7 +353,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       setPerformanceMetrics(null);
       setRiskMetrics(null);
     }
-  }, [transactions, valuations, settings, cashBalances, computedData]);
+  }, [transactions, valuations, settings, cashBalances, computedData, fxRates]);
 
   // Trigger metrics recalculation when data changes
   // Using specific dependencies to avoid infinite loop - don't include refreshMetrics itself
@@ -365,7 +366,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         valuations, 
         settings.riskFreeRate,
         cashBalances,
-        baseCurrency
+        baseCurrency,
+        fxRates
       );
       setPerformanceMetrics(perfMetrics);
       
