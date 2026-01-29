@@ -5,7 +5,8 @@ import {
   Gem, 
   BarChart3,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Landmark
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -59,6 +60,18 @@ const ASSET_CLASSES: AssetClassCard[] = [
     accentColor: 'text-purple-400',
     path: '/analysis/alternatives',
   },
+  {
+    id: 'cash',
+    title: 'Cash & Deposits',
+    subtitle: 'Liquid Instruments',
+    description: 'Cash holdings, fixed deposits, and money market instruments',
+    items: ['Cash', 'Deposits', 'T-Bills', 'Money Market'],
+    icon: <Landmark className="w-10 h-10" />,
+    gradient: 'from-amber-500/30 via-amber-500/10 to-transparent',
+    borderGlow: 'group-hover:shadow-amber-500/20',
+    accentColor: 'text-amber-400',
+    path: '/analysis/cash',
+  },
 ];
 
 export default function AnalysisLanding() {
@@ -102,7 +115,7 @@ export default function AnalysisLanding() {
       </div>
 
       {/* Asset Class Grid - 3 Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 flex-1">
         {ASSET_CLASSES.map((assetClass) => (
           <button
             key={assetClass.id}
