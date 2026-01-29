@@ -141,58 +141,98 @@ export function ConstructionWizard() {
 
   return (
     <div className="space-y-6">
-      {/* Progress Header */}
+      {/* Futuristic Progress Header */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {STEPS.map((step) => (
+          <div className="flex items-center gap-2 md:gap-4">
+            {STEPS.map((step, index) => (
               <button
                 key={step.id}
                 onClick={() => step.id < currentStep && setCurrentStep(step.id)}
                 className={cn(
-                  "flex items-center gap-2 text-xs font-medium transition-colors",
-                  step.id === currentStep && "text-primary",
-                  step.id < currentStep && "text-muted-foreground hover:text-primary cursor-pointer",
-                  step.id > currentStep && "text-muted-foreground/50 cursor-not-allowed"
+                  "group flex items-center gap-2 transition-all duration-300",
+                  step.id === currentStep && "scale-105",
+                  step.id < currentStep && "cursor-pointer",
+                  step.id > currentStep && "cursor-not-allowed opacity-50"
                 )}
                 disabled={step.id > currentStep}
               >
-                <div
-                  className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border transition-colors",
-                    step.id === currentStep && "bg-primary text-primary-foreground border-primary",
-                    step.id < currentStep && "bg-primary/20 text-primary border-primary/40",
-                    step.id > currentStep && "bg-muted border-muted-foreground/30"
+                <div className="relative">
+                  {/* Glow effect for active step */}
+                  {step.id === currentStep && (
+                    <div className="absolute inset-0 bg-primary/40 blur-md animate-pulse" />
                   )}
-                >
-                  {step.id < currentStep ? <Check size={12} /> : step.id}
+                  <div
+                    className={cn(
+                      "relative w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono font-bold border-2 transition-all duration-300",
+                      step.id === currentStep && "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30",
+                      step.id < currentStep && "bg-primary/20 text-primary border-primary/40 group-hover:border-primary group-hover:bg-primary/30",
+                      step.id > currentStep && "bg-muted/30 border-muted-foreground/30 text-muted-foreground/50"
+                    )}
+                  >
+                    {step.id < currentStep ? <Check size={14} /> : step.id}
+                  </div>
                 </div>
-                <span className="hidden md:inline">{step.title}</span>
+                <span className={cn(
+                  "hidden md:inline text-xs font-medium transition-colors",
+                  step.id === currentStep && "text-primary",
+                  step.id < currentStep && "text-muted-foreground group-hover:text-primary",
+                  step.id > currentStep && "text-muted-foreground/50"
+                )}>
+                  {step.title}
+                </span>
+                {/* Connector line */}
+                {index < STEPS.length - 1 && (
+                  <div className={cn(
+                    "hidden md:block w-8 h-px transition-colors",
+                    step.id < currentStep ? "bg-primary/50" : "bg-border"
+                  )} />
+                )}
               </button>
             ))}
           </div>
-          <span className="text-xs text-muted-foreground">
-            Step {currentStep} of {STEPS.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+              Phase
+            </span>
+            <span className="text-xs font-mono font-bold text-primary">
+              {currentStep}/{STEPS.length}
+            </span>
+          </div>
         </div>
-        <Progress value={progress} className="h-1" />
+        
+        {/* Enhanced Progress Bar */}
+        <div className="relative h-1 bg-muted/30 rounded-full overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
+          <div 
+            className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+          <div 
+            className="absolute top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"
+            style={{ left: `${Math.max(0, progress - 5)}%` }}
+          />
+        </div>
       </div>
 
-      {/* Step Content */}
-      <div className="min-h-[400px]">
-        {renderStep()}
+      {/* Step Content with animation container */}
+      <div className="min-h-[400px] relative">
+        <div className="absolute -inset-4 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
+        <div className="relative">
+          {renderStep()}
+        </div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-border">
+      {/* Futuristic Navigation */}
+      <div className="flex items-center justify-between pt-4 border-t border-border/50">
         <Button
           variant="outline"
           onClick={handleBack}
           disabled={currentStep === 1}
-          className="gap-2"
+          className="gap-2 border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all"
         >
           <ChevronLeft size={16} />
-          Back
+          <span className="hidden sm:inline">Back</span>
         </Button>
 
         <div className="flex items-center gap-2">
@@ -200,17 +240,24 @@ export function ConstructionWizard() {
             <Button
               onClick={handleSave}
               disabled={isSaving || isSaved}
-              className="gap-2"
+              className={cn(
+                "gap-2 relative overflow-hidden transition-all",
+                isSaved && "bg-primary/20 text-primary border border-primary/30"
+              )}
             >
+              {/* Button glow effect */}
+              {!isSaved && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-shimmer" />
+              )}
               {isSaved ? (
                 <>
                   <Check size={16} />
-                  Saved
+                  <span className="font-mono">SAVED</span>
                 </>
               ) : (
                 <>
                   <Save size={16} />
-                  {isSaving ? 'Saving...' : 'Save as Target Allocation'}
+                  <span className="font-mono">{isSaving ? 'SAVING...' : 'DEPLOY TARGET'}</span>
                 </>
               )}
             </Button>
@@ -218,9 +265,10 @@ export function ConstructionWizard() {
             <Button
               onClick={handleNext}
               disabled={!canProceed()}
-              className="gap-2"
+              className="gap-2 relative overflow-hidden group"
             >
-              Next
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <span className="font-mono">NEXT</span>
               <ChevronRight size={16} />
             </Button>
           )}
@@ -229,9 +277,12 @@ export function ConstructionWizard() {
 
       {/* Validation Message */}
       {!canProceed() && currentStep >= 2 && currentStep <= 4 && (
-        <p className="text-xs text-destructive text-center">
-          Allocations must sum to 100%
-        </p>
+        <div className="flex items-center justify-center gap-2 p-2 bg-destructive/10 border border-destructive/30 rounded-lg">
+          <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+          <p className="text-xs text-destructive font-mono">
+            VALIDATION ERROR: Allocations must sum to 100%
+          </p>
+        </div>
       )}
     </div>
   );
