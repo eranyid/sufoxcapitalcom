@@ -22,7 +22,7 @@ const IMPLEMENTATION_OPTIONS = [
 ] as const;
 
 const BENCHMARK_OPTIONS = [
-  { value: '', label: 'None' },
+  { value: 'none', label: 'None' },
   { value: 'S&P 500', label: 'S&P 500' },
   { value: 'TA-125', label: 'TA-125' },
   { value: '60/40', label: '60/40 Portfolio' },
@@ -148,9 +148,9 @@ export function BucketsStep({ buckets, onUpdate }: BucketsStepProps) {
               {/* Benchmark */}
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Benchmark (optional)</Label>
-                <Select
-                  value={bucket.benchmark || ''}
-                  onValueChange={(val) => updateBucket(index, { benchmark: val || undefined })}
+              <Select
+                  value={bucket.benchmark || 'none'}
+                  onValueChange={(val) => updateBucket(index, { benchmark: val === 'none' ? undefined : val })}
                 >
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Select benchmark" />
