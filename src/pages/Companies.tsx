@@ -35,11 +35,29 @@ interface Company {
 // Map URL params to asset_type values (supports multiple DB values per category)
 const ASSET_CLASS_MAP: Record<string, { label: string; dbValues: string[] }> = {
   'equities': { label: 'Public Equities', dbValues: ['equity', 'equities', 'stock'] },
-  'funds': { label: 'Funds (ETFs & Mutual Funds)', dbValues: ['etf', 'mutual_fund', 'fund', 'funds'] },
+  'funds': { label: 'Funds (ETFs & Mutual Funds)', dbValues: ['etf', 'mutual_fund', 'fund', 'funds', 'bond'] },
   'alternatives': { label: 'Alternatives', dbValues: ['alternative', 'alternatives', 'hedge_fund', 'private_equity', 'real_estate', 'commodity', 'crypto'] },
   'cash': { label: 'Cash & Deposits', dbValues: ['cash', 'deposit', 'money_market', 't_bill', 'makam'] },
   'all': { label: 'All Companies', dbValues: [] },
 };
+
+// All asset type options for dropdowns
+export const ASSET_TYPE_OPTIONS = [
+  { value: 'equity', label: 'Equity' },
+  { value: 'etf', label: 'ETF' },
+  { value: 'bond', label: 'Bond' },
+  { value: 'mutual_fund', label: 'Mutual Fund' },
+  { value: 'private_equity', label: 'Private Equity' },
+  { value: 'hedge_fund', label: 'Hedge Fund' },
+  { value: 'real_estate', label: 'Real Estate' },
+  { value: 'commodity', label: 'Commodity' },
+  { value: 'crypto', label: 'Crypto' },
+  { value: 'alternative', label: 'Alternative' },
+  { value: 'cash', label: 'Cash' },
+  { value: 'deposit', label: 'Deposit' },
+  { value: 't_bill', label: 'T-Bill / Makam' },
+  { value: 'money_market', label: 'Money Market' },
+];
 
 // Aligned with BoardStatusBadge labels
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: string; label: string }> = {
