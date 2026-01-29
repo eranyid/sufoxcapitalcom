@@ -742,7 +742,7 @@ export function calculateYTDReturn(
   cashBalances?: CashBalancesInput,
   baseCurrency: 'USD' | 'ILS' = 'USD',
   fxRates?: FxRatesMap
-): { ytdReturn: number; ytdPL: number; janValue: number } {
+): { ytdReturn: number; ytdPL: number; ytdFxPL: number; janValue: number } {
   const currentYear = new Date().getFullYear();
   const janMonth = `${currentYear}-01`;
   const decPrevYear = `${currentYear - 1}-12`;
@@ -754,19 +754,23 @@ export function calculateYTDReturn(
   const decValuations = valuations.filter(v => v.month === decPrevYear);
   const janValue = calculatePortfolioValueAtMonth(txBeforeYear, decValuations, decPrevYear, cashBalances, baseCurrency, fxRates);
   
-  // Get current total P/L
+  // Get current total P/L with FX breakdown
   const positions = calculatePositions(transactions);
   const latestVals = getLatestValuations(valuations);
   
   let currentUnrealizedPL = 0;
   let currentRealizedPL = 0;
+  let currentFxPL = 0;
   
   for (const [ticker, pos] of Object.entries(positions)) {
     const val = latestVals[ticker];
     if (val && pos.quantity > 0) {
       const fxRate = val.fxRate || 1;
       const currentValue = pos.quantity * val.pricePerUnit * fxRate;
+      const marketValue = pos.quantity * val.pricePerUnit; // Value without FX
       currentUnrealizedPL += currentValue - pos.totalCost;
+      // FX P/L = difference between value with FX and value at entry FX rate
+      currentFxPL += currentValue - marketValue;
     }
     currentRealizedPL += pos.realizedPL;
   }
@@ -775,13 +779,16 @@ export function calculateYTDReturn(
   const positionsAtJan = calculatePositions(txBeforeYear);
   let janUnrealizedPL = 0;
   let janRealizedPL = 0;
+  let janFxPL = 0;
   
   for (const [ticker, pos] of Object.entries(positionsAtJan)) {
     const val = decValuations.find(v => v.ticker === ticker);
     if (val && pos.quantity > 0) {
       const fxRate = val.fxRate || 1;
       const janValue = pos.quantity * val.pricePerUnit * fxRate;
+      const janMarketValue = pos.quantity * val.pricePerUnit;
       janUnrealizedPL += janValue - pos.totalCost;
+      janFxPL += janValue - janMarketValue;
     }
     janRealizedPL += pos.realizedPL;
   }
@@ -791,10 +798,13 @@ export function calculateYTDReturn(
   const janTotalPL = janRealizedPL + janUnrealizedPL;
   const ytdPL = currentTotalPL - janTotalPL;
   
+  // YTD FX P/L = Current FX P/L - Jan 1st FX P/L
+  const ytdFxPL = currentFxPL - janFxPL;
+  
   // YTD Return % = YTD P/L / Jan 1st Portfolio Value
   const ytdReturn = janValue > 0 ? (ytdPL / janValue) * 100 : 0;
   
-  return { ytdReturn, ytdPL, janValue };
+  return { ytdReturn, ytdPL, ytdFxPL, janValue };
 }
 
 /**
