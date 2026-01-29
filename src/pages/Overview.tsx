@@ -108,7 +108,7 @@ export default function Overview() {
   // Calculate YTD Return using the new P/L-based formula
   const ytdData = useMemo(() => {
     if (transactions.length === 0 || valuations.length === 0) {
-      return { ytdReturn: 0, ytdPL: 0, janValue: 0 };
+      return { ytdReturn: 0, ytdPL: 0, ytdFxPL: 0, janValue: 0 };
     }
     return calculateYTDReturn(transactions, valuations, cashBalances, settings.baseCurrency as 'USD' | 'ILS');
   }, [transactions, valuations, cashBalances, settings.baseCurrency]);
@@ -234,7 +234,8 @@ export default function Overview() {
           value={hasData ? formatCurrency(ytdData.ytdPL) : '$0'}
           trend={ytdData.ytdPL >= 0 ? 'up' : 'down'}
           subLabel={fxLabel}
-          tooltip="Realized + Unrealized profit/loss since January 1st"
+          trendValue={ytdData.ytdFxPL !== 0 ? `FX: ${ytdData.ytdFxPL >= 0 ? '+' : ''}${formatCurrency(ytdData.ytdFxPL)}` : undefined}
+          tooltip="Realized + Unrealized profit/loss since January 1st. FX shows the currency impact portion."
         />
         <KPICard
           title="Unrealized %"
