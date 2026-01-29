@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { CalendarSettingsSection } from '@/components/calendar/CalendarSettingsSection';
+import { DataCleanupSection } from '@/components/settings/DataCleanupSection';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
@@ -524,25 +525,31 @@ export default function Settings() {
       {/* ==================== DATA MANAGEMENT SECTION ==================== */}
       <SectionHeader icon={Database} title="Data Management" />
       
-      <Card className="bg-card/50">
-        <CardContent className="pt-4">
-          <button
-            onClick={() => navigate('/trash')}
-            className="w-full flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-destructive/10 rounded-lg">
-                <Trash2 className="h-4 w-4 text-destructive" />
+      <div className="grid gap-4">
+        {/* Data Cleanup */}
+        <DataCleanupSection />
+        
+        {/* Trash */}
+        <Card className="bg-card/50">
+          <CardContent className="pt-4">
+            <button
+              onClick={() => navigate('/trash')}
+              className="w-full flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-destructive/10 rounded-lg">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Trash (Deleted Items)</p>
+                  <p className="text-xs text-muted-foreground">View and restore deleted records (30-day retention)</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Trash (Deleted Items)</p>
-                <p className="text-xs text-muted-foreground">View and restore deleted records (30-day retention)</p>
-              </div>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
-          </button>
-        </CardContent>
-      </Card>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+            </button>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* ==================== HELP SECTION ==================== */}
       <SectionHeader icon={HelpCircle} title="Getting Started" />
