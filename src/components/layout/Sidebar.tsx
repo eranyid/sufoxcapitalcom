@@ -44,7 +44,6 @@ const navGroups: NavGroup[] = [
       { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
       { path: '/risk', icon: RiskIcon, label: 'Risk' },
       { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
-      { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
     ],
   },
   {
@@ -52,6 +51,7 @@ const navGroups: NavGroup[] = [
     items: [
       { path: '/research', icon: FlaskConical, label: 'Research' },
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
+      { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
       { path: '/charts', icon: ChartsIcon, label: 'Charts' },
       { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
