@@ -325,7 +325,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
           {CURRENCIES_TO_USD.map(currency => (
             <div key={currency} className="space-y-1">
               <label className="text-[10px] text-muted-foreground font-mono">
-                {currency}/USD
+                USD/{currency}
               </label>
               <Input
                 type="number"
@@ -362,7 +362,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
         </Button>
 
         <p className="text-[9px] text-muted-foreground text-center">
-          Enter rate as: 1 {'{Currency}'} = X USD (e.g., 1 EUR = 1.08 USD)
+          Enter rate as: 1 USD = X {'{Currency}'} (e.g., 1 USD = 3.6 ILS)
         </p>
       </CardContent>
     </Card>
