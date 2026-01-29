@@ -598,7 +598,8 @@ export function calculatePerformanceMetrics(
   valuations: MonthlyValuation[],
   riskFreeRate: number,
   cashBalances?: CashBalancesInput,
-  baseCurrency: 'USD' | 'ILS' = 'USD'
+  baseCurrency: 'USD' | 'ILS' = 'USD',
+  fxRates?: FxRatesMap
 ): PerformanceMetrics {
   const positions = calculatePositions(transactions);
   const latestVals = getLatestValuations(valuations);
@@ -662,9 +663,9 @@ export function calculatePerformanceMetrics(
     realizedPL += pos.realizedPL;
   }
   
-  // Calculate cash in base currency
+  // Calculate cash in base currency using dynamic FX rates
   const cashValue = cashBalances 
-    ? calculateTotalCashInBaseCurrency(cashBalances, baseCurrency)
+    ? calculateTotalCashInBaseCurrency(cashBalances, baseCurrency, fxRates)
     : 0;
   
   // NAV = Holdings + Cash (unified Total Portfolio Value)
