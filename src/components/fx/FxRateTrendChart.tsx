@@ -82,14 +82,17 @@ export function FxRateTrendChart({ rates, availablePairs }: FxRateTrendChartProp
           </CardTitle>
           <Select value={selectedPair} onValueChange={setSelectedPair}>
             <SelectTrigger className="w-[140px] h-8">
-              <SelectValue placeholder="Select pair" />
+              <SelectValue>{to}/{from}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {availablePairs.map(pair => (
-                <SelectItem key={pair} value={pair}>
-                  {pair}
-                </SelectItem>
-              ))}
+              {availablePairs.map(pair => {
+                const [from, to] = pair.split('/');
+                return (
+                  <SelectItem key={pair} value={pair}>
+                    {to}/{from}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -171,7 +174,7 @@ export function FxRateTrendChart({ rates, availablePairs }: FxRateTrendChartProp
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
                   formatter={(value: number) => [
                     <span className="font-mono">{value.toFixed(4)}</span>,
-                    `1 ${from} =`
+                    `1 ${to} =`
                   ]}
                   labelFormatter={(label) => format(parseISO(label), 'MMM d, yyyy')}
                 />
