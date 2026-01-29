@@ -33,6 +33,7 @@ interface PortfolioContextType {
   computedData: ComputedPortfolioData;
   // NEW: Dynamic FX rates from user entries
   fxRates: FxRatesMap;
+  previousMonthFxRates: FxRatesMap;
   setSampleDataMode: (enabled: boolean) => void;
   addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   updateTransaction: (id: string, tx: Partial<Transaction>) => Promise<void>;
@@ -74,6 +75,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [fxRates, setFxRates] = useState<FxRatesMap>(DEFAULT_FX_RATES);
+  const [previousMonthFxRates, setPreviousMonthFxRates] = useState<FxRatesMap>(DEFAULT_FX_RATES);
 
   // Active data based on mode
   const transactions = useMemo(() => 
@@ -230,27 +232,34 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       // Get the latest rate for each currency pair to USD
       const currencies: CashCurrency[] = ['EUR', 'ILS', 'GBP', 'CHF', 'JPY'];
       const newRates: FxRatesMap = { USD: 1 };
+      const prevRates: FxRatesMap = { USD: 1 };
       
       for (const currency of currencies) {
-        const { data } = await supabase
+        // Get the latest rate
+        const { data: latestData } = await supabase
           .from('fx_rates')
-          .select('rate')
+          .select('rate, rate_date')
           .eq('user_id', user.id)
           .eq('from_currency', currency)
           .eq('to_currency', 'USD')
           .order('rate_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(2);
         
-        if (data) {
-          newRates[currency] = Number(data.rate);
+        if (latestData && latestData.length > 0) {
+          newRates[currency] = Number(latestData[0].rate);
+          // Second record is the previous month's rate
+          prevRates[currency] = latestData.length > 1 
+            ? Number(latestData[1].rate) 
+            : Number(latestData[0].rate);
         } else {
           // Fallback to default
           newRates[currency] = getDefaultFxRate(currency, 'USD');
+          prevRates[currency] = getDefaultFxRate(currency, 'USD');
         }
       }
       
       setFxRates(newRates);
+      setPreviousMonthFxRates(prevRates);
     } catch (error) {
       console.error('Failed to load FX rates:', error);
     }
@@ -914,6 +923,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       clearAllData,
       refreshMetrics,
       fxRates,
+      previousMonthFxRates,
       refreshFxRates
     }}>
       {children}

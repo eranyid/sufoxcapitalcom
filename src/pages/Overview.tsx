@@ -69,7 +69,7 @@ function getPercentile(sortedValues: number[], percentile: number): number {
 }
 
 export default function Overview() {
-  const { transactions, valuations, performanceMetrics, riskMetrics, cashBalances, settings, loading } = usePortfolio();
+  const { transactions, valuations, performanceMetrics, riskMetrics, cashBalances, settings, loading, fxRates, previousMonthFxRates } = usePortfolio();
   const { fxMode, fxLabel } = useFxMode();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -108,10 +108,17 @@ export default function Overview() {
   // Calculate YTD Return using the new P/L-based formula
   const ytdData = useMemo(() => {
     if (transactions.length === 0 || valuations.length === 0) {
-      return { ytdReturn: 0, ytdPL: 0, ytdFxPL: 0, janValue: 0 };
+      return { ytdReturn: 0, ytdPL: 0, ytdFxPL: 0, janValue: 0, cashFxPL: 0 };
     }
-    return calculateYTDReturn(transactions, valuations, cashBalances, settings.baseCurrency as 'USD' | 'ILS');
-  }, [transactions, valuations, cashBalances, settings.baseCurrency]);
+    return calculateYTDReturn(
+      transactions, 
+      valuations, 
+      cashBalances, 
+      settings.baseCurrency as 'USD' | 'ILS',
+      fxRates,
+      previousMonthFxRates
+    );
+  }, [transactions, valuations, cashBalances, settings.baseCurrency, fxRates, previousMonthFxRates]);
 
   // Load RSS feed URL
   useEffect(() => {
