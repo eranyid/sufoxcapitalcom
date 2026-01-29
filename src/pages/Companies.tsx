@@ -126,6 +126,9 @@ export default function Companies() {
     navigate(`/analysis/${data.id}`);
   };
 
+  // Status order: active → research → monitoring → on_hold → exited
+  const STATUS_ORDER = ['working_on_it', 'research', 'monitoring', 'on_hold', 'done'];
+
   const filteredCompanies = companies.filter(c => {
     const query = searchQuery.toLowerCase();
     return (
@@ -133,6 +136,12 @@ export default function Companies() {
       (c.ticker && c.ticker.toLowerCase().includes(query))
     );
   });
+
+  // Group companies by status
+  const groupedCompanies = STATUS_ORDER.map(status => ({
+    status,
+    companies: filteredCompanies.filter(c => c.status === status),
+  })).filter(group => group.companies.length > 0);
 
   if (loading) {
     return (
@@ -169,7 +178,7 @@ export default function Companies() {
       </div>
 
       {/* Companies Table */}
-      {filteredCompanies.length === 0 ? (
+      {groupedCompanies.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Building2 size={48} className="text-muted-foreground mb-4" />
           <h2 className="text-lg font-medium">No companies yet</h2>
@@ -182,58 +191,61 @@ export default function Companies() {
           </Button>
         </div>
       ) : (
-        <div className="border border-border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="font-semibold">Company Name</TableHead>
-                <TableHead className="font-semibold w-[100px]">Ticker</TableHead>
-                <TableHead className="font-semibold w-[140px]">Market Cap</TableHead>
-                <TableHead className="font-semibold w-[120px]">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCompanies.map(company => (
-                <TableRow
-                  key={company.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => navigate(`/analysis/${company.id}`)}
-                >
-                  <TableCell className="font-medium">{company.company_name}</TableCell>
-                  <TableCell>
-                    {company.ticker ? (
-                      <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
-                        {company.ticker}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-mono text-sm">
-                    {company.market_cap || '—'}
-                  </TableCell>
-                  <TableCell>
-                    {(() => {
-                      const config = STATUS_CONFIG[company.status];
-                      if (!config) {
-                        return (
-                          <span className="text-muted-foreground text-sm">
-                            {company.status.replace(/_/g, ' ')}
-                          </span>
-                        );
-                      }
-                      return (
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md ${config.bg} ${config.text}`}>
-                          {config.icon}
-                          <span className="text-sm font-medium">{config.label}</span>
-                        </div>
-                      );
-                    })()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-6">
+          {groupedCompanies.map((group, groupIndex) => {
+            const config = STATUS_CONFIG[group.status];
+            return (
+              <div key={group.status} className="border border-border rounded-lg overflow-hidden">
+                <Table>
+                  {groupIndex === 0 && (
+                    <TableHeader>
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
+                        <TableHead className="font-semibold">Company Name</TableHead>
+                        <TableHead className="font-semibold w-[100px]">Ticker</TableHead>
+                        <TableHead className="font-semibold w-[140px]">Market Cap</TableHead>
+                        <TableHead className="font-semibold w-[120px]">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                  )}
+                  <TableBody>
+                    {group.companies.map(company => (
+                      <TableRow
+                        key={company.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => navigate(`/analysis/${company.id}`)}
+                      >
+                        <TableCell className="font-medium">{company.company_name}</TableCell>
+                        <TableCell>
+                          {company.ticker ? (
+                            <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
+                              {company.ticker}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {company.market_cap || '—'}
+                        </TableCell>
+                        <TableCell>
+                          {config ? (
+                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md ${config.bg} ${config.text}`}>
+                              {config.icon}
+                              <span className="text-sm font-medium">{config.label}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              {company.status.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            );
+          })}
         </div>
       )}
 
