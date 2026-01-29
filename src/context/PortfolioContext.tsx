@@ -9,14 +9,15 @@ import { syncCrmFromTransaction } from '@/hooks/useCrmSync';
 import { createLedgerEntry, LedgerEntryType } from '@/lib/capitalLedger';
 import { getFxRate, getDefaultFxRate } from '@/lib/fxService';
 
-// Default FX rates to USD
+// Default FX rates in USD/{Currency} format (how many units of currency per 1 USD)
+// e.g., ILS: 3.7 means 1 USD = 3.7 ILS
 const DEFAULT_FX_RATES: FxRatesMap = {
   USD: 1,
-  EUR: 1.08,
-  ILS: 0.27,
-  GBP: 1.27,
-  CHF: 1.14,
-  JPY: 0.0067
+  EUR: 0.92,   // 1 USD = 0.92 EUR
+  ILS: 3.7,    // 1 USD = 3.7 ILS
+  GBP: 0.79,   // 1 USD = 0.79 GBP
+  CHF: 0.88,   // 1 USD = 0.88 CHF
+  JPY: 149.5   // 1 USD = 149.5 JPY
 };
 
 interface PortfolioContextType {

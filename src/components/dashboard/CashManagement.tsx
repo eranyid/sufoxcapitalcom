@@ -128,10 +128,13 @@ export function CashManagement() {
   const { fxRates } = usePortfolio();
   
   // Helper to convert to USD
+  // fxRates stores rates as "1 USD = X {Currency}" (e.g., USD/ILS = 3.6 means 1 USD = 3.6 ILS)
+  // So to convert FROM a currency TO USD, we DIVIDE by the rate
   const toUSD = (currency: CashCurrency, amount: number): number => {
     if (currency === 'USD') return amount;
-    const rate = fxRates[currency] ?? 0;
-    return amount * rate;
+    const rate = fxRates[currency] ?? 1;
+    if (rate <= 0) return 0;
+    return amount / rate;
   };
   
   const totalInUSD = 
