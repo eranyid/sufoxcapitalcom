@@ -16,7 +16,6 @@ interface AssetClassStepProps {
 const ASSET_COLORS: Record<keyof AssetClassAllocation, string> = {
   equities: 'hsl(var(--primary))',
   bonds: 'hsl(210, 80%, 55%)',
-  funds: 'hsl(45, 100%, 50%)',
   hedging: 'hsl(280, 60%, 50%)',
   alternatives: 'hsl(160, 60%, 45%)',
   cash: 'hsl(0, 0%, 60%)',
@@ -25,7 +24,6 @@ const ASSET_COLORS: Record<keyof AssetClassAllocation, string> = {
 const ASSET_LABELS: Record<keyof AssetClassAllocation, string> = {
   equities: 'Equities',
   bonds: 'Bonds',
-  funds: 'Funds',
   hedging: 'Hedging',
   alternatives: 'Alternatives',
   cash: 'Cash',

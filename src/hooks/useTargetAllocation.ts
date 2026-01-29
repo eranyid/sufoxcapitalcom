@@ -197,7 +197,7 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
       if (linesError) throw linesError;
 
       const geography: GeographyAllocation = { israel: 0, usa: 0, europe: 0, other: 0 };
-      const assetClasses: AssetClassAllocation = { equities: 0, bonds: 0, funds: 0, hedging: 0, alternatives: 0, cash: 0 };
+      const assetClasses: AssetClassAllocation = { equities: 0, bonds: 0, hedging: 0, alternatives: 0, cash: 0 };
       const buckets: WizardData['buckets'] = [];
 
       lines?.forEach(line => {
