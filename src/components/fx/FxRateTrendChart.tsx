@@ -82,14 +82,14 @@ export function FxRateTrendChart({ rates, availablePairs }: FxRateTrendChartProp
           </CardTitle>
           <Select value={selectedPair} onValueChange={setSelectedPair}>
             <SelectTrigger className="w-[140px] h-8">
-              <SelectValue>{to}/{from}</SelectValue>
+              <SelectValue>{from}/{to}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {availablePairs.map(pair => {
-                const [from, to] = pair.split('/');
+                const [pairFrom, pairTo] = pair.split('/');
                 return (
                   <SelectItem key={pair} value={pair}>
-                    {to}/{from}
+                    {pairFrom}/{pairTo}
                   </SelectItem>
                 );
               })}
