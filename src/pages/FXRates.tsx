@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getSupportedCurrencies, getDefaultFxRate, FxRate } from '@/lib/fxService';
 import { CashCurrency } from '@/types/investment';
-import { FxRateTrendChart } from '@/components/fx/FxRateTrendChart';
+
 import { MonthlyFxRatesForm } from '@/components/fx/MonthlyFxRatesForm';
 
 const CURRENCY_SYMBOLS: Record<CashCurrency, string> = {
@@ -324,15 +324,12 @@ export default function FXRates() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchRates} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          {/* Convert Currency Dialog */}
+          <Dialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Rate
+              <Button variant="default" className="bg-primary">
+                <Repeat className="h-4 w-4 mr-2" />
+                Convert
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -604,13 +601,6 @@ export default function FXRates() {
         </Card>
       </div>
 
-      {/* FX Rate Trend Chart */}
-      <div className="mt-6">
-        <FxRateTrendChart 
-          rates={rates} 
-          availablePairs={Object.keys(groupedByPair)} 
-        />
-      </div>
 
       {/* Rates Table */}
       <Card className="mt-6">
