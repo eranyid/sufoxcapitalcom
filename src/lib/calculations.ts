@@ -744,7 +744,6 @@ export function calculateYTDReturn(
   fxRates?: FxRatesMap
 ): { ytdReturn: number; ytdPL: number; ytdFxPL: number; janValue: number } {
   const currentYear = new Date().getFullYear();
-  const janMonth = `${currentYear}-01`;
   const decPrevYear = `${currentYear - 1}-12`;
   
   // Get transactions up to end of previous year (for Jan 1st snapshot)
@@ -753,6 +752,10 @@ export function calculateYTDReturn(
   // Calculate Jan 1st portfolio value (using Dec previous year valuations)
   const decValuations = valuations.filter(v => v.month === decPrevYear);
   const janValue = calculatePortfolioValueAtMonth(txBeforeYear, decValuations, decPrevYear, cashBalances, baseCurrency, fxRates);
+  
+  // Build map of entry FX rates from transactions (weighted average for each ticker)
+  const entryFxRates = calculateEntryFxRates(transactions);
+  const janEntryFxRates = calculateEntryFxRates(txBeforeYear);
   
   // Get current total P/L with FX breakdown
   const positions = calculatePositions(transactions);
@@ -765,12 +768,12 @@ export function calculateYTDReturn(
   for (const [ticker, pos] of Object.entries(positions)) {
     const val = latestVals[ticker];
     if (val && pos.quantity > 0) {
-      const fxRate = val.fxRate || 1;
-      const currentValue = pos.quantity * val.pricePerUnit * fxRate;
-      const marketValue = pos.quantity * val.pricePerUnit; // Value without FX
+      const currentFxRate = val.fxRate || 1;
+      const entryFxRate = entryFxRates[ticker] || 1;
+      const currentValue = pos.quantity * val.pricePerUnit * currentFxRate;
       currentUnrealizedPL += currentValue - pos.totalCost;
-      // FX P/L = difference between value with FX and value at entry FX rate
-      currentFxPL += currentValue - marketValue;
+      // FX P/L = quantity * local_price * (current_fx - entry_fx)
+      currentFxPL += pos.quantity * val.pricePerUnit * (currentFxRate - entryFxRate);
     }
     currentRealizedPL += pos.realizedPL;
   }
@@ -784,11 +787,12 @@ export function calculateYTDReturn(
   for (const [ticker, pos] of Object.entries(positionsAtJan)) {
     const val = decValuations.find(v => v.ticker === ticker);
     if (val && pos.quantity > 0) {
-      const fxRate = val.fxRate || 1;
-      const janValue = pos.quantity * val.pricePerUnit * fxRate;
-      const janMarketValue = pos.quantity * val.pricePerUnit;
-      janUnrealizedPL += janValue - pos.totalCost;
-      janFxPL += janValue - janMarketValue;
+      const janFxRate = val.fxRate || 1;
+      const entryFxRate = janEntryFxRates[ticker] || 1;
+      const janValueCalc = pos.quantity * val.pricePerUnit * janFxRate;
+      janUnrealizedPL += janValueCalc - pos.totalCost;
+      // FX P/L at Jan 1: quantity * local_price * (jan_fx - entry_fx)
+      janFxPL += pos.quantity * val.pricePerUnit * (janFxRate - entryFxRate);
     }
     janRealizedPL += pos.realizedPL;
   }
@@ -805,6 +809,33 @@ export function calculateYTDReturn(
   const ytdReturn = janValue > 0 ? (ytdPL / janValue) * 100 : 0;
   
   return { ytdReturn, ytdPL, ytdFxPL, janValue };
+}
+
+/**
+ * Helper: Calculate weighted average entry FX rate per ticker
+ */
+function calculateEntryFxRates(transactions: Transaction[]): Record<string, number> {
+  const entryRates: Record<string, { totalCost: number; weightedFx: number }> = {};
+  
+  for (const tx of transactions) {
+    if (tx.transactionType === 'buy') {
+      const cost = tx.quantity * tx.pricePerUnit;
+      const fxRate = tx.fxRateAtEntry || 1;
+      
+      if (!entryRates[tx.ticker]) {
+        entryRates[tx.ticker] = { totalCost: 0, weightedFx: 0 };
+      }
+      entryRates[tx.ticker].totalCost += cost;
+      entryRates[tx.ticker].weightedFx += cost * fxRate;
+    }
+  }
+  
+  const result: Record<string, number> = {};
+  for (const [ticker, data] of Object.entries(entryRates)) {
+    result[ticker] = data.totalCost > 0 ? data.weightedFx / data.totalCost : 1;
+  }
+  
+  return result;
 }
 
 /**
