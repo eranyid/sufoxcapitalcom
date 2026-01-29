@@ -44,7 +44,7 @@ interface Company {
 const ASSET_CLASS_MAP: Record<string, { label: string; dbValues: string[] }> = {
   'equities': { label: 'Public Equities', dbValues: ['equity', 'equities', 'stock'] },
   'funds': { label: 'Funds (ETFs & Mutual Funds)', dbValues: ['etf', 'mutual_fund', 'fund', 'funds', 'bond'] },
-  'alternatives': { label: 'Alternatives', dbValues: ['alternative', 'alternatives', 'hedge_fund', 'private_equity', 'real_estate', 'commodity', 'crypto'] },
+  'alternatives': { label: 'Alternatives', dbValues: ['alternative', 'alternatives', 'hedge_fund', 'private_equity', 'venture_capital', 'private_debt', 'real_estate', 'commodity', 'crypto'] },
   'cash': { label: 'Cash & Deposits', dbValues: ['cash', 'deposit', 'money_market', 't_bill', 'makam'] },
   'all': { label: 'All Companies', dbValues: [] },
 };
@@ -56,6 +56,8 @@ export const ASSET_TYPE_OPTIONS = [
   { value: 'bond', label: 'Bond' },
   { value: 'mutual_fund', label: 'Mutual Fund' },
   { value: 'private_equity', label: 'Private Equity' },
+  { value: 'venture_capital', label: 'Venture Capital' },
+  { value: 'private_debt', label: 'Private Debt' },
   { value: 'hedge_fund', label: 'Hedge Fund' },
   { value: 'real_estate', label: 'Real Estate' },
   { value: 'commodity', label: 'Commodity' },
