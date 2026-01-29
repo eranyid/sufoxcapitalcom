@@ -1,8 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ConstructionWizard } from '@/components/construction/ConstructionWizard';
+import { NeedsBasedWizard } from '@/components/construction/NeedsBasedWizard';
 import { useTargetAllocation } from '@/hooks/useTargetAllocation';
-import { Target, Clock, Cpu, Activity } from 'lucide-react';
+import { Target, Clock, Cpu, Activity, Brain, Layers } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Construction() {
@@ -17,17 +17,17 @@ export default function Construction() {
             <div className="relative">
               <div className="absolute inset-0 bg-primary/30 blur-md animate-pulse" />
               <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
-                <Cpu className="text-primary" size={20} />
+                <Layers className="text-primary" size={20} />
               </div>
             </div>
             
             <div>
               <h1 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-                Portfolio Construction
+                Needs-Based Portfolio Design
                 <Activity size={14} className="text-primary animate-pulse" />
               </h1>
               <p className="text-[10px] text-muted-foreground font-mono">
-                STRATEGIC ALLOCATION PIPELINE v2.0
+                STRATEGIC ALLOCATION PIPELINE v3.0 — BEHAVIORAL FINANCE LAYER
               </p>
             </div>
           </div>
@@ -65,12 +65,12 @@ export default function Construction() {
 
         <div className="p-4 md:p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Target size={14} className="text-primary" />
-            <h2 className="text-xs font-medium font-mono tracking-wide">TARGET ALLOCATION WIZARD</h2>
+            <Brain size={14} className="text-primary" />
+            <h2 className="text-xs font-medium font-mono tracking-wide">INVESTMENT NEEDS ASSESSMENT</h2>
             <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent ml-3" />
           </div>
           
-          <ConstructionWizard />
+          <NeedsBasedWizard />
         </div>
       </Card>
     </div>
