@@ -1,8 +1,10 @@
 import { SVGProps } from 'react';
 
-export function ConstructionIcon(props: SVGProps<SVGSVGElement>) {
+export function ConstructionIcon({ size = 24, ...props }: SVGProps<SVGSVGElement> & { size?: number }) {
   return (
     <svg
+      height={size}
+      width={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
