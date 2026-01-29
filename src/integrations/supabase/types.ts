@@ -1347,6 +1347,89 @@ export type Database = {
         }
         Relationships: []
       }
+      target_allocation_lines: {
+        Row: {
+          created_at: string
+          dimension_type: Database["public"]["Enums"]["target_dimension_type"]
+          id: string
+          key: string
+          metadata_json: Json | null
+          parent_key: string | null
+          target_id: string
+          target_weight: number
+        }
+        Insert: {
+          created_at?: string
+          dimension_type: Database["public"]["Enums"]["target_dimension_type"]
+          id?: string
+          key: string
+          metadata_json?: Json | null
+          parent_key?: string | null
+          target_id: string
+          target_weight?: number
+        }
+        Update: {
+          created_at?: string
+          dimension_type?: Database["public"]["Enums"]["target_dimension_type"]
+          id?: string
+          key?: string
+          metadata_json?: Json | null
+          parent_key?: string | null
+          target_id?: string
+          target_weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "target_allocation_lines_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "target_allocations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      target_allocations: {
+        Row: {
+          constraints_json: Json
+          created_at: string
+          horizon: string
+          id: string
+          is_active: boolean
+          name: string
+          objective: string
+          risk_level: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          constraints_json?: Json
+          created_at?: string
+          horizon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          objective?: string
+          risk_level?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          constraints_json?: Json
+          created_at?: string
+          horizon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          objective?: string
+          risk_level?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       task_activity_log: {
         Row: {
           action: string
@@ -1835,6 +1918,7 @@ export type Database = {
       app_role: "admin" | "user"
       project_health: "on_track" | "at_risk" | "off_track"
       project_priority: "low" | "medium" | "high"
+      target_dimension_type: "geography" | "asset_class" | "bucket"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1965,6 +2049,7 @@ export const Constants = {
       app_role: ["admin", "user"],
       project_health: ["on_track", "at_risk", "off_track"],
       project_priority: ["low", "medium", "high"],
+      target_dimension_type: ["geography", "asset_class", "bucket"],
     },
   },
 } as const

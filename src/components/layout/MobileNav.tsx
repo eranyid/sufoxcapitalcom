@@ -32,7 +32,7 @@ const primaryNavItems = [
   { path: '/', icon: OverviewIcon, label: 'Overview' },
   { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
   { path: '/risk', icon: RiskIcon, label: 'Risk' },
-  { path: '/research', icon: FlaskConical, label: 'Research' },
+  { path: '/construction', icon: FlaskConical, label: 'Pipeline' },
 ];
 
 const moreNavItems = [

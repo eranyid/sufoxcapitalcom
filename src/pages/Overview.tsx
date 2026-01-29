@@ -16,6 +16,7 @@ import { NewsTicker } from '@/components/dashboard/NewsTicker';
 import { OpenIssuesWidget } from '@/components/backoffice/OpenIssuesWidget';
 import { useCrmTasks } from '@/hooks/useCrmTasks';
 import { CapitalLedgerView } from '@/components/dashboard/CapitalLedgerView';
+import { AllocationDriftWidget } from '@/components/dashboard/AllocationDriftWidget';
 import { StaggeredContainer } from '@/components/StaggeredContainer';
 import { ProspectusButton } from '@/components/ProspectusButton';
 
@@ -337,10 +338,11 @@ export default function Overview() {
         />
       )}
 
-      {/* Cash Management, Policy Check & Open Issues - Stack on mobile */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      {/* Cash Management, Policy Check, Drift & Open Issues */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <CashManagement />
         <PolicyFitCheck />
+        <AllocationDriftWidget />
         <OpenIssuesWidget tasks={tasks} />
       </div>
 
