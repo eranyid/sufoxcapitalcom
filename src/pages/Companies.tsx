@@ -191,23 +191,27 @@ export default function Companies() {
           </Button>
         </div>
       ) : (
-        <div className="space-y-6">
-          {groupedCompanies.map((group, groupIndex) => {
-            const config = STATUS_CONFIG[group.status];
-            return (
-              <div key={group.status} className="border border-border rounded-lg overflow-hidden">
-                <Table>
-                  {groupIndex === 0 && (
-                    <TableHeader>
-                      <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableHead className="font-semibold">Company Name</TableHead>
-                        <TableHead className="font-semibold w-[100px]">Ticker</TableHead>
-                        <TableHead className="font-semibold w-[140px]">Market Cap</TableHead>
-                        <TableHead className="font-semibold w-[120px]">Status</TableHead>
+        <div className="border border-border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead className="font-semibold w-[45%]">Company Name</TableHead>
+                <TableHead className="font-semibold w-[15%]">Ticker</TableHead>
+                <TableHead className="font-semibold w-[20%]">Market Cap</TableHead>
+                <TableHead className="font-semibold w-[20%]">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {groupedCompanies.map((group, groupIndex) => {
+                const config = STATUS_CONFIG[group.status];
+                return (
+                  <>
+                    {/* Spacer row between groups */}
+                    {groupIndex > 0 && (
+                      <TableRow key={`spacer-${group.status}`} className="hover:bg-transparent">
+                        <TableCell colSpan={4} className="h-4 p-0 bg-background border-0" />
                       </TableRow>
-                    </TableHeader>
-                  )}
-                  <TableBody>
+                    )}
                     {group.companies.map(company => (
                       <TableRow
                         key={company.id}
@@ -241,11 +245,11 @@ export default function Companies() {
                         </TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
-            );
-          })}
+                  </>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
 
