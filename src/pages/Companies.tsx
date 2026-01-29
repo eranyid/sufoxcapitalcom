@@ -32,12 +32,12 @@ interface Company {
   updated_at: string;
 }
 
-// Map URL params to asset_type values
-const ASSET_CLASS_MAP: Record<string, { label: string; dbValue: string }> = {
-  'equities': { label: 'Public Equities', dbValue: 'equities' },
-  'funds': { label: 'Funds (ETFs & Mutual Funds)', dbValue: 'funds' },
-  'alternatives': { label: 'Alternatives', dbValue: 'alternatives' },
-  'all': { label: 'All Companies', dbValue: 'all' },
+// Map URL params to asset_type values (supports multiple DB values per category)
+const ASSET_CLASS_MAP: Record<string, { label: string; dbValues: string[] }> = {
+  'equities': { label: 'Public Equities', dbValues: ['equity', 'equities', 'stock'] },
+  'funds': { label: 'Funds (ETFs & Mutual Funds)', dbValues: ['etf', 'mutual_fund', 'fund', 'funds'] },
+  'alternatives': { label: 'Alternatives', dbValues: ['alternative', 'alternatives', 'hedge_fund', 'private_equity', 'real_estate', 'commodity', 'crypto'] },
+  'all': { label: 'All Companies', dbValues: [] },
 };
 
 // Aligned with BoardStatusBadge labels
@@ -114,8 +114,9 @@ export default function Companies() {
     if (!user || !newCompanyName.trim()) return;
 
     setCreating(true);
-    const assetTypeValue = assetClassConfig && assetClassConfig.dbValue !== 'all' 
-      ? assetClassConfig.dbValue 
+    // Use first dbValue as default when creating from a filtered view
+    const assetTypeValue = assetClassConfig && assetClassConfig.dbValues.length > 0 
+      ? assetClassConfig.dbValues[0] 
       : null;
     
     const { data, error } = await supabase
@@ -144,9 +145,9 @@ export default function Companies() {
     navigate(`/analysis/company/${data.id}`);
   };
 
-  // Filter by asset class if specified
-  const assetFilteredCompanies = assetClassConfig && assetClassConfig.dbValue !== 'all'
-    ? companies.filter(c => c.asset_type === assetClassConfig.dbValue)
+  // Filter by asset class if specified (supports multiple DB values per category)
+  const assetFilteredCompanies = assetClassConfig && assetClassConfig.dbValues.length > 0
+    ? companies.filter(c => c.asset_type && assetClassConfig.dbValues.includes(c.asset_type))
     : companies;
 
   // Filter by search query
@@ -213,7 +214,7 @@ export default function Companies() {
           <Building2 size={48} className="text-muted-foreground mb-4" />
           <h2 className="text-lg font-medium">No companies yet</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            {assetClassConfig && assetClassConfig.dbValue !== 'all'
+            {assetClassConfig && assetClassConfig.dbValues.length > 0
               ? `Add your first ${assetClassConfig.label.toLowerCase()} company.`
               : 'Add your first company to start tracking investments.'}
           </p>
