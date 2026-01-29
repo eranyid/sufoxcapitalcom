@@ -728,6 +728,106 @@ export function calculatePerformanceMetrics(
   };
 }
 
+/**
+ * Calculate YTD Return (SUFOX Formula Spec)
+ * Formula: YTD Return = (Current P/L - Jan 1st P/L) / Jan 1st Portfolio Value
+ * Where P/L = Realized P/L + Unrealized P/L
+ * 
+ * This measures the actual gain/loss performance since the start of the year
+ * as a percentage of the portfolio value at year start.
+ */
+export function calculateYTDReturn(
+  transactions: Transaction[],
+  valuations: MonthlyValuation[],
+  cashBalances?: CashBalancesInput,
+  baseCurrency: 'USD' | 'ILS' = 'USD',
+  fxRates?: FxRatesMap
+): { ytdReturn: number; ytdPL: number; janValue: number } {
+  const currentYear = new Date().getFullYear();
+  const janMonth = `${currentYear}-01`;
+  const decPrevYear = `${currentYear - 1}-12`;
+  
+  // Get transactions up to end of previous year (for Jan 1st snapshot)
+  const txBeforeYear = transactions.filter(tx => tx.date < `${currentYear}-01-01`);
+  
+  // Calculate Jan 1st portfolio value (using Dec previous year valuations)
+  const decValuations = valuations.filter(v => v.month === decPrevYear);
+  const janValue = calculatePortfolioValueAtMonth(txBeforeYear, decValuations, decPrevYear, cashBalances, baseCurrency, fxRates);
+  
+  // Get current total P/L
+  const positions = calculatePositions(transactions);
+  const latestVals = getLatestValuations(valuations);
+  
+  let currentUnrealizedPL = 0;
+  let currentRealizedPL = 0;
+  
+  for (const [ticker, pos] of Object.entries(positions)) {
+    const val = latestVals[ticker];
+    if (val && pos.quantity > 0) {
+      const fxRate = val.fxRate || 1;
+      const currentValue = pos.quantity * val.pricePerUnit * fxRate;
+      currentUnrealizedPL += currentValue - pos.totalCost;
+    }
+    currentRealizedPL += pos.realizedPL;
+  }
+  
+  // Get Jan 1st P/L state (realized + unrealized at Dec 31 previous year)
+  const positionsAtJan = calculatePositions(txBeforeYear);
+  let janUnrealizedPL = 0;
+  let janRealizedPL = 0;
+  
+  for (const [ticker, pos] of Object.entries(positionsAtJan)) {
+    const val = decValuations.find(v => v.ticker === ticker);
+    if (val && pos.quantity > 0) {
+      const fxRate = val.fxRate || 1;
+      const janValue = pos.quantity * val.pricePerUnit * fxRate;
+      janUnrealizedPL += janValue - pos.totalCost;
+    }
+    janRealizedPL += pos.realizedPL;
+  }
+  
+  // YTD P/L = Current Total P/L - Jan 1st Total P/L
+  const currentTotalPL = currentRealizedPL + currentUnrealizedPL;
+  const janTotalPL = janRealizedPL + janUnrealizedPL;
+  const ytdPL = currentTotalPL - janTotalPL;
+  
+  // YTD Return % = YTD P/L / Jan 1st Portfolio Value
+  const ytdReturn = janValue > 0 ? (ytdPL / janValue) * 100 : 0;
+  
+  return { ytdReturn, ytdPL, janValue };
+}
+
+/**
+ * Helper: Calculate portfolio value at a specific month including cash
+ */
+function calculatePortfolioValueAtMonth(
+  transactions: Transaction[],
+  valuations: MonthlyValuation[],
+  month: string,
+  cashBalances?: CashBalancesInput,
+  baseCurrency: 'USD' | 'ILS' = 'USD',
+  fxRates?: FxRatesMap
+): number {
+  const positions = calculatePositions(transactions);
+  const valMap = new Map(valuations.map(v => [v.ticker, v]));
+  
+  let holdingsValue = 0;
+  for (const [ticker, pos] of Object.entries(positions)) {
+    const val = valMap.get(ticker);
+    if (val && pos.quantity > 0) {
+      const fxRate = val.fxRate || 1;
+      holdingsValue += pos.quantity * val.pricePerUnit * fxRate;
+    }
+  }
+  
+  // Add cash (assuming constant cash for simplicity, or use historical if available)
+  const cashValue = cashBalances 
+    ? calculateTotalCashInBaseCurrency(cashBalances, baseCurrency, fxRates)
+    : 0;
+  
+  return holdingsValue + cashValue;
+}
+
 // Calculate asset-level monthly returns for correlation
 export function calculateAssetMonthlyReturns(
   transactions: Transaction[],

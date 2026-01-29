@@ -21,6 +21,7 @@ import { ProspectusButton } from '@/components/ProspectusButton';
 
 
 import { computeFactorModel } from '@/lib/factorModel';
+import { calculateYTDReturn } from '@/lib/calculations';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileText } from 'lucide-react';
 
@@ -103,6 +104,14 @@ export default function Overview() {
       totalValue,
     };
   }, [performanceMetrics, fxMode]);
+
+  // Calculate YTD Return using the new P/L-based formula
+  const ytdData = useMemo(() => {
+    if (transactions.length === 0 || valuations.length === 0) {
+      return { ytdReturn: 0, ytdPL: 0, janValue: 0 };
+    }
+    return calculateYTDReturn(transactions, valuations, cashBalances, settings.baseCurrency as 'USD' | 'ILS');
+  }, [transactions, valuations, cashBalances, settings.baseCurrency]);
 
   // Load RSS feed URL
   useEffect(() => {
@@ -214,25 +223,18 @@ export default function Overview() {
       <StaggeredContainer className="grid grid-cols-2 lg:grid-cols-4 gap-2" staggerDelay={60} baseDelay={100}>
         <KPICard
           title="YTD Return"
-          value={hasData ? (() => {
-            const currentYear = new Date().getFullYear().toString();
-            const ytdReturns = performanceMetrics.monthlyReturns.filter(r => r.month.startsWith(currentYear));
-            if (ytdReturns.length === 0) return '0.00%';
-            const ytdReturn = ytdReturns.reduce((acc, r) => acc * (1 + r.return / 100), 1) - 1;
-            return `${ytdReturn >= 0 ? '+' : ''}${(ytdReturn * 100).toFixed(2)}%`;
-          })() : '0.00%'}
-          trend={hasData ? (() => {
-            const currentYear = new Date().getFullYear().toString();
-            const ytdReturns = performanceMetrics.monthlyReturns.filter(r => r.month.startsWith(currentYear));
-            if (ytdReturns.length === 0) return 'neutral';
-            const ytdReturn = ytdReturns.reduce((acc, r) => acc * (1 + r.return / 100), 1) - 1;
-            return ytdReturn >= 0 ? 'up' : 'down';
-          })() : 'neutral'}
+          value={hasData ? `${ytdData.ytdReturn >= 0 ? '+' : ''}${ytdData.ytdReturn.toFixed(2)}%` : '0.00%'}
+          trend={ytdData.ytdReturn >= 0 ? 'up' : ytdData.ytdReturn < 0 ? 'down' : 'neutral'}
           subtitle={new Date().getFullYear().toString()}
           subLabel={fxLabel}
-          tooltip={fxMode === 'real' 
-            ? "Year-to-date return including FX impact, measured in base currency" 
-            : "Year-to-date return excluding FX impact"}
+          tooltip="Year-to-date return: (Realized + Unrealized P/L since Jan 1) / Portfolio Value at Jan 1"
+        />
+        <KPICard
+          title="YTD P/L"
+          value={hasData ? formatCurrency(ytdData.ytdPL) : '$0'}
+          trend={ytdData.ytdPL >= 0 ? 'up' : 'down'}
+          subLabel={fxLabel}
+          tooltip="Realized + Unrealized profit/loss since January 1st"
         />
         <KPICard
           title="Unrealized %"
