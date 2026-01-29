@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,8 +56,10 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
   const [valueComparison, setValueComparison] = useState<ValueComparison | null>(null);
+  
+  // Track value before save to show accurate comparison after state updates
+  const pendingComparisonRef = useRef<{ before: number } | null>(null);
 
   // Generate month options (last 24 months)
   const monthOptions = Array.from({ length: 24 }, (_, i) => {
@@ -140,7 +142,21 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
   // Clear comparison when month changes
   useEffect(() => {
     setValueComparison(null);
+    pendingComparisonRef.current = null;
   }, [selectedMonth]);
+
+  // Update comparison when portfolio value changes after save
+  useEffect(() => {
+    if (pendingComparisonRef.current) {
+      const before = pendingComparisonRef.current.before;
+      const after = computedData.totalPortfolioValue;
+      const diff = after - before;
+      const diffPercent = before > 0 ? (diff / before) * 100 : 0;
+      
+      setValueComparison({ before, after, diff, diffPercent });
+      pendingComparisonRef.current = null;
+    }
+  }, [computedData.totalPortfolioValue]);
 
   const handleUseLastMonth = () => {
     const newRates: Record<CashCurrency, string> = { ...rates };
@@ -219,26 +235,15 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
 
       if (error) throw error;
 
-      // Refresh FX rates in context and wait for recalculation
+      // Store the before value - the useEffect will update the comparison 
+      // when computedData.totalPortfolioValue changes after refreshFxRates
+      pendingComparisonRef.current = { before: valueBefore };
+
+      // Refresh FX rates in context - this will trigger recalculation
       await refreshFxRates();
-      
-      // Small delay to allow state to update
-      await new Promise(resolve => setTimeout(resolve, 100));
       
       toast.success(`Saved FX rates for ${selectedMonth}`);
       onRatesSaved?.();
-
-      // Capture value AFTER saving (need to get fresh value after context update)
-      // We'll show the comparison panel and the value will update reactively
-      const diff = computedData.totalPortfolioValue - valueBefore;
-      const diffPercent = valueBefore > 0 ? (diff / valueBefore) * 100 : 0;
-      
-      setValueComparison({
-        before: valueBefore,
-        after: computedData.totalPortfolioValue,
-        diff,
-        diffPercent
-      });
 
     } catch (error: any) {
       toast.error(error.message || 'Failed to save rates');
