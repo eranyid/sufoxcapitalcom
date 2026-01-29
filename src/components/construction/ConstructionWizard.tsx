@@ -216,7 +216,7 @@ export function ConstructionWizard() {
       </div>
 
       {/* Step Content with animation container */}
-      <div className="min-h-[400px] relative">
+      <div className="min-h-[320px] relative">
         <div className="absolute -inset-4 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
         <div className="relative">
           {renderStep()}
