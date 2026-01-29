@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search, FlaskConical, Eye, Wrench, CheckCircle2, AlertCircle, Pause, LogOut } from 'lucide-react';
+import { Building2, Plus, Search, FlaskConical, Eye, TrendingUp, Pause, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ interface Company {
   updated_at: string;
 }
 
+// Aligned with BoardStatusBadge labels
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: string; label: string }> = {
   research: {
     icon: <FlaskConical size={14} />,
@@ -39,10 +40,10 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: s
     label: 'research',
   },
   working_on_it: {
-    icon: <Wrench size={14} />,
+    icon: <TrendingUp size={14} />,
     bg: 'bg-amber-500/20',
     text: 'text-amber-400',
-    label: 'working on it',
+    label: 'active',
   },
   monitoring: {
     icon: <Eye size={14} />,
@@ -51,28 +52,16 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: s
     label: 'monitoring',
   },
   done: {
-    icon: <CheckCircle2 size={14} />,
+    icon: <LogOut size={14} />,
     bg: 'bg-emerald-500/20',
     text: 'text-emerald-400',
-    label: 'done',
-  },
-  stuck: {
-    icon: <AlertCircle size={14} />,
-    bg: 'bg-red-500/20',
-    text: 'text-red-400',
-    label: 'stuck',
+    label: 'exited',
   },
   on_hold: {
     icon: <Pause size={14} />,
     bg: 'bg-slate-500/20',
     text: 'text-slate-400',
     label: 'on hold',
-  },
-  exited: {
-    icon: <LogOut size={14} />,
-    bg: 'bg-emerald-500/20',
-    text: 'text-emerald-400',
-    label: 'exited',
   },
 };
 
