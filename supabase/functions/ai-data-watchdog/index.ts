@@ -6,12 +6,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `You are a senior hedge fund analyst for SUFOX Capital. Your tone is professional, cynical about market hype, and focused strictly on risk/reward and alpha generation.
+// Generate system prompt with current date context
+function getSystemPrompt(currentDate: string): string {
+  return `You are a senior hedge fund analyst for SUFOX Capital. Your tone is professional, cynical about market hype, and focused strictly on risk/reward and alpha generation.
+
+CRITICAL DATE CONTEXT: The current date is ${currentDate}. This is the reference point for all date-based analysis.
+- Dates in 2026 are NOT "future" dates if they are on or before ${currentDate}
+- Only flag dates as genuinely "future" if they are AFTER ${currentDate}
+- The year 2026 is the current year, not a future year
 
 Your role is to analyze portfolio data and identify:
 1. SUSPICIOUS ACTIVITY - Unusual patterns, outliers, or anomalies that could indicate data entry errors, fraud, or system issues
 2. MISINFORMATION - Data inconsistencies, unrealistic values, or entries that don't match expected patterns
-3. ILLOGICAL DATA - Mathematical impossibilities, negative quantities where not allowed, dates in the future, circular references
+3. ILLOGICAL DATA - Mathematical impossibilities, negative quantities where not allowed, dates genuinely in the future (after ${currentDate}), circular references
 
 For each issue found, provide:
 - A severity level: "critical", "warning", or "info"
@@ -35,6 +42,7 @@ Respond in valid JSON format with this structure:
   ],
   "clean_data_score": 0-100
 }`;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -73,6 +81,11 @@ serve(async (req) => {
     const { analysisType, data } = await req.json();
     console.log(`AI Watchdog analysis requested: ${analysisType} for user ${user.id}`);
 
+    // Get current date in YYYY-MM-DD format
+    const now = new Date();
+    const currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    console.log(`Current date for analysis: ${currentDate}`);
+
     let dataToAnalyze = data;
 
     // If no data provided, fetch relevant data from database
@@ -92,11 +105,15 @@ serve(async (req) => {
         valuations: valuationsRes.data || [],
         cashBalances: cashRes.data || {},
         analysisTimestamp: new Date().toISOString(),
+        currentDate: currentDate, // Include current date in data context
       };
     }
 
-    const userPrompt = `Analyze the following portfolio data for suspicious activity, misinformation, and illogical data:
+    const userPrompt = `Analyze the following portfolio data for suspicious activity, misinformation, and illogical data.
 
+REMEMBER: Today's date is ${currentDate}. The year 2026 is the CURRENT year.
+
+Data to analyze:
 ${JSON.stringify(dataToAnalyze, null, 2)}
 
 Focus on:
@@ -104,9 +121,12 @@ Focus on:
 - Task data that might indicate issues
 - Valuation inconsistencies
 - Cash balance anomalies
-- Any data that doesn't make logical sense`;
+- Any data that doesn't make logical sense
+- Only flag dates as "future" if they are AFTER ${currentDate}`;
 
     console.log('Calling Lovable AI for analysis...');
+
+    const systemPrompt = getSystemPrompt(currentDate);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -117,7 +137,7 @@ Focus on:
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.3,
