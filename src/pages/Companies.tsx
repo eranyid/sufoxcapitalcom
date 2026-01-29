@@ -37,6 +37,7 @@ const ASSET_CLASS_MAP: Record<string, { label: string; dbValues: string[] }> = {
   'equities': { label: 'Public Equities', dbValues: ['equity', 'equities', 'stock'] },
   'funds': { label: 'Funds (ETFs & Mutual Funds)', dbValues: ['etf', 'mutual_fund', 'fund', 'funds'] },
   'alternatives': { label: 'Alternatives', dbValues: ['alternative', 'alternatives', 'hedge_fund', 'private_equity', 'real_estate', 'commodity', 'crypto'] },
+  'cash': { label: 'Cash & Deposits', dbValues: ['cash', 'deposit', 'money_market', 't_bill', 'makam'] },
   'all': { label: 'All Companies', dbValues: [] },
 };
 
