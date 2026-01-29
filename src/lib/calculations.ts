@@ -534,21 +534,26 @@ interface CashBalancesInput {
 }
 
 // FX rates type for dynamic rate support
+// IMPORTANT: User-entered rates are stored as USD/{Currency} format
+// e.g., ILS=3.6 means 1 USD = 3.6 ILS
+// To convert FROM currency TO USD, we DIVIDE by the rate
 export type FxRatesMap = Record<string, number>;
 
-// Default FX rates (fallback when no user rates exist)
-const DEFAULT_FX_RATES_TO_USD: FxRatesMap = {
+// Default FX rates in USD/{Currency} format (how many units of currency per 1 USD)
+// e.g., ILS: 3.7 means 1 USD = 3.7 ILS
+const DEFAULT_FX_RATES_USD_BASE: FxRatesMap = {
   USD: 1,
-  EUR: 1.08,
-  ILS: 0.27,
-  GBP: 1.27,
-  CHF: 1.14,
-  JPY: 0.0067
+  EUR: 0.92,   // 1 USD = 0.92 EUR
+  ILS: 3.7,    // 1 USD = 3.7 ILS
+  GBP: 0.79,   // 1 USD = 0.79 GBP
+  CHF: 0.88,   // 1 USD = 0.88 CHF
+  JPY: 149.5   // 1 USD = 149.5 JPY
 };
 
 /**
  * Convert cash to base currency (USD by default)
- * Now accepts optional dynamic FX rates from user entries
+ * FX rates are in USD/{Currency} format: rate = how many units of currency per 1 USD
+ * To convert FROM currency TO USD: amount / rate
  */
 export function calculateTotalCashInBaseCurrency(
   cashBalances: CashBalancesInput,
@@ -556,13 +561,16 @@ export function calculateTotalCashInBaseCurrency(
   fxRates?: FxRatesMap
 ): number {
   // Use provided rates or defaults
-  const rates = fxRates || DEFAULT_FX_RATES_TO_USD;
+  const rates = fxRates || DEFAULT_FX_RATES_USD_BASE;
   
-  // Helper to get rate to USD
+  // Helper to convert to USD
+  // Rate format: 1 USD = X {Currency}
+  // So to get USD from currency: amount / rate
   const toUSD = (currency: string, amount: number): number => {
     if (currency === 'USD') return amount;
-    const rate = rates[currency] ?? DEFAULT_FX_RATES_TO_USD[currency] ?? 0;
-    return amount * rate;
+    const rate = rates[currency] ?? DEFAULT_FX_RATES_USD_BASE[currency] ?? 1;
+    if (rate <= 0) return 0;
+    return amount / rate;
   };
   
   // Convert all currencies to USD first
@@ -577,9 +585,9 @@ export function calculateTotalCashInBaseCurrency(
   if (baseCurrency === 'USD') {
     return totalUSD;
   } else {
-    // Convert to ILS: USD / (ILS_TO_USD rate)
-    const ilsRate = rates['ILS'] ?? DEFAULT_FX_RATES_TO_USD['ILS'] ?? 0.27;
-    return ilsRate > 0 ? totalUSD / ilsRate : totalUSD * 3.7;
+    // Convert USD to ILS: totalUSD * ILS rate
+    const ilsRate = rates['ILS'] ?? DEFAULT_FX_RATES_USD_BASE['ILS'] ?? 3.7;
+    return totalUSD * ilsRate;
   }
 }
 

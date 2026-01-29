@@ -28,7 +28,8 @@ export interface FxRateInput {
   source?: string;
 }
 
-// Default static rates (fallback when no user rates exist)
+// Default static rates in USD/{Currency} format (how many units of currency per 1 USD)
+// e.g., ILS: 3.70 means 1 USD = 3.70 ILS
 const DEFAULT_FX_RATES: Record<string, Record<string, number>> = {
   USD: { USD: 1, EUR: 0.92, ILS: 3.70, GBP: 0.79, CHF: 0.88, JPY: 149.5 },
   EUR: { USD: 1.087, EUR: 1, ILS: 4.02, GBP: 0.86, CHF: 0.96, JPY: 162.5 },
