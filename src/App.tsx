@@ -35,6 +35,7 @@ const BackOfficeOverview = lazy(() => import("./pages/BackOfficeOverview"));
 const BackOfficeIssues = lazy(() => import("./pages/BackOfficeTasks"));
 const BackOfficeTimeline = lazy(() => import("./pages/BackOfficeTimeline"));
 const Companies = lazy(() => import("./pages/Companies"));
+const AnalysisLanding = lazy(() => import("./pages/AnalysisLanding"));
 const CompanyPage = lazy(() => import("./pages/CompanyPage"));
 const Projects = lazy(() => import("./pages/Projects"));
 const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
@@ -109,10 +110,20 @@ const App = () => (
                   } />
                   <Route path="/analysis" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <AnalysisLanding />
+                    </Suspense>
+                  } />
+                  <Route path="/analysis/all" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Companies />
                     </Suspense>
                   } />
-                  <Route path="/analysis/:companyId" element={
+                  <Route path="/analysis/:assetClass" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Companies />
+                    </Suspense>
+                  } />
+                  <Route path="/analysis/company/:companyId" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <CompanyPage />
                     </Suspense>
