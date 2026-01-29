@@ -741,8 +741,9 @@ export function calculateYTDReturn(
   valuations: MonthlyValuation[],
   cashBalances?: CashBalancesInput,
   baseCurrency: 'USD' | 'ILS' = 'USD',
-  fxRates?: FxRatesMap
-): { ytdReturn: number; ytdPL: number; ytdFxPL: number; janValue: number } {
+  fxRates?: FxRatesMap,
+  previousMonthFxRates?: FxRatesMap
+): { ytdReturn: number; ytdPL: number; ytdFxPL: number; janValue: number; cashFxPL: number } {
   const currentYear = new Date().getFullYear();
   const decPrevYear = `${currentYear - 1}-12`;
   
@@ -797,18 +798,39 @@ export function calculateYTDReturn(
     janRealizedPL += pos.realizedPL;
   }
   
+  // Calculate FX P/L on cash balances (foreign currency cash)
+  // This measures how much the value of non-base currency cash changed due to FX movements
+  let cashFxPL = 0;
+  if (cashBalances && fxRates && previousMonthFxRates) {
+    const foreignCurrencies = ['EUR', 'ILS', 'GBP', 'CHF', 'JPY'] as const;
+    
+    for (const currency of foreignCurrencies) {
+      const balance = cashBalances[currency.toLowerCase() as keyof CashBalancesInput] || 0;
+      if (balance > 0) {
+        const currentRate = fxRates[currency] || 1;
+        const previousRate = previousMonthFxRates[currency] || currentRate;
+        
+        // FX P/L = balance * (1/currentRate - 1/previousRate)
+        // Since rates are stored as "1 USD = X foreign", we divide to get USD value
+        const currentValueUSD = balance / currentRate;
+        const previousValueUSD = balance / previousRate;
+        cashFxPL += currentValueUSD - previousValueUSD;
+      }
+    }
+  }
+  
   // YTD P/L = Current Total P/L - Jan 1st Total P/L
   const currentTotalPL = currentRealizedPL + currentUnrealizedPL;
   const janTotalPL = janRealizedPL + janUnrealizedPL;
   const ytdPL = currentTotalPL - janTotalPL;
   
-  // YTD FX P/L = Current FX P/L - Jan 1st FX P/L
-  const ytdFxPL = currentFxPL - janFxPL;
+  // YTD FX P/L = (Current FX P/L - Jan 1st FX P/L) + Cash FX P/L
+  const ytdFxPL = (currentFxPL - janFxPL) + cashFxPL;
   
   // YTD Return % = YTD P/L / Jan 1st Portfolio Value
   const ytdReturn = janValue > 0 ? (ytdPL / janValue) * 100 : 0;
   
-  return { ytdReturn, ytdPL, ytdFxPL, janValue };
+  return { ytdReturn, ytdPL, ytdFxPL, janValue, cashFxPL };
 }
 
 /**
