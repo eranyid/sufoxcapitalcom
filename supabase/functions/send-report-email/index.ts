@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +23,52 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // === JWT Authentication ===
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error("Missing or invalid authorization header");
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - missing authorization header' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      console.error("Invalid token:", claimsError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - invalid token' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log("Authenticated user:", userId);
+
+    // Verify user is approved
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('is_approved')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!profile?.is_approved) {
+      console.error("User not approved:", userId);
+      return new Response(
+        JSON.stringify({ error: 'Account not approved' }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    // === End Authentication ===
+
     const { to, reportName, pdfBase64, senderName = "SUFOX Capital" }: SendReportEmailRequest = await req.json();
 
     console.log(`Sending report "${reportName}" to ${to}`);
