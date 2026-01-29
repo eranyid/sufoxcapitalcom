@@ -3,9 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { WizardData, OBJECTIVE_LABELS, RISK_LABELS, LIQUIDITY_LABELS } from '@/types/construction';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, 
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend 
+  BarChart, Bar, XAxis, YAxis, Tooltip 
 } from 'recharts';
-import { Check, AlertCircle, Target, Globe, Layers, Briefcase } from 'lucide-react';
+import { Check, AlertCircle, Target, Globe, Layers, Briefcase, Shield, Clock, Droplets } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ReviewStepProps {
@@ -79,76 +79,82 @@ export function ReviewStep({ data, isSaved }: ReviewStepProps) {
     <div className="space-y-6">
       {/* Success Banner */}
       {isSaved && (
-        <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <Check className="text-primary" size={20} />
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-primary">Target Allocation Saved</h3>
-            <p className="text-xs text-muted-foreground">
-              Your target is now active and will be used for drift analysis
-            </p>
+        <div className="relative overflow-hidden p-4 bg-primary/10 border border-primary/30 rounded-lg">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 animate-pulse" />
+          <div className="relative flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/40 blur-md animate-pulse" />
+              <div className="relative w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Check className="text-primary" size={20} />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-mono font-medium text-primary">TARGET DEPLOYED</h3>
+              <p className="text-xs text-muted-foreground">
+                Active allocation synchronized with analytics engine
+              </p>
+            </div>
           </div>
         </div>
       )}
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="bg-card border-border">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-              <Target size={12} />
-              Objective
-            </div>
-            <p className="text-sm font-medium">{OBJECTIVE_LABELS[data.objective]}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-              Risk Level
-            </div>
-            <Badge variant="outline">{RISK_LABELS[data.riskLevel]}</Badge>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-              Liquidity
-            </div>
-            <p className="text-sm font-medium">{LIQUIDITY_LABELS[data.constraints.liquidityRequirement]}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-              Horizon
-            </div>
-            <p className="text-sm font-medium">Long-term</p>
-          </CardContent>
-        </Card>
+        {[
+          { icon: Target, label: 'OBJECTIVE', value: OBJECTIVE_LABELS[data.objective] },
+          { icon: Shield, label: 'RISK LEVEL', value: RISK_LABELS[data.riskLevel], badge: true },
+          { icon: Droplets, label: 'LIQUIDITY', value: LIQUIDITY_LABELS[data.constraints.liquidityRequirement] },
+          { icon: Clock, label: 'HORIZON', value: 'Long-term' },
+        ].map((item, i) => (
+          <Card key={i} className="relative overflow-hidden bg-card/50 backdrop-blur-sm border-border/50 group">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent group-hover:via-primary/50 transition-all" />
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-2 font-mono tracking-wider">
+                <item.icon size={10} />
+                {item.label}
+              </div>
+              {item.badge ? (
+                <Badge variant="outline" className="border-primary/40 text-primary font-mono">
+                  {item.value}
+                </Badge>
+              ) : (
+                <p className="text-sm font-medium">{item.value}</p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Charts Grid */}
       <div className="grid gap-4 md:grid-cols-3">
         {/* Geography */}
-        <Card className="bg-card border-border">
+        <Card className="relative overflow-hidden bg-card/50 backdrop-blur-sm border-border/50">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-primary/50 via-transparent to-transparent" />
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium flex items-center gap-2">
-              <Globe size={12} className="text-primary" />
-              Geography
+            <CardTitle className="text-xs font-mono tracking-wide flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center">
+                <Globe size={10} className="text-primary" />
+              </div>
+              GEOGRAPHY
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[150px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={geoData} cx="50%" cy="50%" innerRadius={30} outerRadius={50} dataKey="value">
+                  <Pie data={geoData} cx="50%" cy="50%" innerRadius={35} outerRadius={55} dataKey="value" strokeWidth={2} stroke="hsl(var(--background))">
                     {geoData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -156,23 +162,33 @@ export function ReviewStep({ data, isSaved }: ReviewStepProps) {
         </Card>
 
         {/* Asset Classes */}
-        <Card className="bg-card border-border">
+        <Card className="relative overflow-hidden bg-card/50 backdrop-blur-sm border-border/50">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium flex items-center gap-2">
-              <Layers size={12} className="text-primary" />
-              Asset Classes
+            <CardTitle className="text-xs font-mono tracking-wide flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center">
+                <Layers size={10} className="text-primary" />
+              </div>
+              ASSET CLASSES
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[150px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={assetData} cx="50%" cy="50%" innerRadius={30} outerRadius={50} dataKey="value">
+                  <Pie data={assetData} cx="50%" cy="50%" innerRadius={35} outerRadius={55} dataKey="value" strokeWidth={2} stroke="hsl(var(--background))">
                     {assetData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -180,11 +196,14 @@ export function ReviewStep({ data, isSaved }: ReviewStepProps) {
         </Card>
 
         {/* Buckets */}
-        <Card className="bg-card border-border">
+        <Card className="relative overflow-hidden bg-card/50 backdrop-blur-sm border-border/50">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-transparent to-primary/50" />
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium flex items-center gap-2">
-              <Briefcase size={12} className="text-primary" />
-              Buckets
+            <CardTitle className="text-xs font-mono tracking-wide flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center">
+                <Briefcase size={10} className="text-primary" />
+              </div>
+              BUCKETS
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -192,8 +211,15 @@ export function ReviewStep({ data, isSaved }: ReviewStepProps) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={bucketData} layout="vertical">
                   <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10 }} />
-                  <Tooltip />
+                  <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                    }}
+                  />
                   <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -203,15 +229,30 @@ export function ReviewStep({ data, isSaved }: ReviewStepProps) {
       </div>
 
       {/* Health Checks */}
-      <Card className="bg-card border-border">
+      <Card className="relative overflow-hidden bg-card/50 backdrop-blur-sm border-border/50">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            {allPass ? (
-              <Check size={16} className="text-primary" />
-            ) : (
-              <AlertCircle size={16} className="text-amber-500" />
-            )}
-            Health Checks ({passCount}/{allChecks.length})
+          <CardTitle className="text-sm font-mono tracking-wide flex items-center gap-3">
+            <div className="relative">
+              {allPass && <div className="absolute inset-0 bg-primary/40 blur-md animate-pulse" />}
+              <div className={cn(
+                "relative w-8 h-8 rounded-lg flex items-center justify-center",
+                allPass ? "bg-primary/20" : "bg-amber-500/20"
+              )}>
+                {allPass ? (
+                  <Check size={16} className="text-primary" />
+                ) : (
+                  <AlertCircle size={16} className="text-amber-500" />
+                )}
+              </div>
+            </div>
+            SYSTEM DIAGNOSTICS
+            <span className={cn(
+              "text-xs px-2 py-1 rounded font-mono",
+              allPass ? "bg-primary/10 text-primary" : "bg-amber-500/10 text-amber-500"
+            )}>
+              {passCount}/{allChecks.length} PASSED
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -220,16 +261,24 @@ export function ReviewStep({ data, isSaved }: ReviewStepProps) {
               <div
                 key={i}
                 className={cn(
-                  "flex items-center gap-2 p-2 rounded-md text-xs",
-                  check.pass ? "bg-primary/10" : "bg-amber-500/10"
+                  "flex items-center gap-2 p-3 rounded-lg border text-xs transition-all",
+                  check.pass 
+                    ? "bg-primary/5 border-primary/30" 
+                    : "bg-amber-500/5 border-amber-500/30"
                 )}
               >
-                {check.pass ? (
-                  <Check size={12} className="text-primary shrink-0" />
-                ) : (
-                  <AlertCircle size={12} className="text-amber-500 shrink-0" />
-                )}
+                <div className={cn(
+                  "w-5 h-5 rounded flex items-center justify-center shrink-0",
+                  check.pass ? "bg-primary/20" : "bg-amber-500/20"
+                )}>
+                  {check.pass ? (
+                    <Check size={10} className="text-primary" />
+                  ) : (
+                    <AlertCircle size={10} className="text-amber-500" />
+                  )}
+                </div>
                 <span className={cn(
+                  "font-mono text-[10px]",
                   check.pass ? "text-foreground" : "text-amber-500"
                 )}>
                   {check.label}
