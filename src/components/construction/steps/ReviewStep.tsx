@@ -35,7 +35,7 @@ export function ReviewStep({ data, isSaved }: ReviewStepProps) {
   const assetTotal = Object.values(data.assetClasses).reduce((a, b) => a + b, 0);
   const bucketTotal = data.buckets.reduce((a, b) => a + b.targetWeight, 0);
   
-  const meetsEquityMin = (data.assetClasses.equities + data.assetClasses.equityFunds) >= data.constraints.minEquities;
+  const meetsEquityMin = data.assetClasses.equities >= data.constraints.minEquities;
   const meetsCashMin = data.assetClasses.cash >= data.constraints.minCash;
   const meetsHedgeMin = data.assetClasses.hedging >= data.constraints.minHedge;
   const hasNoNegatives = Object.values(data.assetClasses).every(v => v >= 0) &&

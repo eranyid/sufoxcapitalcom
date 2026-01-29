@@ -15,9 +15,8 @@ interface AssetClassStepProps {
 
 const ASSET_COLORS: Record<keyof AssetClassAllocation, string> = {
   equities: 'hsl(var(--primary))',
-  equityFunds: 'hsl(30, 90%, 55%)',
   bonds: 'hsl(210, 80%, 55%)',
-  bondFunds: 'hsl(200, 70%, 45%)',
+  funds: 'hsl(45, 100%, 50%)',
   hedging: 'hsl(280, 60%, 50%)',
   alternatives: 'hsl(160, 60%, 45%)',
   cash: 'hsl(0, 0%, 60%)',
@@ -25,9 +24,8 @@ const ASSET_COLORS: Record<keyof AssetClassAllocation, string> = {
 
 const ASSET_LABELS: Record<keyof AssetClassAllocation, string> = {
   equities: 'Equities',
-  equityFunds: 'Equity Funds',
   bonds: 'Bonds',
-  bondFunds: 'Bond Funds',
+  funds: 'Funds',
   hedging: 'Hedging',
   alternatives: 'Alternatives',
   cash: 'Cash',
@@ -38,7 +36,7 @@ export function AssetClassStep({ assetClasses, constraints, onUpdate }: AssetCla
   const isValid = Math.abs(total - 100) < 0.01;
 
   // Constraint validation
-  const meetsEquityMin = (assetClasses.equities + assetClasses.equityFunds) >= constraints.minEquities;
+  const meetsEquityMin = assetClasses.equities >= constraints.minEquities;
   const meetsCashMin = assetClasses.cash >= constraints.minCash;
   const meetsHedgeMin = assetClasses.hedging >= constraints.minHedge;
 
@@ -67,12 +65,12 @@ export function AssetClassStep({ assetClasses, constraints, onUpdate }: AssetCla
         <CardContent className="space-y-4">
           {(Object.keys(assetClasses) as (keyof AssetClassAllocation)[]).map((key) => {
             const isConstrained = 
-              ((key === 'equities' || key === 'equityFunds') && !meetsEquityMin) ||
+              (key === 'equities' && !meetsEquityMin) ||
               (key === 'cash' && !meetsCashMin) ||
               (key === 'hedging' && !meetsHedgeMin);
             
             const minRequired = 
-              (key === 'equities' || key === 'equityFunds') ? constraints.minEquities :
+              key === 'equities' ? constraints.minEquities :
               key === 'cash' ? constraints.minCash :
               key === 'hedging' ? constraints.minHedge : 0;
 
