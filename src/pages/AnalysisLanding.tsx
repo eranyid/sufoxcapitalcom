@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -6,9 +7,31 @@ import {
   BarChart3,
   ArrowRight,
   Sparkles,
-  Landmark
+  Landmark,
+  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { ASSET_TYPE_OPTIONS } from '@/pages/Companies';
 
 interface AssetClassCard {
   id: string;
@@ -76,7 +99,41 @@ const ASSET_CLASSES: AssetClassCard[] = [
 
 export default function AnalysisLanding() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newAssetType, setNewAssetType] = useState<string>('');
+  const [creating, setCreating] = useState(false);
 
+  const handleCreate = async () => {
+    if (!user || !newCompanyName.trim()) return;
+
+    setCreating(true);
+    const { data, error } = await supabase
+      .from('crm_companies')
+      .insert({
+        user_id: user.id,
+        company_name: newCompanyName.trim(),
+        status: 'research',
+        asset_type: newAssetType || null,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      toast.error('Failed to create company');
+      console.error(error);
+      setCreating(false);
+      return;
+    }
+
+    setNewCompanyName('');
+    setNewAssetType('');
+    setCreateOpen(false);
+    setCreating(false);
+    toast.success('Company created');
+    navigate(`/analysis/company/${data.id}`);
+  };
   return (
     <div className="min-h-[calc(100vh-120px)] flex flex-col">
       {/* Hero Section */}
@@ -111,6 +168,15 @@ export default function AnalysisLanding() {
             View All Companies
             <ArrowRight className="w-3 h-3" />
           </button>
+          <div className="h-4 w-px bg-border" />
+          <Button 
+            onClick={() => setCreateOpen(true)} 
+            size="sm" 
+            className="gap-2"
+          >
+            <Plus size={16} />
+            Add Company
+          </Button>
         </div>
       </div>
 
@@ -216,6 +282,56 @@ export default function AnalysisLanding() {
           <ArrowRight className="w-4 h-4 text-primary transform group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
+
+      {/* Create Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Company</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="company-name">Company Name</Label>
+              <Input
+                id="company-name"
+                value={newCompanyName}
+                onChange={e => setNewCompanyName(e.target.value)}
+                placeholder="Enter company name"
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newCompanyName.trim()) handleCreate();
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="asset-type">Asset Class</Label>
+              <Select 
+                value={newAssetType} 
+                onValueChange={setNewAssetType}
+              >
+                <SelectTrigger id="asset-type">
+                  <SelectValue placeholder="Select asset class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSET_TYPE_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreate} disabled={!newCompanyName.trim() || creating}>
+              {creating ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
