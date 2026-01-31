@@ -22,6 +22,8 @@ import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
+import { LabIcon } from '@/components/icons/LabIcon';
+import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import {
   Sheet,
   SheetContent,
@@ -38,6 +40,8 @@ const primaryNavItems = [
 const moreNavItems = [
   { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
   { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
+  { path: '/lab', icon: LabIcon, label: 'Lab' },
+  { path: '/charts', icon: ChartsIcon, label: 'Charts' },
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
