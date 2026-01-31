@@ -31,12 +31,12 @@ import {
 const primaryNavItems = [
   { path: '/', icon: OverviewIcon, label: 'Overview' },
   { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
-  { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
+  { path: '/risk', icon: RiskIcon, label: 'Risk' },
   { path: '/research', icon: ResearchIcon, label: 'Research' },
 ];
 
 const moreNavItems = [
-  { path: '/risk', icon: RiskIcon, label: 'Risk' },
+  { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
   { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
