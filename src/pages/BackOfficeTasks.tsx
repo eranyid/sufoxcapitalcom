@@ -302,34 +302,34 @@ export default function BackOfficeTasks() {
         /* Tasks Table */
         <div className="border border-border rounded-lg overflow-hidden bg-card">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="bg-muted/50 border-b border-border">
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Issue</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Project</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Urgency</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tags</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Due Date</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Updated</th>
+                  <th className="text-left px-3 py-3 font-medium text-muted-foreground w-[40%] sm:w-[30%]">Issue</th>
+                  <th className="text-left px-3 py-3 font-medium text-muted-foreground hidden md:table-cell w-[15%]">Project</th>
+                  <th className="text-left px-3 py-3 font-medium text-muted-foreground w-[25%] sm:w-[15%]">Status</th>
+                  <th className="text-left px-3 py-3 font-medium text-muted-foreground w-[15%] sm:w-[10%]">Urgency</th>
+                  <th className="text-left px-3 py-3 font-medium text-muted-foreground hidden lg:table-cell w-[10%]">Tags</th>
+                  <th className="text-left px-3 py-3 font-medium text-muted-foreground hidden sm:table-cell w-[12%]">Due Date</th>
+                  <th className="text-left px-3 py-3 font-medium text-muted-foreground hidden lg:table-cell w-[10%]">Updated</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b border-border">
-                      <td className="px-4 py-3"><Skeleton className="h-4 w-48" /></td>
-                      <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
-                      <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
-                      <td className="px-4 py-3"><Skeleton className="h-5 w-16" /></td>
-                      <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
-                      <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
-                      <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
+                      <td className="px-3 py-3"><Skeleton className="h-4 w-full max-w-[200px]" /></td>
+                      <td className="px-3 py-3 hidden md:table-cell"><Skeleton className="h-4 w-24" /></td>
+                      <td className="px-3 py-3"><Skeleton className="h-5 w-20" /></td>
+                      <td className="px-3 py-3"><Skeleton className="h-5 w-8" /></td>
+                      <td className="px-3 py-3 hidden lg:table-cell"><Skeleton className="h-4 w-20" /></td>
+                      <td className="px-3 py-3 hidden sm:table-cell"><Skeleton className="h-4 w-20" /></td>
+                      <td className="px-3 py-3 hidden lg:table-cell"><Skeleton className="h-4 w-16" /></td>
                     </tr>
                   ))
                 ) : filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
                       {tasks.length === 0 ? 'No issues yet' : 'No issues match your filters'}
                     </td>
                   </tr>
@@ -343,17 +343,19 @@ export default function BackOfficeTasks() {
                         onClick={() => handleRowClick(task)}
                         className="border-b border-border hover:bg-muted/30 cursor-pointer transition-colors"
                       >
-                        <td className="px-4 py-3 font-medium text-foreground">
-                          {task.task_name}
+                        <td className="px-3 py-3">
+                          <span className="font-medium text-foreground text-sm leading-tight line-clamp-2">
+                            {task.task_name}
+                          </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3 hidden md:table-cell">
                           {project ? (
                             <Link
                               to={`/backoffice/projects/${project.id}`}
                               onClick={(e) => e.stopPropagation()}
                               className="text-xs"
                             >
-                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 truncate max-w-[100px]">
                                 {project.name}
                               </Badge>
                             </Link>
@@ -361,13 +363,13 @@ export default function BackOfficeTasks() {
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <TaskStatusBadge status={task.status as TaskStatus} />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <TaskUrgencyBadge urgency={task.urgency as TaskUrgency} />
                         </td>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-3 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                           <TagsDisplay
                             tags={taskTags}
                             editable
@@ -375,10 +377,10 @@ export default function BackOfficeTasks() {
                             maxVisible={2}
                           />
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : '—'}
+                        <td className="px-3 py-3 text-muted-foreground text-xs hidden sm:table-cell">
+                          {task.due_date ? format(new Date(task.due_date), 'MMM d') : '—'}
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                        <td className="px-3 py-3 text-muted-foreground text-xs hidden lg:table-cell">
                           {formatDistanceToNow(new Date(task.updated_at), { addSuffix: true })}
                         </td>
                       </tr>
