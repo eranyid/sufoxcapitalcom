@@ -4,14 +4,11 @@ import {
   MoreHorizontal,
   Calendar,
   Users,
-  FlaskConical,
   HelpCircle,
-  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { LabIcon } from '@/components/icons/LabIcon';
 import { XRayIcon } from '@/components/icons/XRayIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
@@ -24,6 +21,7 @@ import { PolicyIcon } from '@/components/icons/PolicyIcon';
 import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
+import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import {
   Sheet,
   SheetContent,
@@ -39,7 +37,7 @@ const primaryNavItems = [
 
 const moreNavItems = [
   { path: '/risk', icon: RiskIcon, label: 'Risk' },
-  { path: '/construction', icon: FlaskConical, label: 'Construction' },
+  { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
