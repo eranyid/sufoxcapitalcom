@@ -22,6 +22,8 @@ import { RiskIcon } from '@/components/icons/RiskIcon';
 import { OverviewIcon } from '@/components/icons/OverviewIcon';
 import { PolicyIcon } from '@/components/icons/PolicyIcon';
 import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
+import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
+import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import {
   Sheet,
   SheetContent,
@@ -31,11 +33,13 @@ import {
 const primaryNavItems = [
   { path: '/', icon: OverviewIcon, label: 'Overview' },
   { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
-  { path: '/risk', icon: RiskIcon, label: 'Risk' },
-  { path: '/construction', icon: FlaskConical, label: 'Pipeline' },
+  { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
+  { path: '/research', icon: ResearchIcon, label: 'Research' },
 ];
 
 const moreNavItems = [
+  { path: '/risk', icon: RiskIcon, label: 'Risk' },
+  { path: '/construction', icon: FlaskConical, label: 'Construction' },
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
