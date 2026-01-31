@@ -172,10 +172,11 @@ export default function AnalysisLanding() {
           <Button 
             onClick={() => setCreateOpen(true)} 
             size="sm" 
-            className="gap-2"
+            className="gap-1.5"
           >
             <Plus size={16} />
-            Add Company
+            <span className="hidden sm:inline">Add Company</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
