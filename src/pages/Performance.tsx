@@ -111,9 +111,10 @@ export default function Performance() {
         />
         <KPICard
           title="Win/Loss Ratio"
-          value={hasData ? performanceMetrics.winLossRatio.toFixed(2) : '0.00'}
+          value={hasData && performanceMetrics.winLossRatio > 0 ? performanceMetrics.winLossRatio.toFixed(2) : 'N/A'}
           icon={Percent}
           trend={hasData && performanceMetrics.winLossRatio >= 1 ? 'up' : 'neutral'}
+          subLabel={hasData && performanceMetrics.winLossRatio === 0 ? "No completed trades" : undefined}
         />
       </StaggeredContainer>
 

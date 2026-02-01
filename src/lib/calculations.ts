@@ -358,10 +358,13 @@ export function calculateBeta(portfolioReturns: number[], benchmarkReturns: numb
  * Calculate Win/Loss Ratio (SUFOX Formula Spec)
  * Formula: Win/Loss Ratio = Number of Winning Trades / Number of Losing Trades
  * Count-based ratio, not dollar-weighted
+ * 
+ * NOTE: Returns 0 if no sell transactions exist (N/A state)
+ * Returns winning count if no losing trades exist
  */
 export function calculateWinLossRatio(transactions: Transaction[]): number {
   const sells = transactions.filter(tx => tx.transactionType === 'sell');
-  if (sells.length === 0) return 0;
+  if (sells.length === 0) return 0; // N/A - no completed trades
   
   // Calculate realized P/L for each closed position
   const positions = calculatePositions(transactions);
@@ -374,7 +377,9 @@ export function calculateWinLossRatio(transactions: Transaction[]): number {
   }
   
   // Win/Loss = Winning / Losing (count-based, SUFOX spec)
-  return losingTrades > 0 ? winningTrades / losingTrades : winningTrades;
+  // If no losing trades, return winning count (theoretically infinite ratio)
+  if (losingTrades === 0) return winningTrades > 0 ? winningTrades : 0;
+  return winningTrades / losingTrades;
 }
 
 // Calculate allocations
@@ -463,6 +468,8 @@ export function calculateContributions(
  * Calculate IRR - Internal Rate of Return (SUFOX Formula Spec)
  * Formula: IRR solves 0 = Σ(Net Cash Flow_t / (1 + IRR)^t) for all periods t
  * Uses Newton-Raphson numerical method
+ * 
+ * IMPORTANT: IRR is capped at ±100% to avoid unrealistic values for short periods
  */
 export function calculateIRR(cashFlows: { date: string; amount: number }[]): number {
   if (cashFlows.length < 2) return 0;
@@ -472,6 +479,13 @@ export function calculateIRR(cashFlows: { date: string; amount: number }[]): num
   );
   
   const baseDate = new Date(sortedFlows[0].date).getTime();
+  const lastDate = new Date(sortedFlows[sortedFlows.length - 1].date).getTime();
+  
+  // Calculate time span in years
+  const totalYears = (lastDate - baseDate) / (365.25 * 24 * 60 * 60 * 1000);
+  
+  // If time span is too short (less than 30 days), return 0 to avoid extreme annualization
+  if (totalYears < 0.08) return 0;
   
   // Convert cash flows to time-adjusted format
   const flows = sortedFlows.map(cf => ({
@@ -507,11 +521,11 @@ export function calculateIRR(cashFlows: { date: string; amount: number }[]): num
     
     const newRate = rate - currentNpv / derivative;
     
-    // Bound the rate to reasonable values
+    // Bound the rate to reasonable annualized values (max ±100%)
     if (newRate < -0.99) {
       rate = -0.99;
-    } else if (newRate > 10) {
-      rate = 10;
+    } else if (newRate > 1.0) {
+      rate = 1.0;
     } else {
       rate = newRate;
     }
@@ -519,8 +533,9 @@ export function calculateIRR(cashFlows: { date: string; amount: number }[]): num
     if (Math.abs(currentNpv) < tolerance) break;
   }
   
-  // Return as percentage
-  return rate * 100;
+  // Return as percentage, capped at ±100% for realistic display
+  const resultPercent = rate * 100;
+  return Math.max(-100, Math.min(100, resultPercent));
 }
 
 // Support interface for extended cash balances (all 6 currencies)
@@ -673,7 +688,11 @@ export function calculatePerformanceMetrics(
   
   const unrealizedPL = holdingsValue - totalCost;
   const totalPL = realizedPL + unrealizedPL;
-  const totalReturn = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
+  
+  // Calculate total return with sanity bounds (cap at ±500% for display)
+  // Extreme returns typically indicate data issues or very short holding periods
+  const rawTotalReturn = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
+  const totalReturn = Math.max(-500, Math.min(500, rawTotalReturn));
   
   const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
   const cumulativeReturns = calculateCumulativeReturns(monthlyReturns);
@@ -1079,6 +1098,8 @@ export function calculateTrackingError(
  * Calculate Time-Weighted Return (SUFOX Formula Spec)
  * Formula: TWR = Π(1 + Period Return) - 1 for each sub-period
  * Uses geometric linking (product), not average
+ * 
+ * Result is capped at ±500% for sanity (extreme values indicate data issues)
  */
 export function calculateTWR(monthlyReturns: { month: string; return: number }[]): number {
   if (monthlyReturns.length === 0) return 0;
@@ -1087,10 +1108,15 @@ export function calculateTWR(monthlyReturns: { month: string; return: number }[]
   let cumulativeProduct = 1;
   
   for (const { return: periodReturn } of monthlyReturns) {
-    cumulativeProduct *= (1 + periodReturn / 100);
+    // Cap individual monthly returns at ±50% to prevent extreme compounding
+    const cappedReturn = Math.max(-50, Math.min(50, periodReturn));
+    cumulativeProduct *= (1 + cappedReturn / 100);
   }
   
-  return (cumulativeProduct - 1) * 100;
+  const rawTWR = (cumulativeProduct - 1) * 100;
+  
+  // Cap final result at ±500% for display sanity
+  return Math.max(-500, Math.min(500, rawTWR));
 }
 
 // Full risk metrics calculation
