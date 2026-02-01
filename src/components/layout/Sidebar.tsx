@@ -172,7 +172,7 @@ export function Sidebar() {
                 "object-contain transition-all duration-300",
                 collapsed ? "h-6 w-6" : "h-8 w-8"
               )}
-              src="/lovable-uploads/1e09c6ce-0760-4af9-bce3-47cfd7593a82.png"
+              src="/lovable-uploads/sufox-logo-new.png"
             />
             <div className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-sidebar animate-pulse" />
           </div>

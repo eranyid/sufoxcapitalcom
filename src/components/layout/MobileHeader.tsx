@@ -262,7 +262,7 @@ export function MobileHeader({
             <img 
               alt="SUFOX" 
               className="h-6 w-6 object-contain opacity-80" 
-              src="/lovable-uploads/1273449c-bfbb-4032-9057-0c06b65c76b2.png" 
+              src="/lovable-uploads/sufox-logo-new.png" 
             />
             <span className="text-sm font-normal text-muted-foreground/80 tracking-wide">
               SUFOX CAPITAL
