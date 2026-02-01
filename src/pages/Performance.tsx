@@ -47,8 +47,13 @@ export default function Performance() {
     return { totalPL, marketPL, fxPL, costBasis, realizedPL, unrealizedPL };
   }, [computedData, performanceMetrics]);
 
-  // Use performanceMetrics.totalReturn for the total % to ensure consistency
-  const totalPLPercent = hasData ? performanceMetrics.totalReturn : 0;
+  // Total Return % = Last cumulative return (geometric linking of all monthly returns since inception)
+  // This equals YTD for users who started this year
+  const totalReturnFromCumulative = hasData && performanceMetrics.cumulativeReturns.length > 0
+    ? performanceMetrics.cumulativeReturns[performanceMetrics.cumulativeReturns.length - 1].return
+    : 0;
+  
+  const totalPLPercent = totalReturnFromCumulative;
   
   // Market and FX percentages relative to costBasis (consistent with how total is calculated)
   const marketPLPercent = plBreakdown.costBasis > 0 
@@ -65,14 +70,14 @@ export default function Performance() {
     const isNominal = fxMode === 'nominal';
     
     // In Nominal mode, use marketPL (excludes FX)
-    // In Real mode, use totalReturn (includes FX)
-    const totalReturn = isNominal ? marketPLPercent : performanceMetrics.totalReturn;
+    // In Real mode, use cumulative return from inception
+    const totalReturn = isNominal ? marketPLPercent : totalReturnFromCumulative;
     
     return {
       ...performanceMetrics,
       totalReturn,
     };
-  }, [performanceMetrics, fxMode, marketPLPercent]);
+  }, [performanceMetrics, fxMode, marketPLPercent, totalReturnFromCumulative]);
 
   return (
     <div className="section-spacing animate-fade-in">
