@@ -170,7 +170,7 @@ export function Sidebar() {
               alt="SUFOX"
               className={cn(
                 "object-contain transition-all duration-300",
-                collapsed ? "h-6 w-6" : "h-8 w-8"
+                collapsed ? "h-8 w-8" : "h-10 w-10"
               )}
               src="/lovable-uploads/sufox-logo-new.png"
             />
