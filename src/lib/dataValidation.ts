@@ -132,11 +132,11 @@ function validateHoldings(
   const issues: DataIssue[] = [];
 
   // Calculate current positions
-  const positions: Record<string, { quantity: number; ticker: string; name: string }> = {};
+  const positions: Record<string, { quantity: number; ticker: string; name: string; currency: string }> = {};
   
   transactions.forEach(tx => {
     if (!positions[tx.ticker]) {
-      positions[tx.ticker] = { quantity: 0, ticker: tx.ticker, name: tx.assetName };
+      positions[tx.ticker] = { quantity: 0, ticker: tx.ticker, name: tx.assetName, currency: tx.currency };
     }
     if (tx.transactionType === 'buy') {
       positions[tx.ticker].quantity += tx.quantity;
@@ -167,22 +167,59 @@ function validateHoldings(
     }
   });
 
+  // Get current month for comparison
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const thirtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const staleThresholdMonth = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0')}`;
+
+  // Track holdings with missing or stale valuations
+  const holdingsWithoutValuation: string[] = [];
+  const holdingsWithStaleValuation: { ticker: string; lastMonth: string }[] = [];
+
   let totalValue = 0;
   const holdingValues: { ticker: string; value: number }[] = [];
 
   Object.entries(positions).forEach(([ticker, pos]) => {
     if (pos.quantity > 0) {
-      const price = latestValuations[ticker]?.price || 0;
+      const valuation = latestValuations[ticker];
+      const price = valuation?.price || 0;
       
-      if (price <= 0 && pos.quantity > 0) {
+      // Check for MISSING valuation (no price data at all)
+      if (!valuation) {
+        holdingsWithoutValuation.push(ticker);
         issues.push({
           id: generateId(),
-          severity: 'warning',
+          severity: 'error',
           section: 'Holdings',
-          message: `${ticker} has no valid price data`,
-          details: `Missing or zero price for active holding.`,
+          message: `${ticker} has no valuation data`,
+          details: `Missing price data causes incorrect P/L calculations. Add monthly valuation for this asset.`,
           route: '/valuations'
         });
+      } else {
+        // Check for STALE valuation (older than 60 days)
+        if (valuation.month < staleThresholdMonth) {
+          holdingsWithStaleValuation.push({ ticker, lastMonth: valuation.month });
+          issues.push({
+            id: generateId(),
+            severity: 'warning',
+            section: 'Holdings',
+            message: `${ticker} valuation is outdated (last: ${valuation.month})`,
+            details: `Valuation data is over 60 days old. Update with current price.`,
+            route: '/valuations'
+          });
+        }
+        
+        if (price <= 0) {
+          issues.push({
+            id: generateId(),
+            severity: 'warning',
+            section: 'Holdings',
+            message: `${ticker} has zero or negative price`,
+            details: `Missing or zero price for active holding.`,
+            route: '/valuations'
+          });
+        }
       }
 
       if (isNaN(price) || !isFinite(price)) {
@@ -203,6 +240,18 @@ function validateHoldings(
       }
     }
   });
+
+  // Summary issue if multiple holdings missing valuations
+  if (holdingsWithoutValuation.length > 1) {
+    issues.unshift({
+      id: generateId(),
+      severity: 'error',
+      section: 'Holdings',
+      message: `${holdingsWithoutValuation.length} holdings missing current valuations`,
+      details: `Assets without prices: ${holdingsWithoutValuation.join(', ')}. Unrealized P/L will be incorrect.`,
+      route: '/valuations'
+    });
+  }
 
   // Check weights sum
   if (totalValue > 0 && holdingValues.length > 0) {

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, AlertTriangle } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -18,9 +18,10 @@ interface KPICardProps {
   trendValue?: string;
   className?: string;
   tooltip?: string;
+  warning?: string;  // Warning message to display (e.g., "2 holdings missing valuations")
 }
 
-export function KPICard({ title, value, subtitle, subLabel, icon: Icon, trend, trendValue, className, tooltip }: KPICardProps) {
+export function KPICard({ title, value, subtitle, subLabel, icon: Icon, trend, trendValue, className, tooltip, warning }: KPICardProps) {
   return (
     <div className={cn("kpi-card min-h-[80px] sm:min-h-0 h-full", className)}>
       <div className="flex items-start justify-between gap-2">
@@ -35,6 +36,18 @@ export function KPICard({ title, value, subtitle, subLabel, icon: Icon, trend, t
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[200px] text-xs">
                     <p>{tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {warning && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertTriangle className="h-3 w-3 text-amber-500 cursor-help flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[200px] text-xs bg-amber-500/10 border-amber-500/30">
+                    <p className="text-amber-400">{warning}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

@@ -54,6 +54,7 @@ export interface PortfolioHolding {
   marketPLPercent: number;
   fxPLPercent: number;
   weight: number;
+  missingValuation?: boolean;  // True if no current price data exists
 }
 
 export interface RingSegment {
@@ -111,6 +112,9 @@ export interface ComputedPortfolioData {
   // Risk/Return scatter data
   riskReturnData: RiskReturnData;
   
+  // Data quality indicators
+  missingValuationCount: number;  // Holdings without current price
+  
   // Metadata
   lastUpdated: Date;
 }
@@ -150,7 +154,7 @@ export function computePortfolioData(
   baseCurrency: 'USD' | 'ILS' = 'USD',
   fxRates?: Record<string, number>
 ): ComputedPortfolioData {
-  const hasData = transactions.length > 0 && valuations.length > 0;
+  const hasData = transactions.length > 0;
   
   if (!hasData) {
     return createEmptyPortfolioData();
@@ -162,17 +166,25 @@ export function computePortfolioData(
   // Calculate holdings with proper FX conversion
   const holdings: PortfolioHolding[] = [];
   let holdingsValue = 0;
+  let missingValuationCount = 0;
   
   for (const [ticker, pos] of Object.entries(positions)) {
     if (pos.quantity <= 0) continue;
     
     const val = latestVals[ticker];
     const tx = transactions.find(t => t.ticker === ticker);
-    if (!val || !tx) continue;
+    if (!tx) continue;
     
-    const currentFxRate = val.fxRate || 1;
-    const currentPrice = val.pricePerUnit;
-    const currentValue = pos.quantity * currentPrice * currentFxRate;
+    // FALLBACK: If no valuation exists, use cost basis as current value
+    // This prevents misleading -100% P/L for assets without price data
+    const hasValuation = !!val;
+    const currentFxRate = val?.fxRate || 1;
+    const currentPrice = hasValuation ? val.pricePerUnit : pos.avgCost;
+    const currentValue = pos.quantity * currentPrice * (hasValuation ? currentFxRate : 1);
+    
+    if (!hasValuation) {
+      missingValuationCount++;
+    }
     const costBasis = pos.totalCost;
     const unrealizedPL = currentValue - costBasis;
     const plPercent = costBasis > 0 ? (unrealizedPL / costBasis) * 100 : 0;
@@ -233,13 +245,14 @@ export function computePortfolioData(
       entryFxRate,
       currentValue,
       costBasis,
-      unrealizedPL,
-      marketPL,
-      fxPL,
-      plPercent,
-      marketPLPercent,
-      fxPLPercent,
-      weight: 0 // Will be calculated after total is known
+      unrealizedPL: hasValuation ? unrealizedPL : 0, // 0 if no valuation (cost = value)
+      marketPL: hasValuation ? marketPL : 0,
+      fxPL: hasValuation ? fxPL : 0,
+      plPercent: hasValuation ? plPercent : 0,
+      marketPLPercent: hasValuation ? marketPLPercent : 0,
+      fxPLPercent: hasValuation ? fxPLPercent : 0,
+      weight: 0, // Will be calculated after total is known
+      missingValuation: !hasValuation,
     });
   }
   
@@ -295,6 +308,7 @@ export function computePortfolioData(
     positionRings,
     riskReturnData,
     timeHorizonDistribution: [], // Populated by context after enrichment
+    missingValuationCount,
     lastUpdated: new Date()
   };
 }
@@ -509,6 +523,7 @@ function createEmptyPortfolioData(): ComputedPortfolioData {
       excludedCount: 0
     },
     timeHorizonDistribution: [],
+    missingValuationCount: 0,
     lastUpdated: new Date()
   };
 }

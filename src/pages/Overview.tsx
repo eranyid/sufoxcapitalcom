@@ -70,7 +70,7 @@ function getPercentile(sortedValues: number[], percentile: number): number {
 }
 
 export default function Overview() {
-  const { transactions, valuations, performanceMetrics, riskMetrics, cashBalances, settings, loading, fxRates, previousMonthFxRates } = usePortfolio();
+  const { transactions, valuations, performanceMetrics, riskMetrics, cashBalances, settings, loading, fxRates, previousMonthFxRates, computedData } = usePortfolio();
   const { fxMode, fxLabel } = useFxMode();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -253,6 +253,9 @@ export default function Overview() {
           value={hasData && adjustedMetrics ? formatCurrency(adjustedMetrics.unrealizedPL) : '$0'}
           trend={hasData && adjustedMetrics && adjustedMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
           subLabel={fxLabel}
+          warning={computedData.missingValuationCount > 0 
+            ? `${computedData.missingValuationCount} holding${computedData.missingValuationCount > 1 ? 's' : ''} missing valuation` 
+            : undefined}
           tooltip={fxMode === 'real' 
             ? "Unrealized profit/loss including FX impact, measured in base currency" 
             : "Unrealized profit/loss from price changes only, excluding FX impact"}
