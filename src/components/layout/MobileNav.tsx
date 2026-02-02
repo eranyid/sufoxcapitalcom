@@ -46,8 +46,6 @@ const moreNavItems = [
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
   { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
-  { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
-  { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
   { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
   { path: '/policy', icon: PolicyIcon, label: 'Policy' },
   { path: '/settings', icon: SettingsIcon, label: 'Settings' },
