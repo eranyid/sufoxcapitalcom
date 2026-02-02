@@ -37,8 +37,19 @@ interface Company {
   market_cap: string | null;
   status: string;
   asset_type: string | null;
+  sector: string | null;
+  confidence_level: string | null;
   updated_at: string;
 }
+
+// Conviction level config
+const CONVICTION_CONFIG: Record<string, { label: string; color: string }> = {
+  speculative: { label: 'Speculative', color: 'text-red-400 bg-red-500/20' },
+  starter: { label: 'Starter', color: 'text-orange-400 bg-orange-500/20' },
+  core: { label: 'Core', color: 'text-blue-400 bg-blue-500/20' },
+  high_conviction: { label: 'High Conviction', color: 'text-emerald-400 bg-emerald-500/20' },
+  top: { label: 'Top', color: 'text-amber-400 bg-amber-500/20' },
+};
 
 // Map URL params to asset_type values (supports multiple DB values per category)
 const ASSET_CLASS_MAP: Record<string, { label: string; dbValues: string[] }> = {
@@ -124,7 +135,7 @@ export default function Companies() {
 
       const { data, error } = await supabase
         .from('crm_companies')
-        .select('id, company_name, ticker, market_cap, status, asset_type, updated_at')
+        .select('id, company_name, ticker, market_cap, status, asset_type, sector, confidence_level, updated_at')
         .is('deleted_at', null)
         .order('updated_at', { ascending: false });
 
@@ -158,7 +169,7 @@ export default function Companies() {
         status: 'research',
         asset_type: assetTypeValue,
       })
-      .select('id, company_name, ticker, market_cap, status, asset_type, updated_at')
+      .select('id, company_name, ticker, market_cap, status, asset_type, sector, confidence_level, updated_at')
       .single();
 
     if (error) {
@@ -260,10 +271,12 @@ export default function Companies() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="font-semibold w-[45%]">Company Name</TableHead>
-                <TableHead className="font-semibold w-[15%]">Ticker</TableHead>
-                <TableHead className="font-semibold w-[20%]">Market Cap</TableHead>
-                <TableHead className="font-semibold w-[20%]">Status</TableHead>
+                <TableHead className="font-semibold w-[30%]">Company Name</TableHead>
+                <TableHead className="font-semibold w-[10%]">Ticker</TableHead>
+                <TableHead className="font-semibold w-[15%]">Sector</TableHead>
+                <TableHead className="font-semibold w-[12%]">Conviction</TableHead>
+                <TableHead className="font-semibold w-[13%]">Market Cap</TableHead>
+                <TableHead className="font-semibold w-[15%]">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -271,45 +284,71 @@ export default function Companies() {
                 const config = STATUS_CONFIG[group.status];
                 return (
                   <React.Fragment key={group.status}>
-                    {/* Spacer row between groups */}
-                    {groupIndex > 0 && (
-                      <TableRow key={`spacer-${group.status}`} className="hover:bg-transparent">
-                        <TableCell colSpan={4} className="h-4 p-0 bg-background border-0" />
-                      </TableRow>
-                    )}
-                    {group.companies.map(company => (
-                      <TableRow
-                        key={company.id}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => navigate(`/analysis/company/${company.id}`)}
+                    {/* Group header row with status label */}
+                    <TableRow className="hover:bg-transparent bg-muted/10">
+                      <TableCell 
+                        colSpan={6} 
+                        className={`py-2 border-t-2 ${groupIndex === 0 ? 'border-t-0' : ''} border-border/50`}
                       >
-                        <TableCell className="font-medium">{company.company_name}</TableCell>
-                        <TableCell>
-                          {company.ticker ? (
-                            <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
-                              {company.ticker}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {company.market_cap || '—'}
-                        </TableCell>
-                        <TableCell>
-                          {config ? (
-                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md ${config.bg} ${config.text}`}>
-                              {config.icon}
-                              <span className="text-sm font-medium">{config.label}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">
-                              {company.status.replace(/_/g, ' ')}
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                        <div className={`inline-flex items-center gap-2 ${config?.text || 'text-muted-foreground'}`}>
+                          {config?.icon}
+                          <span className="text-xs font-semibold uppercase tracking-wider">
+                            {config?.label || group.status.replace(/_/g, ' ')}
+                          </span>
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({group.companies.length})
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {group.companies.map(company => {
+                      const convictionConfig = CONVICTION_CONFIG[company.confidence_level || 'core'];
+                      return (
+                        <TableRow
+                          key={company.id}
+                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => navigate(`/analysis/company/${company.id}`)}
+                        >
+                          <TableCell className="font-medium">{company.company_name}</TableCell>
+                          <TableCell>
+                            {company.ticker ? (
+                              <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
+                                {company.ticker}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {company.sector || '—'}
+                          </TableCell>
+                          <TableCell>
+                            {convictionConfig ? (
+                              <span className={`text-xs px-2 py-0.5 rounded ${convictionConfig.color}`}>
+                                {convictionConfig.label}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {company.market_cap || '—'}
+                          </TableCell>
+                          <TableCell>
+                            {config ? (
+                              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md ${config.bg} ${config.text}`}>
+                                {config.icon}
+                                <span className="text-sm font-medium">{config.label}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">
+                                {company.status.replace(/_/g, ' ')}
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </React.Fragment>
                 );
               })}
