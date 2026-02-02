@@ -274,11 +274,11 @@ export default function Overview() {
       {/* Bottom row: FX P/L, Sharpe Ratio, Max Drawdown, Volatility */}
       <StaggeredContainer className="grid grid-cols-2 lg:grid-cols-4 gap-2" staggerDelay={60} baseDelay={340}>
         <KPICard
-          title="FX P/L"
-          value={hasData ? formatCurrency(performanceMetrics.fxPL) : '$0'}
-          trend={hasData && performanceMetrics.fxPL >= 0 ? 'up' : 'down'}
-          subtitle="Currency changes"
-          tooltip="Profit/loss from currency movements between asset and base currency"
+          title="Cash FX P/L"
+          value={formatCurrency(ytdData.cashFxPL)}
+          trend={ytdData.cashFxPL >= 0 ? 'up' : 'down'}
+          subtitle="Foreign cash changes"
+          tooltip="Profit/loss from exchange rate changes on non-USD cash holdings (EUR, ILS, GBP, CHF, JPY)"
         />
         <KPICard
           title="Sharpe Ratio"
