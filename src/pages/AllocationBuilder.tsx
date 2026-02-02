@@ -18,6 +18,7 @@ import { AllocationTreemap } from '@/components/construction/allocation/Allocati
 import { AllocationSankey } from '@/components/construction/allocation/AllocationSankey';
 import { PositionSizeHistogram } from '@/components/construction/allocation/PositionSizeHistogram';
 import { StructuralInsightsPanel } from '@/components/construction/allocation/StructuralInsightsPanel';
+import { StyleRadarChart } from '@/components/construction/allocation/StyleRadarChart';
 import { calculateTotalAllocation } from '@/lib/allocationAnalytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -277,8 +278,10 @@ export default function AllocationBuilder() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <AllocationTreemap positions={positions} />
-            <PositionSizeHistogram positions={positions} />
+            <StyleRadarChart positions={positions} />
           </div>
+
+          <PositionSizeHistogram positions={positions} />
         </TabsContent>
 
         {/* Flows Tab */}
