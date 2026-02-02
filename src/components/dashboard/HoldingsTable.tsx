@@ -13,8 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ArrowUpDown, ArrowUp, ArrowDown, Building2, Briefcase } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Building2, Briefcase, AlertTriangle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -40,6 +41,7 @@ interface Holding {
   marketPL: number;       // P/L from price changes
   fxPL: number;           // P/L from FX changes
   linkedCompany: LinkedCompany | null;
+  missingValuation: boolean;  // True if no current price data
 }
 
 type SortKey = 'ticker' | 'currentValue' | 'plPercent' | 'quantity';
@@ -92,43 +94,52 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
 
       const val = latestVals[ticker];
       const tx = transactions.find(t => t.ticker === ticker);
-      if (!val || !tx) continue;
+      if (!tx) continue;
 
-      const currentFxRate = val.fxRate || 1;
-      const localPrice = val.pricePerUnit;
-      const currentPrice = localPrice * currentFxRate;
+      // FALLBACK: Use cost basis if no valuation exists
+      const hasValuation = !!val;
+      const currentFxRate = val?.fxRate || 1;
+      const localPrice = hasValuation ? val.pricePerUnit : pos.avgCost;
+      const currentPrice = localPrice * (hasValuation ? currentFxRate : 1);
       const currentValue = pos.quantity * currentPrice;
       const costBasis = pos.quantity * pos.avgCost;
-      const plAmount = currentValue - costBasis;
-      const plPercent = costBasis > 0 ? (plAmount / costBasis) * 100 : 0;
+      
+      // If missing valuation, show 0% P/L (cost = value)
+      const plAmount = hasValuation ? currentValue - costBasis : 0;
+      const plPercent = hasValuation && costBasis > 0 ? (plAmount / costBasis) * 100 : 0;
 
       // Calculate separated P/L components using stored entry FX rate if available
       let entryFxRate: number;
-      if (tx.currency === settings.baseCurrency) {
-        entryFxRate = 1;
-      } else if (tx.fxRateAtEntry !== undefined) {
-        entryFxRate = tx.fxRateAtEntry;
-      } else {
-        // Weighted average from all buy transactions for this ticker
-        const tickerBuys = transactions.filter(t => 
-          t.ticker === ticker && 
-          t.transactionType === 'buy' &&
-          t.fxRateAtEntry !== undefined
-        );
-        if (tickerBuys.length > 0) {
-          const totalCostLocal = tickerBuys.reduce((sum, t) => sum + (t.costLocal || t.quantity * t.pricePerUnit + t.fees), 0);
-          const weightedFxSum = tickerBuys.reduce((sum, t) => {
-            const costLocal = t.costLocal || (t.quantity * t.pricePerUnit + t.fees);
-            return sum + (t.fxRateAtEntry! * costLocal);
-          }, 0);
-          entryFxRate = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : currentFxRate;
+      let marketPL = 0;
+      let fxPL = 0;
+      
+      if (hasValuation) {
+        if (tx.currency === settings.baseCurrency) {
+          entryFxRate = 1;
+        } else if (tx.fxRateAtEntry !== undefined) {
+          entryFxRate = tx.fxRateAtEntry;
         } else {
-          entryFxRate = currentFxRate; // Fallback approximation
+          // Weighted average from all buy transactions for this ticker
+          const tickerBuys = transactions.filter(t => 
+            t.ticker === ticker && 
+            t.transactionType === 'buy' &&
+            t.fxRateAtEntry !== undefined
+          );
+          if (tickerBuys.length > 0) {
+            const totalCostLocal = tickerBuys.reduce((sum, t) => sum + (t.costLocal || t.quantity * t.pricePerUnit + t.fees), 0);
+            const weightedFxSum = tickerBuys.reduce((sum, t) => {
+              const costLocal = t.costLocal || (t.quantity * t.pricePerUnit + t.fees);
+              return sum + (t.fxRateAtEntry! * costLocal);
+            }, 0);
+            entryFxRate = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : currentFxRate;
+          } else {
+            entryFxRate = currentFxRate; // Fallback approximation
+          }
         }
+        const valueAtEntryFx = pos.quantity * localPrice * entryFxRate;
+        marketPL = valueAtEntryFx - costBasis;
+        fxPL = pos.quantity * localPrice * (currentFxRate - entryFxRate);
       }
-      const valueAtEntryFx = pos.quantity * localPrice * entryFxRate;
-      const marketPL = valueAtEntryFx - costBasis;
-      const fxPL = pos.quantity * localPrice * (currentFxRate - entryFxRate);
 
       // Find the most recent transaction with a linked company for this ticker
       const linkedTx = transactions
@@ -150,6 +161,7 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
         marketPL,
         fxPL,
         linkedCompany,
+        missingValuation: !hasValuation,
       });
     }
 
@@ -262,9 +274,29 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
           </TableHeader>
           <TableBody>
             {holdings.map((holding) => (
-              <TableRow key={holding.ticker} className="border-border/20 hover:bg-primary/5">
+              <TableRow key={holding.ticker} className={cn(
+                "border-border/20 hover:bg-primary/5",
+                holding.missingValuation && "bg-amber-500/5"
+              )}>
                 <TableCell className="font-mono text-xs text-primary font-medium">
-                  {holding.ticker}
+                  <div className="flex items-center gap-1.5">
+                    {holding.ticker}
+                    {holding.missingValuation && (
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-amber-500/10 text-amber-500 border-amber-500/30">
+                              <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                              No Price
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[200px] text-xs bg-amber-500/10 border-amber-500/30">
+                            <p className="text-amber-400">No valuation data - value shown at cost basis</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {holding.name}
