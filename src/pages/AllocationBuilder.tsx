@@ -1,20 +1,26 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Layers, ArrowLeft, ArrowRight, Check, Target, PieChart, 
-  BarChart3, Save, ChevronRight, Sparkles
+  Layers, BarChart3, PieChart, Grid3X3, GitBranch, 
+  ArrowLeft, Plus, Trash2, RotateCcw, CheckCircle2, AlertTriangle 
 } from 'lucide-react';
 import { Position } from '@/types/allocationBuilder';
+import { AddPositionDialog } from '@/components/construction/allocation/AddPositionDialog';
+import { PositionsTable } from '@/components/construction/allocation/PositionsTable';
+import { AllocationValidation } from '@/components/construction/allocation/AllocationValidation';
+import { AllocationDonutChart } from '@/components/construction/allocation/AllocationDonutChart';
+import { ExposureBarChart } from '@/components/construction/allocation/ExposureBarChart';
+import { AllocationTreemap } from '@/components/construction/allocation/AllocationTreemap';
+import { AllocationSankey } from '@/components/construction/allocation/AllocationSankey';
+import { PositionSizeHistogram } from '@/components/construction/allocation/PositionSizeHistogram';
+import { StructuralInsightsPanel } from '@/components/construction/allocation/StructuralInsightsPanel';
+import { calculateTotalAllocation } from '@/lib/allocationAnalytics';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
-// Pipeline Steps
-import { PipelineObjectivesStep } from '@/components/construction/pipeline/PipelineObjectivesStep';
-import { PipelinePositionsStep } from '@/components/construction/pipeline/PipelinePositionsStep';
-import { PipelineAllocationStep } from '@/components/construction/pipeline/PipelineAllocationStep';
-import { PipelineInsightsStep } from '@/components/construction/pipeline/PipelineInsightsStep';
-import { PipelineSaveStep } from '@/components/construction/pipeline/PipelineSaveStep';
 
 // Sample data for demo
 const SAMPLE_POSITIONS: Position[] = [
@@ -30,62 +36,16 @@ const SAMPLE_POSITIONS: Position[] = [
   { id: '10', name: 'EM Equity', assetType: 'equity', allocation: 5, region: 'asia_pacific', country: 'China', sector: 'Multi-Sector', industry: 'Index', currency: 'USD', liquidityBucket: 'liquid', styleTags: ['growth', 'speculative'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
-export interface AllocationObjectives {
-  name: string;
-  objective: 'growth' | 'balanced' | 'income' | 'preservation';
-  riskLevel: 'conservative' | 'moderate' | 'aggressive';
-  horizon: 'short' | 'medium' | 'long';
-}
-
-const STEPS = [
-  { id: 1, name: 'Objectives', icon: Target, description: 'Define goals & risk' },
-  { id: 2, name: 'Positions', icon: Layers, description: 'Build allocation' },
-  { id: 3, name: 'Review', icon: PieChart, description: 'Validate weights' },
-  { id: 4, name: 'Insights', icon: BarChart3, description: 'Analyze structure' },
-  { id: 5, name: 'Save', icon: Save, description: 'Activate target' },
-];
-
 export default function AllocationBuilder() {
-  const [currentStep, setCurrentStep] = useState(1);
   const [positions, setPositions] = useState<Position[]>(SAMPLE_POSITIONS);
-  const [objectives, setObjectives] = useState<AllocationObjectives>({
-    name: 'Primary Target Allocation',
-    objective: 'balanced',
-    riskLevel: 'moderate',
-    horizon: 'long',
-  });
+  const [activeTab, setActiveTab] = useState<string>('positions');
+  const [groupBy, setGroupBy] = useState<'assetType' | 'region' | 'sector' | 'currency' | 'liquidityBucket'>('assetType');
 
-  const totalAllocation = useMemo(
-    () => positions.reduce((sum, p) => sum + p.allocation, 0),
-    [positions]
-  );
-
+  const totalAllocation = useMemo(() => calculateTotalAllocation(positions), [positions]);
   const isBalanced = Math.abs(totalAllocation - 100) < 0.01;
+  const isOver = totalAllocation > 100;
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1: return objectives.name.trim().length > 0;
-      case 2: return positions.length > 0;
-      case 3: return isBalanced;
-      case 4: return true;
-      case 5: return true;
-      default: return false;
-    }
-  };
-
-  const handleNext = () => {
-    if (currentStep < 5 && canProceed()) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handlePositionAdd = (newPosition: Omit<Position, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleAddPosition = (newPosition: Omit<Position, 'id' | 'createdAt' | 'updatedAt'>) => {
     const position: Position = {
       ...newPosition,
       id: crypto.randomUUID(),
@@ -93,227 +53,276 @@ export default function AllocationBuilder() {
       updatedAt: new Date().toISOString(),
     };
     setPositions(prev => [...prev, position]);
+    toast.success(`Added "${newPosition.name}" (${newPosition.allocation}%)`);
   };
 
-  const handlePositionUpdate = (id: string, updates: Partial<Position>) => {
+  const handleUpdatePosition = (id: string, updates: Partial<Position>) => {
     setPositions(prev => prev.map(p => 
       p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
     ));
   };
 
-  const handlePositionDelete = (id: string) => {
+  const handleDeletePosition = (id: string) => {
+    const position = positions.find(p => p.id === id);
     setPositions(prev => prev.filter(p => p.id !== id));
+    if (position) {
+      toast.success(`Removed "${position.name}"`);
+    }
+  };
+
+  const handleClearAll = () => {
+    setPositions([]);
+    toast.success('All positions cleared');
   };
 
   const handleLoadSample = () => {
     setPositions(SAMPLE_POSITIONS);
-  };
-
-  const handleClear = () => {
-    setPositions([]);
-  };
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <PipelineObjectivesStep 
-            objectives={objectives} 
-            onChange={setObjectives} 
-          />
-        );
-      case 2:
-        return (
-          <PipelinePositionsStep
-            positions={positions}
-            totalAllocation={totalAllocation}
-            onAdd={handlePositionAdd}
-            onUpdate={handlePositionUpdate}
-            onDelete={handlePositionDelete}
-            onLoadSample={handleLoadSample}
-            onClear={handleClear}
-          />
-        );
-      case 3:
-        return (
-          <PipelineAllocationStep
-            positions={positions}
-            totalAllocation={totalAllocation}
-            isBalanced={isBalanced}
-          />
-        );
-      case 4:
-        return (
-          <PipelineInsightsStep positions={positions} />
-        );
-      case 5:
-        return (
-          <PipelineSaveStep
-            objectives={objectives}
-            positions={positions}
-            totalAllocation={totalAllocation}
-          />
-        );
-      default:
-        return null;
-    }
+    toast.success('Sample portfolio loaded');
   };
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link 
-            to="/construction" 
-            className="p-2.5 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 transition-all"
-          >
-            <ArrowLeft size={16} className="text-muted-foreground" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
-              <Sparkles className="text-primary" size={20} />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">Allocation Pipeline</h1>
-              <p className="text-[11px] text-muted-foreground font-mono tracking-wide">
-                STEP {currentStep} OF 5 • {STEPS[currentStep - 1].name.toUpperCase()}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="hidden md:flex items-center gap-1 text-xs text-muted-foreground">
-          <span className="font-mono">{Math.round((currentStep / 5) * 100)}%</span>
-          <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary rounded-full transition-all duration-500"
-              style={{ width: `${(currentStep / 5) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Pipeline Steps Indicator */}
-      <Card className="border-border/50 bg-card/50 overflow-hidden">
-        <div className="flex">
-          {STEPS.map((step, index) => {
-            const isActive = currentStep === step.id;
-            const isCompleted = currentStep > step.id;
-            const Icon = step.icon;
-            
-            return (
-              <button
-                key={step.id}
-                onClick={() => setCurrentStep(step.id)}
-                disabled={step.id > currentStep + 1}
-                className={cn(
-                  "flex-1 flex items-center gap-3 px-4 py-3 transition-all relative",
-                  "border-r border-border/30 last:border-r-0",
-                  isActive && "bg-primary/10",
-                  isCompleted && "bg-muted/30",
-                  !isActive && !isCompleted && "opacity-50",
-                  step.id <= currentStep + 1 && "cursor-pointer hover:bg-muted/20"
-                )}
-              >
-                {/* Step Number/Check */}
-                <div className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all",
-                  isActive && "bg-primary text-primary-foreground",
-                  isCompleted && "bg-emerald-500/20 text-emerald-400",
-                  !isActive && !isCompleted && "bg-muted text-muted-foreground"
-                )}>
-                  {isCompleted ? <Check size={14} /> : step.id}
-                </div>
-                
-                {/* Step Info */}
-                <div className="hidden lg:block text-left">
-                  <div className={cn(
-                    "text-sm font-medium",
-                    isActive && "text-primary",
-                    isCompleted && "text-emerald-400",
-                  )}>
-                    {step.name}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {step.description}
-                  </div>
-                </div>
-
-                {/* Arrow between steps */}
-                {index < STEPS.length - 1 && (
-                  <ChevronRight 
-                    size={14} 
-                    className="absolute right-0 translate-x-1/2 text-muted-foreground/30 z-10 hidden xl:block" 
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Step Content */}
-      <div className="min-h-[400px]">
-        {renderStep()}
-      </div>
-
-      {/* Navigation Footer */}
-      <Card className="border-border/50 bg-card/50">
+      {/* Header Card */}
+      <Card className="border-border/50 bg-gradient-to-br from-card via-card to-muted/20">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              disabled={currentStep === 1}
-              className="gap-2"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </Button>
-
-            <div className="flex items-center gap-2">
-              {/* Step dots for mobile */}
-              <div className="flex items-center gap-1.5 md:hidden">
-                {STEPS.map((step) => (
-                  <div 
-                    key={step.id}
-                    className={cn(
-                      "w-2 h-2 rounded-full transition-all",
-                      currentStep === step.id && "bg-primary w-4",
-                      currentStep > step.id && "bg-emerald-500",
-                      currentStep < step.id && "bg-muted"
-                    )}
-                  />
-                ))}
+            <div className="flex items-center gap-4">
+              <Link 
+                to="/construction" 
+                className="p-2.5 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 transition-all hover:scale-105"
+                title="Back to Construction"
+              >
+                <ArrowLeft size={16} className="text-muted-foreground" />
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
+                  <Layers className="text-primary" size={22} />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold tracking-tight">Portfolio Allocation</h1>
+                  <p className="text-[11px] text-muted-foreground font-mono tracking-wide">
+                    TARGET WEIGHTS BUILDER
+                  </p>
+                </div>
               </div>
             </div>
 
-            {currentStep < 5 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className="gap-2"
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleLoadSample}
+                className="h-8 text-xs hover:bg-muted"
               >
-                {currentStep === 3 && !isBalanced ? (
-                  'Balance to 100% first'
-                ) : (
-                  <>
-                    Next
-                    <ArrowRight size={16} />
-                  </>
-                )}
+                <RotateCcw size={14} className="mr-1.5" />
+                Sample
               </Button>
-            ) : (
-              <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700">
-                <Save size={16} />
-                Activate Allocation
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleClearAll} 
+                className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 size={14} className="mr-1.5" />
+                Clear
               </Button>
-            )}
+              <div className="w-px h-6 bg-border/50" />
+              <AddPositionDialog 
+                onAdd={handleAddPosition} 
+                existingAllocation={totalAllocation}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Allocation Summary Bar */}
+      <div className={cn(
+        "flex items-center justify-between px-4 py-3 rounded-xl border transition-all",
+        isBalanced 
+          ? "bg-emerald-500/5 border-emerald-500/20" 
+          : isOver 
+            ? "bg-destructive/5 border-destructive/20"
+            : "bg-amber-500/5 border-amber-500/20"
+      )}>
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "w-9 h-9 rounded-lg flex items-center justify-center",
+            isBalanced ? "bg-emerald-500/20" : isOver ? "bg-destructive/20" : "bg-amber-500/20"
+          )}>
+            {isBalanced ? (
+              <CheckCircle2 size={18} className="text-emerald-500" />
+            ) : (
+              <AlertTriangle size={18} className={isOver ? "text-destructive" : "text-amber-500"} />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "font-mono text-xl font-bold",
+                isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400"
+              )}>
+                {totalAllocation.toFixed(1)}%
+              </span>
+              <span className="text-sm text-muted-foreground">allocated</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {positions.length} position{positions.length !== 1 ? 's' : ''} • {isBalanced ? '✓ Balanced' : isOver ? 'Over-allocated' : 'Under-allocated'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="flex items-center gap-4 flex-1 max-w-sm ml-8">
+          <div className="flex-1 h-2.5 bg-muted/50 rounded-full overflow-hidden">
+            <div 
+              className={cn(
+                "h-full transition-all duration-700 ease-out rounded-full",
+                isBalanced ? "bg-gradient-to-r from-emerald-500 to-emerald-400" :
+                isOver ? "bg-gradient-to-r from-destructive to-red-400" : 
+                "bg-gradient-to-r from-amber-500 to-amber-400"
+              )}
+              style={{ width: `${Math.min(totalAllocation, 100)}%` }}
+            />
+          </div>
+          <span className={cn(
+            "text-xs font-mono font-medium w-10 text-right",
+            isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400"
+          )}>
+            {(100 - totalAllocation).toFixed(1)}%
+          </span>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="bg-muted/20 p-1 h-10 w-fit">
+          <TabsTrigger value="positions" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <Grid3X3 size={14} />
+            Positions
+          </TabsTrigger>
+          <TabsTrigger value="charts" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <PieChart size={14} />
+            Charts
+          </TabsTrigger>
+          <TabsTrigger value="flows" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <GitBranch size={14} />
+            Flows
+          </TabsTrigger>
+          <TabsTrigger value="insights" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <BarChart3 size={14} />
+            Insights
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Positions Tab */}
+        <TabsContent value="positions" className="space-y-4 mt-2">
+          {positions.length === 0 ? (
+            <Card className="border-dashed border-2 border-border/50">
+              <CardContent className="py-12 text-center">
+                <Layers className="mx-auto mb-4 text-muted-foreground" size={40} />
+                <h3 className="text-lg font-medium mb-2">No Positions Yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Start building your portfolio by adding positions or load sample data
+                </p>
+                <div className="flex justify-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handleLoadSample}>
+                    Load Sample Portfolio
+                  </Button>
+                  <AddPositionDialog 
+                    onAdd={handleAddPosition} 
+                    existingAllocation={totalAllocation}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <PositionsTable 
+              positions={positions}
+              onUpdate={handleUpdatePosition}
+              onDelete={handleDeletePosition}
+            />
+          )}
+        </TabsContent>
+
+        {/* Charts Tab */}
+        <TabsContent value="charts" className="space-y-4 mt-2">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-muted-foreground">Group by:</span>
+            <Select value={groupBy} onValueChange={(v) => setGroupBy(v as typeof groupBy)}>
+              <SelectTrigger className="w-36 h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="assetType">Asset Type</SelectItem>
+                <SelectItem value="region">Region</SelectItem>
+                <SelectItem value="sector">Sector</SelectItem>
+                <SelectItem value="currency">Currency</SelectItem>
+                <SelectItem value="liquidityBucket">Liquidity</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <AllocationDonutChart 
+              positions={positions} 
+              groupBy={groupBy}
+              title={`By ${groupBy === 'assetType' ? 'Asset Type' : 
+                        groupBy === 'region' ? 'Region' : 
+                        groupBy === 'liquidityBucket' ? 'Liquidity' : 
+                        groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}`}
+            />
+            <ExposureBarChart positions={positions} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <AllocationTreemap positions={positions} />
+            <PositionSizeHistogram positions={positions} />
+          </div>
+        </TabsContent>
+
+        {/* Flows Tab */}
+        <TabsContent value="flows" className="space-y-4 mt-2">
+          <AllocationSankey positions={positions} />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <AllocationDonutChart 
+              positions={positions} 
+              groupBy="assetType"
+              title="By Asset Type"
+            />
+            <AllocationDonutChart 
+              positions={positions} 
+              groupBy="sector"
+              title="By Sector"
+            />
+          </div>
+        </TabsContent>
+
+        {/* Insights Tab */}
+        <TabsContent value="insights" className="mt-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <AllocationDonutChart 
+                  positions={positions} 
+                  groupBy="region"
+                  title="Geographic Distribution"
+                />
+                <AllocationDonutChart 
+                  positions={positions} 
+                  groupBy="liquidityBucket"
+                  title="Liquidity Distribution"
+                />
+              </div>
+              <ExposureBarChart positions={positions} maxBars={15} />
+            </div>
+            <div>
+              <StructuralInsightsPanel positions={positions} />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
