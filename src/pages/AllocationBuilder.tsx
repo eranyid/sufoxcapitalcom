@@ -21,6 +21,8 @@ import { StructuralInsightsPanel } from '@/components/construction/allocation/St
 import { StyleRadarChart } from '@/components/construction/allocation/StyleRadarChart';
 import { GeographicAllocationMap } from '@/components/construction/allocation/GeographicAllocationMap';
 import { LiquidityFunnelChart } from '@/components/construction/allocation/LiquidityFunnelChart';
+import { CurrencySunburstChart } from '@/components/construction/allocation/CurrencySunburstChart';
+import { TargetComparisonChart } from '@/components/construction/allocation/TargetComparisonChart';
 import { calculateTotalAllocation } from '@/lib/allocationAnalytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -284,8 +286,13 @@ export default function AllocationBuilder() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <PositionSizeHistogram positions={positions} />
+            <CurrencySunburstChart positions={positions} />
             <LiquidityFunnelChart positions={positions} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <PositionSizeHistogram positions={positions} />
+            <TargetComparisonChart positions={positions} />
           </div>
         </TabsContent>
 
@@ -305,6 +312,11 @@ export default function AllocationBuilder() {
               title="By Sector"
             />
           </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CurrencySunburstChart positions={positions} />
+            <StyleRadarChart positions={positions} />
+          </div>
         </TabsContent>
 
         {/* Insights Tab */}
@@ -314,19 +326,22 @@ export default function AllocationBuilder() {
               {/* Geographic Map - Full Width */}
               <GeographicAllocationMap positions={positions} />
               
+              {/* Target Comparison - Full Width */}
+              <TargetComparisonChart positions={positions} />
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CurrencySunburstChart positions={positions} />
+                <LiquidityFunnelChart positions={positions} />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <StyleRadarChart positions={positions} />
                 <AllocationDonutChart 
                   positions={positions} 
                   groupBy="region"
                   title="Regional Distribution"
                 />
-                <AllocationDonutChart 
-                  positions={positions} 
-                  groupBy="liquidityBucket"
-                  title="Liquidity Distribution"
-                />
               </div>
-              <ExposureBarChart positions={positions} maxBars={15} />
             </div>
             <div>
               <StructuralInsightsPanel positions={positions} />
