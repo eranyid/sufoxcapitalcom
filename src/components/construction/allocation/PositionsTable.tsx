@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Trash2, Edit2, Check, X, ArrowUpDown, ArrowDown, ArrowUp, TrendingUp } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Trash2, ArrowUpDown, ArrowDown, ArrowUp, TrendingUp, Minus, Plus, GripVertical } from 'lucide-react';
 import { Position, ASSET_TYPE_LABELS, REGION_LABELS, LIQUIDITY_LABELS, ASSET_TYPE_COLORS } from '@/types/allocationBuilder';
 import { cn } from '@/lib/utils';
 
@@ -27,10 +27,9 @@ const ASSET_TYPE_STYLES: Record<string, string> = {
 };
 
 export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTableProps) {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
   const [sortField, setSortField] = useState<SortField>('allocation');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [activeSlider, setActiveSlider] = useState<string | null>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -63,22 +62,14 @@ export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTable
     return sortDirection === 'asc' ? comparison : -comparison;
   });
 
-  const startEdit = (position: Position) => {
-    setEditingId(position.id);
-    setEditValue(position.allocation.toString());
+  const handleAllocationChange = (id: string, newValue: number) => {
+    const clampedValue = Math.max(0, Math.min(100, newValue));
+    onUpdate(id, { allocation: Number(clampedValue.toFixed(1)) });
   };
 
-  const saveEdit = (id: string) => {
-    const newValue = parseFloat(editValue);
-    if (!isNaN(newValue) && newValue >= 0 && newValue <= 100) {
-      onUpdate(id, { allocation: newValue });
-    }
-    setEditingId(null);
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditValue('');
+  const incrementAllocation = (position: Position, delta: number) => {
+    const newValue = position.allocation + delta;
+    handleAllocationChange(position.id, newValue);
   };
 
   const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
@@ -112,20 +103,14 @@ export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTable
     <Card className="overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-muted/30 border-b border-border/50 text-xs">
-        <div className="col-span-2">
+        <div className="col-span-3">
           <SortButton field="name">Name</SortButton>
         </div>
-        <div className="col-span-2">
-          <SortButton field="allocation">Weight</SortButton>
+        <div className="col-span-4">
+          <SortButton field="allocation">Allocation</SortButton>
         </div>
         <div className="col-span-2">
-          <SortButton field="assetType">Asset Class</SortButton>
-        </div>
-        <div className="col-span-2">
-          <SortButton field="region">Geography</SortButton>
-        </div>
-        <div className="col-span-1">
-          <span className="text-muted-foreground">CCY</span>
+          <SortButton field="assetType">Class</SortButton>
         </div>
         <div className="col-span-2">
           <span className="text-muted-foreground">Liquidity</span>
@@ -141,59 +126,79 @@ export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTable
           <div 
             key={position.id} 
             className={cn(
-              "grid grid-cols-12 gap-2 px-4 py-3 items-center transition-colors group",
+              "grid grid-cols-12 gap-2 px-4 py-3.5 items-center transition-all group",
               "hover:bg-muted/20",
-              index % 2 === 0 ? "bg-transparent" : "bg-muted/5"
+              index % 2 === 0 ? "bg-transparent" : "bg-muted/5",
+              activeSlider === position.id && "bg-primary/5 ring-1 ring-primary/20"
             )}
           >
-            {/* Name */}
-            <div className="col-span-2">
-              <span className="font-medium text-sm truncate block">{position.name}</span>
+            {/* Name & Region */}
+            <div className="col-span-3">
+              <div className="flex items-center gap-2">
+                <GripVertical size={14} className="text-muted-foreground/30 cursor-grab" />
+                <div className="min-w-0">
+                  <span className="font-medium text-sm truncate block">{position.name}</span>
+                  <span className="text-[10px] text-muted-foreground truncate block">
+                    {REGION_LABELS[position.region]} • {position.currency}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Allocation */}
-            <div className="col-span-2">
-              {editingId === position.id ? (
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    className="w-16 h-7 text-xs font-mono"
-                    min={0}
-                    max={100}
-                    step={0.1}
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveEdit(position.id);
-                      if (e.key === 'Escape') cancelEdit();
-                    }}
-                  />
-                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => saveEdit(position.id)}>
-                    <Check size={12} className="text-emerald-500" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={cancelEdit}>
-                    <X size={12} className="text-destructive" />
-                  </Button>
-                </div>
-              ) : (
-                <button 
-                  className="flex items-center gap-2 group/edit"
-                  onClick={() => startEdit(position)}
+            {/* Allocation Controls */}
+            <div className="col-span-4">
+              <div className="flex items-center gap-2">
+                {/* Minus Button */}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className={cn(
+                    "h-7 w-7 rounded-full border-border/50 transition-all",
+                    "hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive",
+                    "active:scale-95"
+                  )}
+                  onClick={() => incrementAllocation(position, -1)}
+                  disabled={position.allocation <= 0}
                 >
-                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all"
-                      style={{ 
-                        width: `${Math.min(position.allocation * 2, 100)}%`,
-                        backgroundColor: ASSET_TYPE_COLORS[position.assetType],
-                      }}
-                    />
-                  </div>
-                  <span className="font-mono text-sm font-medium">{position.allocation.toFixed(1)}%</span>
-                  <Edit2 size={10} className="text-muted-foreground opacity-0 group-hover/edit:opacity-100 transition-opacity" />
-                </button>
-              )}
+                  <Minus size={12} />
+                </Button>
+
+                {/* Slider */}
+                <div className="flex-1 flex items-center gap-2">
+                  <Slider
+                    value={[position.allocation]}
+                    onValueChange={([value]) => handleAllocationChange(position.id, value)}
+                    onValueCommit={() => setActiveSlider(null)}
+                    onPointerDown={() => setActiveSlider(position.id)}
+                    max={50}
+                    min={0}
+                    step={0.5}
+                    className="flex-1"
+                  />
+                  <span className={cn(
+                    "font-mono text-sm font-bold w-12 text-right tabular-nums transition-colors",
+                    position.allocation >= 20 ? "text-amber-400" : 
+                    position.allocation >= 10 ? "text-foreground" : "text-muted-foreground"
+                  )}>
+                    {position.allocation.toFixed(1)}%
+                  </span>
+                </div>
+
+                {/* Plus Button */}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className={cn(
+                    "h-7 w-7 rounded-full border-border/50 transition-all",
+                    "hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:text-emerald-500",
+                    "active:scale-95"
+                  )}
+                  onClick={() => incrementAllocation(position, 1)}
+                  disabled={position.allocation >= 100}
+                >
+                  <Plus size={12} />
+                </Button>
+              </div>
             </div>
 
             {/* Asset Type */}
@@ -209,27 +214,14 @@ export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTable
               </Badge>
             </div>
 
-            {/* Region */}
-            <div className="col-span-2">
-              <span className="text-sm text-muted-foreground">
-                {REGION_LABELS[position.region]}
-              </span>
-            </div>
-
-            {/* Currency */}
-            <div className="col-span-1">
-              <Badge variant="secondary" className="text-[10px] font-mono bg-muted/50">
-                {position.currency}
-              </Badge>
-            </div>
-
             {/* Liquidity */}
             <div className="col-span-2">
               <span className={cn(
-                "text-xs px-2 py-0.5 rounded-md",
+                "text-[10px] px-2 py-0.5 rounded-md font-medium",
                 position.liquidityBucket === 'highly_liquid' && "bg-emerald-500/10 text-emerald-400",
                 position.liquidityBucket === 'liquid' && "bg-blue-500/10 text-blue-400",
                 position.liquidityBucket === 'semi_liquid' && "bg-amber-500/10 text-amber-400",
+                position.liquidityBucket === 'illiquid' && "bg-orange-500/10 text-orange-400",
                 position.liquidityBucket === 'locked' && "bg-red-500/10 text-red-400",
               )}>
                 {LIQUIDITY_LABELS[position.liquidityBucket]}
@@ -256,9 +248,12 @@ export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTable
         <span className="text-xs text-muted-foreground">
           {positions.length} position{positions.length !== 1 ? 's' : ''} 
         </span>
-        <span className="text-xs font-mono font-medium">
-          Total: {positions.reduce((sum, p) => sum + p.allocation, 0).toFixed(1)}%
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-muted-foreground">Drag slider or use +/- buttons</span>
+          <span className="text-xs font-mono font-medium">
+            Total: {positions.reduce((sum, p) => sum + p.allocation, 0).toFixed(1)}%
+          </span>
+        </div>
       </div>
     </Card>
   );
