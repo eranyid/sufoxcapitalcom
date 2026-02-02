@@ -239,13 +239,13 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       const prevRates: FxRatesMap = { USD: 1 };
       
       for (const currency of currencies) {
-        // Get the latest rate
+        // Get the latest rate - DB stores as "USD → Currency" (e.g., USD/ILS = 3.10)
         const { data: latestData } = await supabase
           .from('fx_rates')
           .select('rate, rate_date')
           .eq('user_id', user.id)
-          .eq('from_currency', currency)
-          .eq('to_currency', 'USD')
+          .eq('from_currency', 'USD')
+          .eq('to_currency', currency)
           .order('rate_date', { ascending: false })
           .limit(2);
         
