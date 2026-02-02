@@ -19,6 +19,7 @@ import { AllocationSankey } from '@/components/construction/allocation/Allocatio
 import { PositionSizeHistogram } from '@/components/construction/allocation/PositionSizeHistogram';
 import { StructuralInsightsPanel } from '@/components/construction/allocation/StructuralInsightsPanel';
 import { StyleRadarChart } from '@/components/construction/allocation/StyleRadarChart';
+import { GeographicAllocationMap } from '@/components/construction/allocation/GeographicAllocationMap';
 import { calculateTotalAllocation } from '@/lib/allocationAnalytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -306,11 +307,14 @@ export default function AllocationBuilder() {
         <TabsContent value="insights" className="mt-2">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 space-y-4">
+              {/* Geographic Map - Full Width */}
+              <GeographicAllocationMap positions={positions} />
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <AllocationDonutChart 
                   positions={positions} 
                   groupBy="region"
-                  title="Geographic Distribution"
+                  title="Regional Distribution"
                 />
                 <AllocationDonutChart 
                   positions={positions} 
