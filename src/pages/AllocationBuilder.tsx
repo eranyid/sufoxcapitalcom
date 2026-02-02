@@ -8,6 +8,7 @@ import {
   Layers, BarChart3, PieChart, Grid3X3, GitBranch, 
   ArrowLeft, Plus, Trash2, RotateCcw, CheckCircle2, AlertTriangle 
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Position } from '@/types/allocationBuilder';
 import { AddPositionDialog } from '@/components/construction/allocation/AddPositionDialog';
 import { PositionsTable } from '@/components/construction/allocation/PositionsTable';
@@ -45,6 +46,7 @@ export default function AllocationBuilder() {
   const [positions, setPositions] = useState<Position[]>(SAMPLE_POSITIONS);
   const [activeTab, setActiveTab] = useState<string>('positions');
   const [groupBy, setGroupBy] = useState<'assetType' | 'region' | 'sector' | 'currency' | 'liquidityBucket'>('assetType');
+  const isMobile = useIsMobile();
 
   const totalAllocation = useMemo(() => calculateTotalAllocation(positions), [positions]);
   const isBalanced = Math.abs(totalAllocation - 100) < 0.01;
@@ -86,52 +88,52 @@ export default function AllocationBuilder() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       {/* Header Card */}
       <Card className="border-border/50 bg-gradient-to-br from-card via-card to-muted/20">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4">
               <Link 
                 to="/construction" 
-                className="p-2.5 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 transition-all hover:scale-105"
+                className="p-2 sm:p-2.5 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 transition-all hover:scale-105 flex-shrink-0"
                 title="Back to Construction"
               >
                 <ArrowLeft size={16} className="text-muted-foreground" />
               </Link>
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
-                  <Layers className="text-primary" size={22} />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                  <Layers className="text-primary" size={isMobile ? 18 : 22} />
                 </div>
-                <div>
-                  <h1 className="text-lg font-bold tracking-tight">Portfolio Allocation</h1>
-                  <p className="text-[11px] text-muted-foreground font-mono tracking-wide">
-                    TARGET WEIGHTS BUILDER
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-bold tracking-tight truncate">Portfolio Allocation</h1>
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground font-mono tracking-wide">
+                    TARGET WEIGHTS
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 justify-end">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleLoadSample}
-                className="h-8 text-xs hover:bg-muted"
+                className="h-8 text-xs hover:bg-muted px-2 sm:px-3"
               >
-                <RotateCcw size={14} className="mr-1.5" />
-                Sample
+                <RotateCcw size={14} className={isMobile ? "" : "mr-1.5"} />
+                {!isMobile && "Sample"}
               </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleClearAll} 
-                className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 px-2 sm:px-3"
               >
-                <Trash2 size={14} className="mr-1.5" />
-                Clear
+                <Trash2 size={14} className={isMobile ? "" : "mr-1.5"} />
+                {!isMobile && "Clear"}
               </Button>
-              <div className="w-px h-6 bg-border/50" />
+              <div className="w-px h-6 bg-border/50 hidden sm:block" />
               <AddPositionDialog 
                 onAdd={handleAddPosition} 
                 existingAllocation={totalAllocation}
@@ -143,43 +145,43 @@ export default function AllocationBuilder() {
 
       {/* Allocation Summary Bar */}
       <div className={cn(
-        "flex items-center justify-between px-4 py-3 rounded-xl border transition-all",
+        "flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border transition-all gap-2 sm:gap-0",
         isBalanced 
           ? "bg-emerald-500/5 border-emerald-500/20" 
           : isOver 
             ? "bg-destructive/5 border-destructive/20"
             : "bg-amber-500/5 border-amber-500/20"
       )}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className={cn(
-            "w-9 h-9 rounded-lg flex items-center justify-center",
+            "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0",
             isBalanced ? "bg-emerald-500/20" : isOver ? "bg-destructive/20" : "bg-amber-500/20"
           )}>
             {isBalanced ? (
-              <CheckCircle2 size={18} className="text-emerald-500" />
+              <CheckCircle2 size={16} className="text-emerald-500" />
             ) : (
-              <AlertTriangle size={18} className={isOver ? "text-destructive" : "text-amber-500"} />
+              <AlertTriangle size={16} className={isOver ? "text-destructive" : "text-amber-500"} />
             )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <span className={cn(
-                "font-mono text-xl font-bold",
+                "font-mono text-lg sm:text-xl font-bold",
                 isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400"
               )}>
                 {totalAllocation.toFixed(1)}%
               </span>
-              <span className="text-sm text-muted-foreground">allocated</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">allocated</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {positions.length} position{positions.length !== 1 ? 's' : ''} • {isBalanced ? '✓ Balanced' : isOver ? 'Over-allocated' : 'Under-allocated'}
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
+              {positions.length} pos • {isBalanced ? '✓ Balanced' : isOver ? 'Over' : 'Under'}
             </p>
           </div>
         </div>
         
         {/* Progress Bar */}
-        <div className="flex items-center gap-4 flex-1 max-w-sm ml-8">
-          <div className="flex-1 h-2.5 bg-muted/50 rounded-full overflow-hidden">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 sm:max-w-sm sm:ml-8">
+          <div className="flex-1 h-2 sm:h-2.5 bg-muted/50 rounded-full overflow-hidden">
             <div 
               className={cn(
                 "h-full transition-all duration-700 ease-out rounded-full",
@@ -191,7 +193,7 @@ export default function AllocationBuilder() {
             />
           </div>
           <span className={cn(
-            "text-xs font-mono font-medium w-10 text-right",
+            "text-[10px] sm:text-xs font-mono font-medium w-10 text-right flex-shrink-0",
             isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400"
           )}>
             {(100 - totalAllocation).toFixed(1)}%
@@ -200,23 +202,25 @@ export default function AllocationBuilder() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted/20 p-1 h-10 w-fit">
-          <TabsTrigger value="positions" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <Grid3X3 size={14} />
-            Positions
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-4">
+        <TabsList className="bg-muted/20 p-1 h-9 sm:h-10 w-full sm:w-fit grid grid-cols-4 sm:flex">
+          <TabsTrigger value="positions" className="gap-1 sm:gap-2 text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <Grid3X3 size={12} className="sm:w-[14px] sm:h-[14px]" />
+            <span className="hidden xs:inline">Positions</span>
+            <span className="xs:hidden">Pos</span>
           </TabsTrigger>
-          <TabsTrigger value="charts" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <PieChart size={14} />
+          <TabsTrigger value="charts" className="gap-1 sm:gap-2 text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <PieChart size={12} className="sm:w-[14px] sm:h-[14px]" />
             Charts
           </TabsTrigger>
-          <TabsTrigger value="flows" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <GitBranch size={14} />
+          <TabsTrigger value="flows" className="gap-1 sm:gap-2 text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <GitBranch size={12} className="sm:w-[14px] sm:h-[14px]" />
             Flows
           </TabsTrigger>
-          <TabsTrigger value="insights" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <BarChart3 size={14} />
-            Insights
+          <TabsTrigger value="insights" className="gap-1 sm:gap-2 text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <BarChart3 size={12} className="sm:w-[14px] sm:h-[14px]" />
+            <span className="hidden xs:inline">Insights</span>
+            <span className="xs:hidden">Info</span>
           </TabsTrigger>
         </TabsList>
 
@@ -251,11 +255,11 @@ export default function AllocationBuilder() {
         </TabsContent>
 
         {/* Charts Tab */}
-        <TabsContent value="charts" className="space-y-4 mt-2">
+        <TabsContent value="charts" className="space-y-3 sm:space-y-4 mt-2">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs text-muted-foreground">Group by:</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Group by:</span>
             <Select value={groupBy} onValueChange={(v) => setGroupBy(v as typeof groupBy)}>
-              <SelectTrigger className="w-36 h-7 text-xs">
+              <SelectTrigger className="w-28 sm:w-36 h-7 text-[10px] sm:text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -268,7 +272,7 @@ export default function AllocationBuilder() {
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <AllocationDonutChart 
               positions={positions} 
               groupBy={groupBy}
@@ -280,27 +284,27 @@ export default function AllocationBuilder() {
             <ExposureBarChart positions={positions} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <AllocationTreemap positions={positions} />
             <StyleRadarChart positions={positions} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <CurrencySunburstChart positions={positions} />
             <LiquidityFunnelChart positions={positions} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <PositionSizeHistogram positions={positions} />
             <TargetComparisonChart positions={positions} />
           </div>
         </TabsContent>
 
         {/* Flows Tab */}
-        <TabsContent value="flows" className="space-y-4 mt-2">
+        <TabsContent value="flows" className="space-y-3 sm:space-y-4 mt-2">
           <AllocationSankey positions={positions} />
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <AllocationDonutChart 
               positions={positions} 
               groupBy="assetType"
@@ -313,7 +317,7 @@ export default function AllocationBuilder() {
             />
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <CurrencySunburstChart positions={positions} />
             <StyleRadarChart positions={positions} />
           </div>
@@ -321,20 +325,25 @@ export default function AllocationBuilder() {
 
         {/* Insights Tab */}
         <TabsContent value="insights" className="mt-2">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 space-y-4">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-3 sm:gap-4">
+            {/* On mobile, show StructuralInsightsPanel first as a summary */}
+            <div className="lg:hidden">
+              <StructuralInsightsPanel positions={positions} />
+            </div>
+            
+            <div className="lg:col-span-2 space-y-3 sm:space-y-4">
               {/* Geographic Map - Full Width */}
               <GeographicAllocationMap positions={positions} />
               
               {/* Target Comparison - Full Width */}
               <TargetComparisonChart positions={positions} />
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <CurrencySunburstChart positions={positions} />
                 <LiquidityFunnelChart positions={positions} />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <StyleRadarChart positions={positions} />
                 <AllocationDonutChart 
                   positions={positions} 
@@ -343,7 +352,9 @@ export default function AllocationBuilder() {
                 />
               </div>
             </div>
-            <div>
+            
+            {/* Desktop sidebar */}
+            <div className="hidden lg:block">
               <StructuralInsightsPanel positions={positions} />
             </div>
           </div>
