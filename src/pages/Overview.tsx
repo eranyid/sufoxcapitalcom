@@ -78,24 +78,31 @@ export default function Overview() {
   const { tasks } = useCrmTasks();
 
   // Calculate Real vs Nominal metrics
+  // For holdings in base currency (USD), there's no FX impact - Real and Nominal should be the same
+  // The FX difference only matters for:
+  // 1. Holdings in foreign currency (comparing entry FX vs current FX)
+  // 2. Cash in foreign currency (comparing value at different FX rates)
   const adjustedMetrics = useMemo(() => {
     if (!performanceMetrics) return null;
     
     const isNominal = fxMode === 'nominal';
     
-    // Real = unrealizedPL (includes FX)
-    // Nominal = unrealizedPL - fxPL (excludes FX) = marketPL
+    // fxPL from holdings only (calculated from entry vs current FX rates)
+    const holdingsFxPL = performanceMetrics.fxPL;
+    
+    // In Nominal mode: subtract the FX component from unrealized P/L
+    // unrealizedPL = marketPL + fxPL, so marketPL = unrealizedPL - fxPL
     const unrealizedPL = isNominal 
-      ? performanceMetrics.marketPL 
+      ? performanceMetrics.unrealizedPL - holdingsFxPL 
       : performanceMetrics.unrealizedPL;
     
     const totalPL = isNominal
-      ? performanceMetrics.realizedPL + performanceMetrics.marketPL
+      ? performanceMetrics.realizedPL + unrealizedPL
       : performanceMetrics.totalPL;
     
     // Total value adjustment: in nominal mode, we subtract the FX component
     const totalValue = isNominal
-      ? performanceMetrics.totalValue - performanceMetrics.fxPL
+      ? performanceMetrics.totalValue - holdingsFxPL
       : performanceMetrics.totalValue;
     
     return {
