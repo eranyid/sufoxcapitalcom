@@ -3,12 +3,27 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   ReferenceLine, BarChart, Bar, Cell, ComposedChart, Line
 } from 'recharts';
-import { Dice6, Settings2, TrendingUp, TrendingDown, Target, AlertTriangle, Zap, Database, Pencil } from 'lucide-react';
+import { Dice6, Settings2, TrendingUp, TrendingDown, Target, AlertTriangle, Zap, Database, Pencil, GitBranch, Layers } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  AssetParameters,
+  SimulationMode,
+  DataQualityLevel,
+  MultivariateConfig,
+  assessDataQuality,
+  determineSimulationMode,
+  buildMultivariateConfig,
+  runMultivariateSimulation,
+  runUnivariateSimulation,
+  generatePercentilePathsMultivariate,
+  extractAssetParameters,
+  MultivariateSimulationResult,
+} from '@/lib/monteCarloEngine';
 
 interface MonteCarloSimulationProps {
   monthlyReturns: number[];
@@ -18,9 +33,16 @@ interface MonteCarloSimulationProps {
   portfolioVolatility?: number; // Annualized volatility
   portfolioSharpe?: number;   // Sharpe ratio
   riskFreeRate?: number;      // Risk-free rate for calculations
+  // NEW: Asset-level data for multivariate simulation
+  assetReturns?: Record<string, { month: string; return: number }[]>;
+  correlationMatrix?: { tickers: string[]; matrix: number[][] };
+  assetWeights?: Record<string, number>;
+  assetNames?: Record<string, string>;
 }
 
 type InputMode = 'portfolio' | 'manual';
+type SimMode = 'auto' | 'univariate' | 'multivariate';
+type RebalancingMode = 'constant' | 'buy_and_hold';
 
 interface SimulationConfig {
   numSimulations: number;
@@ -94,126 +116,6 @@ function calculateStats(logReturns: number[]): { mean: number; std: number } {
   return { mean, std };
 }
 
-// Box-Muller transform for generating standard normal random numbers
-function generateNormalRandom(): number {
-  const u1 = Math.random();
-  const u2 = Math.random();
-  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-}
-
-// Run Monte Carlo simulation with proper financial modeling
-function runMonteCarloSimulation(
-  initialValue: number,
-  yearsToSimulate: number,
-  annualReturn: number, // Expected annual return (decimal)
-  annualVol: number,    // Annual volatility (decimal)
-  config: SimulationConfig
-): { paths: number[][]; finalValues: number[] } {
-  const { numSimulations, timeStep } = config;
-  
-  // Adjust for time step
-  const stepsPerYear = timeStep === 'monthly' ? 12 : 252;
-  const totalSteps = yearsToSimulate * stepsPerYear;
-  const stepMean = annualReturn / stepsPerYear;
-  const stepStd = annualVol / Math.sqrt(stepsPerYear);
-  
-  const paths: number[][] = [];
-  const finalValues: number[] = [];
-  
-  // Run simulations
-  for (let sim = 0; sim < numSimulations; sim++) {
-    const path: number[] = [initialValue];
-    let value = initialValue;
-    
-    for (let step = 0; step < totalSteps; step++) {
-      // Generate correlated random shock using log-normal model
-      const z = generateNormalRandom();
-      const logReturn = stepMean - 0.5 * stepStd * stepStd + stepStd * z;
-      value = value * Math.exp(logReturn);
-      
-      // Store path at yearly intervals
-      if ((step + 1) % stepsPerYear === 0) {
-        path.push(value);
-      }
-    }
-    
-    paths.push(path);
-    finalValues.push(value);
-  }
-  
-  return { paths, finalValues: finalValues.sort((a, b) => a - b) };
-}
-
-// Get percentile from sorted array
-function getPercentile(sortedValues: number[], percentile: number): number {
-  const index = Math.floor((percentile / 100) * sortedValues.length);
-  return sortedValues[Math.min(index, sortedValues.length - 1)];
-}
-
-// Calculate VaR and CVaR from simulation results
-function calculateRiskMetrics(sortedFinalValues: number[], initialValue: number): { var95: number; cvar95: number } {
-  const n = sortedFinalValues.length;
-  const cutoffIndex = Math.floor(0.05 * n);
-  
-  const p5Value = sortedFinalValues[cutoffIndex];
-  const var95 = ((p5Value - initialValue) / initialValue) * 100;
-  
-  // CVaR is the average of all values below VaR
-  const tailValues = sortedFinalValues.slice(0, cutoffIndex + 1);
-  const avgTailValue = tailValues.reduce((a, b) => a + b, 0) / tailValues.length;
-  const cvar95 = ((avgTailValue - initialValue) / initialValue) * 100;
-  
-  return { var95, cvar95 };
-}
-
-// Generate percentile paths for fan chart
-function generatePercentilePaths(
-  initialValue: number,
-  maxYears: number,
-  annualReturn: number,
-  annualVol: number,
-  config: SimulationConfig
-): PercentilePath[] {
-  const results: PercentilePath[] = [];
-  
-  for (let year = 0; year <= maxYears; year += (year < 10 ? 1 : 5)) {
-    if (year === 0) {
-      results.push({
-        period: 0,
-        p5: initialValue,
-        p10: initialValue,
-        p25: initialValue,
-        p50: initialValue,
-        p75: initialValue,
-        p90: initialValue,
-        p95: initialValue,
-      });
-      continue;
-    }
-    
-    const { finalValues } = runMonteCarloSimulation(
-      initialValue, 
-      year, 
-      annualReturn, 
-      annualVol, 
-      { ...config, numSimulations: Math.min(config.numSimulations, 2000) }
-    );
-    
-    results.push({
-      period: year,
-      p5: getPercentile(finalValues, 5),
-      p10: getPercentile(finalValues, 10),
-      p25: getPercentile(finalValues, 25),
-      p50: getPercentile(finalValues, 50),
-      p75: getPercentile(finalValues, 75),
-      p90: getPercentile(finalValues, 90),
-      p95: getPercentile(finalValues, 95),
-    });
-  }
-  
-  return results;
-}
-
 // Generate distribution histogram
 function generateDistribution(sortedValues: number[], numBins: number = 30): DistributionBin[] {
   const min = sortedValues[0];
@@ -269,10 +171,25 @@ function validateManualInputs(inputs: ManualInputs): ValidationErrors {
   return errors;
 }
 
+function getQualityBadgeProps(level: DataQualityLevel): { variant: "default" | "secondary" | "destructive" | "outline"; label: string; className: string } {
+  switch (level) {
+    case 'high':
+      return { variant: 'default', label: 'High Confidence', className: 'bg-success/20 text-success border-success/30' };
+    case 'medium':
+      return { variant: 'secondary', label: 'Medium Confidence', className: 'bg-warning/20 text-warning border-warning/30' };
+    case 'low':
+      return { variant: 'destructive', label: 'Low Confidence', className: 'bg-destructive/20 text-destructive border-destructive/30' };
+    case 'insufficient':
+      return { variant: 'outline', label: 'Insufficient Data', className: 'bg-muted text-muted-foreground' };
+  }
+}
+
 interface SimulationResults {
   fanChartData: PercentilePath[];
   horizonResults: HorizonResult[];
   distribution: DistributionBin[];
+  mode: SimulationMode;
+  diversificationBenefit?: number;
 }
 
 export function MonteCarloSimulation({ 
@@ -281,13 +198,20 @@ export function MonteCarloSimulation({
   portfolioCAGR,
   portfolioVolatility,
   portfolioSharpe,
-  riskFreeRate = 4.5
+  riskFreeRate = 4.5,
+  assetReturns,
+  correlationMatrix,
+  assetWeights,
+  assetNames,
 }: MonteCarloSimulationProps) {
   const [config, setConfig] = useState<SimulationConfig>(DEFAULT_CONFIG);
   const [inputMode, setInputMode] = useState<InputMode>('portfolio');
+  const [simModeOverride, setSimModeOverride] = useState<SimMode>('auto');
+  const [rebalancing, setRebalancing] = useState<RebalancingMode>('constant');
   const [isRunning, setIsRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const [results, setResults] = useState<SimulationResults | null>(null);
+  const [showAssetPanel, setShowAssetPanel] = useState(false);
   
   // Calculate stats from monthly returns (fallback if no portfolio stats provided)
   const logReturns = useMemo(() => toLogReturns(monthlyReturns), [monthlyReturns]);
@@ -333,6 +257,52 @@ export function MonteCarloSimulation({
     ? derivedSharpe 
     : (manualInputs.volatility > 0 ? (manualInputs.cagr - riskFreeRate) / manualInputs.volatility : 0);
   
+  // Build asset parameters for multivariate simulation
+  const assetParams = useMemo((): AssetParameters[] => {
+    if (!assetReturns || !assetWeights || !assetNames) return [];
+    return extractAssetParameters(assetReturns, assetWeights, assetNames);
+  }, [assetReturns, assetWeights, assetNames]);
+  
+  // Assess data quality
+  const dataQuality = useMemo(() => assessDataQuality(assetParams), [assetParams]);
+  
+  // Determine simulation mode
+  const autoSimMode = useMemo((): SimulationMode => {
+    if (!correlationMatrix || correlationMatrix.tickers.length < 2) {
+      return { type: 'univariate', reason: 'Correlation matrix not available' };
+    }
+    return determineSimulationMode(assetParams, correlationMatrix.matrix);
+  }, [assetParams, correlationMatrix]);
+  
+  // Effective simulation mode (considering override)
+  const effectiveSimMode = useMemo((): SimulationMode => {
+    if (simModeOverride === 'auto') return autoSimMode;
+    if (simModeOverride === 'multivariate') {
+      if (autoSimMode.type === 'univariate' && autoSimMode.reason?.includes('Insufficient')) {
+        return autoSimMode; // Can't override insufficient data
+      }
+      return { type: 'multivariate' };
+    }
+    return { type: 'univariate', reason: 'Manual override' };
+  }, [simModeOverride, autoSimMode]);
+  
+  // Build multivariate config
+  const multivariateConfig = useMemo((): MultivariateConfig | null => {
+    if (effectiveSimMode.type !== 'multivariate') return null;
+    if (!correlationMatrix || correlationMatrix.tickers.length < 2) return null;
+    
+    // Filter assets to match correlation matrix
+    const filteredAssets = assetParams.filter(a => correlationMatrix.tickers.includes(a.ticker));
+    if (filteredAssets.length < 2) return null;
+    
+    // Reorder assets to match correlation matrix order
+    const orderedAssets = correlationMatrix.tickers
+      .map(t => filteredAssets.find(a => a.ticker === t))
+      .filter((a): a is AssetParameters => a !== undefined);
+    
+    return buildMultivariateConfig(orderedAssets, correlationMatrix.matrix, rebalancing);
+  }, [effectiveSimMode.type, correlationMatrix, assetParams, rebalancing]);
+  
   // Run simulation on demand
   const runSimulation = useCallback(() => {
     if (monthlyReturns.length < 3 && inputMode === 'portfolio') return;
@@ -342,59 +312,120 @@ export function MonteCarloSimulation({
     
     // Use setTimeout to allow UI to update before heavy computation
     setTimeout(() => {
+      const stepsPerYear = config.timeStep === 'monthly' ? 12 : 252;
+      const useMultivariate = effectiveSimMode.type === 'multivariate' && multivariateConfig;
+      
       // Generate fan chart data
-      const fanChartData = generatePercentilePaths(
-        effectiveValue, 
-        65, 
-        effectiveCAGR / 100, 
-        effectiveVolatility / 100, 
-        config
+      const fanChartData = generatePercentilePathsMultivariate(
+        useMultivariate ? multivariateConfig : null,
+        effectiveValue,
+        65,
+        effectiveCAGR / 100,
+        effectiveVolatility / 100,
+        Math.min(config.numSimulations, 2000),
+        stepsPerYear
       );
       
       // Generate horizon results
-      const horizonResults = TIME_HORIZONS.map(horizon => {
-        const { finalValues } = runMonteCarloSimulation(
-          effectiveValue, 
-          horizon, 
-          effectiveCAGR / 100, 
-          effectiveVolatility / 100, 
-          config
-        );
-        const { var95, cvar95 } = calculateRiskMetrics(finalValues, effectiveValue);
+      const horizonResults: HorizonResult[] = TIME_HORIZONS.map(horizon => {
+        let simResult: MultivariateSimulationResult;
         
-        const probGain = (finalValues.filter(v => v > effectiveValue).length / finalValues.length) * 100;
-        const probLoss = 100 - probGain;
+        if (useMultivariate) {
+          const result = runMultivariateSimulation(
+            multivariateConfig!,
+            effectiveValue,
+            horizon,
+            config.numSimulations,
+            stepsPerYear
+          );
+          if (!result) {
+            // Fallback to univariate
+            simResult = runUnivariateSimulation(
+              effectiveValue,
+              effectiveCAGR / 100,
+              effectiveVolatility / 100,
+              horizon,
+              config.numSimulations,
+              stepsPerYear
+            );
+          } else {
+            simResult = result;
+          }
+        } else {
+          simResult = runUnivariateSimulation(
+            effectiveValue,
+            effectiveCAGR / 100,
+            effectiveVolatility / 100,
+            horizon,
+            config.numSimulations,
+            stepsPerYear
+          );
+        }
         
         return {
           horizon,
-          p5: getPercentile(finalValues, 5),
-          p25: getPercentile(finalValues, 25),
-          p50: getPercentile(finalValues, 50),
-          p75: getPercentile(finalValues, 75),
-          p95: getPercentile(finalValues, 95),
-          probGain,
-          probLoss,
-          var95,
-          cvar95,
-          expectedValue: finalValues.reduce((a, b) => a + b, 0) / finalValues.length,
+          p5: simResult.percentiles.p5,
+          p25: simResult.percentiles.p25,
+          p50: simResult.percentiles.p50,
+          p75: simResult.percentiles.p75,
+          p95: simResult.percentiles.p95,
+          probGain: simResult.riskMetrics.probGain,
+          probLoss: simResult.riskMetrics.probLoss,
+          var95: simResult.riskMetrics.var95,
+          cvar95: simResult.riskMetrics.cvar95,
+          expectedValue: simResult.finalValues.reduce((a, b) => a + b, 0) / simResult.finalValues.length,
         };
       });
       
       // Distribution for 20-year horizon
-      const { finalValues: distValues } = runMonteCarloSimulation(
-        effectiveValue, 
-        20, 
-        effectiveCAGR / 100, 
-        effectiveVolatility / 100, 
-        config
-      );
-      const distribution = generateDistribution(distValues, 40);
+      let distResult: MultivariateSimulationResult;
+      let diversificationBenefit: number | undefined;
       
-      setResults({ fanChartData, horizonResults, distribution });
+      if (useMultivariate) {
+        const result = runMultivariateSimulation(
+          multivariateConfig!,
+          effectiveValue,
+          20,
+          config.numSimulations,
+          stepsPerYear
+        );
+        if (result) {
+          distResult = result;
+          diversificationBenefit = result.diversificationBenefit;
+        } else {
+          distResult = runUnivariateSimulation(
+            effectiveValue,
+            effectiveCAGR / 100,
+            effectiveVolatility / 100,
+            20,
+            config.numSimulations,
+            stepsPerYear
+          );
+        }
+      } else {
+        distResult = runUnivariateSimulation(
+          effectiveValue,
+          effectiveCAGR / 100,
+          effectiveVolatility / 100,
+          20,
+          config.numSimulations,
+          stepsPerYear
+        );
+      }
+      
+      const distribution = generateDistribution(distResult.finalValues, 40);
+      
+      setResults({ 
+        fanChartData, 
+        horizonResults, 
+        distribution, 
+        mode: effectiveSimMode,
+        diversificationBenefit,
+      });
       setHasRun(true);
       setIsRunning(false);
     }, 50);
-  }, [monthlyReturns.length, effectiveValue, effectiveCAGR, effectiveVolatility, config, inputMode, hasValidationErrors]);
+  }, [monthlyReturns.length, effectiveValue, effectiveCAGR, effectiveVolatility, config, inputMode, hasValidationErrors, effectiveSimMode, multivariateConfig]);
   
   // Update manual inputs when portfolio values change
   const syncWithPortfolio = useCallback(() => {
@@ -431,6 +462,8 @@ export function MonteCarloSimulation({
     );
   }
 
+  const qualityBadge = getQualityBadgeProps(dataQuality.level);
+
   return (
     <div className="space-y-2">
       {/* Header with Mode Toggle & Stats */}
@@ -441,16 +474,24 @@ export function MonteCarloSimulation({
             Monte Carlo Risk Engine
             {isRunning && <Zap className="h-3 w-3 animate-pulse text-warning" />}
           </span>
-          <span className="text-[9px] text-muted-foreground font-mono">
-            {config.numSimulations.toLocaleString()} simulations • {config.timeStep} steps
-          </span>
+          <div className="flex items-center gap-2">
+            {effectiveSimMode.type === 'multivariate' && (
+              <Badge variant="outline" className="text-[8px] bg-primary/10 text-primary border-primary/30">
+                <GitBranch className="h-2.5 w-2.5 mr-1" />
+                Multivariate
+              </Badge>
+            )}
+            <span className="text-[9px] text-muted-foreground font-mono">
+              {config.numSimulations.toLocaleString()} simulations • {config.timeStep} steps
+            </span>
+          </div>
         </div>
         
         {/* Mode Toggle */}
         <div className="px-3 py-2 border-b border-border bg-muted/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Mode:</Label>
+              <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Input:</Label>
               <div className="flex h-6 bg-muted rounded-sm p-0.5">
                 <Button
                   variant="ghost"
@@ -464,7 +505,7 @@ export function MonteCarloSimulation({
                   )}
                 >
                   <Database className="h-3 w-3" />
-                  Use Portfolio Data
+                  Portfolio Data
                 </Button>
                 <Button
                   variant="ghost"
@@ -478,25 +519,187 @@ export function MonteCarloSimulation({
                   )}
                 >
                   <Pencil className="h-3 w-3" />
-                  Manual Input
+                  Manual
                 </Button>
               </div>
+              
+              {/* Simulation Mode Selector */}
+              {assetParams.length >= 2 && (
+                <>
+                  <div className="h-4 w-px bg-border mx-2" />
+                  <Label className="text-[9px] uppercase tracking-wider text-muted-foreground">Engine:</Label>
+                  <div className="flex h-6 bg-muted rounded-sm p-0.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSimModeOverride('auto')}
+                      className={cn(
+                        "text-[9px] h-5 px-2 rounded-sm",
+                        simModeOverride === 'auto' 
+                          ? "bg-background text-foreground shadow-sm" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Auto
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSimModeOverride('multivariate')}
+                      disabled={dataQuality.level === 'insufficient'}
+                      className={cn(
+                        "text-[9px] h-5 px-2 gap-1 rounded-sm",
+                        simModeOverride === 'multivariate' 
+                          ? "bg-background text-foreground shadow-sm" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <GitBranch className="h-3 w-3" />
+                      Multi
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSimModeOverride('univariate')}
+                      className={cn(
+                        "text-[9px] h-5 px-2 gap-1 rounded-sm",
+                        simModeOverride === 'univariate' 
+                          ? "bg-background text-foreground shadow-sm" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Layers className="h-3 w-3" />
+                      Uni
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
-            {inputMode === 'manual' && (
-              <button 
-                onClick={syncWithPortfolio}
-                className="text-[9px] text-primary hover:underline"
+            
+            <div className="flex items-center gap-2">
+              {/* Data Quality Badge */}
+              {assetParams.length >= 2 && (
+                <Badge variant={qualityBadge.variant} className={cn("text-[8px]", qualityBadge.className)}>
+                  {qualityBadge.label} ({dataQuality.minMonths}mo)
+                </Badge>
+              )}
+              
+              {inputMode === 'manual' && (
+                <button 
+                  onClick={syncWithPortfolio}
+                  className="text-[9px] text-primary hover:underline"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Mode Description */}
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-[8px] text-muted-foreground">
+              {effectiveSimMode.type === 'multivariate' 
+                ? `Multivariate GBM with ${assetParams.length} correlated assets (EnCorr methodology)`
+                : 'Portfolio-level GBM simulation'}
+              {effectiveSimMode.reason && effectiveSimMode.type === 'univariate' && ` — ${effectiveSimMode.reason}`}
+            </p>
+            
+            {assetParams.length >= 2 && (
+              <button
+                onClick={() => setShowAssetPanel(!showAssetPanel)}
+                className="text-[8px] text-primary hover:underline"
               >
-                Reset to portfolio values
+                {showAssetPanel ? 'Hide' : 'Show'} Asset Parameters
               </button>
             )}
           </div>
-          <p className="text-[8px] text-muted-foreground mt-1">
-            {inputMode === 'portfolio' 
-              ? 'Inputs are derived from your current portfolio statistics.' 
-              : 'You can experiment with your own assumptions.'}
-          </p>
         </div>
+        
+        {/* Asset Parameters Panel (Collapsible) */}
+        {showAssetPanel && assetParams.length >= 2 && (
+          <div className="px-3 py-2 border-b border-border bg-muted/5">
+            <div className="text-[9px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+              Asset Parameters (Annualized)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[9px]">
+                <thead>
+                  <tr className="text-muted-foreground">
+                    <th className="text-left py-1 px-2">Ticker</th>
+                    <th className="text-right py-1 px-2">Weight</th>
+                    <th className="text-right py-1 px-2">Mean (μ)</th>
+                    <th className="text-right py-1 px-2">Vol (σ)</th>
+                    <th className="text-right py-1 px-2">Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assetParams.map(asset => (
+                    <tr key={asset.ticker} className="border-t border-border/30">
+                      <td className="py-1 px-2 font-mono font-medium text-primary">{asset.ticker}</td>
+                      <td className="py-1 px-2 text-right font-mono">{(asset.weight * 100).toFixed(1)}%</td>
+                      <td className={cn(
+                        "py-1 px-2 text-right font-mono",
+                        asset.meanReturn >= 0 ? "text-success" : "text-destructive"
+                      )}>
+                        {(asset.meanReturn * 100).toFixed(1)}%
+                      </td>
+                      <td className="py-1 px-2 text-right font-mono text-warning">
+                        {(asset.volatility * 100).toFixed(1)}%
+                      </td>
+                      <td className={cn(
+                        "py-1 px-2 text-right font-mono",
+                        asset.monthsOfData >= 12 ? "text-success" : asset.monthsOfData >= 6 ? "text-warning" : "text-destructive"
+                      )}>
+                        {asset.monthsOfData}mo
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Mini Correlation Matrix */}
+            {correlationMatrix && correlationMatrix.tickers.length >= 2 && (
+              <div className="mt-3">
+                <div className="text-[9px] font-medium text-muted-foreground mb-1 uppercase tracking-wider">
+                  Correlation Matrix
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="text-[8px]">
+                    <thead>
+                      <tr>
+                        <th className="py-1 px-1"></th>
+                        {correlationMatrix.tickers.slice(0, 6).map(t => (
+                          <th key={t} className="py-1 px-1 font-mono text-muted-foreground">{t.slice(0, 4)}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {correlationMatrix.tickers.slice(0, 6).map((ticker, i) => (
+                        <tr key={ticker}>
+                          <td className="py-1 px-1 font-mono text-primary">{ticker.slice(0, 4)}</td>
+                          {correlationMatrix.matrix[i].slice(0, 6).map((corr, j) => (
+                            <td 
+                              key={j} 
+                              className={cn(
+                                "py-1 px-1 text-center font-mono",
+                                i === j ? "text-muted-foreground" :
+                                corr >= 0.5 ? "text-success" :
+                                corr <= -0.5 ? "text-destructive" : ""
+                              )}
+                            >
+                              {corr.toFixed(2)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Key Stats / Inputs */}
         <div className="p-3 grid grid-cols-2 md:grid-cols-6 gap-3 border-b border-border">
@@ -570,31 +773,43 @@ export function MonteCarloSimulation({
             )}
           </div>
           
-          {/* Data Points */}
+          {/* Data Points / Assets */}
           <div className="space-y-0.5">
-            <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Data Points</div>
+            <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
+              {effectiveSimMode.type === 'multivariate' ? 'Assets' : 'Data Points'}
+            </div>
             <div className="font-mono text-sm">
-              {inputMode === 'portfolio' ? `${monthlyReturns.length} months` : '—'}
+              {effectiveSimMode.type === 'multivariate' 
+                ? `${assetParams.length} assets`
+                : inputMode === 'portfolio' ? `${monthlyReturns.length} months` : '—'
+              }
             </div>
           </div>
           
-          {/* Sharpe Estimate */}
+          {/* Sharpe Estimate / Diversification */}
           <div className="space-y-0.5">
-            <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Sharpe Est.</div>
+            <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
+              {results?.diversificationBenefit !== undefined ? 'Div. Benefit' : 'Sharpe Est.'}
+            </div>
             <div className="font-mono text-sm">
-              {effectiveSharpe !== 0 ? effectiveSharpe.toFixed(2) : 'N/A'}
+              {results?.diversificationBenefit !== undefined 
+                ? `${results.diversificationBenefit.toFixed(1)}%`
+                : effectiveSharpe !== 0 ? effectiveSharpe.toFixed(2) : 'N/A'
+              }
             </div>
           </div>
           
           {/* Model */}
           <div className="space-y-0.5">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Model</div>
-            <div className="font-mono text-[10px] text-muted-foreground">Log-Normal GBM</div>
+            <div className="font-mono text-[10px] text-muted-foreground">
+              {effectiveSimMode.type === 'multivariate' ? 'MV-GBM + Cholesky' : 'Log-Normal GBM'}
+            </div>
           </div>
         </div>
         
         {/* Configuration Panel with Run Button */}
-        <div className="p-3 grid grid-cols-2 md:grid-cols-5 gap-3 bg-muted/20">
+        <div className="p-3 grid grid-cols-2 md:grid-cols-6 gap-3 bg-muted/20">
           <div className="space-y-1">
             <Label className="text-[9px] uppercase tracking-wider">Simulations</Label>
             <Select 
@@ -629,6 +844,25 @@ export function MonteCarloSimulation({
             </Select>
           </div>
           
+          {/* Rebalancing (only for multivariate) */}
+          {effectiveSimMode.type === 'multivariate' && (
+            <div className="space-y-1">
+              <Label className="text-[9px] uppercase tracking-wider">Rebalancing</Label>
+              <Select 
+                value={rebalancing} 
+                onValueChange={(v: RebalancingMode) => setRebalancing(v)}
+              >
+                <SelectTrigger className="h-7 text-[10px] font-mono">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="constant">Constant Weights</SelectItem>
+                  <SelectItem value="buy_and_hold">Buy & Hold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="space-y-1">
             <Label className="text-[9px] uppercase tracking-wider">&nbsp;</Label>
             <Button 
@@ -651,7 +885,7 @@ export function MonteCarloSimulation({
             </Button>
           </div>
           
-          <div className="col-span-2 flex items-end">
+          <div className={cn("flex items-end", effectiveSimMode.type === 'multivariate' ? "" : "col-span-2")}>
             <div className="text-[8px] text-muted-foreground leading-tight">
               <Settings2 className="h-3 w-3 inline mr-1" />
               {inputMode === 'portfolio' 
@@ -671,6 +905,12 @@ export function MonteCarloSimulation({
           <p className="text-muted-foreground text-xs">
             Configure your parameters above and click "Run Simulation" to generate Monte Carlo projections.
           </p>
+          {effectiveSimMode.type === 'multivariate' && (
+            <p className="text-[10px] text-primary mt-2">
+              <GitBranch className="h-3 w-3 inline mr-1" />
+              Multivariate engine ready with {assetParams.length} correlated assets
+            </p>
+          )}
         </div>
       ) : (
         <>
@@ -679,7 +919,14 @@ export function MonteCarloSimulation({
       <div className="bloomberg-panel">
         <div className="bloomberg-header">
           <span className="bloomberg-header-title">Monte Carlo Projection</span>
-          <span className="text-[9px] text-muted-foreground font-mono">65-Year Horizon</span>
+          <div className="flex items-center gap-2">
+            {results?.mode.type === 'multivariate' && (
+              <Badge variant="outline" className="text-[8px] bg-primary/10 text-primary border-primary/30">
+                Multivariate
+              </Badge>
+            )}
+            <span className="text-[9px] text-muted-foreground font-mono">65-Year Horizon</span>
+          </div>
         </div>
         <div className="p-3">
           <div className="h-[280px]">
@@ -858,12 +1105,18 @@ export function MonteCarloSimulation({
       {/* Methodology Footer */}
       <div className="px-1 py-2 text-[8px] text-muted-foreground leading-relaxed border-t border-border">
         <AlertTriangle className="h-3 w-3 inline mr-1 text-warning" />
-        <strong>Model:</strong> Geometric Brownian Motion (GBM) with log-normal returns. 
+        <strong>Model:</strong> {results?.mode.type === 'multivariate' 
+          ? `Multivariate GBM with Cholesky decomposition (${assetParams.length} assets, ${rebalancing === 'constant' ? 'constant rebalancing' : 'buy-and-hold'})` 
+          : 'Geometric Brownian Motion (GBM) with log-normal returns'
+        }. 
         <strong> Parameters:</strong> μ = {formatPercent(effectiveCAGR)} p.a., σ = {effectiveVolatility.toFixed(1)}% p.a.
         <strong> Source:</strong> {inputMode === 'portfolio' ? 'Live portfolio data' : 'Manual input'}.
-        <strong> Method:</strong> {config.numSimulations.toLocaleString()} independent paths, {config.timeStep} time steps.
-        <strong> Disclaimer:</strong> Past performance does not guarantee future results. This simulation assumes stationary parameters and does not account for regime changes, fat tails, or liquidity constraints.
+        {results?.diversificationBenefit !== undefined && results.diversificationBenefit > 0 && (
+          <> <strong>Diversification:</strong> {results.diversificationBenefit.toFixed(1)}% risk reduction vs. uncorrelated.</>
+        )}
+        {' '}Past performance is not indicative of future results. This simulation does not constitute investment advice.
       </div>
+
       </>
       )}
     </div>
