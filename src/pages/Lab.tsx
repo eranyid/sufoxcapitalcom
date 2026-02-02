@@ -10,6 +10,10 @@ import {
   AlertCircle,
   Undo2,
   Redo2,
+  Blocks,
+  Settings2,
+  ChevronDown,
+  X,
 } from 'lucide-react';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { cn } from '@/lib/utils';
@@ -35,6 +39,7 @@ import {
 } from '@/lib/pipelineValidation';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { LabBlockLibrary, LIBRARY_ICON_MAP } from '@/components/lab/LabBlockLibrary';
 import { LabCanvas } from '@/components/lab/LabCanvas';
 import { LabInspector } from '@/components/lab/LabInspector';
@@ -44,6 +49,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   DndContext,
   DragOverlay,
@@ -129,6 +135,9 @@ export default function Lab() {
   const [activeDragBlockId, setActiveDragBlockId] = useState<string | null>(null);
   const [isOverCanvas, setIsOverCanvas] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
+  const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   // Compute validation errors whenever blocks change
   useEffect(() => {
@@ -437,23 +446,23 @@ export default function Lab() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
+        <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] flex flex-col bg-background">
           {/* Toolbar */}
-          <div className="border-b border-border bg-card px-4 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <LabIcon className="h-5 w-5 text-primary" />
+          <div className="border-b border-border bg-card px-2 sm:px-4 py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <LabIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                 <Input
                   value={pipelineName}
                   onChange={(e) => setPipelineName(e.target.value)}
-                  className="h-8 w-48 text-sm font-medium bg-transparent border-none focus-visible:ring-1"
-                  placeholder="Pipeline name..."
+                  className="h-7 sm:h-8 w-24 sm:w-48 text-xs sm:text-sm font-medium bg-transparent border-none focus-visible:ring-1"
+                  placeholder="Pipeline..."
                 />
               </div>
-              {/* Data source indicator */}
+              {/* Data source indicator - hide on mobile */}
               <Badge 
                 variant={availableAssets.length > 0 ? "default" : "secondary"} 
-                className="text-[10px] gap-1"
+                className="text-[9px] sm:text-[10px] gap-1 hidden sm:flex"
               >
                 <Database className="h-3 w-3" />
                 {availableAssets.length > 0 
@@ -463,98 +472,132 @@ export default function Lab() {
               </Badge>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Undo/Redo buttons */}
-              <div className="flex items-center border-r border-border pr-2 mr-1">
+            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Undo/Redo buttons - icons only on mobile */}
+              <div className="flex items-center border-r border-border pr-1 sm:pr-2 mr-0.5 sm:mr-1">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0"
+                  className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                   onClick={() => { undo(); toast.success('Undo'); }}
                   disabled={!canUndo}
                   title="Undo (Ctrl+Z)"
                 >
-                  <Undo2 className="h-4 w-4" />
+                  <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0"
+                  className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                   onClick={() => { redo(); toast.success('Redo'); }}
                   disabled={!canRedo}
                   title="Redo (Ctrl+Shift+Z)"
                 >
-                  <Redo2 className="h-4 w-4" />
+                  <Redo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
-              <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8">
-                    <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
-                    Load
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Load Pipeline</DialogTitle>
-                    <DialogDescription>
-                      Select a saved pipeline to load
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-2 mt-4">
-                    {savedPipelines.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        No saved pipelines yet
-                      </p>
-                    ) : (
-                      savedPipelines.map((pipeline) => (
-                        <div 
-                          key={pipeline.id}
-                          className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                        >
-                          <button
-                            onClick={() => handleLoad(pipeline)}
-                            className="flex-1 text-left"
-                          >
-                            <div className="text-sm font-medium">{pipeline.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {pipeline.blocks.length} blocks • Updated {new Date(pipeline.updatedAt).toLocaleDateString()}
+              
+              {/* Load/Save/Clear - Dropdown on mobile */}
+              {isMobile ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 px-2">
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setLoadDialogOpen(true)}>
+                      <FolderOpen className="h-3.5 w-3.5 mr-2" />
+                      Load
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSave}>
+                      <Save className="h-3.5 w-3.5 mr-2" />
+                      Save
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={handleClear}
+                      disabled={blocks.length === 0 && !result}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-2" />
+                      Clear
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8">
+                        <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
+                        Load
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Load Pipeline</DialogTitle>
+                        <DialogDescription>
+                          Select a saved pipeline to load
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-2 mt-4">
+                        {savedPipelines.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-8">
+                            No saved pipelines yet
+                          </p>
+                        ) : (
+                          savedPipelines.map((pipeline) => (
+                            <div 
+                              key={pipeline.id}
+                              className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                            >
+                              <button
+                                onClick={() => handleLoad(pipeline)}
+                                className="flex-1 text-left"
+                              >
+                                <div className="text-sm font-medium">{pipeline.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {pipeline.blocks.length} blocks • Updated {new Date(pipeline.updatedAt).toLocaleDateString()}
+                                </div>
+                              </button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteSaved(pipeline.id)}
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
-                          </button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteSaved(pipeline.id)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
+                          ))
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
 
-              <Button variant="outline" size="sm" className="h-8" onClick={handleSave}>
-                <Save className="h-3.5 w-3.5 mr-1.5" />
-                Save
-              </Button>
+                  <Button variant="outline" size="sm" className="h-8" onClick={handleSave}>
+                    <Save className="h-3.5 w-3.5 mr-1.5" />
+                    Save
+                  </Button>
 
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-muted-foreground hover:text-destructive hover:border-destructive/50" 
-                onClick={handleClear}
-                disabled={blocks.length === 0 && !result}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                Clear
-              </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 text-muted-foreground hover:text-destructive hover:border-destructive/50" 
+                    onClick={handleClear}
+                    disabled={blocks.length === 0 && !result}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    Clear
+                  </Button>
+                </>
+              )}
 
               {/* Run button with validation indicator */}
-              <div className="flex items-center gap-2">
-                {validationErrors.length > 0 && (
+              <div className="flex items-center gap-1 sm:gap-2">
+                {validationErrors.length > 0 && !isMobile && (
                   <div className={cn(
                     "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium",
                     validationErrors.some(e => e.severity === 'error')
@@ -571,23 +614,23 @@ export default function Lab() {
                 <Button 
                   size="sm" 
                   className={cn(
-                    "h-8",
+                    "h-7 sm:h-8 px-2 sm:px-3",
                     validationErrors.some(e => e.severity === 'error') && "opacity-80"
                   )}
                   onClick={handleRun}
                   disabled={blocks.length === 0 || isRunning || validationErrors.some(e => e.severity === 'error')}
                 >
-                  <Play className="h-3.5 w-3.5 mr-1.5" />
-                  Run
+                  <Play className="h-3.5 w-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Run</span>
                 </Button>
               </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Left Panel - Block Library */}
-            <div className="w-56 shrink-0">
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+            {/* Left Panel - Block Library (Desktop only, Sheet on mobile) */}
+            <div className="hidden md:block w-56 shrink-0">
               <LabBlockLibrary 
                 onAddBlock={handleAddBlock}
                 onLoadPreset={handleLoadPreset}
@@ -600,7 +643,12 @@ export default function Lab() {
                 <LabCanvas
                   blocks={blocks}
                   selectedBlockId={selectedBlockId}
-                  onSelectBlock={setSelectedBlockId}
+                  onSelectBlock={(id) => {
+                    setSelectedBlockId(id);
+                    if (id && isMobile) {
+                      setMobileInspectorOpen(true);
+                    }
+                  }}
                   onRemoveBlock={handleRemoveBlock}
                   onDuplicateBlock={handleDuplicateBlock}
                   onReorderBlocks={handleReorderBlocks}
@@ -617,8 +665,8 @@ export default function Lab() {
               />
             </div>
 
-            {/* Right Panel - Inspector */}
-            <div className="w-52 shrink-0">
+            {/* Right Panel - Inspector (Desktop only) */}
+            <div className="hidden md:block w-52 shrink-0">
               <LabInspector
                 selectedBlock={selectedBlock}
                 onUpdateBlock={handleUpdateBlock}
@@ -627,6 +675,74 @@ export default function Lab() {
               />
             </div>
           </div>
+          
+          {/* Mobile FABs */}
+          {isMobile && (
+            <div className="fixed bottom-20 right-4 flex flex-col gap-2 z-50">
+              {/* Add Block FAB */}
+              <Sheet open={mobileLibraryOpen} onOpenChange={setMobileLibraryOpen}>
+                <SheetTrigger asChild>
+                  <Button 
+                    size="lg" 
+                    className="h-12 w-12 rounded-full shadow-lg"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[70vh]">
+                  <SheetHeader className="pb-2">
+                    <SheetTitle className="flex items-center gap-2">
+                      <Blocks className="h-4 w-4" />
+                      Block Library
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="overflow-auto h-[calc(100%-3rem)]">
+                    <LabBlockLibrary 
+                      onAddBlock={(type) => {
+                        handleAddBlock(type);
+                        setMobileLibraryOpen(false);
+                      }}
+                      onLoadPreset={(presetId) => {
+                        handleLoadPreset(presetId);
+                        setMobileLibraryOpen(false);
+                      }}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+              
+              {/* Inspector FAB (only when block selected) */}
+              {selectedBlockId && (
+                <Sheet open={mobileInspectorOpen} onOpenChange={setMobileInspectorOpen}>
+                  <SheetTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      size="lg" 
+                      className="h-12 w-12 rounded-full shadow-lg bg-card"
+                    >
+                      <Settings2 className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[85vw] sm:w-80">
+                    <SheetHeader className="pb-2">
+                      <SheetTitle className="flex items-center gap-2">
+                        <Settings2 className="h-4 w-4" />
+                        Block Settings
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="overflow-auto h-[calc(100%-3rem)]">
+                      <LabInspector
+                        selectedBlock={selectedBlock}
+                        onUpdateBlock={handleUpdateBlock}
+                        availableAssets={availableAssets}
+                        pipelineBlocks={blocks}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Drag Overlay */}
