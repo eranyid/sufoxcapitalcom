@@ -20,6 +20,7 @@ import { PositionSizeHistogram } from '@/components/construction/allocation/Posi
 import { StructuralInsightsPanel } from '@/components/construction/allocation/StructuralInsightsPanel';
 import { StyleRadarChart } from '@/components/construction/allocation/StyleRadarChart';
 import { GeographicAllocationMap } from '@/components/construction/allocation/GeographicAllocationMap';
+import { LiquidityFunnelChart } from '@/components/construction/allocation/LiquidityFunnelChart';
 import { calculateTotalAllocation } from '@/lib/allocationAnalytics';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -282,7 +283,10 @@ export default function AllocationBuilder() {
             <StyleRadarChart positions={positions} />
           </div>
 
-          <PositionSizeHistogram positions={positions} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <PositionSizeHistogram positions={positions} />
+            <LiquidityFunnelChart positions={positions} />
+          </div>
         </TabsContent>
 
         {/* Flows Tab */}
