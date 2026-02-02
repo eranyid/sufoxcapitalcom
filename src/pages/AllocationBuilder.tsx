@@ -81,117 +81,135 @@ export default function AllocationBuilder() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link 
-            to="/construction" 
-            className="p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-          >
-            <ArrowLeft size={18} className="text-muted-foreground" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Layers className="text-primary" size={20} />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold">Portfolio Construction</h1>
-              <p className="text-xs text-muted-foreground font-mono">
-                ALLOCATION-ONLY BUILDER • NO MARKET DATA
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleLoadSample}
-            className="h-8 text-xs"
-          >
-            <RotateCcw size={14} className="mr-1.5" />
-            Load Sample
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleClearAll} 
-            className="h-8 text-xs text-destructive hover:text-destructive"
-          >
-            <Trash2 size={14} className="mr-1.5" />
-            Clear All
-          </Button>
-          <AddPositionDialog 
-            onAdd={handleAddPosition} 
-            existingAllocation={totalAllocation}
-          />
-        </div>
-      </div>
-
-      {/* Allocation Summary Bar */}
-      <Card className="border-border/50 bg-card/50">
-        <CardContent className="py-3 px-4">
+    <div className="space-y-5">
+      {/* Header Card */}
+      <Card className="border-border/50 bg-gradient-to-br from-card via-card to-muted/20">
+        <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isBalanced ? (
-                <CheckCircle2 size={20} className="text-emerald-500" />
-              ) : (
-                <AlertTriangle size={20} className={isOver ? "text-destructive" : "text-amber-500"} />
-              )}
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Total Allocation</span>
-                  <span className={cn(
-                    "font-mono font-semibold px-2 py-0.5 rounded text-sm",
-                    isBalanced ? "bg-emerald-500/20 text-emerald-400" :
-                    isOver ? "bg-destructive/20 text-destructive" : 
-                    "bg-amber-500/20 text-amber-400"
-                  )}>
-                    {totalAllocation.toFixed(1)}%
-                  </span>
+            <div className="flex items-center gap-4">
+              <Link 
+                to="/construction" 
+                className="p-2.5 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 transition-all hover:scale-105"
+                title="Back to Construction"
+              >
+                <ArrowLeft size={16} className="text-muted-foreground" />
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
+                  <Layers className="text-primary" size={22} />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {positions.length} positions • {isBalanced ? 'Balanced' : isOver ? 'Over-allocated' : 'Under-allocated'}
-                </p>
+                <div>
+                  <h1 className="text-lg font-bold tracking-tight">Portfolio Allocation</h1>
+                  <p className="text-[11px] text-muted-foreground font-mono tracking-wide">
+                    TARGET WEIGHTS BUILDER
+                  </p>
+                </div>
               </div>
             </div>
-            
-            {/* Progress Bar */}
-            <div className="flex items-center gap-3 flex-1 max-w-md ml-8">
-              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className={cn(
-                    "h-full transition-all duration-500 rounded-full",
-                    isBalanced ? "bg-emerald-500" :
-                    isOver ? "bg-destructive" : "bg-amber-500"
-                  )}
-                  style={{ width: `${Math.min(totalAllocation, 100)}%` }}
-                />
-              </div>
-              <span className="text-xs text-muted-foreground font-mono w-8">%</span>
+
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleLoadSample}
+                className="h-8 text-xs hover:bg-muted"
+              >
+                <RotateCcw size={14} className="mr-1.5" />
+                Sample
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleClearAll} 
+                className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 size={14} className="mr-1.5" />
+                Clear
+              </Button>
+              <div className="w-px h-6 bg-border/50" />
+              <AddPositionDialog 
+                onAdd={handleAddPosition} 
+                existingAllocation={totalAllocation}
+              />
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Allocation Summary Bar */}
+      <div className={cn(
+        "flex items-center justify-between px-4 py-3 rounded-xl border transition-all",
+        isBalanced 
+          ? "bg-emerald-500/5 border-emerald-500/20" 
+          : isOver 
+            ? "bg-destructive/5 border-destructive/20"
+            : "bg-amber-500/5 border-amber-500/20"
+      )}>
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "w-9 h-9 rounded-lg flex items-center justify-center",
+            isBalanced ? "bg-emerald-500/20" : isOver ? "bg-destructive/20" : "bg-amber-500/20"
+          )}>
+            {isBalanced ? (
+              <CheckCircle2 size={18} className="text-emerald-500" />
+            ) : (
+              <AlertTriangle size={18} className={isOver ? "text-destructive" : "text-amber-500"} />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "font-mono text-xl font-bold",
+                isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400"
+              )}>
+                {totalAllocation.toFixed(1)}%
+              </span>
+              <span className="text-sm text-muted-foreground">allocated</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {positions.length} position{positions.length !== 1 ? 's' : ''} • {isBalanced ? '✓ Balanced' : isOver ? 'Over-allocated' : 'Under-allocated'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="flex items-center gap-4 flex-1 max-w-sm ml-8">
+          <div className="flex-1 h-2.5 bg-muted/50 rounded-full overflow-hidden">
+            <div 
+              className={cn(
+                "h-full transition-all duration-700 ease-out rounded-full",
+                isBalanced ? "bg-gradient-to-r from-emerald-500 to-emerald-400" :
+                isOver ? "bg-gradient-to-r from-destructive to-red-400" : 
+                "bg-gradient-to-r from-amber-500 to-amber-400"
+              )}
+              style={{ width: `${Math.min(totalAllocation, 100)}%` }}
+            />
+          </div>
+          <span className={cn(
+            "text-xs font-mono font-medium w-10 text-right",
+            isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400"
+          )}>
+            {(100 - totalAllocation).toFixed(1)}%
+          </span>
+        </div>
+      </div>
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted/30 p-1 h-9">
-          <TabsTrigger value="positions" className="gap-1.5 text-xs h-7 px-3">
+        <TabsList className="bg-muted/20 p-1 h-10 w-fit">
+          <TabsTrigger value="positions" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
             <Grid3X3 size={14} />
             Positions
           </TabsTrigger>
-          <TabsTrigger value="charts" className="gap-1.5 text-xs h-7 px-3">
+          <TabsTrigger value="charts" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
             <PieChart size={14} />
             Charts
           </TabsTrigger>
-          <TabsTrigger value="flows" className="gap-1.5 text-xs h-7 px-3">
+          <TabsTrigger value="flows" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
             <GitBranch size={14} />
             Flows
           </TabsTrigger>
-          <TabsTrigger value="insights" className="gap-1.5 text-xs h-7 px-3">
+          <TabsTrigger value="insights" className="gap-2 text-xs h-8 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm">
             <BarChart3 size={14} />
             Insights
           </TabsTrigger>
