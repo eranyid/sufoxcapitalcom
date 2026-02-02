@@ -1,21 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { Position } from '@/types/allocationBuilder';
 import { getPositionSizeDistribution } from '@/lib/allocationAnalytics';
+import { cn } from '@/lib/utils';
 
 interface PositionSizeHistogramProps {
   positions: Position[];
 }
 
+// Professional FT color
+const HISTOGRAM_COLOR = '#FD625E'; // Coral/Red - typical for distribution charts
+
 export function PositionSizeHistogram({ positions }: PositionSizeHistogramProps) {
   const distribution = getPositionSizeDistribution(positions);
-  
-  const chartData = distribution.map(d => ({
-    ...d,
-    fill: d.count > 0 ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
-  }));
-
+  const maxCount = Math.max(...distribution.map(d => d.count), 1);
   const totalPositions = positions.length;
 
   if (positions.length === 0) {
@@ -33,56 +31,107 @@ export function PositionSizeHistogram({ positions }: PositionSizeHistogramProps)
 
   return (
     <Card className="bg-card border-border">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center justify-between">
-          Position Size Distribution
-          <Badge variant="outline" className="text-xs font-mono">
-            {totalPositions} positions
+      <CardHeader className="pb-2 border-b border-border/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-sm font-semibold">Position Size Distribution</CardTitle>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Histogram • Shows allocation frequency by size bucket
+            </p>
+          </div>
+          <Badge variant="outline" className="text-[10px] font-mono bg-muted/30">
+            {totalPositions} POS
           </Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[200px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
-            >
-              <XAxis 
-                dataKey="range" 
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                interval={0}
-                angle={-30}
-                textAnchor="end"
-              />
-              <YAxis 
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                allowDecimals={false}
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    return (
-                      <div className="bg-card border border-border rounded-lg p-2 shadow-lg">
-                        <p className="font-medium text-sm">{data.range}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {data.count} position{data.count !== 1 ? 's' : ''} 
-                          {totalPositions > 0 && ` (${((data.count / totalPositions) * 100).toFixed(0)}%)`}
-                        </p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} opacity={entry.count > 0 ? 1 : 0.3} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+      <CardContent className="pt-4">
+        {/* Histogram bars - vertical column chart */}
+        <div className="flex items-end gap-1 h-32 mb-2">
+          {distribution.map((bucket, index) => {
+            const heightPercent = bucket.count > 0 ? (bucket.count / maxCount) * 100 : 0;
+            const isEmpty = bucket.count === 0;
+            
+            return (
+              <div 
+                key={index} 
+                className="flex-1 flex flex-col items-center group"
+              >
+                {/* Count label on top */}
+                {bucket.count > 0 && (
+                  <span className="text-[9px] font-mono font-bold text-muted-foreground mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {bucket.count}
+                  </span>
+                )}
+                
+                {/* Bar */}
+                <div 
+                  className="w-full relative transition-all duration-500 group-hover:opacity-80"
+                  style={{ 
+                    height: `${Math.max(heightPercent, isEmpty ? 0 : 8)}%`,
+                    minHeight: bucket.count > 0 ? '8px' : '0'
+                  }}
+                >
+                  <div 
+                    className={cn(
+                      "absolute inset-0 rounded-t transition-all",
+                      isEmpty ? "bg-muted/20" : ""
+                    )}
+                    style={{ 
+                      backgroundColor: isEmpty ? undefined : HISTOGRAM_COLOR,
+                      opacity: isEmpty ? 0.3 : 0.9
+                    }}
+                  />
+                  
+                  {/* Hover tooltip */}
+                  {bucket.count > 0 && (
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-card border border-border rounded px-2 py-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                      <span className="text-[10px] font-medium">{bucket.count} position{bucket.count !== 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* X-axis labels */}
+        <div className="flex gap-1 border-t border-border/30 pt-2">
+          {distribution.map((bucket, index) => (
+            <div key={index} className="flex-1 text-center">
+              <span className="text-[8px] text-muted-foreground font-mono leading-none">
+                {bucket.range.replace('%', '').replace('-', '–')}
+              </span>
+            </div>
+          ))}
+        </div>
+        
+        {/* Axis label */}
+        <div className="text-center mt-2">
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+            Allocation Range (%)
+          </span>
+        </div>
+
+        {/* Summary stats */}
+        <div className="mt-4 pt-3 border-t border-border/30 grid grid-cols-3 gap-2">
+          <div className="text-center">
+            <div className="text-xs font-mono font-bold text-foreground">
+              {(positions.reduce((sum, p) => sum + p.allocation, 0) / positions.length || 0).toFixed(1)}%
+            </div>
+            <div className="text-[9px] text-muted-foreground">Avg Size</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs font-mono font-bold text-foreground">
+              {Math.min(...positions.map(p => p.allocation)).toFixed(1)}%
+            </div>
+            <div className="text-[9px] text-muted-foreground">Min</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs font-mono font-bold text-foreground">
+              {Math.max(...positions.map(p => p.allocation)).toFixed(1)}%
+            </div>
+            <div className="text-[9px] text-muted-foreground">Max</div>
+          </div>
         </div>
       </CardContent>
     </Card>
