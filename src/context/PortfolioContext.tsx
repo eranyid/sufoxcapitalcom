@@ -225,7 +225,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   // Load FX rates from database
-  // IMPORTANT: DB stores rates as "1 {Currency} = X USD" (e.g., 1 EUR = 0.836 USD)
+  // IMPORTANT: DB stores rates as "1 USD = X {Currency}" (e.g., 1 USD = 3.10 ILS)
   // Code expects rates as "1 USD = X {Currency}" (e.g., 1 USD = 1.196 EUR)
   // For currencies where rate < 1 (EUR, GBP, CHF), we need to invert the rate
   // For currencies where rate > 1 (ILS, JPY), the rate is already correct
@@ -250,16 +250,13 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
           .limit(2);
         
         if (latestData && latestData.length > 0) {
-          const dbRate = Number(latestData[0].rate);
-          const prevDbRate = latestData.length > 1 
+          // DB stores rates as "1 USD = X {Currency}" (e.g., 1 USD = 3.10 ILS)
+          // This is the format we need for calculations: amount_in_usd * rate = amount_in_currency
+          // Or: amount_in_currency / rate = amount_in_usd
+          newRates[currency] = Number(latestData[0].rate);
+          prevRates[currency] = latestData.length > 1 
             ? Number(latestData[1].rate) 
-            : dbRate;
-          
-          // DB rate is "1 Currency = X USD"
-          // We need "1 USD = X Currency" which is 1 / dbRate
-          // This gives us: amount_in_currency / rate = amount_in_usd
-          newRates[currency] = dbRate > 0 ? 1 / dbRate : 1;
-          prevRates[currency] = prevDbRate > 0 ? 1 / prevDbRate : 1;
+            : Number(latestData[0].rate);
         } else {
           // Fallback to default
           newRates[currency] = getDefaultFxRate(currency, 'USD');
