@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Brain, 
   Target, 
-  Crown, 
+  Building2, 
   ArrowRight, 
   Sparkles,
   Layers,
@@ -27,7 +27,6 @@ interface PortalCard {
   gradient: string;
   borderGlow: string;
   accentColor: string;
-  recommended?: boolean;
 }
 
 const PORTAL_CARDS: PortalCard[] = [
@@ -48,11 +47,10 @@ const PORTAL_CARDS: PortalCard[] = [
     subtitle: 'Ultra HNW Deep Profiling',
     description: 'Comprehensive wealth structuring for ₪1B+ portfolios with governance, succession, and multi-generational planning.',
     features: ['Governance', 'Succession', 'Tax Optimization', 'Illiquidity Budget'],
-    icon: <Crown className="w-10 h-10" />,
+    icon: <Building2 className="w-10 h-10" />,
     gradient: 'from-amber-500/30 via-amber-500/10 to-transparent',
     borderGlow: 'group-hover:shadow-amber-500/20',
     accentColor: 'text-amber-400',
-    recommended: true,
   },
   {
     id: 'target',
@@ -167,15 +165,6 @@ export default function Construction() {
               card.borderGlow
             )}
           >
-            {/* Recommended Badge */}
-            {card.recommended && (
-              <div className="absolute top-4 right-4">
-                <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 border border-amber-500/30 rounded-full">
-                  <Gem className="w-3 h-3 text-amber-400" />
-                  <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Premium</span>
-                </div>
-              </div>
-            )}
 
             {/* Gradient Background */}
             <div className={cn(
