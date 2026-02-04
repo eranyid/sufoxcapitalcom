@@ -483,6 +483,68 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     setUserTransactions(prev => [...prev, newTx]);
     
+    // AUTO-CREATE VALUATION ON BUY TRANSACTION
+    // This ensures the asset appears immediately in the portfolio (transaction-driven)
+    if (tx.transactionType === 'buy') {
+      const transactionMonth = tx.date.substring(0, 7); // YYYY-MM
+      
+      // Check if a valuation already exists for this ticker + month
+      const { data: existingVal } = await supabase
+        .from('valuations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('ticker', tx.ticker.toUpperCase())
+        .eq('month', transactionMonth)
+        .is('deleted_at', null)
+        .maybeSingle();
+      
+      if (existingVal) {
+        // Update existing valuation with transaction price
+        await supabase
+          .from('valuations')
+          .update({
+            price_per_unit: tx.pricePerUnit,
+            fx_rate: fxRateAtEntry !== 1 ? fxRateAtEntry : null
+          })
+          .eq('id', existingVal.id);
+        
+        // Update local state
+        setUserValuations(prev => prev.map(v => 
+          v.id === existingVal.id 
+            ? { ...v, pricePerUnit: tx.pricePerUnit, fxRate: fxRateAtEntry !== 1 ? fxRateAtEntry : undefined }
+            : v
+        ));
+      } else {
+        // Create initial valuation from transaction (qty × price implicit in pricePerUnit)
+        const { data: valData, error: valError } = await supabase
+          .from('valuations')
+          .insert({
+            user_id: user.id,
+            asset_id: tx.ticker.toUpperCase(),
+            ticker: tx.ticker.toUpperCase(),
+            asset_name: tx.assetName,
+            month: transactionMonth,
+            price_per_unit: tx.pricePerUnit,
+            fx_rate: fxRateAtEntry !== 1 ? fxRateAtEntry : null
+          })
+          .select()
+          .single();
+        
+        if (!valError && valData) {
+          const newVal: MonthlyValuation = {
+            id: valData.id,
+            assetId: valData.asset_id ?? '',
+            ticker: valData.ticker,
+            assetName: valData.asset_name,
+            month: valData.month,
+            pricePerUnit: Number(valData.price_per_unit),
+            fxRate: valData.fx_rate ? Number(valData.fx_rate) : undefined
+          };
+          setUserValuations(prev => [...prev, newVal]);
+        }
+      }
+    }
+    
     // Update cash balance for ALL supported currencies
     const SUPPORTED_CASH_CURRENCIES: CashCurrency[] = ['USD', 'EUR', 'ILS', 'GBP', 'CHF', 'JPY'];
     const txCurrency = tx.currency as CashCurrency;
@@ -573,42 +635,97 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     setUserTransactions(prev => prev.filter(t => t.id !== id));
   };
 
-  // Valuation operations
+  // Valuation operations - uses UPSERT logic (update if exists, insert if not)
   const addValuation = async (val: Omit<MonthlyValuation, 'id'>) => {
     if (!user) return;
     
-    const { data, error } = await supabase
+    const tickerUpper = val.ticker.toUpperCase();
+    
+    // Check if a valuation already exists for this ticker + month (UPSERT logic)
+    const { data: existingVal } = await supabase
       .from('valuations')
-      .insert({
-        user_id: user.id,
-        asset_id: val.assetId,
-        ticker: val.ticker,
-        asset_name: val.assetName,
-        month: val.month,
-        price_per_unit: val.pricePerUnit,
-        fx_rate: val.fxRate,
-        linked_company_id: val.linkedCompanyId || null
-      })
-      .select()
-      .single();
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('ticker', tickerUpper)
+      .eq('month', val.month)
+      .is('deleted_at', null)
+      .maybeSingle();
     
-    if (error) {
-      console.error('Error adding valuation:', error);
-      return;
+    if (existingVal) {
+      // UPDATE existing valuation - don't create duplicate
+      const { error } = await supabase
+        .from('valuations')
+        .update({
+          asset_name: val.assetName,
+          price_per_unit: val.pricePerUnit,
+          fx_rate: val.fxRate,
+          linked_company_id: val.linkedCompanyId || null,
+          // Bond/Debt fields
+          yield_to_maturity: (val as any).yieldToMaturity,
+          coupon_rate: (val as any).couponRate,
+          duration: (val as any).duration,
+          accrued_interest: (val as any).accruedInterest,
+          maturity_date: (val as any).maturityDate
+        })
+        .eq('id', existingVal.id);
+      
+      if (error) {
+        console.error('Error updating existing valuation:', error);
+        return;
+      }
+      
+      // Update local state
+      setUserValuations(prev => prev.map(v => 
+        v.id === existingVal.id 
+          ? { 
+              ...v, 
+              assetName: val.assetName,
+              pricePerUnit: val.pricePerUnit, 
+              fxRate: val.fxRate,
+              linkedCompanyId: val.linkedCompanyId,
+              yieldToMaturity: (val as any).yieldToMaturity,
+              couponRate: (val as any).couponRate,
+              duration: (val as any).duration,
+              accruedInterest: (val as any).accruedInterest,
+              maturityDate: (val as any).maturityDate
+            }
+          : v
+      ));
+    } else {
+      // INSERT new valuation
+      const { data, error } = await supabase
+        .from('valuations')
+        .insert({
+          user_id: user.id,
+          asset_id: val.assetId,
+          ticker: tickerUpper,
+          asset_name: val.assetName,
+          month: val.month,
+          price_per_unit: val.pricePerUnit,
+          fx_rate: val.fxRate,
+          linked_company_id: val.linkedCompanyId || null
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error adding valuation:', error);
+        return;
+      }
+      
+      const newVal: MonthlyValuation = {
+        id: data.id,
+        assetId: data.asset_id ?? '',
+        ticker: data.ticker,
+        assetName: data.asset_name,
+        month: data.month,
+        pricePerUnit: Number(data.price_per_unit),
+        fxRate: data.fx_rate ? Number(data.fx_rate) : undefined,
+        linkedCompanyId: data.linked_company_id ?? undefined
+      };
+      
+      setUserValuations(prev => [...prev, newVal]);
     }
-    
-    const newVal: MonthlyValuation = {
-      id: data.id,
-      assetId: data.asset_id ?? '',
-      ticker: data.ticker,
-      assetName: data.asset_name,
-      month: data.month,
-      pricePerUnit: Number(data.price_per_unit),
-      fxRate: data.fx_rate ? Number(data.fx_rate) : undefined,
-      linkedCompanyId: data.linked_company_id ?? undefined
-    };
-    
-    setUserValuations(prev => [...prev, newVal]);
   };
 
   const updateValuation = async (id: string, val: Partial<MonthlyValuation>) => {

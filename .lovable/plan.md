@@ -1,78 +1,128 @@
-# Plan: Fix Data Consistency and Unrealized P/L Accuracy
+# Plan: Portfolio Accounting Redesign - Transaction-Driven Valuations
 
 ## Status: ✅ COMPLETED
 
 ## Problem Analysis
 
-Based on database investigation, the **-41.63% Unrealized P/L** was mathematically correct but **misleading** because:
+Previously, there was a delay between adding a transaction and seeing the asset in the portfolio. Users had to:
+1. Add a transaction (BUY)
+2. Separately add a valuation for that asset/month
 
-| Asset | Transaction Cost | Has Valuation? | Calculated Current Value |
-|-------|-----------------|----------------|--------------------------|
-| MPWR | $2,229.33 (2 shares) | Yes ($1,161.78/share) | $2,323.56 |
-| SLV | $844.37 | **NO** | $0 |
-| GLD | $906.78 | **NO** | $0 |
-| **Total** | $3,980.48 | - | $2,323.56 |
-
-The system was treating SLV and GLD as worth $0 because no monthly valuations exist for them.
+This caused confusion and data inconsistency. Assets without valuations showed as $0 or with "No Price" badges.
 
 ---
 
-## Implemented Solutions
+## Implemented Solution
 
-### ✅ Phase 1: Cost-Basis Fallback (portfolioEngine.ts)
+### New Transaction-Driven Flow
 
-- When a holding has no valuation data, the system now uses **cost basis as current value**
-- This prevents misleading -100% P/L for assets without price data
-- Unrealized P/L shows as $0 for holdings without valuations (cost = value)
-- Added `missingValuation` flag to `PortfolioHolding` interface
-- Added `missingValuationCount` to `ComputedPortfolioData`
+1. **BUY Transaction → Auto-Creates Valuation**
+   - When a BUY transaction is entered, the system automatically creates a valuation entry for that month
+   - Valuation price = transaction price per unit
+   - Asset appears immediately in portfolio (no delay)
 
-### ✅ Phase 2: Data Watchdog Enhancement (dataValidation.ts)
+2. **Later Valuations → Upsert (Update if Exists)**
+   - When adding a valuation for an existing ticker+month, it UPDATES instead of creating duplicate
+   - Each asset has only ONE valuation per month (time-series integrity)
+   - Manual valuation updates overwrite transaction-derived values
 
-- Added **Missing Valuation Check** (severity: error)
-  - For each holding with quantity > 0, verifies valuation exists
-  - Message: "Asset XYZ has no valuation data"
-
-- Added **Stale Valuation Check** (severity: warning)
-  - Warns if latest valuation is older than 60 days
-  - Message: "Asset XYZ valuation is outdated (last: YYYY-MM)"
-
-- Added **Summary Issue** when multiple holdings missing valuations
-
-### ✅ Phase 3: Visual Warnings
-
-**HoldingsTable.tsx:**
-- Added "No Price" badge for assets without valuations
-- Row background highlighted in amber for missing valuations
-- Tooltip explains: "No valuation data - value shown at cost basis"
-
-**KPICard.tsx:**
-- Added optional `warning` prop for data quality indicators
-- Warning displays as amber triangle icon with tooltip
-
-**Overview.tsx:**
-- Unrealized P/L KPI now shows warning badge when holdings are missing valuations
-- Example: "⚠️ 2 holdings missing valuation"
+3. **Data Integrity Rules (Enforced)**
+   - Each asset exists only once per month in valuations
+   - Ticker is normalized to uppercase for consistency
+   - Valuation history is a clean time-series by month
 
 ---
 
-## Expected Behavior After Fix
+## Technical Changes
 
-| Metric | Before (Bug) | After (Fixed) |
-|--------|---------------|---------------|
-| Holdings Value | Only counted assets with valuations | Includes all assets (at cost if no valuation) |
-| Unrealized P/L | Misleading -41% | Shows $0 for assets without price data |
-| Unrealized % | Incorrectly negative | 0% for assets without valuations |
-| Warnings | None | Clear visual indicators |
+### `src/context/PortfolioContext.tsx`
+
+**addTransaction() - Enhanced:**
+```typescript
+// After creating transaction, auto-create valuation for BUY
+if (tx.transactionType === 'buy') {
+  const transactionMonth = tx.date.substring(0, 7); // YYYY-MM
+  
+  // Check if valuation exists for ticker+month
+  const existing = await checkExistingValuation(ticker, month);
+  
+  if (existing) {
+    // UPDATE existing valuation
+    await updateValuation(existing.id, { pricePerUnit, fxRate });
+  } else {
+    // INSERT new valuation from transaction
+    await insertValuation({ ticker, month, pricePerUnit, fxRate });
+  }
+}
+```
+
+**addValuation() - Enhanced with Upsert:**
+```typescript
+// Check if valuation exists for ticker+month
+const existing = await checkExistingValuation(ticker, month);
+
+if (existing) {
+  // UPDATE existing - no duplicate
+  await updateValuation(existing.id, { ...fields });
+} else {
+  // INSERT new valuation
+  await insertValuation({ ...fields });
+}
+```
 
 ---
 
-## Files Modified
+## Expected Behavior
 
-| File | Changes |
-|------|---------|
-| `src/lib/portfolioEngine.ts` | Added cost-basis fallback, missingValuation tracking |
-| `src/lib/dataValidation.ts` | Enhanced validation with missing/stale valuation checks |
-| `src/components/dashboard/HoldingsTable.tsx` | Added "No Price" badge, amber highlighting |
-| `src/components/dashboard/KPICard.tsx` | Added warning prop with tooltip |
-| `src/pages/Overview.tsx` | Connected warning indicator to Unrealized P/L KPI |
+| Scenario | Before (Bug) | After (Fixed) |
+|----------|--------------|---------------|
+| Add BUY transaction | Asset not in portfolio until valuation added | Asset appears immediately with transaction price |
+| Add valuation for existing ticker+month | Creates duplicate | Updates existing valuation |
+| Portfolio value | Delayed/incorrect | Always reflects latest transaction or valuation |
+| Data integrity | Possible duplicates | One valuation per asset per month |
+
+---
+
+## Logical Flow Diagram
+
+```
+┌─────────────────────┐
+│  User adds BUY TX   │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ Transaction saved   │
+│ to database         │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ Check: Valuation    │
+│ exists for          │
+│ ticker + month?     │
+└──────────┬──────────┘
+           │
+    ┌──────┴──────┐
+    │             │
+   YES           NO
+    │             │
+    ▼             ▼
+┌────────┐  ┌────────────┐
+│ UPDATE │  │ INSERT new │
+│existing│  │ valuation  │
+│  val   │  │ from TX    │
+└────────┘  └────────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ Asset visible in    │
+│ portfolio NOW       │
+└─────────────────────┘
+```
+
+---
+
+## Previous Plan: Data Consistency Fix (Archived)
+
+The previous plan addressed cost-basis fallback for missing valuations. This is now less critical since valuations are auto-created, but the fallback still exists as a safety net for legacy data.
