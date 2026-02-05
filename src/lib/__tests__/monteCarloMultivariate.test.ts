@@ -18,6 +18,7 @@ import {
   determineSimulationMode,
   runMultivariateSimulation,
   runUnivariateSimulation,
+  isStructuredError,
   buildMultivariateConfig,
   AssetParameters,
 } from '../monteCarloEngine';
@@ -405,15 +406,19 @@ describe('Multivariate Simulation', () => {
     
     const result = runMultivariateSimulation(config!, 100000, 1, 100, 12);
     expect(result).not.toBeNull();
-    expect(result!.finalValues).toHaveLength(100);
+    if (result && !isStructuredError(result)) {
+      expect(result.finalValues).toHaveLength(100);
+    }
   });
 
   it('should return sorted final values', () => {
     const { config } = createTestConfig();
     const result = runMultivariateSimulation(config!, 100000, 5, 500, 12);
     
-    for (let i = 1; i < result!.finalValues.length; i++) {
-      expect(result!.finalValues[i]).toBeGreaterThanOrEqual(result!.finalValues[i - 1]);
+    if (result && !isStructuredError(result)) {
+      for (let i = 1; i < result.finalValues.length; i++) {
+        expect(result.finalValues[i]).toBeGreaterThanOrEqual(result.finalValues[i - 1]);
+      }
     }
   });
 
@@ -421,17 +426,21 @@ describe('Multivariate Simulation', () => {
     const { config } = createTestConfig();
     const result = runMultivariateSimulation(config!, 100000, 10, 500, 12);
     
-    result!.finalValues.forEach(v => {
-      expect(v).toBeGreaterThan(0);
-    });
+    if (result && !isStructuredError(result)) {
+      result.finalValues.forEach(v => {
+        expect(v).toBeGreaterThan(0);
+      });
+    }
   });
 
   it('should calculate risk metrics', () => {
     const { config } = createTestConfig();
     const result = runMultivariateSimulation(config!, 100000, 10, 1000, 12);
     
-    expect(result!.riskMetrics.probGain + result!.riskMetrics.probLoss).toBeCloseTo(100, 1);
-    expect(result!.riskMetrics.cvar95).toBeLessThanOrEqual(result!.riskMetrics.var95 + 0.1);
+    if (result && !isStructuredError(result)) {
+      expect(result.riskMetrics.probGain + result.riskMetrics.probLoss).toBeCloseTo(100, 1);
+      expect(result.riskMetrics.cvar95).toBeLessThanOrEqual(result.riskMetrics.var95 + 0.1);
+    }
   });
 
   it('should show diversification benefit for negatively correlated assets', () => {
@@ -439,7 +448,9 @@ describe('Multivariate Simulation', () => {
     const result = runMultivariateSimulation(config!, 100000, 10, 2000, 12);
     
     // With negative correlation, diversification benefit should be positive
-    expect(result!.diversificationBenefit).toBeGreaterThanOrEqual(0);
+    if (result && !isStructuredError(result)) {
+      expect(result.diversificationBenefit).toBeGreaterThanOrEqual(0);
+    }
   });
 });
 

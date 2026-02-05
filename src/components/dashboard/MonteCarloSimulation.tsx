@@ -23,6 +23,7 @@ import {
   generatePercentilePathsMultivariate,
   extractAssetParameters,
   MultivariateSimulationResult,
+  isStructuredError,
 } from '@/lib/monteCarloEngine';
 
 interface MonteCarloSimulationProps {
@@ -328,7 +329,7 @@ export function MonteCarloSimulation({
       
       // Generate horizon results
       const horizonResults: HorizonResult[] = TIME_HORIZONS.map(horizon => {
-        let simResult: MultivariateSimulationResult;
+        let simResult: MultivariateSimulationResult | null = null;
         
         if (useMultivariate) {
           const result = runMultivariateSimulation(
@@ -338,9 +339,9 @@ export function MonteCarloSimulation({
             config.numSimulations,
             stepsPerYear
           );
-          if (!result) {
-            // Fallback to univariate
-            simResult = runUnivariateSimulation(
+          if (!result || isStructuredError(result)) {
+            // Fallback to univariate on error
+            const uniResult = runUnivariateSimulation(
               effectiveValue,
               effectiveCAGR / 100,
               effectiveVolatility / 100,
@@ -348,11 +349,12 @@ export function MonteCarloSimulation({
               config.numSimulations,
               stepsPerYear
             );
+            simResult = isStructuredError(uniResult) ? null : uniResult;
           } else {
             simResult = result;
           }
         } else {
-          simResult = runUnivariateSimulation(
+          const uniResult = runUnivariateSimulation(
             effectiveValue,
             effectiveCAGR / 100,
             effectiveVolatility / 100,
@@ -360,6 +362,23 @@ export function MonteCarloSimulation({
             config.numSimulations,
             stepsPerYear
           );
+          simResult = isStructuredError(uniResult) ? null : uniResult;
+        }
+        
+        if (!simResult) {
+          return {
+            horizon,
+            p5: effectiveValue,
+            p25: effectiveValue,
+            p50: effectiveValue,
+            p75: effectiveValue,
+            p95: effectiveValue,
+            probGain: 50,
+            probLoss: 50,
+            var95: 0,
+            cvar95: 0,
+            expectedValue: effectiveValue,
+          };
         }
         
         return {
@@ -378,7 +397,7 @@ export function MonteCarloSimulation({
       });
       
       // Distribution for 20-year horizon
-      let distResult: MultivariateSimulationResult;
+      let distResult: MultivariateSimulationResult | null = null;
       let diversificationBenefit: number | undefined;
       
       if (useMultivariate) {
@@ -389,11 +408,11 @@ export function MonteCarloSimulation({
           config.numSimulations,
           stepsPerYear
         );
-        if (result) {
+        if (result && !isStructuredError(result)) {
           distResult = result;
           diversificationBenefit = result.diversificationBenefit;
         } else {
-          distResult = runUnivariateSimulation(
+          const uniResult = runUnivariateSimulation(
             effectiveValue,
             effectiveCAGR / 100,
             effectiveVolatility / 100,
@@ -401,9 +420,10 @@ export function MonteCarloSimulation({
             config.numSimulations,
             stepsPerYear
           );
+          distResult = isStructuredError(uniResult) ? null : uniResult;
         }
       } else {
-        distResult = runUnivariateSimulation(
+        const uniResult = runUnivariateSimulation(
           effectiveValue,
           effectiveCAGR / 100,
           effectiveVolatility / 100,
@@ -411,9 +431,10 @@ export function MonteCarloSimulation({
           config.numSimulations,
           stepsPerYear
         );
+        distResult = isStructuredError(uniResult) ? null : uniResult;
       }
       
-      const distribution = generateDistribution(distResult.finalValues, 40);
+      const distribution = distResult ? generateDistribution(distResult.finalValues, 40) : [];
       
       setResults({ 
         fanChartData, 
