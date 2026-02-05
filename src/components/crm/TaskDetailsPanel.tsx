@@ -93,8 +93,8 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
-      {/* Header - Mobile optimized, scrollable when tall */}
-        <div className="shrink overflow-y-auto border-b border-border p-3 sm:p-4 max-h-[50vh]">
+      {/* Header - compact, no overflow */}
+        <div className="flex-shrink-0 border-b border-border p-3 sm:p-4">
           <div className="flex items-start justify-between gap-2 sm:gap-3">
             <div className="flex-1 min-w-0">
               <Input
@@ -128,7 +128,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
           </div>
 
           {/* Status & Urgency - Same height, urgency smallest in middle */}
-          <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
+          <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-3">
             <Select
               value={task.status}
               onValueChange={v => onUpdate(task.id, 'status', v, task.status)}
@@ -179,7 +179,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
           </div>
 
           {/* Project Link */}
-          <div className="mt-3 sm:mt-4 flex items-center gap-2">
+          <div className="mt-2 flex items-center gap-2">
             <FolderKanban size={14} className="text-muted-foreground flex-shrink-0" />
             <Select
               value={task.linked_project_id || 'none'}
@@ -213,7 +213,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
           </div>
 
           {/* Company Link */}
-          <div className="mt-3 sm:mt-4 flex items-center gap-2">
+          <div className="mt-2 flex items-center gap-2">
             <Building2 size={14} className="text-muted-foreground flex-shrink-0" />
             <Select
               value={task.company_id || 'none'}
