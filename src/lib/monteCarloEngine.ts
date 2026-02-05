@@ -120,14 +120,14 @@ export interface MultivariateSimulationResult {
 /** Maximum allowed log return per step (±50% per period) */
 const MAX_LOG_RETURN_PER_STEP = 0.5;
 
-/** Maximum portfolio value multiplier (10,000x initial) */
-const MAX_VALUE_MULTIPLIER = 10000;
+/** Maximum portfolio value multiplier (1,000,000,000x initial for very long horizons) */
+const MAX_VALUE_MULTIPLIER = 1e9;
 
 /** Minimum portfolio value as fraction of initial (1e-9) */
 const MIN_VALUE_MULTIPLIER = 1e-9;
 
-/** Maximum dispersion: σ × √T ≤ 6 */
-const MAX_DISPERSION = 6.0;
+/** Maximum dispersion: σ × √T ≤ 10 (extended for long horizons up to 100 years) */
+const MAX_DISPERSION = 10.0;
 
 /** Z-score truncation bounds for normal draws */
 const MAX_Z_SCORE = 8.0;
