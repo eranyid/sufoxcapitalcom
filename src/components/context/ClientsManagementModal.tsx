@@ -1,5 +1,5 @@
  import { useState } from 'react';
- import { Plus, ArrowRight, Loader2, MoreHorizontal, Trash2, Power, PowerOff } from 'lucide-react';
+ import { Plus, ArrowRight, Loader2, MoreHorizontal, Trash2, Power, PowerOff, Pencil } from 'lucide-react';
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
  import { Button } from '@/components/ui/button';
  import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@
  import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
  import { useClients, Client } from '@/hooks/useClients';
  import { CreateClientDialog } from './CreateClientDialog';
+ import { EditClientDialog } from './EditClientDialog';
  import { formatDistanceToNow } from 'date-fns';
  import PeopleIcon from '@/assets/people-icon.svg';
  
@@ -21,6 +22,7 @@
    const { clients, isLoading, updateClient, deleteClient } = useClients();
    const [showCreateDialog, setShowCreateDialog] = useState(false);
    const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
  
    const activeClients = clients.filter(c => c.status === 'active');
    const inactiveClients = clients.filter(c => c.status !== 'active');
@@ -111,6 +113,7 @@
                            }}
                            onToggleStatus={() => handleToggleStatus(client)}
                            onDelete={() => setClientToDelete(client)}
+                             onEdit={() => setClientToEdit(client)}
                          />
                        ))}
                      </div>
@@ -129,6 +132,7 @@
                            }}
                            onToggleStatus={() => handleToggleStatus(client)}
                            onDelete={() => setClientToDelete(client)}
+                             onEdit={() => setClientToEdit(client)}
                          />
                        ))}
                      </div>
@@ -143,6 +147,12 @@
        <CreateClientDialog 
          open={showCreateDialog} 
          onOpenChange={setShowCreateDialog} 
+       />
+       
+       <EditClientDialog
+         client={clientToEdit}
+         open={!!clientToEdit}
+         onOpenChange={(open) => !open && setClientToEdit(null)}
        />
  
        <AlertDialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
@@ -173,9 +183,10 @@
    onSelect: () => void;
    onToggleStatus: () => void;
    onDelete: () => void;
+   onEdit: () => void;
  }
  
- function ClientRow({ client, onSelect, onToggleStatus, onDelete }: ClientRowProps) {
+ function ClientRow({ client, onSelect, onToggleStatus, onDelete, onEdit }: ClientRowProps) {
    const isActive = client.status === 'active';
    
    return (
@@ -227,6 +238,10 @@
              </Button>
            </DropdownMenuTrigger>
            <DropdownMenuContent align="end" className="bg-[#15151a] border-border/50">
+             <DropdownMenuItem onClick={onEdit}>
+               <Pencil className="h-4 w-4 mr-2" />
+               Edit Details
+             </DropdownMenuItem>
              <DropdownMenuItem onClick={onToggleStatus}>
                {isActive ? (
                  <>
