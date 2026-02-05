@@ -23,6 +23,7 @@ import { ReportsIcon } from '@/components/icons/ReportsIcon';
 import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
+ import { ERLabIcon } from '@/components/icons/ERLabIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
@@ -53,7 +54,7 @@ const navGroups: NavGroup[] = [
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
-      { path: '/expected-return-lab', icon: LabIcon, label: 'ER Lab' },
+       { path: '/expected-return-lab', icon: ERLabIcon, label: 'ER Lab' },
       { path: '/charts', icon: ChartsIcon, label: 'Charts' },
       { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
     ],
