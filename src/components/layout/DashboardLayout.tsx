@@ -8,7 +8,7 @@ import { useSession } from '@/context/SessionContext';
 import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
- import { Database, User, Building2 } from 'lucide-react';
+  import { Database, User, Building2, ArrowLeftRight } from 'lucide-react';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
 import { CommandBar } from '@/components/CommandBar';
@@ -26,7 +26,7 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { sampleDataMode } = usePortfolio();
-   const { session, isContextSet } = useSession();
+    const { session, isContextSet, clearContext } = useSession();
   const [watchdogPanelOpen, setWatchdogPanelOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
@@ -84,6 +84,11 @@ export function DashboardLayout() {
     return <Navigate to="/context" replace />;
   }
 
+   const handleSwitchContext = () => {
+     clearContext();
+     navigate('/context');
+   };
+ 
   const getStatusDotColor = (color: 'success' | 'warning' | 'muted') => {
     switch (color) {
       case 'success': return 'bg-emerald-500';
@@ -177,6 +182,13 @@ export function DashboardLayout() {
                   </Badge>
                 </>
               )}
+               <button
+                 onClick={handleSwitchContext}
+                 className="ml-1 p-0.5 rounded hover:bg-muted transition-colors"
+                 title="Switch Context"
+               >
+                 <ArrowLeftRight className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+               </button>
             </div>
             
             {sampleDataMode && (

@@ -2,22 +2,36 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CrmCompany } from '@/types/crm';
 import { useAuth } from '@/hooks/useAuth';
+ import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
 
 export function useCrmCompanies() {
   const { user } = useAuth();
+   const { session, isContextSet } = useSession();
   const [companies, setCompanies] = useState<CrmCompany[]>([]);
   const [loading, setLoading] = useState(true);
 
+   // Get client_id for queries
+   const activeClientId = session.scope === 'client' ? session.clientId : null;
+ 
   const fetchCompanies = useCallback(async () => {
-    if (!user) return;
+     if (!user || !isContextSet) return;
     
     setLoading(true);
-    const { data, error } = await supabase
+     let query = supabase
       .from('crm_companies')
       .select('*')
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+       .eq('user_id', user.id)
+       .is('deleted_at', null);
+ 
+     // Filter by client context
+     if (activeClientId) {
+       query = query.eq('client_id', activeClientId);
+     } else {
+       query = query.is('client_id', null);
+     }
+ 
+     const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       toast.error('Failed to load companies');
@@ -26,19 +40,20 @@ export function useCrmCompanies() {
       setCompanies((data as CrmCompany[]) || []);
     }
     setLoading(false);
-  }, [user]);
+   }, [user, isContextSet, activeClientId]);
 
   useEffect(() => {
     fetchCompanies();
   }, [fetchCompanies]);
 
   const createCompany = async (company: Partial<CrmCompany>) => {
-    if (!user) return null;
+     if (!user || !isContextSet) return null;
 
     const { data, error } = await supabase
       .from('crm_companies')
       .insert({
         user_id: user.id,
+         client_id: activeClientId,
         company_name: company.company_name,
         market_cap: company.market_cap || null,
         sector: company.sector || null,

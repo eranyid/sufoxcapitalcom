@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+ import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
 import type { 
   TargetAllocation, 
@@ -31,19 +32,32 @@ interface UseTargetAllocationReturn {
 
 export function useTargetAllocation(): UseTargetAllocationReturn {
   const { user } = useAuth();
+   const { session, isContextSet } = useSession();
   const [activeTarget, setActiveTargetState] = useState<TargetAllocation | null>(null);
   const [allTargets, setAllTargets] = useState<TargetAllocation[]>([]);
   const [targetLines, setTargetLines] = useState<TargetAllocationLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+   // Get client_id for queries
+   const activeClientId = session.scope === 'client' ? session.clientId : null;
+ 
   const fetchTargets = useCallback(async () => {
-    if (!user?.id) return;
+     if (!user?.id || !isContextSet) return;
     
     try {
-      const { data: targets, error } = await supabase
+       let query = supabase
         .from('target_allocations')
         .select('*')
-        .order('created_at', { ascending: false });
+         .eq('user_id', user.id);
+ 
+       // Filter by client context
+       if (activeClientId) {
+         query = query.eq('client_id', activeClientId);
+       } else {
+         query = query.is('client_id', null);
+       }
+ 
+       const { data: targets, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -79,31 +93,40 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+   }, [user?.id, isContextSet, activeClientId]);
 
   useEffect(() => {
     fetchTargets();
   }, [fetchTargets]);
 
   const saveTarget = async (data: WizardData, name = 'Primary Target'): Promise<string | null> => {
-    if (!user?.id) {
+     if (!user?.id || !isContextSet) {
       toast.error('Please login to save');
       return null;
     }
 
     try {
       // Deactivate existing active targets
-      await supabase
+       let deactivateQuery = supabase
         .from('target_allocations')
         .update({ is_active: false })
         .eq('user_id', user.id)
-        .eq('is_active', true);
+         .eq('is_active', true);
+ 
+       if (activeClientId) {
+         deactivateQuery = deactivateQuery.eq('client_id', activeClientId);
+       } else {
+         deactivateQuery = deactivateQuery.is('client_id', null);
+       }
+ 
+       await deactivateQuery;
 
       // Create new target allocation
       const { data: newTarget, error: targetError } = await supabase
         .from('target_allocations')
         .insert({
           user_id: user.id,
+           client_id: activeClientId,
           name,
           is_active: true,
           objective: data.objective,
@@ -284,14 +307,22 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
   };
 
   const setActiveTarget = async (targetId: string): Promise<void> => {
-    if (!user?.id) return;
+     if (!user?.id || !isContextSet) return;
 
     try {
       // Deactivate all
-      await supabase
+       let deactivateQuery = supabase
         .from('target_allocations')
         .update({ is_active: false })
-        .eq('user_id', user.id);
+         .eq('user_id', user.id);
+ 
+       if (activeClientId) {
+         deactivateQuery = deactivateQuery.eq('client_id', activeClientId);
+       } else {
+         deactivateQuery = deactivateQuery.is('client_id', null);
+       }
+ 
+       await deactivateQuery;
 
       // Activate selected
       await supabase

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+ import { useSession } from '@/context/SessionContext';
 import { toast } from 'sonner';
 import type { Report, ReportSection, ReportBranding } from '@/types/reports';
 import { DEFAULT_BRANDING, DEFAULT_SECTIONS } from '@/types/reports';
@@ -8,16 +9,29 @@ import type { Json } from '@/integrations/supabase/types';
 
 export function useReports() {
   const { user } = useAuth();
+   const { session, isContextSet } = useSession();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
 
+   // Get client_id for queries
+   const activeClientId = session.scope === 'client' ? session.clientId : null;
+ 
   const fetchReports = useCallback(async () => {
-    if (!user) return;
+     if (!user || !isContextSet) return;
 
-    const { data, error } = await supabase
+     let query = supabase
       .from('reports')
       .select('*')
-      .order('updated_at', { ascending: false });
+       .eq('user_id', user.id);
+ 
+     // Filter by client context
+     if (activeClientId) {
+       query = query.eq('client_id', activeClientId);
+     } else {
+       query = query.is('client_id', null);
+     }
+ 
+     const { data, error } = await query.order('updated_at', { ascending: false });
 
     if (error) {
       toast.error('Failed to load reports');
@@ -31,19 +45,20 @@ export function useReports() {
       })));
     }
     setLoading(false);
-  }, [user]);
+   }, [user, isContextSet, activeClientId]);
 
   useEffect(() => {
     fetchReports();
   }, [fetchReports]);
 
   const createReport = async (name: string, description?: string): Promise<Report | null> => {
-    if (!user) return null;
+     if (!user || !isContextSet) return null;
 
     const { data, error } = await supabase
       .from('reports')
       .insert({
         user_id: user.id,
+         client_id: activeClientId,
         name,
         description: description || null,
         sections: DEFAULT_SECTIONS as unknown as Json,
@@ -114,12 +129,13 @@ export function useReports() {
 
   const duplicateReport = async (id: string): Promise<Report | null> => {
     const original = reports.find(r => r.id === id);
-    if (!original || !user) return null;
+     if (!original || !user || !isContextSet) return null;
 
     const { data, error } = await supabase
       .from('reports')
       .insert({
         user_id: user.id,
+         client_id: activeClientId,
         name: `${original.name} (Copy)`,
         description: original.description,
         sections: original.sections as unknown as Json,

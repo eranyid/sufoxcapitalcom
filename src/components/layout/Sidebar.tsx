@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ChevronLeft, ChevronRight, LogOut, Users, HelpCircle, RefreshCw
+   ChevronLeft, ChevronRight, LogOut, Users, HelpCircle, ArrowLeftRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -259,12 +259,12 @@ export function Sidebar() {
         <button
           onClick={handleSwitchContext}
           className={cn(
-            "w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] text-muted-foreground hover:text-accent",
-            "hover:bg-accent/10 transition-all duration-200 rounded-md font-medium",
+             "w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] text-muted-foreground hover:text-primary",
+             "hover:bg-primary/10 transition-all duration-200 rounded-md font-medium border border-transparent hover:border-primary/30",
             collapsed && "justify-center px-0"
           )}
         >
-          <RefreshCw size={12} />
+           <ArrowLeftRight size={12} />
           {!collapsed && <span>Switch Context</span>}
         </button>
         <button
