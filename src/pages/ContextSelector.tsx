@@ -8,6 +8,7 @@
  import { ChevronRight } from 'lucide-react';
  import ProfileIcon from '@/assets/profile-icon.svg';
  import PeopleIcon from '@/assets/people-icon.svg';
+ import MonitorIcon from '@/assets/monitor-icon.svg';
  import sufoxLogo from '@/assets/sufox-logo-new.png';
  import { useIsMobile } from '@/hooks/use-mobile';
  
@@ -65,12 +66,28 @@
  
        {/* User email - top right, minimal */}
        <div 
-         className="absolute top-6 right-6 md:top-8 md:right-8 text-[10px] md:text-[11px] tracking-wide text-white/30 animate-fade-in max-w-[200px] truncate"
+         className="absolute top-4 right-4 md:top-8 md:right-8 text-[10px] md:text-[11px] tracking-wide text-white/30 animate-fade-in max-w-[200px] truncate"
          style={{ animationDelay: '0.8s', animationFillMode: 'backwards' }}
        >
          {user?.email}
        </div>
  
+       {/* Tagline with monitor icon - top left */}
+       <div 
+         className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-2 animate-fade-in"
+         style={{ animationDelay: '0.5s', animationFillMode: 'backwards' }}
+       >
+         <img 
+           src={MonitorIcon} 
+           alt="" 
+           className="h-4 w-4 md:h-5 md:w-5 opacity-40"
+           style={{ filter: 'brightness(0) invert(1)' }}
+         />
+         <span className="text-[10px] md:text-xs tracking-[0.15em] uppercase text-white/40 font-light">
+           Precision is non-negotiable
+         </span>
+       </div>
+
        {/* Main orbital composition - vertical on mobile, horizontal on desktop */}
        <div className="relative flex flex-col md:flex-row items-center justify-center px-6 md:px-0 py-12 md:py-0">
          
