@@ -145,6 +145,42 @@ export type Database = {
         }
         Relationships: []
       }
+      client_workspaces: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          current_version: number
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          current_version?: number
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          current_version?: number
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       company_decisions: {
         Row: {
           catalyst_timeline: string | null
@@ -1919,6 +1955,559 @@ export type Database = {
             columns: ["linked_company_id"]
             isOneToOne: false
             referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_allocations: {
+        Row: {
+          created_at: string
+          distribution_frequency: string | null
+          expected_yield: number | null
+          id: string
+          level: number
+          level_type: string
+          liquidity_bucket: string | null
+          liquidity_score: number | null
+          metadata_json: Json | null
+          name: string
+          parent_id: string | null
+          return_contribution: number | null
+          risk_contribution: number | null
+          ticker: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          weight: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          distribution_frequency?: string | null
+          expected_yield?: number | null
+          id?: string
+          level?: number
+          level_type: string
+          liquidity_bucket?: string | null
+          liquidity_score?: number | null
+          metadata_json?: Json | null
+          name: string
+          parent_id?: string | null
+          return_contribution?: number | null
+          risk_contribution?: number | null
+          ticker?: string | null
+          updated_at?: string
+          user_id: string
+          version?: number
+          weight?: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          distribution_frequency?: string | null
+          expected_yield?: number | null
+          id?: string
+          level?: number
+          level_type?: string
+          liquidity_bucket?: string | null
+          liquidity_score?: number | null
+          metadata_json?: Json | null
+          name?: string
+          parent_id?: string | null
+          return_contribution?: number | null
+          risk_contribution?: number | null
+          ticker?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+          weight?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_allocations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "workspace_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_allocations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_assumptions: {
+        Row: {
+          asset_class: string
+          confidence_level: number | null
+          correlation_group: string | null
+          created_at: string
+          expected_return: number
+          expected_volatility: number
+          id: string
+          source_notes: string | null
+          source_tag: string | null
+          strategy: string | null
+          sub_strategy: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          asset_class: string
+          confidence_level?: number | null
+          correlation_group?: string | null
+          created_at?: string
+          expected_return: number
+          expected_volatility: number
+          id?: string
+          source_notes?: string | null
+          source_tag?: string | null
+          strategy?: string | null
+          sub_strategy?: string | null
+          updated_at?: string
+          user_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          asset_class?: string
+          confidence_level?: number | null
+          correlation_group?: string | null
+          created_at?: string
+          expected_return?: number
+          expected_volatility?: number
+          id?: string
+          source_notes?: string | null
+          source_tag?: string | null
+          strategy?: string | null
+          sub_strategy?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_assumptions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_audit_log: {
+        Row: {
+          action: string
+          change_reason: string | null
+          created_at: string
+          entity_id: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          stage: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          change_reason?: string | null
+          created_at?: string
+          entity_id?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          stage: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          change_reason?: string | null
+          created_at?: string
+          entity_id?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          stage?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_audit_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_constraints: {
+        Row: {
+          allowed_currencies: string[] | null
+          base_currency: string | null
+          created_at: string
+          esg_exclusions: string[] | null
+          hard_constraints: Json | null
+          id: string
+          investment_horizon_years: number | null
+          liquidity_t0_min_pct: number | null
+          liquidity_t30_min_pct: number | null
+          liquidity_t90_min_pct: number | null
+          max_drawdown: number | null
+          max_fx_exposure_pct: number | null
+          max_single_asset_pct: number | null
+          max_single_geography_pct: number | null
+          max_single_strategy_pct: number | null
+          regulatory_constraints: Json | null
+          soft_constraints: Json | null
+          special_constraints: string | null
+          target_return_nominal: number | null
+          target_return_real: number | null
+          updated_at: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          allowed_currencies?: string[] | null
+          base_currency?: string | null
+          created_at?: string
+          esg_exclusions?: string[] | null
+          hard_constraints?: Json | null
+          id?: string
+          investment_horizon_years?: number | null
+          liquidity_t0_min_pct?: number | null
+          liquidity_t30_min_pct?: number | null
+          liquidity_t90_min_pct?: number | null
+          max_drawdown?: number | null
+          max_fx_exposure_pct?: number | null
+          max_single_asset_pct?: number | null
+          max_single_geography_pct?: number | null
+          max_single_strategy_pct?: number | null
+          regulatory_constraints?: Json | null
+          soft_constraints?: Json | null
+          special_constraints?: string | null
+          target_return_nominal?: number | null
+          target_return_real?: number | null
+          updated_at?: string
+          user_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          allowed_currencies?: string[] | null
+          base_currency?: string | null
+          created_at?: string
+          esg_exclusions?: string[] | null
+          hard_constraints?: Json | null
+          id?: string
+          investment_horizon_years?: number | null
+          liquidity_t0_min_pct?: number | null
+          liquidity_t30_min_pct?: number | null
+          liquidity_t90_min_pct?: number | null
+          max_drawdown?: number | null
+          max_fx_exposure_pct?: number | null
+          max_single_asset_pct?: number | null
+          max_single_geography_pct?: number | null
+          max_single_strategy_pct?: number | null
+          regulatory_constraints?: Json | null
+          soft_constraints?: Json | null
+          special_constraints?: string | null
+          target_return_nominal?: number | null
+          target_return_real?: number | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_constraints_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_correlations: {
+        Row: {
+          asset_class_1: string
+          asset_class_2: string
+          correlation: number
+          created_at: string
+          id: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          asset_class_1: string
+          asset_class_2: string
+          correlation: number
+          created_at?: string
+          id?: string
+          user_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          asset_class_1?: string
+          asset_class_2?: string
+          correlation?: number
+          created_at?: string
+          id?: string
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_correlations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_narratives: {
+        Row: {
+          allocation_rationale: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          embedded_charts: Json | null
+          executive_summary: string | null
+          expected_outcomes: string | null
+          governance_rules: string | null
+          id: string
+          risk_explanation: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          allocation_rationale?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          embedded_charts?: Json | null
+          executive_summary?: string | null
+          expected_outcomes?: string | null
+          governance_rules?: string | null
+          id?: string
+          risk_explanation?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          allocation_rationale?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          embedded_charts?: Json | null
+          executive_summary?: string | null
+          expected_outcomes?: string | null
+          governance_rules?: string | null
+          id?: string
+          risk_explanation?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_narratives_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_optimizations: {
+        Row: {
+          created_at: string
+          efficient_frontier_data: Json | null
+          expected_return_after: number | null
+          expected_return_before: number | null
+          expected_volatility_after: number | null
+          expected_volatility_before: number | null
+          id: string
+          input_assumptions: Json
+          input_weights: Json
+          optimized_weights: Json
+          posterior_returns: Json | null
+          risk_aversion: number | null
+          risk_free_rate: number | null
+          sharpe_after: number | null
+          sharpe_before: number | null
+          tau: number | null
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          efficient_frontier_data?: Json | null
+          expected_return_after?: number | null
+          expected_return_before?: number | null
+          expected_volatility_after?: number | null
+          expected_volatility_before?: number | null
+          id?: string
+          input_assumptions: Json
+          input_weights: Json
+          optimized_weights: Json
+          posterior_returns?: Json | null
+          risk_aversion?: number | null
+          risk_free_rate?: number | null
+          sharpe_after?: number | null
+          sharpe_before?: number | null
+          tau?: number | null
+          user_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          efficient_frontier_data?: Json | null
+          expected_return_after?: number | null
+          expected_return_before?: number | null
+          expected_volatility_after?: number | null
+          expected_volatility_before?: number | null
+          id?: string
+          input_assumptions?: Json
+          input_weights?: Json
+          optimized_weights?: Json
+          posterior_returns?: Json | null
+          risk_aversion?: number | null
+          risk_free_rate?: number | null
+          sharpe_after?: number | null
+          sharpe_before?: number | null
+          tau?: number | null
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_optimizations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_scenarios: {
+        Row: {
+          created_at: string
+          id: string
+          interpretation: string | null
+          parameters: Json
+          results: Json
+          scenario_name: string
+          scenario_type: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interpretation?: string | null
+          parameters: Json
+          results: Json
+          scenario_name: string
+          scenario_type: string
+          user_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interpretation?: string | null
+          parameters?: Json
+          results?: Json
+          scenario_name?: string
+          scenario_type?: string
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_scenarios_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_versions: {
+        Row: {
+          allocations_snapshot: Json | null
+          assumptions_snapshot: Json | null
+          change_summary: string | null
+          constraints_snapshot: Json | null
+          created_at: string
+          created_by: string | null
+          id: string
+          optimization_snapshot: Json | null
+          user_id: string
+          version_number: number
+          workspace_id: string
+        }
+        Insert: {
+          allocations_snapshot?: Json | null
+          assumptions_snapshot?: Json | null
+          change_summary?: string | null
+          constraints_snapshot?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          optimization_snapshot?: Json | null
+          user_id: string
+          version_number: number
+          workspace_id: string
+        }
+        Update: {
+          allocations_snapshot?: Json | null
+          assumptions_snapshot?: Json | null
+          change_summary?: string | null
+          constraints_snapshot?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          optimization_snapshot?: Json | null
+          user_id?: string
+          version_number?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_versions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "client_workspaces"
             referencedColumns: ["id"]
           },
         ]

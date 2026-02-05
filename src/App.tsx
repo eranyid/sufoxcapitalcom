@@ -53,6 +53,8 @@ const Lab = lazy(() => import("./pages/Lab"));
 const Charts = lazy(() => import("./pages/Charts"));
 const Calendar = lazy(() => import("./pages/Calendar"));
 const ExpectedReturnLab = lazy(() => import("./pages/ExpectedReturnLab"));
+ const Workspaces = lazy(() => import("./pages/Workspaces"));
+ const WorkspaceDetail = lazy(() => import("./pages/WorkspaceDetail"));
 
 const queryClient = new QueryClient();
 
@@ -175,6 +177,16 @@ const App = () => (
                       <ExpectedReturnLab />
                     </Suspense>
                   } />
+                   <Route path="/workspaces" element={
+                     <Suspense fallback={<DashboardLoadingSkeleton />}>
+                       <Workspaces />
+                     </Suspense>
+                   } />
+                   <Route path="/workspaces/:id" element={
+                     <Suspense fallback={<DashboardLoadingSkeleton />}>
+                       <WorkspaceDetail />
+                     </Suspense>
+                   } />
                   <Route path="/construction" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Construction />
