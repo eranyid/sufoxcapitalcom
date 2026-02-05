@@ -119,13 +119,13 @@
        </div>
 
        {/* Main orbital composition - vertical on mobile, horizontal on desktop */}
-       <div className="relative flex flex-col md:flex-row items-center justify-center px-6 md:px-0 py-12 md:py-0">
+       <div className="relative flex flex-col md:flex-row items-center justify-center px-6 md:px-0 pt-16 pb-8 md:py-0">
          
          {/* Orbital rings - always centered on logo */}
          <div 
            className="absolute flex items-center justify-center pointer-events-none"
            style={{ 
-             top: isMobile ? '56px' : '50%', 
+             top: isMobile ? '80px' : '50%', 
              left: '50%', 
              transform: isMobile ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
            }}
@@ -168,7 +168,7 @@
  
          {/* Central Logo - the visual anchor */}
          <div 
-           className="relative z-20 animate-scale-in mb-8 md:mb-0"
+           className="relative z-20 animate-scale-in mb-6 md:mb-0"
            style={{ animationDuration: '0.6s' }}
          >
            {/* Breathing glow behind logo */}
@@ -181,11 +181,11 @@
            />
            
            {/* Logo container */}
-           <div className="relative p-5 md:p-7 rounded-full bg-gradient-to-br from-[rgba(30,30,35,0.9)] to-[rgba(20,20,25,0.8)] border border-[rgba(180,140,60,0.25)] backdrop-blur-xl shadow-[0_0_60px_rgba(180,140,60,0.15)]">
+           <div className="relative p-4 md:p-7 rounded-full bg-gradient-to-br from-[rgba(30,30,35,0.9)] to-[rgba(20,20,25,0.8)] border border-[rgba(180,140,60,0.25)] backdrop-blur-xl shadow-[0_0_60px_rgba(180,140,60,0.15)]">
              <img 
                src={sufoxLogo} 
                alt="SUFOX Capital" 
-               className="h-14 w-14 md:h-20 md:w-20 object-contain"
+               className="h-12 w-12 md:h-20 md:w-20 object-contain"
                style={{ filter: 'drop-shadow(0 0 8px rgba(180, 140, 60, 0.3))' }}
              />
            </div>
