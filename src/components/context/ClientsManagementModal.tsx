@@ -1,5 +1,5 @@
  import { useState } from 'react';
- import { Building2, Plus, ArrowRight, Loader2, MoreHorizontal, Trash2, Power, PowerOff, Edit2 } from 'lucide-react';
+ import { Plus, ArrowRight, Loader2, MoreHorizontal, Trash2, Power, PowerOff } from 'lucide-react';
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
  import { Button } from '@/components/ui/button';
  import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@
  import { useClients, Client } from '@/hooks/useClients';
  import { CreateClientDialog } from './CreateClientDialog';
  import { formatDistanceToNow } from 'date-fns';
+ import PeopleIcon from '@/assets/people-icon.svg';
  
  interface ClientsManagementModalProps {
    open: boolean;
@@ -38,58 +39,68 @@
    return (
      <>
        <Dialog open={open} onOpenChange={onOpenChange}>
-         <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+         <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col bg-[#0d0d10] border-[rgba(60,100,160,0.2)]">
            <DialogHeader>
-             <div className="flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 rounded-lg bg-accent/10 border border-accent/20">
-                   <Building2 className="h-5 w-5 text-accent" />
+             <div className="flex items-center justify-between pb-4 border-b border-border/30">
+               <div className="flex items-center gap-4">
+                 <div className="p-3 rounded-full bg-gradient-to-br from-[rgba(60,120,180,0.2)] to-[rgba(60,120,180,0.05)] border border-[rgba(60,120,180,0.3)]">
+                   <img 
+                     src={PeopleIcon} 
+                     alt="" 
+                     className="h-6 w-6" 
+                     style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(50%) saturate(400%) hue-rotate(175deg) brightness(95%)' }} 
+                   />
                  </div>
                  <div>
-                   <DialogTitle className="text-xl">Clients</DialogTitle>
-                   <DialogDescription className="text-sm">
+                   <DialogTitle className="text-lg font-medium text-white/90">Clients</DialogTitle>
+                   <DialogDescription className="text-xs text-white/40 mt-0.5">
                      Manage and select client contexts
                    </DialogDescription>
                  </div>
                </div>
                <Button 
-                 variant="outline" 
+                 variant="ghost" 
                  size="sm" 
                  onClick={() => setShowCreateDialog(true)}
-                 className="gap-1.5"
+                 className="gap-1.5 text-[#5a9bd4] hover:text-[#5a9bd4] hover:bg-[rgba(60,120,180,0.1)] border border-[rgba(60,120,180,0.3)]"
                >
                  <Plus className="h-4 w-4" />
-                 Add
+                 New Client
                </Button>
              </div>
            </DialogHeader>
            
-           <div className="flex-1 overflow-hidden mt-4">
+           <div className="flex-1 overflow-hidden mt-2">
              {isLoading ? (
-               <div className="flex items-center justify-center h-40">
+               <div className="flex items-center justify-center h-48">
                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                </div>
              ) : clients.length === 0 ? (
-               <div className="flex flex-col items-center justify-center h-40 text-center p-6">
-                 <div className="p-4 rounded-full bg-muted/50 mb-4">
-                   <Building2 className="h-8 w-8 text-muted-foreground" />
+               <div className="flex flex-col items-center justify-center h-48 text-center p-6">
+                 <div className="p-4 rounded-full bg-[rgba(60,120,180,0.1)] border border-[rgba(60,120,180,0.2)] mb-4">
+                   <img 
+                     src={PeopleIcon} 
+                     alt="" 
+                     className="h-8 w-8 opacity-50" 
+                     style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(50%) saturate(400%) hue-rotate(175deg) brightness(95%)' }} 
+                   />
                  </div>
-                 <p className="text-muted-foreground mb-4">No clients yet</p>
+                 <p className="text-white/40 mb-4 text-sm">No clients yet</p>
                  <Button 
-                   variant="outline" 
+                   variant="ghost" 
                    onClick={() => setShowCreateDialog(true)}
-                   className="gap-1.5"
+                   className="gap-1.5 text-[#5a9bd4] hover:text-[#5a9bd4] hover:bg-[rgba(60,120,180,0.1)] border border-[rgba(60,120,180,0.3)]"
                  >
                    <Plus className="h-4 w-4" />
                    Create First Client
                  </Button>
                </div>
              ) : (
-               <ScrollArea className="h-[400px] pr-2">
-                 <div className="space-y-4">
+               <ScrollArea className="h-[350px] pr-2">
+                 <div className="space-y-5">
                    {activeClients.length > 0 && (
-                     <div className="space-y-2">
-                       <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium px-1">Active</p>
+                     <div className="space-y-2.5">
+                       <p className="text-[10px] text-[#5a9bd4]/70 uppercase tracking-[0.15em] font-medium px-1">Active</p>
                        {activeClients.map((client) => (
                          <ClientRow 
                            key={client.id} 
@@ -106,8 +117,8 @@
                    )}
                    
                    {inactiveClients.length > 0 && (
-                     <div className="space-y-2 mt-6">
-                       <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium px-1">Inactive</p>
+                     <div className="space-y-2.5">
+                       <p className="text-[10px] text-white/30 uppercase tracking-[0.15em] font-medium px-1">Inactive</p>
                        {inactiveClients.map((client) => (
                          <ClientRow 
                            key={client.id} 
@@ -168,35 +179,38 @@
    const isActive = client.status === 'active';
    
    return (
-     <div className="group flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/50 hover:bg-muted/50 hover:border-border transition-colors">
+     <div className={`group flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${
+       isActive 
+         ? 'border-[rgba(60,120,180,0.2)] bg-[rgba(60,120,180,0.05)] hover:bg-[rgba(60,120,180,0.1)] hover:border-[rgba(60,120,180,0.35)]' 
+         : 'border-border/30 bg-background/30 hover:bg-muted/30 hover:border-border/50'
+     }`}>
        <button
          onClick={onSelect}
          className="flex-1 min-w-0 text-left"
        >
          <div className="flex items-center gap-2">
-           <span className={`font-medium truncate ${!isActive ? 'text-muted-foreground' : 'text-foreground'}`}>
+           <span className={`font-medium truncate ${!isActive ? 'text-white/40' : 'text-white/90'}`}>
              {client.name}
            </span>
-           <Badge 
-             variant={isActive ? 'default' : 'secondary'}
-             className="text-xs capitalize"
-           >
-             {client.status}
-           </Badge>
+           {isActive && (
+             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[rgba(60,120,180,0.2)] text-[#5a9bd4] border border-[rgba(60,120,180,0.3)]">
+               Active
+             </span>
+           )}
          </div>
          {client.description && (
-           <p className="text-xs text-muted-foreground mt-0.5 truncate">{client.description}</p>
+           <p className="text-xs text-white/40 mt-1 truncate">{client.description}</p>
          )}
-         <p className="text-[10px] text-muted-foreground/60 mt-1">
+         <p className="text-[10px] text-white/25 mt-1.5">
            Updated {formatDistanceToNow(new Date(client.updated_at), { addSuffix: true })}
          </p>
        </button>
        
-       <div className="flex items-center gap-1 ml-2">
+       <div className="flex items-center gap-1 ml-3">
          <Button
            variant="ghost"
            size="icon"
-           className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+           className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-[#5a9bd4] hover:text-[#5a9bd4] hover:bg-[rgba(60,120,180,0.15)]"
            onClick={onSelect}
          >
            <ArrowRight className="h-4 w-4" />
@@ -207,12 +221,12 @@
              <Button
                variant="ghost"
                size="icon"
-               className="h-8 w-8"
+               className="h-8 w-8 text-white/40 hover:text-white/70 hover:bg-white/5"
              >
                <MoreHorizontal className="h-4 w-4" />
              </Button>
            </DropdownMenuTrigger>
-           <DropdownMenuContent align="end">
+           <DropdownMenuContent align="end" className="bg-[#15151a] border-border/50">
              <DropdownMenuItem onClick={onToggleStatus}>
                {isActive ? (
                  <>
