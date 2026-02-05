@@ -277,50 +277,58 @@
    } catch {
      optimalWeights = marketWeights;
    }
-   
-   // Step 7: Calculate risk contributions
-   const portfolioVol = calculatePortfolioVolatility(
-     optimalWeights.map(w => w * 100), 
-     covMatrix
-   );
-   
-   const riskContributions: number[] = [];
-   for (let i = 0; i < n; i++) {
-     const w = optimalWeights.map(x => x);
-     const sigmaW = math.multiply(covMatrix, w) as number[];
-     const marginalRisk = sigmaW[i] / (portfolioVol / 100);
-     const contribution = w[i] * marginalRisk;
-     riskContributions.push(contribution);
-   }
-   
-   const totalRiskContrib = riskContributions.reduce((a, b) => a + Math.abs(b), 0);
-   
-   // Build results
-   const results: OptimizationResult[] = assets.map((asset, i) => ({
-     assetClass: asset.assetClass,
-     impliedMarketReturn: impliedReturns[i],
-     posteriorReturn: posteriorReturns[i],
-     inputWeight: asset.marketCapWeight,
-     optimizedWeight: optimalWeights[i] * 100,
-     riskContribution: totalRiskContrib > 0 ? (Math.abs(riskContributions[i]) / totalRiskContrib) * 100 : 0,
-     marginalRisk: (math.multiply(covMatrix, optimalWeights) as number[])[i] * 100,
-   }));
-   
-   // Calculate portfolio metrics for both input and optimized
-   const inputWeights = assets.map(a => a.marketCapWeight);
-   const inputReturns = assets.map(a => a.expectedReturn);
-   
-   const inputMetrics: PortfolioMetrics = {
-     expectedReturn: calculateExpectedPortfolioReturn(inputWeights, inputReturns),
-     expectedVolatility: calculatePortfolioVolatility(inputWeights, covMatrix),
-     sharpeRatio: 0,
-     diversificationRatio: 0,
-   };
-   inputMetrics.sharpeRatio = (inputMetrics.expectedReturn - params.riskFreeRate) / inputMetrics.expectedVolatility;
-   
-   const optimizedMetrics: PortfolioMetrics = {
-     expectedReturn: calculateExpectedPortfolioReturn(optimalWeights.map(w => w * 100), posteriorReturns),
-     expectedVolatility: portfolioVol,
+    
+    // Step 7: Calculate portfolio volatility
+    const portfolioVol = calculatePortfolioVolatility(
+      optimalWeights.map(w => w * 100), 
+      covMatrix
+    );
+    
+    // Step 8: Calculate risk contributions using Marginal Contribution to Risk (MCTR)
+    const portfolioVolDecimal = portfolioVol / 100;
+    const w = optimalWeights.map(x => x); // weights in decimal
+    const sigmaW = math.multiply(covMatrix, w) as number[]; // Sigma * w
+    
+    // Marginal risk for each asset: (Sigma * w)_i / sigma_p
+    const marginalRisks = sigmaW.map(sw => portfolioVolDecimal > 0 ? sw / portfolioVolDecimal : 0);
+    
+    // Risk contribution: w_i * MCTR_i
+    const riskContributions = w.map((wi, i) => wi * marginalRisks[i]);
+    
+    // Total should approximately equal portfolioVolDecimal
+    const totalRiskContrib = riskContributions.reduce((a, b) => a + Math.abs(b), 0);
+    
+    // Normalize to percentages
+    const normalizedRiskContribs = totalRiskContrib > 0 
+      ? riskContributions.map(rc => (Math.abs(rc) / totalRiskContrib) * 100)
+      : optimalWeights.map(w => w * 100); // fallback to weights
+    
+    // Build results
+    const results: OptimizationResult[] = assets.map((asset, i) => ({
+      assetClass: asset.assetClass,
+      impliedMarketReturn: impliedReturns[i],
+      posteriorReturn: posteriorReturns[i],
+      inputWeight: asset.marketCapWeight,
+      optimizedWeight: optimalWeights[i] * 100,
+      riskContribution: normalizedRiskContribs[i],
+      marginalRisk: marginalRisks[i] * 100,
+    }));
+    
+    // Calculate portfolio metrics for both input and optimized
+    const inputWeights = assets.map(a => a.marketCapWeight);
+    const inputReturns = assets.map(a => a.expectedReturn);
+    
+    const inputMetrics: PortfolioMetrics = {
+      expectedReturn: calculateExpectedPortfolioReturn(inputWeights, inputReturns),
+      expectedVolatility: calculatePortfolioVolatility(inputWeights, covMatrix),
+      sharpeRatio: 0,
+      diversificationRatio: 0,
+    };
+    inputMetrics.sharpeRatio = (inputMetrics.expectedReturn - params.riskFreeRate) / inputMetrics.expectedVolatility;
+    
+    const optimizedMetrics: PortfolioMetrics = {
+      expectedReturn: calculateExpectedPortfolioReturn(optimalWeights.map(w => w * 100), posteriorReturns),
+      expectedVolatility: portfolioVol,
      sharpeRatio: 0,
      diversificationRatio: 0,
    };
