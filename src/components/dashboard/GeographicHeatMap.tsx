@@ -1,5 +1,8 @@
-import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import { useState, useCallback } from 'react';
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import { scaleLinear } from 'd3-scale';
+import { Button } from '@/components/ui/button';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
@@ -110,6 +113,27 @@ const COLORS = ['#FF8C00', '#4A90D9', '#50C878', '#FFD700', '#9370DB', '#FF6B6B'
 export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
   
+  // Zoom and pan state
+  const [position, setPosition] = useState({ coordinates: [0, 25] as [number, number], zoom: 1 });
+
+  const handleZoomIn = useCallback(() => {
+    if (position.zoom >= 8) return;
+    setPosition(pos => ({ ...pos, zoom: pos.zoom * 1.5 }));
+  }, [position.zoom]);
+
+  const handleZoomOut = useCallback(() => {
+    if (position.zoom <= 1) return;
+    setPosition(pos => ({ ...pos, zoom: pos.zoom / 1.5 }));
+  }, [position.zoom]);
+
+  const handleReset = useCallback(() => {
+    setPosition({ coordinates: [0, 25], zoom: 1 });
+  }, []);
+
+  const handleMoveEnd = useCallback((pos: { coordinates: [number, number]; zoom: number }) => {
+    setPosition(pos);
+  }, []);
+  
   // Create a weight map for each ISO country code
   const countryWeights: Record<string, number> = {};
   let hasGlobal = false;
@@ -170,20 +194,58 @@ export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
         <div>
           <span className="text-primary">■</span> Geographic Distribution
         </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleZoomIn}
+            disabled={position.zoom >= 8}
+          >
+            <ZoomIn className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleZoomOut}
+            disabled={position.zoom <= 1}
+          >
+            <ZoomOut className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleReset}
+            disabled={position.zoom === 1 && position.coordinates[0] === 0 && position.coordinates[1] === 25}
+          >
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
       <div className="p-4">
         {/* World Heat Map - Full Width */}
         <div className="w-full mb-4">
-          <p className="terminal-label mb-2">Distribution</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="terminal-label">Distribution</p>
+            <p className="text-[9px] text-muted-foreground">Drag to pan • Scroll to zoom</p>
+          </div>
           <div className="w-full h-[280px] md:h-[340px]">
             <ComposableMap
               projection="geoMercator"
               projectionConfig={{
-                scale: 140,
-                center: [0, 25]
+                scale: 140
               }}
               style={{ width: '100%', height: '100%' }}
             >
+              <ZoomableGroup
+                zoom={position.zoom}
+                center={position.coordinates}
+                onMoveEnd={handleMoveEnd}
+                minZoom={1}
+                maxZoom={8}
+              >
               <Geographies geography={geoUrl}>
                 {({ geographies }) =>
                   geographies.map((geo) => {
@@ -209,6 +271,7 @@ export function GeographicHeatMap({ data }: GeographicHeatMapProps) {
                   })
                 }
               </Geographies>
+              </ZoomableGroup>
             </ComposableMap>
           </div>
           
