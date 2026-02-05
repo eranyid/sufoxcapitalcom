@@ -1260,6 +1260,47 @@ export type Database = {
         }
         Relationships: []
       }
+      policy_target_holdings: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          name: string | null
+          target_weight: number
+          ticker: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          target_weight?: number
+          ticker: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          target_weight?: number
+          ticker?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_target_holdings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolio_settings: {
         Row: {
           base_currency: string | null
