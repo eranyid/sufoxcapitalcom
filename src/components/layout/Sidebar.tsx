@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
-  ChevronLeft, ChevronRight, LogOut, Users, HelpCircle
+  ChevronLeft, ChevronRight, LogOut, Users, HelpCircle, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -26,6 +27,7 @@ import { LabIcon } from '@/components/icons/LabIcon';
  import { ERLabIcon } from '@/components/icons/ERLabIcon';
  import { WorkspacesIcon } from '@/components/icons/WorkspacesIcon';
 import { LucideIcon } from 'lucide-react';
+import { useSession } from '@/context/SessionContext';
 
 interface NavItem {
   path: string;
@@ -149,6 +151,13 @@ function NavGroupSection({
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut, isAdmin } = useAuth();
+  const { clearContext } = useSession();
+  const navigate = useNavigate();
+  
+  const handleSwitchContext = () => {
+    clearContext();
+    navigate('/context');
+  };
 
   return (
     <aside
@@ -247,6 +256,17 @@ export function Sidebar() {
             <p className="text-[10px] text-foreground truncate font-mono">{user.email}</p>
           </div>
         )}
+        <button
+          onClick={handleSwitchContext}
+          className={cn(
+            "w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] text-muted-foreground hover:text-accent",
+            "hover:bg-accent/10 transition-all duration-200 rounded-md font-medium",
+            collapsed && "justify-center px-0"
+          )}
+        >
+          <RefreshCw size={12} />
+          {!collapsed && <span>Switch Context</span>}
+        </button>
         <button
           onClick={signOut}
           className={cn(
