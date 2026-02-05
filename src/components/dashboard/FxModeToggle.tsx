@@ -8,23 +8,13 @@ interface FxModeToggleProps {
 export function FxModeToggle({ className }: FxModeToggleProps) {
   const { fxMode, setFxMode } = useFxMode();
 
-  const handleRealClick = () => {
-    setFxMode('real');
-  };
-
-  const handleNominalClick = () => {
-    setFxMode('nominal');
-  };
-
   return (
-    <div className={cn("flex items-center gap-0.5 p-1 bg-muted/50 border border-border rounded-full", className)}>
+    <div className={cn("flex items-center gap-0.5 p-0.5 bg-muted/50 border border-border rounded-full", className)}>
       <button
         type="button"
-        onClick={handleRealClick}
+        onClick={() => setFxMode('real')}
         className={cn(
-          // Mobile-first: larger touch targets (min 44px height)
-          "min-h-[44px] px-4 sm:min-h-0 sm:px-3 sm:py-1.5",
-          "text-xs sm:text-[10px] font-mono uppercase tracking-wider rounded-full transition-colors",
+          "px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded-full transition-colors",
           "touch-manipulation select-none",
           fxMode === 'real' 
             ? "bg-primary text-primary-foreground" 
@@ -35,11 +25,9 @@ export function FxModeToggle({ className }: FxModeToggleProps) {
       </button>
       <button
         type="button"
-        onClick={handleNominalClick}
+        onClick={() => setFxMode('nominal')}
         className={cn(
-          // Mobile-first: larger touch targets (min 44px height)
-          "min-h-[44px] px-4 sm:min-h-0 sm:px-3 sm:py-1.5",
-          "text-xs sm:text-[10px] font-mono uppercase tracking-wider rounded-full transition-colors",
+          "px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded-full transition-colors",
           "touch-manipulation select-none",
           fxMode === 'nominal' 
             ? "bg-primary text-primary-foreground" 
