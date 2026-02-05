@@ -94,7 +94,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
         )}
       >
       {/* Header - Mobile optimized, scrollable when tall */}
-        <div className="flex-shrink-1 overflow-y-auto border-b border-border p-3 sm:p-4 max-h-[55vh] sm:max-h-none">
+        <div className="shrink overflow-y-auto border-b border-border p-3 sm:p-4 max-h-[50vh]">
           <div className="flex items-start justify-between gap-2 sm:gap-3">
             <div className="flex-1 min-w-0">
               <Input
