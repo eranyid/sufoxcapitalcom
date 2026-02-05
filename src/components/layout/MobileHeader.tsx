@@ -1,10 +1,13 @@
 import { Database } from 'lucide-react';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useSession } from '@/context/SessionContext';
+import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useState, useEffect, useMemo } from 'react';
 import { getUSMarketSession, getTASEMarketSession, getUSStatusColor, getTASEStatusColor, formatCountdown, TIMEZONE_ISRAEL, TIMEZONE_US } from '@/lib/marketSessionEngine';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { User, Building2, ArrowLeftRight } from 'lucide-react';
 
 interface MobileHeaderProps {
   status: 'ok' | 'warning' | 'error';
@@ -229,12 +232,19 @@ export function MobileHeader({
   onNotificationsClick
 }: MobileHeaderProps) {
   const { sampleDataMode } = usePortfolio();
+  const { session, isContextSet, clearContext } = useSession();
+  const navigate = useNavigate();
   const [time, setTime] = useState(new Date());
   
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const handleSwitchContext = () => {
+    clearContext();
+    navigate('/context');
+  };
 
   // Get market sessions
   const usSession = getUSMarketSession(time);
@@ -271,6 +281,23 @@ export function MobileHeader({
           
           {/* Right: Notifications + Sample data indicator */}
           <div className="flex items-center gap-2">
+            {/* Context Indicator */}
+            {isContextSet && (
+              <button
+                onClick={handleSwitchContext}
+                className="flex items-center gap-1 px-2 py-0.5 bg-muted/50 border border-border/50 rounded text-[10px]"
+              >
+                {session.scope === 'personal' ? (
+                  <User className="h-3 w-3 text-primary" />
+                ) : (
+                  <Building2 className="h-3 w-3 text-accent" />
+                )}
+                <span className="max-w-[50px] truncate">
+                  {session.scope === 'personal' ? 'Personal' : session.clientName}
+                </span>
+                <ArrowLeftRight className="h-2.5 w-2.5 text-muted-foreground" />
+              </button>
+            )}
             <NotificationBell 
               unreadCount={unreadNotifications} 
               onClick={onNotificationsClick} 

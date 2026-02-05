@@ -147,6 +147,7 @@ export type Database = {
       }
       client_workspaces: {
         Row: {
+          client_id: string | null
           client_name: string | null
           created_at: string
           current_version: number
@@ -158,6 +159,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           client_name?: string | null
           created_at?: string
           current_version?: number
@@ -169,9 +171,48 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
           client_name?: string | null
           created_at?: string
           current_version?: number
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_workspaces_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
           description?: string | null
           id?: string
           name?: string
