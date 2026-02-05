@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { syncCrmFromTransaction } from '@/hooks/useCrmSync';
 import { createLedgerEntry, LedgerEntryType } from '@/lib/capitalLedger';
 import { getFxRate, getDefaultFxRate } from '@/lib/fxService';
+import { useSession } from '@/context/SessionContext';
 
 // Default FX rates in USD/{Currency} format (how many units of currency per 1 USD)
 // e.g., ILS: 3.7 means 1 USD = 3.7 ILS
@@ -57,6 +58,7 @@ const PortfolioContext = createContext<PortfolioContextType | null>(null);
 
 export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { session, isContextSet } = useSession();
   const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
   const [userValuations, setUserValuations] = useState<MonthlyValuation[]>([]);
   const [companySectors, setCompanySectors] = useState<Map<string, string>>(new Map());
@@ -93,9 +95,12 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('sampleDataMode', String(enabled));
   };
 
+  // Get client_id for queries - null means personal (no client filter on insert, filter by IS NULL on select)
+  const activeClientId = session.scope === 'client' ? session.clientId : null;
+
   // Load data from Supabase when user changes
   useEffect(() => {
-    if (!user) {
+    if (!user || !isContextSet) {
       setUserTransactions([]);
       setUserValuations([]);
       setSettings({ riskFreeRate: 4.5, benchmarkReturns: [], baseCurrency: 'USD' });
@@ -107,12 +112,21 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     const loadData = async () => {
       setLoading(true);
       try {
-        // Load transactions
-        const { data: txData } = await supabase
+        // Load transactions - filter by client context
+        let txQuery = supabase
           .from('transactions')
           .select('*')
           .eq('user_id', user.id)
           .is('deleted_at', null);
+        
+        // Filter by client_id based on context
+        if (activeClientId) {
+          txQuery = txQuery.eq('client_id', activeClientId);
+        } else {
+          txQuery = txQuery.is('client_id', null);
+        }
+        
+        const { data: txData } = await txQuery;
         
         if (txData) {
           setUserTransactions(txData.map(tx => ({
@@ -135,12 +149,20 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
           })));
         }
 
-        // Load valuations
-        const { data: valData } = await supabase
+        // Load valuations - filter by client context
+        let valQuery = supabase
           .from('valuations')
           .select('*')
           .eq('user_id', user.id)
           .is('deleted_at', null);
+        
+        if (activeClientId) {
+          valQuery = valQuery.eq('client_id', activeClientId);
+        } else {
+          valQuery = valQuery.is('client_id', null);
+        }
+        
+        const { data: valData } = await valQuery;
         
         if (valData) {
           setUserValuations(valData.map(val => ({
@@ -155,12 +177,19 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
           })));
         }
 
-        // Load settings
-        const { data: settingsData } = await supabase
+        // Load settings - filter by client context
+        let settingsQuery = supabase
           .from('portfolio_settings')
           .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('user_id', user.id);
+        
+        if (activeClientId) {
+          settingsQuery = settingsQuery.eq('client_id', activeClientId);
+        } else {
+          settingsQuery = settingsQuery.is('client_id', null);
+        }
+        
+        const { data: settingsData } = await settingsQuery.maybeSingle();
         
         if (settingsData) {
           setSettings({
@@ -168,14 +197,24 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
             benchmarkReturns: (settingsData.benchmark_returns as number[]) ?? [],
             baseCurrency: settingsData.base_currency as PortfolioSettings['baseCurrency']
           });
+        } else {
+          // Reset to defaults if no settings found for this context
+          setSettings({ riskFreeRate: 4.5, benchmarkReturns: [], baseCurrency: 'USD' });
         }
 
-        // Load cash balances
-        const { data: cashData } = await supabase
+        // Load cash balances - filter by client context
+        let cashQuery = supabase
           .from('cash_balances')
           .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('user_id', user.id);
+        
+        if (activeClientId) {
+          cashQuery = cashQuery.eq('client_id', activeClientId);
+        } else {
+          cashQuery = cashQuery.is('client_id', null);
+        }
+        
+        const { data: cashData } = await cashQuery.maybeSingle();
         
         if (cashData) {
           setCashBalances({
@@ -186,14 +225,25 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
             CHF: Number(cashData.chf ?? 0),
             JPY: Number(cashData.jpy ?? 0)
           });
+        } else {
+          // Reset to defaults if no cash balances found for this context
+          setCashBalances({ USD: 0, EUR: 0, ILS: 0, GBP: 0, CHF: 0, JPY: 0 });
         }
 
-        // Load CRM companies to get sector and time_horizon data
-        const { data: companiesData } = await supabase
+        // Load CRM companies to get sector and time_horizon data - filter by client context
+        let companiesQuery = supabase
           .from('crm_companies')
           .select('ticker, sector, time_horizon')
           .eq('user_id', user.id)
           .is('deleted_at', null);
+        
+        if (activeClientId) {
+          companiesQuery = companiesQuery.eq('client_id', activeClientId);
+        } else {
+          companiesQuery = companiesQuery.is('client_id', null);
+        }
+        
+        const { data: companiesData } = await companiesQuery;
         
         if (companiesData) {
           const sectorMap = new Map<string, string>();
@@ -213,6 +263,9 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
           });
           setCompanySectors(sectorMap);
           setCompanyTimeHorizons(timeHorizonMap);
+        } else {
+          setCompanySectors(new Map());
+          setCompanyTimeHorizons(new Map());
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -222,7 +275,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadData();
-  }, [user]);
+  }, [user, isContextSet, activeClientId]);
 
   // Load FX rates from database
   // IMPORTANT: DB stores rates as "1 USD = X {Currency}" (e.g., 1 USD = 3.10 ILS)
@@ -230,7 +283,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   // For currencies where rate < 1 (EUR, GBP, CHF), we need to invert the rate
   // For currencies where rate > 1 (ILS, JPY), the rate is already correct
   const refreshFxRates = useCallback(async () => {
-    if (!user) return;
+    if (!user || !isContextSet) return;
     
     try {
       // Get the latest rate for each currency pair to USD
@@ -239,8 +292,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       const prevRates: FxRatesMap = { USD: 1 };
       
       for (const currency of currencies) {
-        // Get the latest rate - DB stores as "USD → Currency" (e.g., USD/ILS = 3.10)
-        const { data: latestData } = await supabase
+        // Get the latest rate - filter by client context
+        let rateQuery = supabase
           .from('fx_rates')
           .select('rate, rate_date')
           .eq('user_id', user.id)
@@ -249,16 +302,20 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
           .order('rate_date', { ascending: false })
           .limit(2);
         
+        if (activeClientId) {
+          rateQuery = rateQuery.eq('client_id', activeClientId);
+        } else {
+          rateQuery = rateQuery.is('client_id', null);
+        }
+        
+        const { data: latestData } = await rateQuery;
+        
         if (latestData && latestData.length > 0) {
-          // DB stores rates as "1 USD = X {Currency}" (e.g., 1 USD = 3.10 ILS)
-          // This is the format we need for calculations: amount_in_usd * rate = amount_in_currency
-          // Or: amount_in_currency / rate = amount_in_usd
           newRates[currency] = Number(latestData[0].rate);
           prevRates[currency] = latestData.length > 1 
             ? Number(latestData[1].rate) 
             : Number(latestData[0].rate);
         } else {
-          // Fallback to default
           newRates[currency] = getDefaultFxRate(currency, 'USD');
           prevRates[currency] = getDefaultFxRate(currency, 'USD');
         }
@@ -269,7 +326,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to load FX rates:', error);
     }
-  }, [user]);
+  }, [user, isContextSet, activeClientId]);
 
   // Load FX rates when user changes
   useEffect(() => {
@@ -438,6 +495,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       .from('transactions')
       .insert({
         user_id: user.id,
+        client_id: activeClientId,
         asset_name: tx.assetName,
         ticker: tx.ticker,
         asset_type: tx.assetType,
@@ -489,14 +547,21 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       const transactionMonth = tx.date.substring(0, 7); // YYYY-MM
       
       // Check if a valuation already exists for this ticker + month
-      const { data: existingVal } = await supabase
+      let existingValQuery = supabase
         .from('valuations')
         .select('id')
         .eq('user_id', user.id)
         .eq('ticker', tx.ticker.toUpperCase())
         .eq('month', transactionMonth)
-        .is('deleted_at', null)
-        .maybeSingle();
+        .is('deleted_at', null);
+      
+      if (activeClientId) {
+        existingValQuery = existingValQuery.eq('client_id', activeClientId);
+      } else {
+        existingValQuery = existingValQuery.is('client_id', null);
+      }
+      
+      const { data: existingVal } = await existingValQuery.maybeSingle();
       
       if (existingVal) {
         // Update existing valuation with transaction price
@@ -520,6 +585,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
           .from('valuations')
           .insert({
             user_id: user.id,
+            client_id: activeClientId,
             asset_id: tx.ticker.toUpperCase(),
             ticker: tx.ticker.toUpperCase(),
             asset_name: tx.assetName,
@@ -642,14 +708,21 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     const tickerUpper = val.ticker.toUpperCase();
     
     // Check if a valuation already exists for this ticker + month (UPSERT logic)
-    const { data: existingVal } = await supabase
+    let existingValQuery = supabase
       .from('valuations')
       .select('id')
       .eq('user_id', user.id)
       .eq('ticker', tickerUpper)
       .eq('month', val.month)
-      .is('deleted_at', null)
-      .maybeSingle();
+      .is('deleted_at', null);
+    
+    if (activeClientId) {
+      existingValQuery = existingValQuery.eq('client_id', activeClientId);
+    } else {
+      existingValQuery = existingValQuery.is('client_id', null);
+    }
+    
+    const { data: existingVal } = await existingValQuery.maybeSingle();
     
     if (existingVal) {
       // UPDATE existing valuation - don't create duplicate
@@ -697,6 +770,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         .from('valuations')
         .insert({
           user_id: user.id,
+          client_id: activeClientId,
           asset_id: val.assetId,
           ticker: tickerUpper,
           asset_name: val.assetName,
@@ -776,14 +850,46 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     const updated = { ...settings, ...newSettings };
     
-    const { error } = await supabase
+    // For settings, we need a unique constraint on (user_id, client_id)
+    // Since client_id can be null for personal, we handle insert/update separately
+    let settingsQuery = supabase
       .from('portfolio_settings')
-      .upsert({
-        user_id: user.id,
-        risk_free_rate: updated.riskFreeRate,
-        benchmark_returns: updated.benchmarkReturns,
-        base_currency: updated.baseCurrency
-      }, { onConflict: 'user_id' });
+      .select('id')
+      .eq('user_id', user.id);
+    
+    if (activeClientId) {
+      settingsQuery = settingsQuery.eq('client_id', activeClientId);
+    } else {
+      settingsQuery = settingsQuery.is('client_id', null);
+    }
+    
+    const { data: existingSettings } = await settingsQuery.maybeSingle();
+    
+    let error;
+    if (existingSettings) {
+      // Update existing
+      const result = await supabase
+        .from('portfolio_settings')
+        .update({
+          risk_free_rate: updated.riskFreeRate,
+          benchmark_returns: updated.benchmarkReturns,
+          base_currency: updated.baseCurrency
+        })
+        .eq('id', existingSettings.id);
+      error = result.error;
+    } else {
+      // Insert new
+      const result = await supabase
+        .from('portfolio_settings')
+        .insert({
+          user_id: user.id,
+          client_id: activeClientId,
+          risk_free_rate: updated.riskFreeRate,
+          benchmark_returns: updated.benchmarkReturns,
+          base_currency: updated.baseCurrency
+        });
+      error = result.error;
+    }
     
     if (error) {
       console.error('Error updating settings:', error);
@@ -799,6 +905,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     const insertData = txs.map(tx => ({
       user_id: user.id,
+      client_id: activeClientId,
       asset_name: tx.assetName,
       ticker: tx.ticker,
       asset_type: tx.assetType,
@@ -846,6 +953,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     const insertData = vals.map(val => ({
       user_id: user.id,
+      client_id: activeClientId,
       asset_id: val.assetId,
       ticker: val.ticker,
       asset_name: val.assetName,
@@ -881,10 +989,25 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const clearAllData = async () => {
     if (!user) return;
     
+    // Only clear data for current context
+    let txDelete = supabase.from('transactions').delete().eq('user_id', user.id);
+    let valDelete = supabase.from('valuations').delete().eq('user_id', user.id);
+    let cashDelete = supabase.from('cash_balances').delete().eq('user_id', user.id);
+    
+    if (activeClientId) {
+      txDelete = txDelete.eq('client_id', activeClientId);
+      valDelete = valDelete.eq('client_id', activeClientId);
+      cashDelete = cashDelete.eq('client_id', activeClientId);
+    } else {
+      txDelete = txDelete.is('client_id', null);
+      valDelete = valDelete.is('client_id', null);
+      cashDelete = cashDelete.is('client_id', null);
+    }
+    
     await Promise.all([
-      supabase.from('transactions').delete().eq('user_id', user.id),
-      supabase.from('valuations').delete().eq('user_id', user.id),
-      supabase.from('cash_balances').delete().eq('user_id', user.id)
+      txDelete,
+      valDelete,
+      cashDelete
     ]);
     
     setUserTransactions([]);
@@ -898,17 +1021,49 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     
     const newBalances = { ...cashBalances, [currency]: amount };
     
-    const { error } = await supabase
+    // Check if cash balances exist for this context
+    let cashQuery = supabase
       .from('cash_balances')
-      .upsert({
-        user_id: user.id,
-        usd: newBalances.USD,
-        eur: newBalances.EUR,
-        ils: newBalances.ILS,
-        gbp: newBalances.GBP,
-        chf: newBalances.CHF,
-        jpy: newBalances.JPY
-      }, { onConflict: 'user_id' });
+      .select('id')
+      .eq('user_id', user.id);
+    
+    if (activeClientId) {
+      cashQuery = cashQuery.eq('client_id', activeClientId);
+    } else {
+      cashQuery = cashQuery.is('client_id', null);
+    }
+    
+    const { data: existingCash } = await cashQuery.maybeSingle();
+    
+    let error;
+    if (existingCash) {
+      const result = await supabase
+        .from('cash_balances')
+        .update({
+          usd: newBalances.USD,
+          eur: newBalances.EUR,
+          ils: newBalances.ILS,
+          gbp: newBalances.GBP,
+          chf: newBalances.CHF,
+          jpy: newBalances.JPY
+        })
+        .eq('id', existingCash.id);
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('cash_balances')
+        .insert({
+          user_id: user.id,
+          client_id: activeClientId,
+          usd: newBalances.USD,
+          eur: newBalances.EUR,
+          ils: newBalances.ILS,
+          gbp: newBalances.GBP,
+          chf: newBalances.CHF,
+          jpy: newBalances.JPY
+        });
+      error = result.error;
+    }
     
     if (error) {
       console.error('Error updating cash balance:', error);
@@ -974,18 +1129,49 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       [toCurrency]: newToBalance
     };
     
-    // Single database update with both currencies
-    const { error } = await supabase
+    // Check if cash balances exist for this context
+    let cashQuery = supabase
       .from('cash_balances')
-      .upsert({
-        user_id: user.id,
-        usd: newBalances.USD,
-        eur: newBalances.EUR,
-        ils: newBalances.ILS,
-        gbp: newBalances.GBP,
-        chf: newBalances.CHF,
-        jpy: newBalances.JPY
-      }, { onConflict: 'user_id' });
+      .select('id')
+      .eq('user_id', user.id);
+    
+    if (activeClientId) {
+      cashQuery = cashQuery.eq('client_id', activeClientId);
+    } else {
+      cashQuery = cashQuery.is('client_id', null);
+    }
+    
+    const { data: existingCash } = await cashQuery.maybeSingle();
+    
+    let error;
+    if (existingCash) {
+      const result = await supabase
+        .from('cash_balances')
+        .update({
+          usd: newBalances.USD,
+          eur: newBalances.EUR,
+          ils: newBalances.ILS,
+          gbp: newBalances.GBP,
+          chf: newBalances.CHF,
+          jpy: newBalances.JPY
+        })
+        .eq('id', existingCash.id);
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('cash_balances')
+        .insert({
+          user_id: user.id,
+          client_id: activeClientId,
+          usd: newBalances.USD,
+          eur: newBalances.EUR,
+          ils: newBalances.ILS,
+          gbp: newBalances.GBP,
+          chf: newBalances.CHF,
+          jpy: newBalances.JPY
+        });
+      error = result.error;
+    }
     
     if (error) {
       console.error('Error converting currency:', error);
