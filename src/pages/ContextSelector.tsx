@@ -5,7 +5,9 @@
  import { Client } from '@/hooks/useClients';
  import { SystemTypeModal } from '@/components/context/SystemTypeModal';
  import { ClientsManagementModal } from '@/components/context/ClientsManagementModal';
- import { User, Briefcase, ChevronRight } from 'lucide-react';
+ import { ChevronRight } from 'lucide-react';
+ import ProfileIcon from '@/assets/profile-icon.svg';
+ import PeopleIcon from '@/assets/people-icon.svg';
  import sufoxLogo from '@/assets/sufox-logo-new.png';
  import { useIsMobile } from '@/hooks/use-mobile';
  
@@ -184,7 +186,7 @@
                  }}
                />
                <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(180,140,60,0.2)] to-[rgba(180,140,60,0.05)] border border-[rgba(180,140,60,0.25)] group-hover:border-[rgba(180,140,60,0.45)] transition-colors duration-500">
-                 <User className="h-5 w-5 md:h-7 md:w-7 text-[#c4a54d]" />
+                  <img src={ProfileIcon} alt="" className="h-5 w-5 md:h-7 md:w-7" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(30%) saturate(600%) hue-rotate(10deg) brightness(95%)' }} />
                </div>
              </div>
              
@@ -242,7 +244,7 @@
                    }}
                  />
                  <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(60,120,180,0.2)] to-[rgba(60,120,180,0.05)] border border-[rgba(60,120,180,0.25)] group-hover:border-[rgba(60,120,180,0.45)] transition-colors duration-500">
-                   <Briefcase className="h-5 w-5 text-[#5a9bd4]" />
+                    <img src={PeopleIcon} alt="" className="h-5 w-5" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(50%) saturate(400%) hue-rotate(175deg) brightness(95%)' }} />
                  </div>
                </div>
              )}
@@ -265,7 +267,7 @@
                    }}
                  />
                  <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(60,120,180,0.2)] to-[rgba(60,120,180,0.05)] border border-[rgba(60,120,180,0.25)] group-hover:border-[rgba(60,120,180,0.45)] transition-colors duration-500">
-                   <Briefcase className="h-7 w-7 text-[#5a9bd4]" />
+                    <img src={PeopleIcon} alt="" className="h-7 w-7" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(50%) saturate(400%) hue-rotate(175deg) brightness(95%)' }} />
                  </div>
                </div>
              )}
