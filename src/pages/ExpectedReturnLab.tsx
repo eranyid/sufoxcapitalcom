@@ -39,33 +39,31 @@
    const [isCalculating, setIsCalculating] = useState(false);
    const [hasRun, setHasRun] = useState(false);
    
-   // Validation
-   const totalWeight = assets.reduce((sum, a) => sum + a.marketCapWeight, 0);
-   const isWeightValid = Math.abs(totalWeight - 100) < 0.5;
-   const hasEnoughAssets = assets.length >= 2;
-   const canOptimize = isWeightValid && hasEnoughAssets;
-   
-   // Run optimization
-   const handleOptimize = useCallback(() => {
-     if (!canOptimize) return;
-     
-     setIsCalculating(true);
-     
-     // Use setTimeout to allow UI to update
-     setTimeout(() => {
-       try {
-         const { results: optResults, metrics } = runBlackLittermanOptimization(assets, params);
-         setResults(optResults);
-         setInputMetrics(metrics.input);
-         setOptimizedMetrics(metrics.optimized);
-         setHasRun(true);
-       } catch (error) {
-         console.error('Optimization failed:', error);
-       } finally {
-         setIsCalculating(false);
-       }
-     }, 50);
-   }, [assets, params, canOptimize]);
+    // Validation - only check for minimum assets
+    const hasEnoughAssets = assets.length >= 2;
+    const canOptimize = hasEnoughAssets;
+    
+    // Run optimization
+    const handleOptimize = useCallback(() => {
+      if (!canOptimize) return;
+      
+      setIsCalculating(true);
+      
+      // Use setTimeout to allow UI to update
+      setTimeout(() => {
+        try {
+          const { results: optResults, metrics } = runBlackLittermanOptimization(assets, params);
+          setResults(optResults);
+          setInputMetrics(metrics.input);
+          setOptimizedMetrics(metrics.optimized);
+          setHasRun(true);
+        } catch (error) {
+          console.error('Optimization failed:', error);
+        } finally {
+          setIsCalculating(false);
+        }
+      }, 50);
+    }, [assets, params, canOptimize]);
    
    return (
      <>
@@ -109,24 +107,15 @@
            </Button>
          </div>
          
-         {/* Validation Warnings */}
-         {!isWeightValid && (
-           <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
-             <AlertTriangle className="h-4 w-4" />
-             <AlertDescription>
-               Total weights must sum to 100%. Current total: {totalWeight.toFixed(1)}%
-             </AlertDescription>
-           </Alert>
-         )}
-         
-         {!hasEnoughAssets && (
-           <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
-             <AlertTriangle className="h-4 w-4" />
-             <AlertDescription>
-               Add at least 2 asset classes to run optimization.
-             </AlertDescription>
-           </Alert>
-         )}
+          {/* Validation Warnings */}
+          {!hasEnoughAssets && (
+            <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Add at least 2 asset classes to run optimization.
+              </AlertDescription>
+            </Alert>
+          )}
          
          {/* SECTION 1: Input Assumptions */}
          <InputAssumptionsTable assets={assets} onAssetsChange={setAssets} />
