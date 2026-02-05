@@ -47,6 +47,26 @@
  
    return (
      <div className="min-h-screen bg-[#0a0a0c] relative overflow-hidden flex items-center justify-center">
+       {/* Animated flowing wave gradient */}
+       <div 
+         className="absolute inset-0 opacity-30"
+         style={{
+           background: 'linear-gradient(45deg, transparent 0%, rgba(30, 58, 95, 0.15) 25%, rgba(180, 140, 60, 0.1) 50%, rgba(30, 58, 95, 0.15) 75%, transparent 100%)',
+           backgroundSize: '400% 400%',
+           animation: 'waveFlow 15s ease-in-out infinite',
+         }}
+       />
+       
+       {/* Secondary wave layer for depth */}
+       <div 
+         className="absolute inset-0 opacity-20"
+         style={{
+           background: 'linear-gradient(-45deg, transparent 0%, rgba(180, 140, 60, 0.08) 30%, rgba(60, 100, 160, 0.12) 60%, transparent 100%)',
+           backgroundSize: '300% 300%',
+           animation: 'waveFlow 20s ease-in-out infinite reverse',
+         }}
+       />
+
        {/* Deep background gradient */}
        <div 
          className="absolute inset-0"
