@@ -21,14 +21,15 @@
  ];
  
  export function RiskContributionPie({ results }: RiskContributionPieProps) {
-   const data = results
-     .filter(r => r.riskContribution > 1)
-     .map(r => ({
-       name: r.assetClass.length > 15 ? r.assetClass.slice(0, 13) + '...' : r.assetClass,
-       fullName: r.assetClass,
-       value: r.riskContribution,
-     }))
-     .sort((a, b) => b.value - a.value);
+    // Include all assets with any positive risk contribution
+    const data = results
+      .filter(r => r.riskContribution > 0.5) // Lower threshold to 0.5%
+      .map(r => ({
+        name: r.assetClass.length > 15 ? r.assetClass.slice(0, 13) + '...' : r.assetClass,
+        fullName: r.assetClass,
+        value: r.riskContribution,
+      }))
+      .sort((a, b) => b.value - a.value);
    
    if (data.length === 0) {
      return (
