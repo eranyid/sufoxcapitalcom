@@ -281,11 +281,12 @@ export function PolicyFitCheck() {
               <p className="text-sm text-muted-foreground mb-4">
                 Check if your portfolio aligns with your investment policy using AI analysis
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+              <div className="flex flex-col items-center justify-center gap-2">
+                <ComplianceCheckModal onCheckComplete={handleComplianceCheckComplete} />
                 <Button 
                   onClick={runPolicyCheck} 
                   disabled={isRunning}
-                  className="gradient-gold text-primary-foreground"
+                  className="gradient-gold text-primary-foreground w-full sm:w-auto"
                 >
                   {isRunning ? (
                     <>
@@ -299,7 +300,6 @@ export function PolicyFitCheck() {
                     </>
                   )}
                 </Button>
-                <ComplianceCheckModal onCheckComplete={handleComplianceCheckComplete} />
               </div>
               <div className="mt-3">
                 <Link to="/policy" className="text-xs text-primary hover:underline flex items-center justify-center gap-1">
