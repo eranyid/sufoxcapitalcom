@@ -55,6 +55,7 @@ export type Database = {
           amount: number
           amount_base: number | null
           base_currency: string | null
+          client_id: string | null
           created_at: string
           currency: string
           description: string | null
@@ -70,6 +71,7 @@ export type Database = {
           amount: number
           amount_base?: number | null
           base_currency?: string | null
+          client_id?: string | null
           created_at?: string
           currency: string
           description?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           amount?: number
           amount_base?: number | null
           base_currency?: string | null
+          client_id?: string | null
           created_at?: string
           currency?: string
           description?: string | null
@@ -98,6 +101,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "capital_ledger_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "capital_ledger_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
@@ -109,6 +119,7 @@ export type Database = {
       cash_balances: {
         Row: {
           chf: number | null
+          client_id: string | null
           created_at: string
           eur: number | null
           gbp: number | null
@@ -121,6 +132,7 @@ export type Database = {
         }
         Insert: {
           chf?: number | null
+          client_id?: string | null
           created_at?: string
           eur?: number | null
           gbp?: number | null
@@ -133,6 +145,7 @@ export type Database = {
         }
         Update: {
           chf?: number | null
+          client_id?: string | null
           created_at?: string
           eur?: number | null
           gbp?: number | null
@@ -143,7 +156,15 @@ export type Database = {
           usd?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cash_balances_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_workspaces: {
         Row: {
@@ -450,6 +471,7 @@ export type Database = {
         Row: {
           asset_type: string | null
           business_description: string | null
+          client_id: string | null
           company_name: string
           confidence_level: string | null
           created_at: string
@@ -482,6 +504,7 @@ export type Database = {
         Insert: {
           asset_type?: string | null
           business_description?: string | null
+          client_id?: string | null
           company_name: string
           confidence_level?: string | null
           created_at?: string
@@ -514,6 +537,7 @@ export type Database = {
         Update: {
           asset_type?: string | null
           business_description?: string | null
+          client_id?: string | null
           company_name?: string
           confidence_level?: string | null
           created_at?: string
@@ -544,6 +568,13 @@ export type Database = {
           why_we_own?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "crm_companies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "crm_companies_project_id_fkey"
             columns: ["project_id"]
@@ -741,6 +772,7 @@ export type Database = {
       }
       custom_scenarios: {
         Row: {
+          client_id: string | null
           created_at: string
           description: string | null
           horizon: string
@@ -752,6 +784,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           description?: string | null
           horizon?: string
@@ -763,6 +796,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           description?: string | null
           horizon?: string
@@ -773,7 +807,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "custom_scenarios_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       external_events: {
         Row: {
@@ -825,6 +867,7 @@ export type Database = {
       }
       fx_rates: {
         Row: {
+          client_id: string | null
           created_at: string
           from_currency: string
           id: string
@@ -835,6 +878,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           from_currency: string
           id?: string
@@ -845,6 +889,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           from_currency?: string
           id?: string
@@ -854,7 +899,15 @@ export type Database = {
           to_currency?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fx_rates_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       holdings_snapshot: {
         Row: {
@@ -863,6 +916,7 @@ export type Database = {
           avg_cost_base: number
           avg_cost_local: number
           base_currency: string
+          client_id: string | null
           created_at: string
           fx_rate_at_entry: number | null
           id: string
@@ -878,6 +932,7 @@ export type Database = {
           avg_cost_base: number
           avg_cost_local: number
           base_currency?: string
+          client_id?: string | null
           created_at?: string
           fx_rate_at_entry?: number | null
           id?: string
@@ -893,6 +948,7 @@ export type Database = {
           avg_cost_base?: number
           avg_cost_local?: number
           base_currency?: string
+          client_id?: string | null
           created_at?: string
           fx_rate_at_entry?: number | null
           id?: string
@@ -902,7 +958,15 @@ export type Database = {
           total_cost_base?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "holdings_snapshot_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       internal_events: {
         Row: {
@@ -961,6 +1025,7 @@ export type Database = {
           alternatives_min_pct: number | null
           cash_max_pct: number | null
           cash_min_pct: number | null
+          client_id: string | null
           created_at: string
           equity_max_pct: number | null
           equity_min_pct: number | null
@@ -986,6 +1051,7 @@ export type Database = {
           alternatives_min_pct?: number | null
           cash_max_pct?: number | null
           cash_min_pct?: number | null
+          client_id?: string | null
           created_at?: string
           equity_max_pct?: number | null
           equity_min_pct?: number | null
@@ -1011,6 +1077,7 @@ export type Database = {
           alternatives_min_pct?: number | null
           cash_max_pct?: number | null
           cash_min_pct?: number | null
+          client_id?: string | null
           created_at?: string
           equity_max_pct?: number | null
           equity_min_pct?: number | null
@@ -1031,7 +1098,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "investment_policies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       needs_profile: {
         Row: {
@@ -1189,6 +1264,7 @@ export type Database = {
         Row: {
           base_currency: string | null
           benchmark_returns: Json | null
+          client_id: string | null
           created_at: string
           id: string
           notify_on_assignment: boolean | null
@@ -1203,6 +1279,7 @@ export type Database = {
         Insert: {
           base_currency?: string | null
           benchmark_returns?: Json | null
+          client_id?: string | null
           created_at?: string
           id?: string
           notify_on_assignment?: boolean | null
@@ -1217,6 +1294,7 @@ export type Database = {
         Update: {
           base_currency?: string | null
           benchmark_returns?: Json | null
+          client_id?: string | null
           created_at?: string
           id?: string
           notify_on_assignment?: boolean | null
@@ -1228,7 +1306,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_settings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1391,6 +1477,7 @@ export type Database = {
       reports: {
         Row: {
           branding: Json
+          client_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -1402,6 +1489,7 @@ export type Database = {
         }
         Insert: {
           branding?: Json
+          client_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1413,6 +1501,7 @@ export type Database = {
         }
         Update: {
           branding?: Json
+          client_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1422,11 +1511,20 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       research_watchlist: {
         Row: {
           asset_class: string | null
+          client_id: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -1436,6 +1534,7 @@ export type Database = {
         }
         Insert: {
           asset_class?: string | null
+          client_id?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1445,6 +1544,7 @@ export type Database = {
         }
         Update: {
           asset_class?: string | null
+          client_id?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1452,7 +1552,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "research_watchlist_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       target_allocation_lines: {
         Row: {
@@ -1497,6 +1605,7 @@ export type Database = {
       }
       target_allocations: {
         Row: {
+          client_id: string | null
           constraints_json: Json
           created_at: string
           horizon: string
@@ -1511,6 +1620,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           constraints_json?: Json
           created_at?: string
           horizon?: string
@@ -1525,6 +1635,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
           constraints_json?: Json
           created_at?: string
           horizon?: string
@@ -1539,6 +1650,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "target_allocations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "target_allocations_needs_profile_id_fkey"
             columns: ["needs_profile_id"]
@@ -1793,6 +1911,7 @@ export type Database = {
           base_currency: string | null
           cash_impact_amount: number | null
           cash_impact_currency: string | null
+          client_id: string | null
           cost_base: number | null
           cost_local: number | null
           created_at: string
@@ -1820,6 +1939,7 @@ export type Database = {
           base_currency?: string | null
           cash_impact_amount?: number | null
           cash_impact_currency?: string | null
+          client_id?: string | null
           cost_base?: number | null
           cost_local?: number | null
           created_at?: string
@@ -1847,6 +1967,7 @@ export type Database = {
           base_currency?: string | null
           cash_impact_amount?: number | null
           cash_impact_currency?: string | null
+          client_id?: string | null
           cost_base?: number | null
           cost_local?: number | null
           created_at?: string
@@ -1869,6 +1990,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_linked_company_id_fkey"
             columns: ["linked_company_id"]
@@ -1937,6 +2065,7 @@ export type Database = {
           accrued_interest: number | null
           asset_id: string | null
           asset_name: string
+          client_id: string | null
           coupon_rate: number | null
           created_at: string
           deleted_at: string | null
@@ -1956,6 +2085,7 @@ export type Database = {
           accrued_interest?: number | null
           asset_id?: string | null
           asset_name: string
+          client_id?: string | null
           coupon_rate?: number | null
           created_at?: string
           deleted_at?: string | null
@@ -1975,6 +2105,7 @@ export type Database = {
           accrued_interest?: number | null
           asset_id?: string | null
           asset_name?: string
+          client_id?: string | null
           coupon_rate?: number | null
           created_at?: string
           deleted_at?: string | null
@@ -1991,6 +2122,13 @@ export type Database = {
           yield_to_maturity?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "valuations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "valuations_linked_company_id_fkey"
             columns: ["linked_company_id"]
