@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { MobileHeader } from './MobileHeader';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useSession } from '@/context/SessionContext';
 import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
-import { Database } from 'lucide-react';
+import { Database, ArrowLeftRight, User, Building2 } from 'lucide-react';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
 import { CommandBar } from '@/components/CommandBar';
@@ -18,11 +19,14 @@ import { DottedGridBackground } from '@/components/DottedGridBackground';
 import { getUSMarketSession, getTASEMarketSession, getUSStatusColor, getTASEStatusColor, formatCountdown, TIMEZONE_ISRAEL } from '@/lib/marketSessionEngine';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { sampleDataMode } = usePortfolio();
+  const { session, isContextSet, clearContext } = useSession();
   const [watchdogPanelOpen, setWatchdogPanelOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
@@ -74,6 +78,16 @@ export function DashboardLayout() {
   // Check if session change is within 5 minutes (300000ms)
   const usChangingSoon = usSession.nextChange && (usSession.nextChange.getTime() - currentTime.getTime()) <= 300000;
   const taseChangingSoon = taseSession.nextChange && (taseSession.nextChange.getTime() - currentTime.getTime()) <= 300000;
+
+  // Redirect to context selector if no context is set
+  if (!isContextSet) {
+    return <Navigate to="/context" replace />;
+  }
+
+  const handleSwitchContext = () => {
+    clearContext();
+    navigate('/context');
+  };
 
   const getStatusDotColor = (color: 'success' | 'warning' | 'muted') => {
     switch (color) {
@@ -148,7 +162,39 @@ export function DashboardLayout() {
         <div className="hidden md:flex bg-secondary border-b border-border px-4 py-1 items-center justify-between text-[10px]">
           <div className="flex items-center gap-4">
             <span className="text-primary font-semibold tracking-wider">SUFOX CAPITAL</span>
-            <span className="text-muted-foreground">Portfolio & Risk Analytics</span>
+            
+            {/* Context Indicator */}
+            <div className="flex items-center gap-2 px-2 py-0.5 bg-muted/50 border border-border/50 rounded">
+              {session.scope === 'personal' ? (
+                <>
+                  <User className="h-3 w-3 text-primary" />
+                  <span className="text-foreground font-medium">Personal</span>
+                  <Badge variant="outline" className="text-[8px] px-1 py-0 h-4">Terminal</Badge>
+                </>
+              ) : (
+                <>
+                  <Building2 className="h-3 w-3 text-accent" />
+                  <span className="text-foreground font-medium">{session.clientName}</span>
+                  <Badge 
+                    variant={session.systemType === 'client_portfolio' ? 'default' : 'outline'} 
+                    className="text-[8px] px-1 py-0 h-4"
+                  >
+                    {session.systemType === 'client_portfolio' ? 'Workspace' : 'Terminal'}
+                  </Badge>
+                </>
+              )}
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSwitchContext}
+              className="h-5 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeftRight className="h-3 w-3" />
+              Switch
+            </Button>
+            
             {sampleDataMode && (
               <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/50 text-primary font-semibold rounded animate-pulse">
                 <Database className="h-3 w-3" />

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { SessionProvider } from "./context/SessionContext";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -55,6 +56,7 @@ const Calendar = lazy(() => import("./pages/Calendar"));
 const ExpectedReturnLab = lazy(() => import("./pages/ExpectedReturnLab"));
  const Workspaces = lazy(() => import("./pages/Workspaces"));
  const WorkspaceDetail = lazy(() => import("./pages/WorkspaceDetail"));
+const ContextSelector = lazy(() => import("./pages/ContextSelector"));
 
 const queryClient = new QueryClient();
 
@@ -63,8 +65,9 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <PortfolioProvider>
-            <FxModeProvider>
+          <SessionProvider>
+            <PortfolioProvider>
+              <FxModeProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
@@ -72,6 +75,14 @@ const App = () => (
                   <ErrorBoundary>
                     <ScrollToTop />
               <Routes>
+                {/* Context Selector - mandatory after auth */}
+                <Route path="/context" element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<AuthLoadingSkeleton />}>
+                      <ContextSelector />
+                    </Suspense>
+                  </ProtectedRoute>
+                } />
                 <Route path="/auth" element={
                   <Suspense fallback={<AuthLoadingSkeleton />}>
                     <Auth />
@@ -294,8 +305,9 @@ const App = () => (
                   </ErrorBoundary>
                 </BrowserRouter>
               </TooltipProvider>
-            </FxModeProvider>
-          </PortfolioProvider>
+              </FxModeProvider>
+            </PortfolioProvider>
+          </SessionProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
