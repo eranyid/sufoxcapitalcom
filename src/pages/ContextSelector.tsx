@@ -72,6 +72,16 @@
          {user?.email}
        </div>
  
+       {/* Title - top center */}
+       <div 
+         className="absolute top-4 left-1/2 -translate-x-1/2 md:top-8 animate-fade-in"
+         style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}
+       >
+         <h1 className="text-sm md:text-base tracking-[0.3em] uppercase text-white/50 font-light">
+           SUFOX <span className="text-white/30">Terminal</span>
+         </h1>
+       </div>
+
        {/* Tagline with monitor icon - top left */}
        <div 
          className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-2 animate-fade-in"
