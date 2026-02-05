@@ -5,7 +5,7 @@
  import { Client } from '@/hooks/useClients';
  import { SystemTypeModal } from '@/components/context/SystemTypeModal';
  import { ClientsManagementModal } from '@/components/context/ClientsManagementModal';
- import { User, Building2, ArrowRight } from 'lucide-react';
+ import { User, Briefcase, ChevronRight } from 'lucide-react';
  import sufoxLogo from '@/assets/sufox-logo-new.png';
  
  export default function ContextSelector() {
@@ -41,144 +41,214 @@
    };
  
    return (
-     <div className="min-h-screen bg-background relative overflow-hidden">
-       {/* Animated background effects */}
-       <div className="absolute inset-0 pointer-events-none">
-         {/* Radial gradient from center */}
-         <div 
-           className="absolute inset-0"
-           style={{
-             background: 'radial-gradient(circle at 50% 35%, hsl(var(--primary) / 0.08) 0%, transparent 50%)',
-           }}
-         />
-         {/* Subtle grid */}
-         <div 
-           className="absolute inset-0 opacity-30"
-           style={{
-             background: 'radial-gradient(circle, hsl(var(--foreground) / 0.04) 1px, transparent 1px)',
-             backgroundSize: '24px 24px',
-           }}
-         />
-         {/* Animated orbital rings */}
-         <div className="absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2">
-           <div 
-             className="w-[500px] h-[500px] rounded-full border border-primary/10 animate-[spin_60s_linear_infinite]"
-           />
-         </div>
-         <div className="absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2">
-           <div 
-             className="w-[650px] h-[650px] rounded-full border border-accent/5 animate-[spin_90s_linear_infinite_reverse]"
-           />
-         </div>
+     <div className="min-h-screen bg-[#0a0a0c] relative overflow-hidden flex items-center justify-center">
+       {/* Deep background gradient */}
+       <div 
+         className="absolute inset-0"
+         style={{
+           background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(30, 58, 95, 0.15) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 50% 50%, rgba(180, 140, 60, 0.08) 0%, transparent 50%)',
+         }}
+       />
+ 
+       {/* Subtle dot pattern */}
+       <div 
+         className="absolute inset-0 opacity-[0.03]"
+         style={{
+           backgroundImage: 'radial-gradient(circle, hsl(40, 60%, 70%) 0.5px, transparent 0.5px)',
+           backgroundSize: '32px 32px',
+         }}
+       />
+ 
+       {/* User email - top right, minimal */}
+       <div 
+         className="absolute top-8 right-8 text-[11px] tracking-wide text-white/30 animate-fade-in"
+         style={{ animationDelay: '0.8s', animationFillMode: 'backwards' }}
+       >
+         {user?.email}
        </div>
  
-       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6">
-         {/* User indicator - top right */}
-         <div className="absolute top-6 right-6 text-sm text-muted-foreground animate-fade-in">
-           <span className="text-foreground/60">{user?.email}</span>
+       {/* Main orbital composition */}
+       <div className="relative flex items-center justify-center">
+         
+         {/* Orbital rings - concentric circles around logo */}
+         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+           {/* Innermost glow */}
+           <div 
+             className="absolute w-[180px] h-[180px] rounded-full"
+             style={{
+               background: 'radial-gradient(circle, rgba(180, 140, 60, 0.12) 0%, transparent 70%)',
+               animation: 'pulse 4s ease-in-out infinite',
+             }}
+           />
+           
+           {/* Ring 1 - closest to logo */}
+           <div 
+             className="absolute w-[220px] h-[220px] rounded-full border border-[rgba(180,140,60,0.15)]"
+             style={{ animation: 'spin 80s linear infinite' }}
+           />
+           
+           {/* Ring 2 */}
+           <div 
+             className="absolute w-[320px] h-[320px] rounded-full border border-[rgba(60,100,160,0.1)]"
+             style={{ animation: 'spin 120s linear infinite reverse' }}
+           />
+           
+           {/* Ring 3 - outermost */}
+           <div 
+             className="absolute w-[440px] h-[440px] rounded-full border border-[rgba(180,140,60,0.06)]"
+             style={{ animation: 'spin 180s linear infinite' }}
+           />
+           
+           {/* Ambient outer glow */}
+           <div 
+             className="absolute w-[500px] h-[500px] rounded-full"
+             style={{
+               background: 'radial-gradient(circle, rgba(60,100,160,0.05) 0%, transparent 60%)',
+             }}
+           />
          </div>
  
-         {/* Central Hub */}
-         <div className="flex flex-col items-center">
-           {/* Centered Logo with glow */}
-           <div className="relative mb-8 animate-scale-in">
-             {/* Glow effect */}
-             <div className="absolute inset-0 blur-3xl bg-primary/20 rounded-full scale-150" />
-             <div className="absolute inset-0 blur-xl bg-primary/10 rounded-full scale-125" />
-             
-             {/* Logo container */}
-             <div className="relative p-6 rounded-full bg-gradient-to-br from-card/80 to-card/40 border border-border/50 backdrop-blur-xl shadow-2xl">
-               <img 
-                 src={sufoxLogo} 
-                 alt="SUFOX Capital" 
-                 className="h-20 w-20 object-contain drop-shadow-lg"
+         {/* Central Logo - the visual anchor */}
+         <div 
+           className="relative z-20 animate-scale-in"
+           style={{ animationDuration: '0.6s' }}
+         >
+           {/* Breathing glow behind logo */}
+           <div 
+             className="absolute inset-0 blur-2xl rounded-full scale-150"
+             style={{
+               background: 'radial-gradient(circle, rgba(180, 140, 60, 0.25) 0%, transparent 70%)',
+               animation: 'pulse 6s ease-in-out infinite',
+             }}
+           />
+           
+           {/* Logo container */}
+           <div className="relative p-5 rounded-full bg-gradient-to-br from-[rgba(30,30,35,0.9)] to-[rgba(20,20,25,0.8)] border border-[rgba(180,140,60,0.25)] backdrop-blur-xl shadow-[0_0_60px_rgba(180,140,60,0.15)]">
+             <img 
+               src={sufoxLogo} 
+               alt="SUFOX Capital" 
+               className="h-16 w-16 object-contain"
+               style={{ filter: 'drop-shadow(0 0 8px rgba(180, 140, 60, 0.3))' }}
+             />
+           </div>
+         </div>
+ 
+         {/* LEFT CARD - Personal Account */}
+         <button
+           onClick={handleEnterPersonal}
+           className="group absolute z-10 animate-fade-in"
+           style={{ 
+             left: '-340px',
+             animationDelay: '0.3s', 
+             animationFillMode: 'backwards',
+           }}
+         >
+           {/* Hover glow */}
+           <div 
+             className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+             style={{
+               background: 'radial-gradient(ellipse at 80% 50%, rgba(180, 140, 60, 0.2) 0%, transparent 60%)',
+               filter: 'blur(20px)',
+             }}
+           />
+           
+           {/* Card with curved inner edge */}
+           <div 
+             className="relative flex items-center gap-5 px-8 py-6 backdrop-blur-xl border border-[rgba(180,140,60,0.15)] group-hover:border-[rgba(180,140,60,0.35)] transition-all duration-500 group-hover:-translate-x-2 group-hover:shadow-[0_0_40px_rgba(180,140,60,0.1)]"
+             style={{
+               background: 'linear-gradient(135deg, rgba(25,25,30,0.85) 0%, rgba(20,20,25,0.75) 100%)',
+               borderRadius: '24px 100px 100px 24px',
+               minWidth: '240px',
+             }}
+           >
+             {/* Icon */}
+             <div className="relative flex-shrink-0">
+               <div 
+                 className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                 style={{
+                   background: 'radial-gradient(circle, rgba(180, 140, 60, 0.3) 0%, transparent 70%)',
+                   filter: 'blur(12px)',
+                   transform: 'scale(2)',
+                 }}
                />
+               <div className="relative p-3.5 rounded-full bg-gradient-to-br from-[rgba(180,140,60,0.2)] to-[rgba(180,140,60,0.05)] border border-[rgba(180,140,60,0.25)] group-hover:border-[rgba(180,140,60,0.45)] transition-colors duration-500">
+                 <User className="h-6 w-6 text-[#c4a54d]" />
+               </div>
              </div>
              
-             {/* Pulsing ring */}
-             <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" style={{ animationDuration: '3s' }} />
+             {/* Text */}
+             <div className="flex-1 text-left">
+               <h2 className="text-base font-medium text-white/90 tracking-wide mb-0.5">Personal</h2>
+               <p className="text-[11px] text-white/40 tracking-wide">Your portfolio & research</p>
+             </div>
+             
+             {/* Arrow indicator */}
+             <ChevronRight className="h-4 w-4 text-[#c4a54d]/50 group-hover:text-[#c4a54d] group-hover:translate-x-1 transition-all duration-300" />
            </div>
+         </button>
  
-           {/* Title */}
-           <div className="text-center mb-12 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
-             <h1 className="text-2xl font-light text-foreground tracking-wide mb-2">
-               Select Context
-             </h1>
-             <div className="w-16 h-px bg-gradient-to-r from-transparent via-primary to-transparent mx-auto" />
-           </div>
- 
-           {/* Semi-circular context cards */}
-           <div className="relative flex items-center justify-center gap-8 md:gap-16">
-             {/* Personal Account - Left Arc Position */}
-             <button
-               onClick={handleEnterPersonal}
-               className="group relative animate-fade-in"
-               style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}
-             >
-               {/* Card glow on hover */}
-               <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-               
-               <div className="relative flex flex-col items-center p-8 rounded-2xl bg-gradient-to-br from-card/60 to-card/30 border border-border/30 backdrop-blur-xl hover:border-primary/50 hover:from-card/80 hover:to-card/50 transition-all duration-500 group-hover:scale-105 group-hover:-translate-y-2">
-                 {/* Icon with orbital effect */}
-                 <div className="relative mb-4">
-                   <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                   <div className="relative p-4 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 group-hover:border-primary/50 transition-colors">
-                     <User className="h-8 w-8 text-primary" />
-                   </div>
-                 </div>
-                 
-                 <h2 className="text-lg font-medium text-foreground mb-1">Personal</h2>
-                 <p className="text-xs text-muted-foreground mb-4 max-w-[140px] text-center">
-                   Your portfolio & research
-                 </p>
-                 
-                 <div className="flex items-center gap-1.5 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                   <span>Enter</span>
-                   <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                 </div>
+         {/* RIGHT CARD - Clients */}
+         <button
+           onClick={() => setShowClientsModal(true)}
+           className="group absolute z-10 animate-fade-in"
+           style={{ 
+             right: '-340px',
+             animationDelay: '0.4s', 
+             animationFillMode: 'backwards',
+           }}
+         >
+           {/* Hover glow */}
+           <div 
+             className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+             style={{
+               background: 'radial-gradient(ellipse at 20% 50%, rgba(60, 120, 180, 0.2) 0%, transparent 60%)',
+               filter: 'blur(20px)',
+             }}
+           />
+           
+           {/* Card with curved inner edge (mirrored) */}
+           <div 
+             className="relative flex items-center gap-5 px-8 py-6 backdrop-blur-xl border border-[rgba(60,120,180,0.15)] group-hover:border-[rgba(60,120,180,0.35)] transition-all duration-500 group-hover:translate-x-2 group-hover:shadow-[0_0_40px_rgba(60,120,180,0.1)]"
+             style={{
+               background: 'linear-gradient(225deg, rgba(25,25,30,0.85) 0%, rgba(20,20,25,0.75) 100%)',
+               borderRadius: '100px 24px 24px 100px',
+               minWidth: '240px',
+             }}
+           >
+             {/* Arrow indicator (on left for symmetry) */}
+             <ChevronRight className="h-4 w-4 text-[#5a9bd4]/50 group-hover:text-[#5a9bd4] group-hover:-translate-x-1 transition-all duration-300 rotate-180" />
+             
+             {/* Text */}
+             <div className="flex-1 text-right">
+               <h2 className="text-base font-medium text-white/90 tracking-wide mb-0.5">Clients</h2>
+               <p className="text-[11px] text-white/40 tracking-wide">Manage client portfolios</p>
+             </div>
+             
+             {/* Icon */}
+             <div className="relative flex-shrink-0">
+               <div 
+                 className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                 style={{
+                   background: 'radial-gradient(circle, rgba(60, 120, 180, 0.3) 0%, transparent 70%)',
+                   filter: 'blur(12px)',
+                   transform: 'scale(2)',
+                 }}
+               />
+               <div className="relative p-3.5 rounded-full bg-gradient-to-br from-[rgba(60,120,180,0.2)] to-[rgba(60,120,180,0.05)] border border-[rgba(60,120,180,0.25)] group-hover:border-[rgba(60,120,180,0.45)] transition-colors duration-500">
+                 <Briefcase className="h-6 w-6 text-[#5a9bd4]" />
                </div>
-             </button>
- 
-             {/* Decorative center line */}
-             <div className="hidden md:block w-px h-24 bg-gradient-to-b from-transparent via-border/50 to-transparent" />
- 
-             {/* Clients - Right Arc Position */}
-             <button
-               onClick={() => setShowClientsModal(true)}
-               className="group relative animate-fade-in"
-               style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}
-             >
-               {/* Card glow on hover */}
-               <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-               
-               <div className="relative flex flex-col items-center p-8 rounded-2xl bg-gradient-to-br from-card/60 to-card/30 border border-border/30 backdrop-blur-xl hover:border-accent/50 hover:from-card/80 hover:to-card/50 transition-all duration-500 group-hover:scale-105 group-hover:-translate-y-2">
-                 {/* Icon with orbital effect */}
-                 <div className="relative mb-4">
-                   <div className="absolute inset-0 rounded-full bg-accent/20 blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                   <div className="relative p-4 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 border border-accent/30 group-hover:border-accent/50 transition-colors">
-                     <Building2 className="h-8 w-8 text-accent" />
-                   </div>
-                 </div>
-                 
-                 <h2 className="text-lg font-medium text-foreground mb-1">Clients</h2>
-                 <p className="text-xs text-muted-foreground mb-4 max-w-[140px] text-center">
-                   Manage client portfolios
-                 </p>
-                 
-                 <div className="flex items-center gap-1.5 text-accent text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                   <span>Manage</span>
-                   <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                 </div>
-               </div>
-             </button>
+             </div>
            </div>
- 
-           {/* Footer Note */}
-           <p className="text-center text-[10px] text-muted-foreground/50 mt-12 tracking-wide uppercase animate-fade-in" style={{ animationDelay: '0.5s', animationFillMode: 'backwards' }}>
-             Context-scoped data isolation
-           </p>
-         </div>
+         </button>
        </div>
+ 
+       {/* Footer caption */}
+       <p 
+         className="absolute bottom-8 left-1/2 -translate-x-1/2 text-[10px] tracking-[0.2em] uppercase text-white/20 animate-fade-in"
+         style={{ animationDelay: '0.6s', animationFillMode: 'backwards' }}
+       >
+         Context-scoped data isolation
+       </p>
  
        {/* Clients Management Modal */}
        <ClientsManagementModal
