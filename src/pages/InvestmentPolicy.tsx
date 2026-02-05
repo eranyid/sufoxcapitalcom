@@ -454,7 +454,18 @@ export default function InvestmentPolicy() {
       {/* Manual Target Allocation */}
       <PolicyTargetAllocationTable />
 
-      {/* Target Allocation Summary */}
+      {/* Save Button */}
+      <div className="flex justify-end pt-4">
+        <Button onClick={handleSave} disabled={isSaving} size="lg" className="gradient-gold text-primary-foreground">
+          {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+          Save Investment Policy
+        </Button>
+      </div>
+
+      {/* Divider */}
+      <Separator className="my-4" />
+
+      {/* Target Allocation Summary (from Construction Wizard) */}
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center justify-between">
@@ -481,7 +492,6 @@ export default function InvestmentPolicy() {
         <CardContent className="pt-6">
           {activeTarget ? (
             <div className="space-y-6">
-              {/* Overview Badges */}
               <div className="flex flex-wrap items-center gap-3">
                 <Badge variant="secondary" className="gap-1.5 px-3 py-1">
                   <Sparkles className="h-3 w-3" />
@@ -498,13 +508,11 @@ export default function InvestmentPolicy() {
 
               <Separator />
 
-              {/* Asset Class Allocation */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <PieChart className="h-4 w-4 text-primary" />
                   <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Asset Allocation</Label>
                 </div>
-                
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                   {Object.entries(assetClassData).map(([key, weight]) => (
                     <div key={key} className="p-4 rounded-xl bg-card border border-border/50 space-y-2">
@@ -512,10 +520,7 @@ export default function InvestmentPolicy() {
                         <span className="text-xs text-muted-foreground">{ASSET_CLASS_LABELS[key] || key}</span>
                         <span className="font-mono text-lg font-semibold text-foreground">{weight}%</span>
                       </div>
-                      <Progress 
-                        value={weight} 
-                        className={cn("h-1.5", ASSET_CLASS_COLORS[key])}
-                      />
+                      <Progress value={weight} className={cn("h-1.5", ASSET_CLASS_COLORS[key])} />
                     </div>
                   ))}
                 </div>
@@ -523,13 +528,11 @@ export default function InvestmentPolicy() {
 
               <Separator />
 
-              {/* Geographic Allocation */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-primary" />
                   <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Geographic Allocation</Label>
                 </div>
-                
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {Object.entries(geographyData).map(([key, weight]) => (
                     <div key={key} className="p-4 rounded-xl bg-card border border-border/50 text-center">
@@ -540,7 +543,6 @@ export default function InvestmentPolicy() {
                 </div>
               </div>
 
-              {/* Buckets (if any) */}
               {bucketsData.length > 0 && (
                 <>
                   <Separator />
@@ -549,7 +551,6 @@ export default function InvestmentPolicy() {
                       <PieChart className="h-4 w-4 text-primary" />
                       <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Implementation Buckets</Label>
                     </div>
-                    
                     <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                       {bucketsData.map((bucket) => (
                         <div key={bucket.key} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1">
@@ -582,14 +583,6 @@ export default function InvestmentPolicy() {
           )}
         </CardContent>
       </Card>
-
-      {/* Save Button (bottom) */}
-      <div className="flex justify-end pt-4">
-        <Button onClick={handleSave} disabled={isSaving} size="lg" className="gradient-gold text-primary-foreground">
-          {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          Save Investment Policy
-        </Button>
-      </div>
 
       {/* Prospectus PDF Viewer Modal */}
       <Dialog open={isProspectusOpen} onOpenChange={setIsProspectusOpen}>
