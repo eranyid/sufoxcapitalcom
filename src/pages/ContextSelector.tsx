@@ -173,15 +173,15 @@
              }}
            />
            
-           {/* Logo container */}
-           <div className="relative p-4 md:p-7 rounded-full bg-gradient-to-br from-[rgba(30,30,35,0.9)] to-[rgba(20,20,25,0.8)] border border-[rgba(180,140,60,0.25)] backdrop-blur-xl shadow-[0_0_60px_rgba(180,140,60,0.15)]">
-             <img 
-               src={sufoxLogo} 
-               alt="SUFOX Capital" 
-               className="h-12 w-12 md:h-20 md:w-20 object-contain"
-               style={{ filter: 'drop-shadow(0 0 8px rgba(180, 140, 60, 0.3))' }}
-             />
-           </div>
+            {/* Logo container */}
+            <div className="relative p-5 md:p-7 rounded-full bg-gradient-to-br from-[rgba(30,30,35,0.9)] to-[rgba(20,20,25,0.8)] border border-[rgba(180,140,60,0.25)] backdrop-blur-xl shadow-[0_0_60px_rgba(180,140,60,0.15)]">
+              <img 
+                src={sufoxLogo} 
+                alt="SUFOX Capital" 
+                className="h-16 w-16 md:h-20 md:w-20 object-contain"
+                style={{ filter: 'drop-shadow(0 0 8px rgba(180, 140, 60, 0.3))' }}
+              />
+            </div>
          </div>
  
          {/* Cards container - stacked on mobile, absolute on desktop */}
