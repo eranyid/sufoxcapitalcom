@@ -3,10 +3,11 @@
  import { useSession, SystemType } from '@/context/SessionContext';
  import { useAuth } from '@/hooks/useAuth';
  import { Client } from '@/hooks/useClients';
- import { PersonalPanel } from '@/components/context/PersonalPanel';
- import { ClientsPanel } from '@/components/context/ClientsPanel';
  import { SystemTypeModal } from '@/components/context/SystemTypeModal';
+ import { ClientsManagementModal } from '@/components/context/ClientsManagementModal';
  import { DottedGridBackground } from '@/components/DottedGridBackground';
+ import { Card, CardContent } from '@/components/ui/card';
+ import { User, Building2, ArrowRight } from 'lucide-react';
  import sufoxLogo from '@/assets/sufox-logo-new.png';
  
  export default function ContextSelector() {
@@ -16,6 +17,7 @@
    
    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
    const [showSystemTypeModal, setShowSystemTypeModal] = useState(false);
+   const [showClientsModal, setShowClientsModal] = useState(false);
  
    const handleEnterPersonal = () => {
      setPersonalContext();
@@ -34,10 +36,8 @@
      setShowSystemTypeModal(false);
      
      if (systemType === 'client_portfolio') {
-       // Navigate to workspaces for this client - they can create/select a workspace there
        navigate('/workspaces');
      } else {
-       // Navigate to main terminal with client context
        navigate('/');
      }
    };
@@ -66,23 +66,67 @@
                  Select Operating Context
                </h1>
                <p className="text-muted-foreground">
-                 Choose how you want to work in the platform. All data remains unified across contexts.
+                 Choose your working environment
                </p>
              </div>
  
-             {/* Two Panels */}
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[480px]">
-               <PersonalPanel onEnter={handleEnterPersonal} />
-               <ClientsPanel onSelectClient={handleSelectClient} />
+             {/* Two Cards Side by Side */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               {/* Personal Account Card - Left */}
+               <Card 
+                 className="group cursor-pointer border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/50 hover:bg-card transition-all duration-200"
+                 onClick={handleEnterPersonal}
+               >
+                 <CardContent className="p-8 flex flex-col items-center text-center">
+                   <div className="p-4 rounded-full bg-primary/10 border border-primary/20 mb-6 group-hover:scale-110 transition-transform">
+                     <User className="h-10 w-10 text-primary" />
+                   </div>
+                   <h2 className="text-2xl font-semibold text-foreground mb-2">Personal Account</h2>
+                   <p className="text-muted-foreground text-sm mb-6">
+                     Access your personal portfolio, research, and analytics
+                   </p>
+                   <div className="flex items-center gap-2 text-primary font-medium">
+                     <span>Enter</span>
+                     <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                   </div>
+                 </CardContent>
+               </Card>
+ 
+               {/* Clients Card - Right */}
+               <Card 
+                 className="group cursor-pointer border-border/50 bg-card/80 backdrop-blur-sm hover:border-accent/50 hover:bg-card transition-all duration-200"
+                 onClick={() => setShowClientsModal(true)}
+               >
+                 <CardContent className="p-8 flex flex-col items-center text-center">
+                   <div className="p-4 rounded-full bg-accent/10 border border-accent/20 mb-6 group-hover:scale-110 transition-transform">
+                     <Building2 className="h-10 w-10 text-accent" />
+                   </div>
+                   <h2 className="text-2xl font-semibold text-foreground mb-2">Clients</h2>
+                   <p className="text-muted-foreground text-sm mb-6">
+                     Manage client portfolios and workspaces
+                   </p>
+                   <div className="flex items-center gap-2 text-accent font-medium">
+                     <span>Manage Clients</span>
+                     <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                   </div>
+                 </CardContent>
+               </Card>
              </div>
  
              {/* Footer Note */}
-             <p className="text-center text-xs text-muted-foreground mt-8">
-               Using your global data library. Context selection controls operating scope, not data access.
+             <p className="text-center text-xs text-muted-foreground mt-10">
+               Data is scoped per context. Switch anytime from the sidebar.
              </p>
            </div>
          </main>
        </div>
+ 
+       {/* Clients Management Modal */}
+       <ClientsManagementModal
+         open={showClientsModal}
+         onOpenChange={setShowClientsModal}
+         onSelectClient={handleSelectClient}
+       />
  
        {/* System Type Modal */}
        <SystemTypeModal
