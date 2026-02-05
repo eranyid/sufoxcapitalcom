@@ -68,7 +68,7 @@ export function InputAssumptionsTable({ assets, onAssetsChange }: InputAssumptio
     >
       <div className="overflow-x-auto">
         {/* Header Row */}
-        <div className="grid grid-cols-[minmax(140px,1.5fr)_minmax(120px,1fr)_minmax(120px,1fr)_80px_minmax(130px,1fr)_32px] gap-2 px-4 py-2 border-b border-border/50 text-xs text-muted-foreground">
+        <div className="grid grid-cols-[minmax(140px,1.5fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] gap-2 px-4 py-2 border-b border-border/50 text-xs text-muted-foreground">
           <div>Asset Class</div>
           <div className="flex items-center gap-1 justify-center">
             <Tooltip>
@@ -91,15 +91,6 @@ export function InputAssumptionsTable({ assets, onAssetsChange }: InputAssumptio
           <div className="flex items-center gap-1 justify-center">
             <Tooltip>
               <TooltipTrigger className="flex items-center gap-1">
-                Weight
-                <Info className="h-3 w-3" />
-              </TooltipTrigger>
-              <TooltipContent>Market Cap / Target Weight</TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="flex items-center gap-1 justify-center">
-            <Tooltip>
-              <TooltipTrigger className="flex items-center gap-1">
                 Confidence
                 <Info className="h-3 w-3" />
               </TooltipTrigger>
@@ -114,7 +105,7 @@ export function InputAssumptionsTable({ assets, onAssetsChange }: InputAssumptio
           {assets.map((asset) => (
             <div 
               key={asset.id} 
-              className="grid grid-cols-[minmax(140px,1.5fr)_minmax(120px,1fr)_minmax(120px,1fr)_80px_minmax(130px,1fr)_32px] gap-2 px-4 py-3 items-center group hover:bg-muted/30 transition-colors"
+              className="grid grid-cols-[minmax(140px,1.5fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] gap-2 px-4 py-3 items-center group hover:bg-muted/30 transition-colors"
             >
               {/* Asset Class Name */}
               <div>
@@ -169,17 +160,6 @@ export function InputAssumptionsTable({ assets, onAssetsChange }: InputAssumptio
                 </span>
               </div>
               
-              {/* Weight - Numeric Input (kept as requested) */}
-              <div className="flex justify-center">
-                <Input
-                  type="number"
-                  value={asset.marketCapWeight}
-                  onChange={(e) => handleUpdate(asset.id, 'marketCapWeight', parseFloat(e.target.value) || 0)}
-                  className="h-7 text-xs text-center font-mono w-16"
-                  step={1}
-                />
-              </div>
-              
               {/* Confidence - Visual Slider */}
               <div className="flex items-center gap-2">
                 <Slider
@@ -213,25 +193,6 @@ export function InputAssumptionsTable({ assets, onAssetsChange }: InputAssumptio
             </div>
           ))}
         </div>
-      </div>
-      
-      {/* Weight Summary */}
-      <div className={cn(
-        "flex items-center justify-between px-4 py-2 border-t text-xs",
-        isBalanced ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-destructive/5 border-destructive/20'
-      )}>
-        <span className="text-muted-foreground">Total Weight</span>
-        <span className={cn(
-          "font-mono font-semibold",
-          isBalanced ? 'text-emerald-400' : 'text-destructive'
-        )}>
-          {totalWeight.toFixed(1)}%
-          {!isBalanced && (
-            <span className="text-muted-foreground ml-2">
-              ({totalWeight > 100 ? '+' : ''}{(totalWeight - 100).toFixed(1)}%)
-            </span>
-          )}
-        </span>
       </div>
     </BloombergPanel>
   );
