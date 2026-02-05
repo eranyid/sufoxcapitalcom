@@ -5,7 +5,6 @@ import {
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { LabIcon } from '@/components/icons/LabIcon';
 import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { BackOfficeIcon } from '@/components/icons/BackOfficeIcon';
 import { CalendarIcon } from '@/components/icons/CalendarIcon';
@@ -23,6 +22,7 @@ import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
 import { ReportsIcon } from '@/components/icons/ReportsIcon';
 import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
+import { LabIcon } from '@/components/icons/LabIcon';
 import { LucideIcon } from 'lucide-react';
 
 interface NavItem {
@@ -52,7 +52,7 @@ const navGroups: NavGroup[] = [
       { path: '/research', icon: ResearchIcon, label: 'Research' },
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
-      { path: '/lab', icon: LabIcon, label: 'Lab' },
+      { path: '/expected-return-lab', icon: LabIcon, label: 'ER Lab' },
       { path: '/charts', icon: ChartsIcon, label: 'Charts' },
       { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
     ],
