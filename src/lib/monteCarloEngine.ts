@@ -76,6 +76,41 @@ export interface MultivariateSimulationResult {
 }
 
 // ============================================
+// NUMERICAL STABILITY GUARDS
+// ============================================
+
+/**
+ * Maximum allowed log return per step to prevent numerical overflow
+ * This caps extreme moves to ~50% per period
+ */
+const MAX_LOG_RETURN_PER_STEP = 0.4;
+
+/**
+ * Maximum portfolio value multiplier (prevents runaway growth)
+ * 1000x initial value is already astronomical for any realistic projection
+ */
+const MAX_VALUE_MULTIPLIER = 10000;
+
+/**
+ * Minimum portfolio value as fraction of initial (prevent zero/negative)
+ */
+const MIN_VALUE_MULTIPLIER = 0.0001;
+
+/**
+ * Clamp a value between min and max
+ */
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Check if a number is valid (finite and not NaN)
+ */
+function isValidNumber(value: number): boolean {
+  return Number.isFinite(value) && !Number.isNaN(value);
+}
+
+// ============================================
 // RANDOM NUMBER GENERATION
 // ============================================
 
@@ -353,10 +388,14 @@ export function runMultivariateSimulation(
   const dt = 1 / stepsPerYear;  // Time step as fraction of year
   const sqrtDt = Math.sqrt(dt);
   
-  // Per-asset parameters (already annualized)
-  const means = assets.map(a => a.meanReturn);
-  const vols = assets.map(a => a.volatility);
+  // Per-asset parameters (already annualized) - clamp to reasonable ranges
+  const means = assets.map(a => clamp(a.meanReturn, -0.5, 1.0));  // -50% to +100% annual
+  const vols = assets.map(a => clamp(a.volatility, 0.01, 1.0));   // 1% to 100% annual
   const weights = assets.map(a => a.weight);
+  
+  // Value bounds
+  const maxValue = initialValue * MAX_VALUE_MULTIPLIER;
+  const minValue = initialValue * MIN_VALUE_MULTIPLIER;
   
   const portfolioPaths: number[][] = [];
   const finalValues: number[] = [];
@@ -366,8 +405,9 @@ export function runMultivariateSimulation(
     // Initialize asset values based on weights
     let assetValues = weights.map(w => initialValue * w);
     const portfolioPath: number[] = [initialValue];
+    let isPathValid = true;
     
-    for (let step = 0; step < totalSteps; step++) {
+    for (let step = 0; step < totalSteps && isPathValid; step++) {
       // Generate correlated random shocks
       const Z = generateIndependentNormals(n);
       const epsilon = matrixVectorMultiply(choleskyL, Z);
@@ -377,29 +417,60 @@ export function runMultivariateSimulation(
         // GBM with Itô correction: r = (μ - 0.5σ²)dt + σ√dt × ε
         const drift = (means[i] - 0.5 * vols[i] * vols[i]) * dt;
         const diffusion = vols[i] * sqrtDt * epsilon[i];
-        const logReturn = drift + diffusion;
+        // Clamp log return to prevent extreme moves
+        const logReturn = clamp(drift + diffusion, -MAX_LOG_RETURN_PER_STEP, MAX_LOG_RETURN_PER_STEP);
         
-        assetValues[i] = assetValues[i] * Math.exp(logReturn);
+        let newValue = assetValues[i] * Math.exp(logReturn);
+        
+        // Guard against invalid values
+        if (!isValidNumber(newValue)) {
+          newValue = assetValues[i]; // Keep previous value
+        }
+        
+        assetValues[i] = newValue;
+      }
+      
+      // Check for path validity
+      const currentTotal = assetValues.reduce((a, b) => a + b, 0);
+      if (!isValidNumber(currentTotal) || currentTotal > maxValue * 10) {
+        isPathValid = false;
+        break;
       }
       
       // Rebalancing logic
       if (rebalancing === 'constant') {
         // Constant weights: rebalance to target weights each period
         const totalValue = assetValues.reduce((a, b) => a + b, 0);
-        assetValues = weights.map(w => totalValue * w);
+        const clampedTotal = clamp(totalValue, minValue, maxValue);
+        assetValues = weights.map(w => clampedTotal * w);
+      } else {
+        // For buy_and_hold, still apply value bounds per asset
+        assetValues = assetValues.map(v => clamp(v, minValue / n, maxValue / n));
       }
-      // For 'buy_and_hold', let weights drift naturally
       
       // Record portfolio value at yearly intervals
       if ((step + 1) % stepsPerYear === 0) {
-        const portfolioValue = assetValues.reduce((a, b) => a + b, 0);
+        const portfolioValue = clamp(assetValues.reduce((a, b) => a + b, 0), minValue, maxValue);
         portfolioPath.push(portfolioValue);
       }
     }
     
-    const finalValue = assetValues.reduce((a, b) => a + b, 0);
-    portfolioPaths.push(portfolioPath);
-    finalValues.push(finalValue);
+    // Only include valid paths
+    if (isPathValid) {
+      const finalValue = clamp(assetValues.reduce((a, b) => a + b, 0), minValue, maxValue);
+      // Fill missing yearly values if path was cut short
+      while (portfolioPath.length < years + 1) {
+        portfolioPath.push(portfolioPath[portfolioPath.length - 1]);
+      }
+      portfolioPaths.push(portfolioPath);
+      finalValues.push(finalValue);
+    }
+  }
+  
+  // If too many paths were invalid, return null
+  if (finalValues.length < numSimulations * 0.5) {
+    console.warn('Monte Carlo: Too many invalid paths, falling back');
+    return null;
   }
   
   // Sort final values for percentile calculations
@@ -472,8 +543,16 @@ export function runUnivariateSimulation(
   const dt = 1 / stepsPerYear;
   const sqrtDt = Math.sqrt(dt);
   
-  const drift = (annualReturn - 0.5 * annualVol * annualVol) * dt;
-  const diffusion = annualVol * sqrtDt;
+  // Clamp inputs to reasonable ranges
+  const clampedReturn = clamp(annualReturn, -0.5, 1.0);  // -50% to +100% annual
+  const clampedVol = clamp(annualVol, 0.01, 1.0);        // 1% to 100% annual
+  
+  const drift = (clampedReturn - 0.5 * clampedVol * clampedVol) * dt;
+  const diffusion = clampedVol * sqrtDt;
+  
+  // Value bounds
+  const maxValue = initialValue * MAX_VALUE_MULTIPLIER;
+  const minValue = initialValue * MIN_VALUE_MULTIPLIER;
   
   const portfolioPaths: number[][] = [];
   const finalValues: number[] = [];
@@ -484,8 +563,15 @@ export function runUnivariateSimulation(
     
     for (let step = 0; step < totalSteps; step++) {
       const z = generateNormalRandom();
-      const logReturn = drift + diffusion * z;
-      value = value * Math.exp(logReturn);
+      // Clamp log return to prevent extreme moves
+      const logReturn = clamp(drift + diffusion * z, -MAX_LOG_RETURN_PER_STEP, MAX_LOG_RETURN_PER_STEP);
+      let newValue = value * Math.exp(logReturn);
+      
+      // Guard against invalid values and apply bounds
+      if (!isValidNumber(newValue)) {
+        newValue = value; // Keep previous value
+      }
+      value = clamp(newValue, minValue, maxValue);
       
       if ((step + 1) % stepsPerYear === 0) {
         path.push(value);
