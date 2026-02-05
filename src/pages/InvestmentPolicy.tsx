@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useTargetAllocation } from '@/hooks/useTargetAllocation';
 import { useNavigate } from 'react-router-dom';
+import { PolicyTargetAllocationTable } from '@/components/policy/PolicyTargetAllocationTable';
 import { OBJECTIVE_LABELS, RISK_LABELS } from '@/types/construction';
 import { cn } from '@/lib/utils';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -449,6 +450,9 @@ export default function InvestmentPolicy() {
           />
         </CardContent>
       </Card>
+
+      {/* Manual Target Allocation */}
+      <PolicyTargetAllocationTable />
 
       {/* Target Allocation Summary */}
       <Card className="overflow-hidden">
