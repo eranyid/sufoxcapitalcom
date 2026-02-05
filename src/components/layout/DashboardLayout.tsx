@@ -8,7 +8,7 @@ import { useSession } from '@/context/SessionContext';
 import { useDataWatchdog } from '@/hooks/useDataWatchdog';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
-import { Database, ArrowLeftRight, User, Building2 } from 'lucide-react';
+ import { Database, User, Building2 } from 'lucide-react';
 import { DataWatchdogStatus } from '@/components/dashboard/DataWatchdogStatus';
 import { DataWatchdogPanel } from '@/components/dashboard/DataWatchdogPanel';
 import { CommandBar } from '@/components/CommandBar';
@@ -26,7 +26,7 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { sampleDataMode } = usePortfolio();
-  const { session, isContextSet, clearContext } = useSession();
+   const { session, isContextSet } = useSession();
   const [watchdogPanelOpen, setWatchdogPanelOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
@@ -83,11 +83,6 @@ export function DashboardLayout() {
   if (!isContextSet) {
     return <Navigate to="/context" replace />;
   }
-
-  const handleSwitchContext = () => {
-    clearContext();
-    navigate('/context');
-  };
 
   const getStatusDotColor = (color: 'success' | 'warning' | 'muted') => {
     switch (color) {
@@ -169,7 +164,6 @@ export function DashboardLayout() {
                 <>
                   <User className="h-3 w-3 text-primary" />
                   <span className="text-foreground font-medium">Personal</span>
-                  <Badge variant="outline" className="text-[8px] px-1 py-0 h-4">Terminal</Badge>
                 </>
               ) : (
                 <>
@@ -184,16 +178,6 @@ export function DashboardLayout() {
                 </>
               )}
             </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSwitchContext}
-              className="h-5 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeftRight className="h-3 w-3" />
-              Switch
-            </Button>
             
             {sampleDataMode && (
               <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/50 text-primary font-semibold rounded animate-pulse">
