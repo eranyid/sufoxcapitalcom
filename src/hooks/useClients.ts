@@ -65,9 +65,9 @@
        const { data, error } = await supabase
          .from('clients')
          .update({
-           name: input.name,
-           status: input.status,
-           description: input.description,
+           ...(input.name !== undefined && { name: input.name }),
+           ...(input.status !== undefined && { status: input.status }),
+           ...(input.description !== undefined && { description: input.description }),
            updated_at: new Date().toISOString(),
          })
          .eq('id', input.id)
@@ -79,6 +79,28 @@
      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['clients'] });
+       toast.success('Client updated');
+     },
+     onError: (error) => {
+       toast.error('Failed to update client: ' + error.message);
+     },
+   });
+ 
+   const deleteClient = useMutation({
+     mutationFn: async (id: string) => {
+       const { error } = await supabase
+         .from('clients')
+         .delete()
+         .eq('id', id);
+ 
+       if (error) throw error;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['clients'] });
+       toast.success('Client deleted');
+     },
+     onError: (error) => {
+       toast.error('Failed to delete client: ' + error.message);
      },
    });
  
@@ -88,5 +110,6 @@
      error,
      createClient,
      updateClient,
+     deleteClient,
    };
  }
