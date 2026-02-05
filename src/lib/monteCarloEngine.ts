@@ -82,6 +82,43 @@ export interface SimulationError {
   };
 }
 
+// ============================================
+// STRUCTURED ERROR TYPES (INSTITUTIONAL-GRADE)
+// ============================================
+
+export type SimulationErrorCode = 
+  | 'EXCESSIVE_DISPERSION'
+  | 'INVALID_PARAMETERS'
+  | 'INSUFFICIENT_DATA'
+  | 'BROKEN_TIME_RECURRENCE'
+  | 'PATH_FAILURE_EXCEEDED'
+  | 'NUMERICAL_OVERFLOW'
+  | 'CONTEXT_SCOPE_VIOLATION';
+
+export interface StructuredSimulationError {
+  code: SimulationErrorCode;
+  message: string;
+  diagnostics: {
+    inputParameters?: {
+      meanReturn: number;
+      volatility: number;
+      years: number;
+      numSimulations: number;
+      dispersion?: number;
+    };
+    pathMetrics?: {
+      discardedPaths: number;
+      flatPaths: number;
+      totalPaths: number;
+      failureRate: number;
+    };
+    context?: {
+      scope: string;
+      clientId: string | null;
+    };
+  };
+}
+
 export interface DataQualityInfo {
   level: DataQualityLevel;
   minMonths: number;
@@ -120,13 +157,15 @@ export interface MultivariateSimulationResult {
 /** Maximum allowed log return per step (±50% per period) */
 const MAX_LOG_RETURN_PER_STEP = 0.5;
 
-/** Maximum portfolio value multiplier (1,000,000,000x initial for very long horizons) */
-const MAX_VALUE_MULTIPLIER = 1e9;
+/** Log-space bounds: logS ∈ [-30, +30] → S ∈ [~1e-13, ~1e13] */
+const LOG_VALUE_MAX = 30;
+const LOG_VALUE_MIN = -30;
 
-/** Minimum portfolio value as fraction of initial (1e-9) */
-const MIN_VALUE_MULTIPLIER = 1e-9;
+/** Level-space bounds derived from log bounds */
+const LEVEL_VALUE_MAX = Math.exp(LOG_VALUE_MAX);
+const LEVEL_VALUE_MIN = Math.exp(LOG_VALUE_MIN);
 
-/** Maximum dispersion: σ × √T ≤ 10 (extended for long horizons up to 100 years) */
+/** Maximum dispersion: σ × √T ≤ 10 */
 const MAX_DISPERSION = 10.0;
 
 /** Z-score truncation bounds for normal draws */
@@ -135,12 +174,16 @@ const MAX_Z_SCORE = 8.0;
 /** Maximum allowed path failure rate (2%) */
 const MAX_PATH_FAILURE_RATE = 0.02;
 
+/** Minimum change threshold for flat path detection */
+const FLAT_PATH_THRESHOLD = 1e-12;
+
 /** Input parameter bounds */
 const PARAM_BOUNDS = {
   meanReturn: { min: -0.90, max: 2.00 },      // -90% to +200% annualized
   volatility: { min: 0.001, max: 3.00 },       // 0.1% to 300% annualized
   years: { min: 1, max: 100 },
   numSimulations: { min: 100, max: 200000 },
+  stepsPerYear: { min: 1, max: 252 },
 };
 
 /** Clamp a value between min and max */
@@ -151,6 +194,97 @@ function clamp(value: number, min: number, max: number): number {
 /** Check if a number is valid (finite and not NaN) */
 function isValidNumber(value: number): boolean {
   return Number.isFinite(value) && !Number.isNaN(value);
+}
+
+// ============================================
+// PRE-SIMULATION VALIDATION (STEP 1)
+// ============================================
+
+/**
+ * Validate all simulation parameters BEFORE any simulation starts.
+ * Returns structured error if validation fails, null if valid.
+ * CRITICAL: This is the gatekeeper - no simulation runs without passing this.
+ */
+export function validateSimulationParameters(
+  meanReturn: number,
+  volatility: number,
+  years: number,
+  numSimulations: number,
+  stepsPerYear: number = 12
+): StructuredSimulationError | null {
+  // Check for NaN/undefined/non-finite
+  if (!isValidNumber(meanReturn)) {
+    return {
+      code: 'INVALID_PARAMETERS',
+      message: 'Mean return is not a valid finite number',
+      diagnostics: {
+        inputParameters: { meanReturn, volatility, years, numSimulations }
+      }
+    };
+  }
+  
+  if (!isValidNumber(volatility)) {
+    return {
+      code: 'INVALID_PARAMETERS',
+      message: 'Volatility is not a valid finite number',
+      diagnostics: {
+        inputParameters: { meanReturn, volatility, years, numSimulations }
+      }
+    };
+  }
+  
+  if (!isValidNumber(years) || years < PARAM_BOUNDS.years.min || years > PARAM_BOUNDS.years.max) {
+    return {
+      code: 'INVALID_PARAMETERS',
+      message: `Years must be between ${PARAM_BOUNDS.years.min} and ${PARAM_BOUNDS.years.max}`,
+      diagnostics: {
+        inputParameters: { meanReturn, volatility, years, numSimulations }
+      }
+    };
+  }
+  
+  if (!isValidNumber(numSimulations) || numSimulations < PARAM_BOUNDS.numSimulations.min || numSimulations > PARAM_BOUNDS.numSimulations.max) {
+    return {
+      code: 'INVALID_PARAMETERS',
+      message: `Number of simulations must be between ${PARAM_BOUNDS.numSimulations.min} and ${PARAM_BOUNDS.numSimulations.max}`,
+      diagnostics: {
+        inputParameters: { meanReturn, volatility, years, numSimulations }
+      }
+    };
+  }
+  
+  if (!isValidNumber(stepsPerYear) || stepsPerYear < PARAM_BOUNDS.stepsPerYear.min || stepsPerYear > PARAM_BOUNDS.stepsPerYear.max) {
+    return {
+      code: 'INVALID_PARAMETERS',
+      message: `Steps per year must be between ${PARAM_BOUNDS.stepsPerYear.min} and ${PARAM_BOUNDS.stepsPerYear.max}`,
+      diagnostics: {
+        inputParameters: { meanReturn, volatility, years, numSimulations }
+      }
+    };
+  }
+  
+  // Check dispersion: σ × √T > MAX_DISPERSION is EXCESSIVE
+  const dispersion = volatility * Math.sqrt(years);
+  if (dispersion > MAX_DISPERSION) {
+    return {
+      code: 'EXCESSIVE_DISPERSION',
+      message: `Dispersion σ×√T = ${dispersion.toFixed(2)} exceeds maximum ${MAX_DISPERSION}. Reduce volatility or horizon.`,
+      diagnostics: {
+        inputParameters: { meanReturn, volatility, years, numSimulations, dispersion }
+      }
+    };
+  }
+  
+  return null; // Valid
+}
+
+/**
+ * Type guard to check if simulation result is a structured error
+ */
+export function isStructuredError<T>(
+  result: T | StructuredSimulationError | null
+): result is StructuredSimulationError {
+  return result !== null && typeof result === 'object' && 'code' in result && 'message' in result;
 }
 
 // ============================================
@@ -451,7 +585,7 @@ export function runMultivariateSimulation(
   years: number,
   numSimulations: number = 10000,
   stepsPerYear: number = 12
-): MultivariateSimulationResult | null {
+): MultivariateSimulationResult | StructuredSimulationError | null {
   const { assets, choleskyL, rebalancing } = config;
   const n = assets.length;
   
@@ -485,14 +619,15 @@ export function runMultivariateSimulation(
   const weights = assets.map(a => a.weight);
   
   // Value bounds in log-space
-  const logMaxValue = Math.log(initialValue * MAX_VALUE_MULTIPLIER);
-  const logMinValue = Math.log(initialValue * MIN_VALUE_MULTIPLIER);
-  const levelMaxValue = initialValue * MAX_VALUE_MULTIPLIER;
-  const levelMinValue = initialValue * MIN_VALUE_MULTIPLIER;
+  const logMaxValue = LOG_VALUE_MAX;
+  const logMinValue = LOG_VALUE_MIN;
+  const levelMaxValue = LEVEL_VALUE_MAX;
+  const levelMinValue = LEVEL_VALUE_MIN;
   
   // Track diagnostics
   let discardedPaths = 0;
   let cappedPaths = 0;
+  let flatPaths = 0;
   
   const portfolioPaths: number[][] = [];
   const finalValues: number[] = [];
@@ -504,6 +639,8 @@ export function runMultivariateSimulation(
     const portfolioPath: number[] = [initialValue];
     let isPathValid = true;
     let isPathCapped = false;
+    let previousPortfolioValue = initialValue;
+    let unchangedSteps = 0;
     
     for (let step = 0; step < totalSteps && isPathValid; step++) {
       // Generate correlated random shocks
@@ -539,6 +676,18 @@ export function runMultivariateSimulation(
       
       if (!isPathValid) break;
       
+      // Calculate current portfolio value for flat path detection
+      const currentAssetValues = logAssetValues.map(lv => Math.exp(lv));
+      const currentPortfolioValue = currentAssetValues.reduce((a, b) => a + b, 0);
+      
+      // FLAT PATH DETECTION: Check if values changed
+      if (Math.abs(currentPortfolioValue - previousPortfolioValue) < FLAT_PATH_THRESHOLD * Math.max(previousPortfolioValue, 1)) {
+        unchangedSteps++;
+      } else {
+        unchangedSteps = 0;
+      }
+      previousPortfolioValue = currentPortfolioValue;
+      
       // Rebalancing logic
       if (rebalancing === 'constant') {
         // Convert to level, sum, then back to log for rebalancing
@@ -554,6 +703,13 @@ export function runMultivariateSimulation(
         const portfolioValue = clamp(assetLevelValues.reduce((a, b) => a + b, 0), levelMinValue, levelMaxValue);
         portfolioPath.push(portfolioValue);
       }
+    }
+    
+    // Check for flat path (more than 10% of steps unchanged when vol > 0)
+    const avgVol = vols.reduce((a, b) => a + b, 0) / vols.length;
+    if (avgVol > 0.001 && unchangedSteps > totalSteps * 0.1) {
+      flatPaths++;
+      isPathValid = false;
     }
     
     // Only include valid paths
@@ -575,8 +731,51 @@ export function runMultivariateSimulation(
   // Check path failure rate (2% threshold)
   const failureRate = discardedPaths / clampedSims;
   if (failureRate > MAX_PATH_FAILURE_RATE) {
-    console.warn('Monte Carlo: Too many invalid paths, falling back');
-    return null;
+    // FAIL LOUDLY - return structured error
+    return {
+      code: 'PATH_FAILURE_EXCEEDED' as SimulationErrorCode,
+      message: `Path failure rate ${(failureRate * 100).toFixed(1)}% exceeds maximum ${(MAX_PATH_FAILURE_RATE * 100).toFixed(0)}%`,
+      diagnostics: {
+        pathMetrics: {
+          discardedPaths,
+          flatPaths,
+          totalPaths: clampedSims,
+          failureRate
+        }
+      }
+    } as StructuredSimulationError;
+  }
+  
+  // Check for flat paths specifically - this indicates broken stochastic process
+  if (flatPaths > clampedSims * 0.01) {
+    return {
+      code: 'BROKEN_TIME_RECURRENCE' as SimulationErrorCode,
+      message: `Detected ${flatPaths} flat paths (${((flatPaths/clampedSims)*100).toFixed(1)}%) - stochastic process not evolving correctly`,
+      diagnostics: {
+        pathMetrics: {
+          discardedPaths,
+          flatPaths,
+          totalPaths: clampedSims,
+          failureRate
+        }
+      }
+    } as StructuredSimulationError;
+  }
+  
+  // Guard against empty results
+  if (finalValues.length === 0) {
+    return {
+      code: 'PATH_FAILURE_EXCEEDED' as SimulationErrorCode,
+      message: 'No valid paths produced - all simulations failed',
+      diagnostics: {
+        pathMetrics: {
+          discardedPaths,
+          flatPaths,
+          totalPaths: clampedSims,
+          failureRate: 1.0
+        }
+      }
+    } as StructuredSimulationError;
   }
   
   // Build diagnostics
@@ -601,6 +800,9 @@ export function runMultivariateSimulation(
   }
   if (cappedPaths > 0) {
     diagnostics.warnings.push(`${cappedPaths} paths hit value bounds and were capped`);
+  }
+  if (flatPaths > 0) {
+    diagnostics.warnings.push(`${flatPaths} paths showed flat evolution and were discarded`);
   }
   
   const isStabilized = anyCapped || cappedPaths > 0;
@@ -697,11 +899,9 @@ export function runUnivariateSimulation(
   const diffusion = clampedVol * sqrtDt;
   
   // Value bounds in log-space
-  const logMaxValue = Math.log(initialValue * MAX_VALUE_MULTIPLIER);
-  const logMinValue = Math.log(initialValue * MIN_VALUE_MULTIPLIER);
+  const logMaxValue = LOG_VALUE_MAX;
+  const logMinValue = LOG_VALUE_MIN;
   const logInitial = Math.log(initialValue);
-  const levelMinValue = initialValue * MIN_VALUE_MULTIPLIER;
-  const levelMaxValue = initialValue * MAX_VALUE_MULTIPLIER;
   
   // Track diagnostics
   let discardedPaths = 0;
@@ -897,7 +1097,7 @@ export function generatePercentilePathsMultivariate(
   
   // Generate for each year
   for (let year = 1; year <= maxYears; year += (year < 10 ? 1 : 5)) {
-    let simResult: MultivariateSimulationResult | null;
+    let simResult: MultivariateSimulationResult | StructuredSimulationError | null;
     
     if (config && config.choleskyL) {
       simResult = runMultivariateSimulation(
@@ -918,7 +1118,8 @@ export function generatePercentilePathsMultivariate(
       );
     }
     
-    if (simResult) {
+    // Only use valid results, skip errors
+    if (simResult && !isStructuredError(simResult)) {
       results.push({
         period: year,
         ...simResult.percentiles,
