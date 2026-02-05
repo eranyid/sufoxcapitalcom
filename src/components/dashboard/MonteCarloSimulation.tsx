@@ -293,8 +293,28 @@ export function MonteCarloSimulation({
     if (!correlationMatrix || correlationMatrix.tickers.length < 2) return null;
     
     // Filter assets to match correlation matrix
-    const filteredAssets = assetParams.filter(a => correlationMatrix.tickers.includes(a.ticker));
+    let filteredAssets = assetParams.filter(a => correlationMatrix.tickers.includes(a.ticker));
     if (filteredAssets.length < 2) return null;
+    
+    // CRITICAL: In Manual mode, scale asset parameters to match manual inputs
+    // This ensures consistency between Multivariate and Univariate engines
+    if (inputMode === 'manual') {
+      // Calculate portfolio-level stats from asset parameters
+      const totalWeight = filteredAssets.reduce((sum, a) => sum + a.weight, 0);
+      const weightedAvgReturn = filteredAssets.reduce((sum, a) => sum + a.weight * a.meanReturn, 0) / (totalWeight || 1);
+      const weightedAvgVol = filteredAssets.reduce((sum, a) => sum + a.weight * a.volatility, 0) / (totalWeight || 1);
+      
+      // Calculate scaling factors to match manual inputs
+      const returnScale = weightedAvgReturn !== 0 ? (effectiveCAGR / 100) / weightedAvgReturn : 1;
+      const volScale = weightedAvgVol !== 0 ? (effectiveVolatility / 100) / weightedAvgVol : 1;
+      
+      // Apply scaling to each asset to preserve relative differences
+      filteredAssets = filteredAssets.map(asset => ({
+        ...asset,
+        meanReturn: asset.meanReturn * returnScale,
+        volatility: asset.volatility * volScale,
+      }));
+    }
     
     // Reorder assets to match correlation matrix order
     const orderedAssets = correlationMatrix.tickers
@@ -302,7 +322,7 @@ export function MonteCarloSimulation({
       .filter((a): a is AssetParameters => a !== undefined);
     
     return buildMultivariateConfig(orderedAssets, correlationMatrix.matrix, rebalancing);
-  }, [effectiveSimMode.type, correlationMatrix, assetParams, rebalancing]);
+  }, [effectiveSimMode.type, correlationMatrix, assetParams, rebalancing, inputMode, effectiveCAGR, effectiveVolatility]);
   
   // Run simulation on demand
   const runSimulation = useCallback(() => {
@@ -623,6 +643,7 @@ export function MonteCarloSimulation({
                 ? `Multivariate GBM with ${assetParams.length} correlated assets (EnCorr methodology)`
                 : 'Portfolio-level GBM simulation'}
               {effectiveSimMode.reason && effectiveSimMode.type === 'univariate' && ` — ${effectiveSimMode.reason}`}
+              {inputMode === 'manual' && ' — Manual override'}
             </p>
             
             {assetParams.length >= 2 && (
@@ -635,6 +656,16 @@ export function MonteCarloSimulation({
             )}
           </div>
         </div>
+        
+        {/* Manual Mode Info Banner */}
+        {inputMode === 'manual' && hasRun && (
+          <div className="px-3 py-1.5 border-b border-warning/20 bg-warning/5">
+            <p className="text-[8px] text-warning flex items-center gap-1">
+              <Settings2 className="h-3 w-3" />
+              Using manual input values. Click "Run Simulation" to generate projections.
+            </p>
+          </div>
+        )}
         
         {/* Asset Parameters Panel (Collapsible) */}
         {showAssetPanel && assetParams.length >= 2 && (
