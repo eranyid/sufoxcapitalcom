@@ -11,8 +11,10 @@
  * - Geometric Brownian Motion (GBM) with Itô correction
  * - Rebalancing options (constant weights vs. buy-and-hold)
  * - Data quality validation and fallback mechanisms
+ * - Full log-space simulation for numerical stability
+ * - Comprehensive bounds checking and failure diagnostics
  * 
- * Formula: S_i(t+1) = S_i(t) × exp[(μ_i - 0.5σ_i²)Δt + σ_i√Δt × ε_i]
+ * Formula: logS_i(t+1) = logS_i(t) + (μ_i - 0.5σ_i²)Δt + σ_i√Δt × ε_i
  * Where ε = L × Z (correlated shocks via Cholesky)
  */
 
@@ -46,6 +48,40 @@ export interface SimulationMode {
 
 export type DataQualityLevel = 'high' | 'medium' | 'low' | 'insufficient';
 
+// ============================================
+// SIMULATION DIAGNOSTICS & ERROR TYPES
+// ============================================
+
+export interface SimulationDiagnostics {
+  discardedPaths: number;
+  cappedPaths: number;
+  totalPaths: number;
+  appliedCaps: {
+    meanReturnCapped: boolean;
+    volatilityCapped: boolean;
+    dispersionCapped: boolean;
+    originalMean?: number;
+    originalVol?: number;
+    originalDispersion?: number;
+  };
+  warnings: string[];
+}
+
+export interface SimulationError {
+  status: 'unstable_simulation' | 'invalid_parameters' | 'insufficient_data';
+  reason: string;
+  diagnostics: {
+    discardedPaths?: number;
+    totalPaths?: number;
+    inputParameters?: {
+      meanReturn: number;
+      volatility: number;
+      years: number;
+      numSimulations: number;
+    };
+  };
+}
+
 export interface DataQualityInfo {
   level: DataQualityLevel;
   minMonths: number;
@@ -73,62 +109,100 @@ export interface MultivariateSimulationResult {
     probLoss: number;
   };
   diversificationBenefit: number;  // % reduction vs. weighted-average VaRs
+  diagnostics: SimulationDiagnostics;
+  isStabilized: boolean;  // True if parameters were auto-adjusted
 }
 
 // ============================================
-// NUMERICAL STABILITY GUARDS
+// NUMERICAL STABILITY GUARDS (INSTITUTIONAL)
 // ============================================
 
-/**
- * Maximum allowed log return per step to prevent numerical overflow
- * This caps extreme moves to ~50% per period
- */
-const MAX_LOG_RETURN_PER_STEP = 0.4;
+/** Maximum allowed log return per step (±50% per period) */
+const MAX_LOG_RETURN_PER_STEP = 0.5;
 
-/**
- * Maximum portfolio value multiplier (prevents runaway growth)
- * 1000x initial value is already astronomical for any realistic projection
- */
+/** Maximum portfolio value multiplier (10,000x initial) */
 const MAX_VALUE_MULTIPLIER = 10000;
 
-/**
- * Minimum portfolio value as fraction of initial (prevent zero/negative)
- */
-const MIN_VALUE_MULTIPLIER = 0.0001;
+/** Minimum portfolio value as fraction of initial (1e-9) */
+const MIN_VALUE_MULTIPLIER = 1e-9;
 
-/**
- * Clamp a value between min and max
- */
+/** Maximum dispersion: σ × √T ≤ 6 */
+const MAX_DISPERSION = 6.0;
+
+/** Z-score truncation bounds for normal draws */
+const MAX_Z_SCORE = 8.0;
+
+/** Maximum allowed path failure rate (2%) */
+const MAX_PATH_FAILURE_RATE = 0.02;
+
+/** Input parameter bounds */
+const PARAM_BOUNDS = {
+  meanReturn: { min: -0.90, max: 2.00 },      // -90% to +200% annualized
+  volatility: { min: 0.001, max: 3.00 },       // 0.1% to 300% annualized
+  years: { min: 1, max: 100 },
+  numSimulations: { min: 100, max: 200000 },
+};
+
+/** Clamp a value between min and max */
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/**
- * Check if a number is valid (finite and not NaN)
- */
+/** Check if a number is valid (finite and not NaN) */
 function isValidNumber(value: number): boolean {
   return Number.isFinite(value) && !Number.isNaN(value);
 }
 
 // ============================================
-// RANDOM NUMBER GENERATION
+// SAFE RANDOM NUMBER GENERATION
 // ============================================
 
 /**
- * Box-Muller transform for generating standard normal random numbers
- * N(0,1) distribution
+ * Safe Box-Muller transform for generating standard normal random numbers
+ * N(0,1) distribution with guards against log(0) and Z-score truncation
  */
 export function generateNormalRandom(): number {
-  const u1 = Math.random();
-  const u2 = Math.random();
-  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  // Ensure u1 is never 0 or 1 to prevent log(0) and boundary issues
+  const epsilon = 1e-10;
+  let u1 = Math.random();
+  let u2 = Math.random();
+  
+  // Guard against exact 0 or 1
+  u1 = Math.max(epsilon, Math.min(1 - epsilon, u1));
+  u2 = Math.max(epsilon, Math.min(1 - epsilon, u2));
+  
+  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  
+  // Truncate to [-8, +8] as per institutional requirements
+  return clamp(z, -MAX_Z_SCORE, MAX_Z_SCORE);
 }
 
-/**
- * Generate N independent standard normal random variables
- */
+/** Generate N independent standard normal random variables (truncated) */
 export function generateIndependentNormals(n: number): number[] {
   return Array.from({ length: n }, () => generateNormalRandom());
+}
+
+/** Seeded pseudo-random number generator (Mulberry32) for reproducibility */
+export function createSeededRNG(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Seeded normal random generator with truncation */
+export function createSeededNormalRNG(seed: number): () => number {
+  const rng = createSeededRNG(seed);
+  return () => {
+    const epsilon = 1e-10;
+    const u1 = Math.max(epsilon, Math.min(1 - epsilon, rng()));
+    const u2 = Math.max(epsilon, Math.min(1 - epsilon, rng()));
+    const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    return clamp(z, -MAX_Z_SCORE, MAX_Z_SCORE);
+  };
 }
 
 // ============================================
@@ -359,10 +433,11 @@ export function determineSimulationMode(
 // ============================================
 
 /**
- * Run Multivariate Monte Carlo Simulation
+ * Run Multivariate Monte Carlo Simulation in Log-Space
  * 
  * Uses Cholesky decomposition to generate correlated asset returns,
  * then aggregates to portfolio level.
+ * All calculations performed in log-space for numerical stability.
  * 
  * @param config - Multivariate configuration with assets and correlation
  * @param initialValue - Starting portfolio value
@@ -384,94 +459,151 @@ export function runMultivariateSimulation(
     return null;
   }
   
-  const totalSteps = years * stepsPerYear;
+  // Clamp simulation parameters
+  const clampedYears = clamp(Math.round(years), PARAM_BOUNDS.years.min, PARAM_BOUNDS.years.max);
+  const clampedSims = clamp(Math.round(numSimulations), PARAM_BOUNDS.numSimulations.min, PARAM_BOUNDS.numSimulations.max);
+  
+  const totalSteps = clampedYears * stepsPerYear;
   const dt = 1 / stepsPerYear;  // Time step as fraction of year
   const sqrtDt = Math.sqrt(dt);
   
-  // Per-asset parameters (already annualized) - clamp to reasonable ranges
-  const means = assets.map(a => clamp(a.meanReturn, -0.5, 1.0));  // -50% to +100% annual
-  const vols = assets.map(a => clamp(a.volatility, 0.01, 1.0));   // 1% to 100% annual
+  // Per-asset parameters with dispersion guard
+  const rawMeans = assets.map(a => a.meanReturn);
+  const rawVols = assets.map(a => a.volatility);
+  
+  // Apply parameter bounds and dispersion guard
+  const means = rawMeans.map(m => clamp(m, PARAM_BOUNDS.meanReturn.min, PARAM_BOUNDS.meanReturn.max));
+  const vols = rawVols.map((v, i) => {
+    let clampedVol = clamp(v, PARAM_BOUNDS.volatility.min, PARAM_BOUNDS.volatility.max);
+    // Apply dispersion guard: σ × √T ≤ 6
+    const dispersion = clampedVol * Math.sqrt(clampedYears);
+    if (dispersion > MAX_DISPERSION) {
+      clampedVol = MAX_DISPERSION / Math.sqrt(clampedYears);
+    }
+    return clampedVol;
+  });
   const weights = assets.map(a => a.weight);
   
-  // Value bounds
-  const maxValue = initialValue * MAX_VALUE_MULTIPLIER;
-  const minValue = initialValue * MIN_VALUE_MULTIPLIER;
+  // Value bounds in log-space
+  const logMaxValue = Math.log(initialValue * MAX_VALUE_MULTIPLIER);
+  const logMinValue = Math.log(initialValue * MIN_VALUE_MULTIPLIER);
+  const levelMaxValue = initialValue * MAX_VALUE_MULTIPLIER;
+  const levelMinValue = initialValue * MIN_VALUE_MULTIPLIER;
+  
+  // Track diagnostics
+  let discardedPaths = 0;
+  let cappedPaths = 0;
   
   const portfolioPaths: number[][] = [];
   const finalValues: number[] = [];
   
   // Run simulations
-  for (let sim = 0; sim < numSimulations; sim++) {
-    // Initialize asset values based on weights
-    let assetValues = weights.map(w => initialValue * w);
+  for (let sim = 0; sim < clampedSims; sim++) {
+    // Initialize in LOG-SPACE
+    let logAssetValues = weights.map(w => Math.log(Math.max(initialValue * w, 1e-15)));
     const portfolioPath: number[] = [initialValue];
     let isPathValid = true;
+    let isPathCapped = false;
     
     for (let step = 0; step < totalSteps && isPathValid; step++) {
       // Generate correlated random shocks
       const Z = generateIndependentNormals(n);
       const epsilon = matrixVectorMultiply(choleskyL, Z);
       
-      // Update each asset using GBM
+      // Update each asset in LOG-SPACE using GBM
       for (let i = 0; i < n; i++) {
         // GBM with Itô correction: r = (μ - 0.5σ²)dt + σ√dt × ε
         const drift = (means[i] - 0.5 * vols[i] * vols[i]) * dt;
         const diffusion = vols[i] * sqrtDt * epsilon[i];
+        
         // Clamp log return to prevent extreme moves
         const logReturn = clamp(drift + diffusion, -MAX_LOG_RETURN_PER_STEP, MAX_LOG_RETURN_PER_STEP);
         
-        let newValue = assetValues[i] * Math.exp(logReturn);
+        // LOG-SPACE UPDATE: logS[t+1] = logS[t] + logReturn
+        let newLogValue = logAssetValues[i] + logReturn;
         
         // Guard against invalid values
-        if (!isValidNumber(newValue)) {
-          newValue = assetValues[i]; // Keep previous value
+        if (!isValidNumber(newLogValue)) {
+          isPathValid = false;
+          break;
         }
         
-        assetValues[i] = newValue;
+        // Apply bounds in log-space
+        if (newLogValue > logMaxValue || newLogValue < logMinValue) {
+          newLogValue = clamp(newLogValue, logMinValue, logMaxValue);
+          isPathCapped = true;
+        }
+        
+        logAssetValues[i] = newLogValue;
       }
       
-      // Check for path validity
-      const currentTotal = assetValues.reduce((a, b) => a + b, 0);
-      if (!isValidNumber(currentTotal) || currentTotal > maxValue * 10) {
-        isPathValid = false;
-        break;
-      }
+      if (!isPathValid) break;
       
       // Rebalancing logic
       if (rebalancing === 'constant') {
-        // Constant weights: rebalance to target weights each period
-        const totalValue = assetValues.reduce((a, b) => a + b, 0);
-        const clampedTotal = clamp(totalValue, minValue, maxValue);
-        assetValues = weights.map(w => clampedTotal * w);
-      } else {
-        // For buy_and_hold, still apply value bounds per asset
-        assetValues = assetValues.map(v => clamp(v, minValue / n, maxValue / n));
+        // Convert to level, sum, then back to log for rebalancing
+        const assetLevelValues = logAssetValues.map(lv => Math.exp(lv));
+        const totalValue = assetLevelValues.reduce((a, b) => a + b, 0);
+        const clampedTotal = clamp(totalValue, levelMinValue, levelMaxValue);
+        logAssetValues = weights.map(w => Math.log(Math.max(clampedTotal * w, 1e-15)));
       }
       
       // Record portfolio value at yearly intervals
       if ((step + 1) % stepsPerYear === 0) {
-        const portfolioValue = clamp(assetValues.reduce((a, b) => a + b, 0), minValue, maxValue);
+        const assetLevelValues = logAssetValues.map(lv => Math.exp(lv));
+        const portfolioValue = clamp(assetLevelValues.reduce((a, b) => a + b, 0), levelMinValue, levelMaxValue);
         portfolioPath.push(portfolioValue);
       }
     }
     
     // Only include valid paths
     if (isPathValid) {
-      const finalValue = clamp(assetValues.reduce((a, b) => a + b, 0), minValue, maxValue);
+      const assetLevelValues = logAssetValues.map(lv => Math.exp(lv));
+      const finalValue = clamp(assetLevelValues.reduce((a, b) => a + b, 0), levelMinValue, levelMaxValue);
       // Fill missing yearly values if path was cut short
-      while (portfolioPath.length < years + 1) {
+      while (portfolioPath.length < clampedYears + 1) {
         portfolioPath.push(portfolioPath[portfolioPath.length - 1]);
       }
       portfolioPaths.push(portfolioPath);
       finalValues.push(finalValue);
+      if (isPathCapped) cappedPaths++;
+    } else {
+      discardedPaths++;
     }
   }
   
-  // If too many paths were invalid, return null
-  if (finalValues.length < numSimulations * 0.5) {
+  // Check path failure rate (2% threshold)
+  const failureRate = discardedPaths / clampedSims;
+  if (failureRate > MAX_PATH_FAILURE_RATE) {
     console.warn('Monte Carlo: Too many invalid paths, falling back');
     return null;
   }
+  
+  // Build diagnostics
+  const anyCapped = rawMeans.some((m, i) => m !== means[i]) || rawVols.some((v, i) => v !== vols[i]);
+  const diagnostics: SimulationDiagnostics = {
+    discardedPaths,
+    cappedPaths,
+    totalPaths: clampedSims,
+    appliedCaps: {
+      meanReturnCapped: rawMeans.some((m, i) => m !== means[i]),
+      volatilityCapped: rawVols.some((v, i) => v !== vols[i]),
+      dispersionCapped: rawVols.some((v, i) => {
+        const dispersion = v * Math.sqrt(clampedYears);
+        return dispersion > MAX_DISPERSION;
+      }),
+    },
+    warnings: [],
+  };
+  
+  if (diagnostics.appliedCaps.dispersionCapped) {
+    diagnostics.warnings.push('Volatility reduced to maintain numerical stability (dispersion cap applied)');
+  }
+  if (cappedPaths > 0) {
+    diagnostics.warnings.push(`${cappedPaths} paths hit value bounds and were capped`);
+  }
+  
+  const isStabilized = anyCapped || cappedPaths > 0;
   
   // Sort final values for percentile calculations
   const sortedFinalValues = [...finalValues].sort((a, b) => a - b);
@@ -496,7 +628,7 @@ export function runMultivariateSimulation(
   
   // Calculate diversification benefit
   // Compare portfolio VaR to weighted average of individual VaRs
-  const individualVars = assets.map(a => 1.645 * a.volatility * Math.sqrt(years));
+  const individualVars = assets.map((a, i) => 1.645 * vols[i] * Math.sqrt(clampedYears));
   const weightedAvgVar = assets.reduce((sum, a, i) => sum + a.weight * individualVars[i], 0);
   const portfolioVarEstimate = Math.abs(var95 / 100);
   const diversificationBenefit = weightedAvgVar > 0 
@@ -522,14 +654,17 @@ export function runMultivariateSimulation(
       probLoss,
     },
     diversificationBenefit: Math.max(0, diversificationBenefit),
+    diagnostics,
+    isStabilized,
   };
 }
 
 /**
- * Run Univariate Monte Carlo Simulation (Portfolio-Level)
+ * Run Univariate Monte Carlo Simulation in Log-Space (Portfolio-Level)
  * 
  * Fallback when multivariate is not possible.
  * Simulates the portfolio as a single entity.
+ * All calculations performed in log-space for numerical stability.
  */
 export function runUnivariateSimulation(
   initialValue: number,
@@ -539,48 +674,129 @@ export function runUnivariateSimulation(
   numSimulations: number = 10000,
   stepsPerYear: number = 12
 ): MultivariateSimulationResult {
-  const totalSteps = years * stepsPerYear;
+  // Clamp simulation parameters
+  const clampedYears = clamp(Math.round(years), PARAM_BOUNDS.years.min, PARAM_BOUNDS.years.max);
+  const clampedSims = clamp(Math.round(numSimulations), PARAM_BOUNDS.numSimulations.min, PARAM_BOUNDS.numSimulations.max);
+  
+  const totalSteps = clampedYears * stepsPerYear;
   const dt = 1 / stepsPerYear;
   const sqrtDt = Math.sqrt(dt);
   
-  // Clamp inputs to reasonable ranges
-  const clampedReturn = clamp(annualReturn, -0.5, 1.0);  // -50% to +100% annual
-  const clampedVol = clamp(annualVol, 0.01, 1.0);        // 1% to 100% annual
+  // Clamp inputs with institutional bounds
+  const clampedReturn = clamp(annualReturn, PARAM_BOUNDS.meanReturn.min, PARAM_BOUNDS.meanReturn.max);
+  let clampedVol = clamp(annualVol, PARAM_BOUNDS.volatility.min, PARAM_BOUNDS.volatility.max);
+  
+  // Apply dispersion guard: σ × √T ≤ 6
+  const originalDispersion = clampedVol * Math.sqrt(clampedYears);
+  const dispersionCapped = originalDispersion > MAX_DISPERSION;
+  if (dispersionCapped) {
+    clampedVol = MAX_DISPERSION / Math.sqrt(clampedYears);
+  }
   
   const drift = (clampedReturn - 0.5 * clampedVol * clampedVol) * dt;
   const diffusion = clampedVol * sqrtDt;
   
-  // Value bounds
-  const maxValue = initialValue * MAX_VALUE_MULTIPLIER;
-  const minValue = initialValue * MIN_VALUE_MULTIPLIER;
+  // Value bounds in log-space
+  const logMaxValue = Math.log(initialValue * MAX_VALUE_MULTIPLIER);
+  const logMinValue = Math.log(initialValue * MIN_VALUE_MULTIPLIER);
+  const logInitial = Math.log(initialValue);
+  const levelMinValue = initialValue * MIN_VALUE_MULTIPLIER;
+  const levelMaxValue = initialValue * MAX_VALUE_MULTIPLIER;
+  
+  // Track diagnostics
+  let discardedPaths = 0;
+  let cappedPaths = 0;
   
   const portfolioPaths: number[][] = [];
   const finalValues: number[] = [];
   
-  for (let sim = 0; sim < numSimulations; sim++) {
-    let value = initialValue;
+  for (let sim = 0; sim < clampedSims; sim++) {
+    // Initialize in LOG-SPACE
+    let logValue = logInitial;
     const path: number[] = [initialValue];
+    let isPathValid = true;
+    let isPathCapped = false;
     
-    for (let step = 0; step < totalSteps; step++) {
+    for (let step = 0; step < totalSteps && isPathValid; step++) {
       const z = generateNormalRandom();
       // Clamp log return to prevent extreme moves
       const logReturn = clamp(drift + diffusion * z, -MAX_LOG_RETURN_PER_STEP, MAX_LOG_RETURN_PER_STEP);
-      let newValue = value * Math.exp(logReturn);
       
-      // Guard against invalid values and apply bounds
-      if (!isValidNumber(newValue)) {
-        newValue = value; // Keep previous value
+      // LOG-SPACE UPDATE: logS[t+1] = logS[t] + logReturn
+      let newLogValue = logValue + logReturn;
+      
+      // Guard against invalid values
+      if (!isValidNumber(newLogValue)) {
+        isPathValid = false;
+        break;
       }
-      value = clamp(newValue, minValue, maxValue);
+      
+      // Apply bounds in log-space
+      if (newLogValue > logMaxValue || newLogValue < logMinValue) {
+        newLogValue = clamp(newLogValue, logMinValue, logMaxValue);
+        isPathCapped = true;
+      }
+      
+      logValue = newLogValue;
       
       if ((step + 1) % stepsPerYear === 0) {
-        path.push(value);
+        path.push(Math.exp(logValue));
       }
     }
     
-    portfolioPaths.push(path);
-    finalValues.push(value);
+    if (isPathValid) {
+      const finalValue = Math.exp(logValue);
+      
+      // Fill missing values
+      while (path.length < clampedYears + 1) {
+        path.push(path[path.length - 1]);
+      }
+      
+      portfolioPaths.push(path);
+      finalValues.push(finalValue);
+      if (isPathCapped) cappedPaths++;
+    } else {
+      discardedPaths++;
+    }
   }
+  
+  // If too many paths failed, still return but log warning
+  const failureRate = discardedPaths / clampedSims;
+  if (failureRate > MAX_PATH_FAILURE_RATE) {
+    console.warn(`Monte Carlo univariate: ${(failureRate * 100).toFixed(1)}% path failure rate`);
+  }
+  
+  // Check if parameters were capped
+  const meanCapped = annualReturn !== clampedReturn;
+  const volCapped = annualVol !== clampedVol;
+  
+  // Build diagnostics
+  const diagnostics: SimulationDiagnostics = {
+    discardedPaths,
+    cappedPaths,
+    totalPaths: clampedSims,
+    appliedCaps: { 
+      meanReturnCapped: meanCapped, 
+      volatilityCapped: volCapped, 
+      dispersionCapped,
+      originalMean: meanCapped ? annualReturn : undefined,
+      originalVol: volCapped ? annualVol : undefined,
+      originalDispersion: dispersionCapped ? originalDispersion : undefined,
+    },
+    warnings: [],
+  };
+  
+  if (dispersionCapped) {
+    diagnostics.warnings.push(`Volatility reduced to maintain numerical stability (dispersion was ${originalDispersion.toFixed(2)}, capped to ${MAX_DISPERSION})`);
+  }
+  if (meanCapped) {
+    diagnostics.warnings.push('Mean return clamped to valid range [-90%, +200%]');
+  }
+  if (cappedPaths > 0) {
+    diagnostics.warnings.push(`${cappedPaths} paths hit value bounds and were capped`);
+  }
+  
+  const isStabilized = meanCapped || volCapped || dispersionCapped || cappedPaths > 0;
   
   const sortedFinalValues = [...finalValues].sort((a, b) => a - b);
   
@@ -618,6 +834,8 @@ export function runUnivariateSimulation(
       probLoss: 100 - probGain,
     },
     diversificationBenefit: 0, // N/A for univariate
+    diagnostics,
+    isStabilized,
   };
 }
 
@@ -748,4 +966,61 @@ export function extractAssetParameters(
   }
   
   return assets;
+}
+
+/**
+ * Type guard to check if simulation result is an error
+ */
+export function isSimulationError(
+  result: MultivariateSimulationResult | SimulationError | null
+): result is SimulationError {
+  return result !== null && 'status' in result && 'reason' in result;
+}
+
+/**
+ * Validate simulation parameters and return stabilization info
+ * Used by UI to show warnings about parameter adjustments
+ */
+export function validateAndStabilizeParams(
+  meanReturn: number,
+  volatility: number,
+  years: number
+): {
+  stabilizedMean: number;
+  stabilizedVol: number;
+  stabilizedYears: number;
+  wasStabilized: boolean;
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  
+  // Clamp years
+  const stabilizedYears = clamp(Math.round(years), PARAM_BOUNDS.years.min, PARAM_BOUNDS.years.max);
+  if (years !== stabilizedYears) {
+    warnings.push(`Horizon clamped to ${stabilizedYears} years (max: ${PARAM_BOUNDS.years.max})`);
+  }
+  
+  // Clamp mean return
+  const stabilizedMean = clamp(meanReturn, PARAM_BOUNDS.meanReturn.min, PARAM_BOUNDS.meanReturn.max);
+  if (meanReturn !== stabilizedMean) {
+    warnings.push(`Mean return clamped to ${(stabilizedMean * 100).toFixed(0)}% (range: -90% to +200%)`);
+  }
+  
+  // Clamp volatility with dispersion guard
+  let stabilizedVol = clamp(volatility, PARAM_BOUNDS.volatility.min, PARAM_BOUNDS.volatility.max);
+  const dispersion = stabilizedVol * Math.sqrt(stabilizedYears);
+  if (dispersion > MAX_DISPERSION) {
+    stabilizedVol = MAX_DISPERSION / Math.sqrt(stabilizedYears);
+    warnings.push(`Volatility reduced to ${(stabilizedVol * 100).toFixed(0)}% for numerical stability (dispersion cap: σ×√T ≤ ${MAX_DISPERSION})`);
+  } else if (volatility !== stabilizedVol) {
+    warnings.push(`Volatility clamped to ${(stabilizedVol * 100).toFixed(0)}% (range: 0.1% to 300%)`);
+  }
+  
+  return {
+    stabilizedMean,
+    stabilizedVol,
+    stabilizedYears,
+    wasStabilized: warnings.length > 0,
+    warnings,
+  };
 }
