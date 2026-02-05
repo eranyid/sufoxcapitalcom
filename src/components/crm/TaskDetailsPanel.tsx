@@ -88,13 +88,13 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
       {/* Panel - Full screen on mobile */}
       <div
         className={cn(
-          'fixed top-0 h-full bg-background border-l border-border shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out',
+          'fixed top-0 h-full bg-background border-l border-border shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out pb-[env(safe-area-inset-bottom)]',
           'right-0 w-full sm:w-[420px] lg:w-[480px]',
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
-        {/* Header - Mobile optimized */}
-        <div className="flex-shrink-0 border-b border-border p-3 sm:p-4">
+      {/* Header - Mobile optimized, scrollable when tall */}
+        <div className="flex-shrink-1 overflow-y-auto border-b border-border p-3 sm:p-4 max-h-[55vh] sm:max-h-none">
           <div className="flex items-start justify-between gap-2 sm:gap-3">
             <div className="flex-1 min-w-0">
               <Input
