@@ -70,13 +70,20 @@
        </div>
  
        {/* Main orbital composition - vertical on mobile, horizontal on desktop */}
-       <div className="relative flex flex-col md:flex-row items-center justify-center px-6 md:px-0">
+       <div className="relative flex flex-col md:flex-row items-center justify-center px-6 md:px-0 py-12 md:py-0">
          
-         {/* Orbital rings - centered on logo position */}
-         <div className="absolute flex items-center justify-center pointer-events-none" style={{ top: isMobile ? '0' : '50%', left: '50%', transform: isMobile ? 'translateX(-50%)' : 'translate(-50%, -50%)' }}>
+         {/* Orbital rings - always centered on logo */}
+         <div 
+           className="absolute flex items-center justify-center pointer-events-none"
+           style={{ 
+             top: isMobile ? '56px' : '50%', 
+             left: '50%', 
+             transform: isMobile ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
+           }}
+         >
            {/* Innermost glow */}
            <div 
-             className="absolute w-[160px] h-[160px] md:w-[220px] md:h-[220px] rounded-full"
+             className="absolute w-[140px] h-[140px] md:w-[220px] md:h-[220px] rounded-full"
              style={{
                background: 'radial-gradient(circle, rgba(180, 140, 60, 0.12) 0%, transparent 70%)',
                animation: 'pulse 4s ease-in-out infinite',
@@ -85,25 +92,25 @@
            
            {/* Ring 1 - closest to logo */}
            <div 
-             className="absolute w-[200px] h-[200px] md:w-[280px] md:h-[280px] rounded-full border border-[rgba(180,140,60,0.15)]"
+             className="absolute w-[160px] h-[160px] md:w-[280px] md:h-[280px] rounded-full border border-[rgba(180,140,60,0.15)]"
              style={{ animation: 'spin 80s linear infinite' }}
            />
            
            {/* Ring 2 */}
            <div 
-             className="absolute w-[280px] h-[280px] md:w-[400px] md:h-[400px] rounded-full border border-[rgba(60,100,160,0.1)]"
+             className="absolute w-[240px] h-[240px] md:w-[400px] md:h-[400px] rounded-full border border-[rgba(60,100,160,0.1)]"
              style={{ animation: 'spin 120s linear infinite reverse' }}
            />
            
            {/* Ring 3 - outermost */}
            <div 
-             className="absolute w-[380px] h-[380px] md:w-[540px] md:h-[540px] rounded-full border border-[rgba(180,140,60,0.06)]"
+             className="absolute w-[320px] h-[320px] md:w-[540px] md:h-[540px] rounded-full border border-[rgba(180,140,60,0.06)]"
              style={{ animation: 'spin 180s linear infinite' }}
            />
            
            {/* Ambient outer glow */}
            <div 
-             className="absolute w-[420px] h-[420px] md:w-[620px] md:h-[620px] rounded-full"
+             className="absolute w-[360px] h-[360px] md:w-[620px] md:h-[620px] rounded-full"
              style={{
                background: 'radial-gradient(circle, rgba(60,100,160,0.05) 0%, transparent 60%)',
              }}
@@ -112,7 +119,7 @@
  
          {/* Central Logo - the visual anchor */}
          <div 
-           className="relative z-20 animate-scale-in mb-10 md:mb-0"
+           className="relative z-20 animate-scale-in mb-8 md:mb-0"
            style={{ animationDuration: '0.6s' }}
          >
            {/* Breathing glow behind logo */}
