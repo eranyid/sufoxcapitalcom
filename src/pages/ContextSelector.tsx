@@ -86,7 +86,7 @@
  
        {/* User email - top right, minimal */}
        <div 
-         className="absolute top-4 right-4 md:top-8 md:right-8 text-[10px] md:text-[11px] tracking-wide text-white/30 animate-fade-in max-w-[200px] truncate"
+         className="absolute top-4 right-4 md:top-8 md:right-8 text-[10px] md:text-[11px] tracking-wide text-white/30 animate-fade-in max-w-[200px] truncate hidden md:block"
          style={{ animationDelay: '0.8s', animationFillMode: 'backwards' }}
        >
          {user?.email}
@@ -94,17 +94,17 @@
  
        {/* Title - top center */}
        <div 
-         className="absolute top-4 left-1/2 -translate-x-1/2 md:top-8 animate-fade-in"
+         className="absolute top-4 left-1/2 -translate-x-1/2 md:top-8 animate-fade-in z-10"
          style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}
        >
-         <h1 className="text-sm md:text-base tracking-[0.3em] uppercase text-white/50 font-light">
+         <h1 className="text-xs md:text-base tracking-[0.2em] md:tracking-[0.3em] uppercase text-white/50 font-light whitespace-nowrap">
            SUFOX <span className="text-white/30">Terminal</span>
          </h1>
        </div>
 
        {/* Tagline with monitor icon - top left */}
        <div 
-         className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-2 animate-fade-in"
+         className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-2 animate-fade-in hidden md:flex"
          style={{ animationDelay: '0.5s', animationFillMode: 'backwards' }}
        >
          <img 
