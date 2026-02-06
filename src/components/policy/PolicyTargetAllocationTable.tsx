@@ -137,8 +137,8 @@ export function PolicyTargetAllocationTable() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Crosshair className="h-5 w-5 text-primary" />
-              Manual Target Allocation
+              <Crosshair className="h-5 w-5 text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.6)]" />
+              <span className="drop-shadow-[0_0_8px_hsl(var(--primary)/0.4)]">Manual Target Allocation</span>
             </CardTitle>
             <CardDescription>
               Define your target portfolio weights per security — ticker and % of total portfolio
