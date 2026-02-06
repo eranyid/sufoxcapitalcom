@@ -426,6 +426,65 @@ export type Database = {
           },
         ]
       }
+      conversation_participants: {
+        Row: {
+          conversation_id: string
+          id: string
+          joined_at: string
+          last_read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_activity_log: {
         Row: {
           action: string
@@ -1104,6 +1163,65 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          analysis_id: string | null
+          analysis_snapshot: Json | null
+          analysis_title: string | null
+          analysis_type: string | null
+          content: string | null
+          conversation_id: string
+          created_at: string
+          file_content_type: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          message_type: string
+          sender_id: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          analysis_snapshot?: Json | null
+          analysis_title?: string | null
+          analysis_type?: string | null
+          content?: string | null
+          conversation_id: string
+          created_at?: string
+          file_content_type?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          message_type?: string
+          sender_id: string
+        }
+        Update: {
+          analysis_id?: string | null
+          analysis_snapshot?: Json | null
+          analysis_title?: string | null
+          analysis_type?: string | null
+          content?: string | null
+          conversation_id?: string
+          created_at?: string
+          file_content_type?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          message_type?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]

@@ -53,6 +53,7 @@ const FXRates = lazy(() => import("./pages/FXRates"));
 const Lab = lazy(() => import("./pages/Lab"));
 const Charts = lazy(() => import("./pages/Charts"));
 const Calendar = lazy(() => import("./pages/Calendar"));
+const Messages = lazy(() => import("./pages/Messages"));
 
  const Workspaces = lazy(() => import("./pages/Workspaces"));
  const WorkspaceDetail = lazy(() => import("./pages/WorkspaceDetail"));
@@ -181,6 +182,11 @@ const App = () => (
                   <Route path="/calendar" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Calendar />
+                    </Suspense>
+                  } />
+                  <Route path="/messages" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Messages />
                     </Suspense>
                   } />
                    <Route path="/workspaces" element={

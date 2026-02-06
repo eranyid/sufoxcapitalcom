@@ -25,6 +25,7 @@ import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
  
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
+import { MessagesIcon } from '@/components/icons/MessagesIcon';
 import {
   Sheet,
   SheetContent,
@@ -39,6 +40,7 @@ const primaryNavItems = [
 ];
 
 const moreNavItems = [
+  { path: '/messages', icon: MessagesIcon, label: 'Messages' },
   { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
   { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
   { path: '/lab', icon: LabIcon, label: 'Lab' },
