@@ -9,6 +9,8 @@ interface NavEquityCurveProps {
   valuations: MonthlyValuation[];
   cashBalances: CashBalances;
   baseCurrency?: 'USD' | 'ILS';
+  /** Current NAV from portfolio engine — single source of truth for latest month */
+  engineNav?: { totalValue: number; holdingsValue: number; cashValue: number };
 }
 
 interface NavDataPoint {
@@ -22,7 +24,8 @@ export function NavEquityCurve({
   transactions, 
   valuations, 
   cashBalances,
-  baseCurrency = 'USD'
+  baseCurrency = 'USD',
+  engineNav
 }: NavEquityCurveProps) {
   const [showSplit, setShowSplit] = useState(false);
 
@@ -58,21 +61,6 @@ export function NavEquityCurve({
       holdingsMap[month] = holdings;
     });
 
-    // Calculate cash in base currency using dynamic FX (imported from calculations)
-    const totalCash = baseCurrency === 'USD' 
-      ? cashBalances.USD 
-        + (cashBalances.EUR > 0 ? cashBalances.EUR / 0.92 : 0)
-        + (cashBalances.ILS > 0 ? cashBalances.ILS / 3.7 : 0)
-        + (cashBalances.GBP > 0 ? cashBalances.GBP / 0.79 : 0)
-        + (cashBalances.CHF > 0 ? cashBalances.CHF / 0.88 : 0)
-        + (cashBalances.JPY > 0 ? cashBalances.JPY / 149.5 : 0)
-      : cashBalances.ILS 
-        + (cashBalances.USD * 3.7)
-        + (cashBalances.EUR * (3.7 / 0.92))
-        + (cashBalances.GBP * (3.7 / 0.79))
-        + (cashBalances.CHF * (3.7 / 0.88))
-        + (cashBalances.JPY * (3.7 / 149.5));
-
     const lastMonth = months[months.length - 1];
 
     // Calculate NAV for each month
@@ -94,7 +82,18 @@ export function NavEquityCurve({
 
       // Only add cash to the latest month (we don't have historical cash data)
       const isLatestMonth = month === lastMonth;
-      const monthCash = isLatestMonth ? totalCash : 0;
+      
+      // For the latest month, use engine values if available (single source of truth)
+      if (isLatestMonth && engineNav) {
+        return {
+          month,
+          nav: engineNav.totalValue,
+          cash: engineNav.cashValue,
+          holdings: engineNav.holdingsValue
+        };
+      }
+
+      const monthCash = 0; // No historical cash data available
 
       return {
         month,
