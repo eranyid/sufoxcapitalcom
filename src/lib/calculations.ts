@@ -978,10 +978,14 @@ function calculatePortfolioValueAtMonth(
   transactions: Transaction[],
   valuations: MonthlyValuation[],
   month: string,
-  cashBalances?: CashBalancesInput,
-  baseCurrency: 'USD' | 'ILS' = 'USD',
-  fxRates?: FxRatesMap
+  _cashBalances?: CashBalancesInput,
+  _baseCurrency: 'USD' | 'ILS' = 'USD',
+  _fxRates?: FxRatesMap
 ): number {
+  // IMPORTANT: Only use holdings valued at the target month.
+  // We do NOT add current cash balances here — that would incorrectly
+  // attribute today's cash (post-deposits) to a historical date.
+  // Historical cash snapshots are not available, so Jan 1 NAV = holdings only.
   const positions = calculatePositions(transactions);
   const valMap = new Map(valuations.map(v => [v.ticker, v]));
   
@@ -994,12 +998,7 @@ function calculatePortfolioValueAtMonth(
     }
   }
   
-  // Add cash (assuming constant cash for simplicity, or use historical if available)
-  const cashValue = cashBalances 
-    ? calculateTotalCashInBaseCurrency(cashBalances, baseCurrency, fxRates)
-    : 0;
-  
-  return holdingsValue + cashValue;
+  return holdingsValue;
 }
 
 // Calculate asset-level monthly returns for correlation
