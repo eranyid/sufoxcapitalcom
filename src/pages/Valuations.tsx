@@ -42,7 +42,7 @@ const emptyEditForm: EditFormState = {
 
 export default function Valuations() {
   const { user } = useAuth();
-  const { transactions, valuations, addValuation, updateValuation, deleteValuation, importValuations } = usePortfolio();
+  const { transactions, valuations, addValuation, updateValuation, deleteValuation, importValuations, fxRates } = usePortfolio();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingValuation, setEditingValuation] = useState<MonthlyValuation | null>(null);
@@ -112,13 +112,25 @@ export default function Valuations() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const asset = uniqueAssets.find(a => a.ticker === form.ticker);
+    
+    // Auto-populate FX rate for non-USD assets if user didn't manually enter one
+    let resolvedFxRate: number | undefined = form.fxRate ? parseFloat(form.fxRate) : undefined;
+    if (!resolvedFxRate) {
+      const tx = transactions.find(t => t.ticker === form.ticker);
+      if (tx && tx.currency !== 'USD' && fxRates[tx.currency] && fxRates[tx.currency] > 0) {
+        // fxRates is in "1 USD = X currency" format
+        // Store as the conversion factor from local → base (1/rate for USD base)
+        resolvedFxRate = 1 / fxRates[tx.currency];
+      }
+    }
+    
     await addValuation({
       assetId: form.ticker,
       ticker: form.ticker,
       assetName: form.assetName || asset?.name || form.ticker,
       month: form.month,
       pricePerUnit: parseFloat(form.pricePerUnit),
-      fxRate: form.fxRate ? parseFloat(form.fxRate) : undefined,
+      fxRate: resolvedFxRate,
       linkedCompanyId: form.linkedCompanyId || undefined,
       yieldToMaturity: form.yieldToMaturity ? parseFloat(form.yieldToMaturity) : undefined,
       couponRate: form.couponRate ? parseFloat(form.couponRate) : undefined,
