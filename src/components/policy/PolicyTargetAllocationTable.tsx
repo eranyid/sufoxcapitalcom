@@ -78,7 +78,30 @@ function useCurrentWeights(): Map<string, number> {
         }
       });
 
-      // 3. Calculate market value = qty * latest price, converted to USD base
+      // 3. For non-USD assets with no fx_rate in valuations, fetch from fx_rates table
+      const nonUsdCurrencies = new Set<string>();
+      for (const [, info] of tickerInfo) {
+        if (info.currency !== 'USD') nonUsdCurrencies.add(info.currency);
+      }
+
+      const fxFallback = new Map<string, number>();
+      if (nonUsdCurrencies.size > 0) {
+        const { data: fxRates } = await supabase
+          .from('fx_rates')
+          .select('from_currency, rate, rate_date')
+          .eq('user_id', user.id)
+          .eq('to_currency', 'USD')
+          .in('from_currency', Array.from(nonUsdCurrencies))
+          .order('rate_date', { ascending: false });
+
+        fxRates?.forEach(r => {
+          if (!fxFallback.has(r.from_currency)) {
+            fxFallback.set(r.from_currency, r.rate);
+          }
+        });
+      }
+
+      // 4. Calculate market value = qty * latest price, converted to USD base
       const marketValues = new Map<string, number>();
       let totalMarketValue = 0;
 
@@ -87,8 +110,13 @@ function useCurrentWeights(): Map<string, number> {
         if (!priceInfo) continue;
 
         let marketValue = info.qty * priceInfo.price;
-        if (priceInfo.fxRate && priceInfo.fxRate > 0 && info.currency !== 'USD') {
-          marketValue = marketValue / priceInfo.fxRate;
+
+        // Convert non-USD: use valuation fx_rate first, then fx_rates table fallback
+        if (info.currency !== 'USD') {
+          const fxRate = priceInfo.fxRate || fxFallback.get(info.currency);
+          if (fxRate && fxRate > 0) {
+            marketValue = marketValue / fxRate;
+          }
         }
 
         marketValues.set(ticker, marketValue);
