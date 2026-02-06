@@ -798,116 +798,150 @@ export function calculatePerformanceMetrics(
 }
 
 /**
- * Calculate YTD Return (SUFOX Formula Spec)
- * Formula: YTD Return = (Current P/L - Jan 1st P/L) / Jan 1st Portfolio Value
- * Where P/L = Realized P/L + Unrealized P/L
+ * Calculate YTD (Year-to-Date) Return — Broker-Grade
  * 
- * This measures the actual gain/loss performance since the start of the year
- * as a percentage of the portfolio value at year start.
+ * Uses cashflow-adjusted NAV return:
+ * YTD% = (NAV_today - NAV_jan1 - netExternalFlows) / NAV_jan1
+ * 
+ * External flows = DEPOSIT − WITHDRAWAL (from capital ledger).
+ * Trades (BUY/SELL) are internal and do NOT count as flows.
+ * 
+ * If NAV_jan1 is 0 or unavailable (new account started this year),
+ * falls back to cost-basis return for the period.
  */
+
+export interface LedgerEntryForYTD {
+  entry_type: string;
+  currency: string;
+  amount: number;
+  amount_base: number | null;
+  fx_rate_used: number | null;
+  created_at: string;
+}
+
 export function calculateYTDReturn(
   transactions: Transaction[],
   valuations: MonthlyValuation[],
   cashBalances?: CashBalancesInput,
   baseCurrency: 'USD' | 'ILS' = 'USD',
   fxRates?: FxRatesMap,
-  previousMonthFxRates?: FxRatesMap
-): { ytdReturn: number; ytdPL: number; ytdFxPL: number; janValue: number; cashFxPL: number } {
+  previousMonthFxRates?: FxRatesMap,
+  ledgerEntries?: LedgerEntryForYTD[]
+): { ytdReturn: number; ytdPL: number; ytdFxPL: number; janValue: number; cashFxPL: number; navToday: number; netExternalFlows: number } {
   const currentYear = new Date().getFullYear();
   const decPrevYear = `${currentYear - 1}-12`;
   
-  // Get transactions up to end of previous year (for Jan 1st snapshot)
+  // ──────────────────────────────────────────────
+  // 1. NAV at Jan 1 (= Dec 31 previous year snapshot)
+  // ──────────────────────────────────────────────
   const txBeforeYear = transactions.filter(tx => tx.date < `${currentYear}-01-01`);
-  
-  // Calculate Jan 1st portfolio value (using Dec previous year valuations)
   const decValuations = valuations.filter(v => v.month === decPrevYear);
   const janValue = calculatePortfolioValueAtMonth(txBeforeYear, decValuations, decPrevYear, cashBalances, baseCurrency, fxRates);
   
-  // Build map of entry FX rates from transactions (weighted average for each ticker)
-  const entryFxRates = calculateEntryFxRates(transactions);
-  const janEntryFxRates = calculateEntryFxRates(txBeforeYear);
-  
-  // Get current total P/L with FX breakdown
+  // ──────────────────────────────────────────────
+  // 2. NAV today (recomputed from raw data for auditability)
+  // ──────────────────────────────────────────────
   const positions = calculatePositions(transactions);
   const latestVals = getLatestValuations(valuations);
   
-  let currentUnrealizedPL = 0;
-  let currentRealizedPL = 0;
-  let currentFxPL = 0;
-  
+  let holdingsMV = 0;
   for (const [ticker, pos] of Object.entries(positions)) {
+    if (pos.quantity <= 0) continue;
     const val = latestVals[ticker];
-    const tx = transactions.find(t => t.ticker === ticker);
-    if (val && pos.quantity > 0) {
-      const currentFxRate = val.fxRate || 1;
-      const entryFxRate = entryFxRates[ticker] || 1;
-      const currentValue = pos.quantity * val.pricePerUnit * currentFxRate;
-      // Convert cost basis to base currency
-      const totalCostBase = pos.totalCost * entryFxRate;
-      currentUnrealizedPL += currentValue - totalCostBase;
-      // FX P/L = quantity * local_price * (current_fx - entry_fx)
-      currentFxPL += pos.quantity * val.pricePerUnit * (currentFxRate - entryFxRate);
+    if (val) {
+      holdingsMV += pos.quantity * val.pricePerUnit * (val.fxRate || 1);
+    } else {
+      // Fallback to cost for assets without valuation
+      const tx = transactions.find(t => t.ticker === ticker);
+      if (tx) {
+        let fallbackFx = 1;
+        if (tx.currency !== baseCurrency && fxRates) {
+          const rate = fxRates[tx.currency];
+          if (rate && rate > 0) {
+            fallbackFx = baseCurrency === 'USD' ? (1 / rate) : rate;
+          }
+        }
+        holdingsMV += pos.quantity * pos.avgCost * fallbackFx;
+      }
     }
-    // Convert realized P/L to base currency
-    const realizedFxRate = tx ? (entryFxRates[ticker] || (tx.fxRateAtEntry || 1)) : 1;
-    currentRealizedPL += pos.realizedPL * realizedFxRate;
   }
   
-  // Get Jan 1st P/L state (realized + unrealized at Dec 31 previous year)
-  const positionsAtJan = calculatePositions(txBeforeYear);
-  let janUnrealizedPL = 0;
-  let janRealizedPL = 0;
-  let janFxPL = 0;
+  const cashBase = cashBalances
+    ? calculateTotalCashInBaseCurrency(cashBalances, baseCurrency, fxRates)
+    : 0;
+  const navToday = holdingsMV + cashBase;
   
-  for (const [ticker, pos] of Object.entries(positionsAtJan)) {
-    const val = decValuations.find(v => v.ticker === ticker);
-    const tx = txBeforeYear.find(t => t.ticker === ticker);
-    if (val && pos.quantity > 0) {
-      const janFxRate = val.fxRate || 1;
-      const entryFxRate = janEntryFxRates[ticker] || 1;
-      const janValueCalc = pos.quantity * val.pricePerUnit * janFxRate;
-      const totalCostBase = pos.totalCost * entryFxRate;
-      janUnrealizedPL += janValueCalc - totalCostBase;
-      // FX P/L at Jan 1: quantity * local_price * (jan_fx - entry_fx)
-      janFxPL += pos.quantity * val.pricePerUnit * (janFxRate - entryFxRate);
+  // ──────────────────────────────────────────────
+  // 3. Net external flows since Jan 1 (DEPOSIT + WITHDRAWAL, converted to base)
+  //    BUY/SELL/FX_CONVERSION are internal — excluded.
+  // ──────────────────────────────────────────────
+  let netExternalFlows = 0;
+  if (ledgerEntries) {
+    const externalTypes = ['DEPOSIT', 'WITHDRAWAL'];
+    const ytdEntries = ledgerEntries.filter(e => 
+      externalTypes.includes(e.entry_type) &&
+      e.created_at >= `${currentYear}-01-01`
+    );
+    
+    for (const entry of ytdEntries) {
+      let amountBase: number;
+      if (entry.amount_base != null) {
+        amountBase = entry.amount_base;
+      } else if (entry.currency.toUpperCase() === baseCurrency) {
+        amountBase = entry.amount;
+      } else {
+        // Convert using FX rate at entry time or current rates
+        const rate = entry.fx_rate_used || (fxRates ? fxRates[entry.currency.toUpperCase()] : null) || 1;
+        amountBase = baseCurrency === 'USD' ? entry.amount / rate : entry.amount * rate;
+      }
+      // DEPOSIT amount > 0 (inflow), WITHDRAWAL amount < 0 (outflow)
+      netExternalFlows += amountBase;
     }
-    const realizedFxRate = tx ? (janEntryFxRates[ticker] || (tx.fxRateAtEntry || 1)) : 1;
-    janRealizedPL += pos.realizedPL * realizedFxRate;
   }
   
-  // Calculate FX P/L on cash balances (foreign currency cash)
-  // This measures how much the value of non-base currency cash changed due to FX movements
+  // ──────────────────────────────────────────────
+  // 4. YTD Return = (NAV_today - NAV_jan1 - netExternalFlows) / NAV_jan1
+  // ──────────────────────────────────────────────
+  let ytdReturn: number;
+  let ytdPL: number;
+  
+  if (janValue > 0) {
+    ytdPL = navToday - janValue - netExternalFlows;
+    ytdReturn = (ytdPL / janValue) * 100;
+  } else {
+    // New account started this year — no Jan 1 NAV.
+    // Return = unrealized % (all positions are new this year).
+    let totalCostBase = 0;
+    for (const [ticker, pos] of Object.entries(positions)) {
+      if (pos.quantity <= 0) continue;
+      const tx = transactions.find(t => t.ticker === ticker);
+      const entryFx = tx?.fxRateAtEntry || 1;
+      totalCostBase += pos.totalCost * entryFx;
+    }
+    const unrealizedPL = holdingsMV - totalCostBase;
+    ytdPL = unrealizedPL;
+    ytdReturn = totalCostBase > 0 ? (unrealizedPL / totalCostBase) * 100 : 0;
+  }
+  
+  // ──────────────────────────────────────────────
+  // 5. Cash FX P/L (unchanged logic)
+  // ──────────────────────────────────────────────
   let cashFxPL = 0;
   if (cashBalances && fxRates && previousMonthFxRates) {
     const foreignCurrencies = ['EUR', 'ILS', 'GBP', 'CHF', 'JPY'] as const;
-    
     for (const currency of foreignCurrencies) {
       const balance = cashBalances[currency.toLowerCase() as keyof CashBalancesInput] || 0;
       if (balance > 0) {
         const currentRate = fxRates[currency] || 1;
         const previousRate = previousMonthFxRates[currency] || currentRate;
-        
-        // FX P/L = balance * (1/currentRate - 1/previousRate)
-        // Since rates are stored as "1 USD = X foreign", we divide to get USD value
-        const currentValueUSD = balance / currentRate;
-        const previousValueUSD = balance / previousRate;
-        cashFxPL += currentValueUSD - previousValueUSD;
+        cashFxPL += (balance / currentRate) - (balance / previousRate);
       }
     }
   }
   
-  // YTD P/L = Current Total P/L - Jan 1st Total P/L
-  const currentTotalPL = currentRealizedPL + currentUnrealizedPL;
-  const janTotalPL = janRealizedPL + janUnrealizedPL;
-  const ytdPL = currentTotalPL - janTotalPL;
+  const ytdFxPL = cashFxPL;
   
-  // YTD FX P/L = (Current FX P/L - Jan 1st FX P/L) + Cash FX P/L
-  const ytdFxPL = (currentFxPL - janFxPL) + cashFxPL;
-  
-  // YTD Return % = YTD P/L / Jan 1st Portfolio Value
-  const ytdReturn = janValue > 0 ? (ytdPL / janValue) * 100 : 0;
-  
-  return { ytdReturn, ytdPL, ytdFxPL, janValue, cashFxPL };
+  return { ytdReturn, ytdPL, ytdFxPL, janValue, cashFxPL, navToday, netExternalFlows };
 }
 
 /**

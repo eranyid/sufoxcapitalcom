@@ -22,7 +22,7 @@ import { ProspectusButton } from '@/components/ProspectusButton';
 
 
 import { computeFactorModel } from '@/lib/factorModel';
-import { calculateYTDReturn } from '@/lib/calculations';
+import { calculateYTDReturn, LedgerEntryForYTD } from '@/lib/calculations';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileText } from 'lucide-react';
 
@@ -75,6 +75,7 @@ export default function Overview() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [rssFeedUrl, setRssFeedUrl] = useState<string | null>(null);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntryForYTD[]>([]);
   const { tasks } = useCrmTasks();
 
   // Calculate Real vs Nominal metrics
@@ -113,10 +114,26 @@ export default function Overview() {
     };
   }, [performanceMetrics, fxMode]);
 
-  // Calculate YTD Return using the new P/L-based formula
+  // Fetch capital ledger entries for YTD external flow calculation
+  useEffect(() => {
+    const fetchLedger = async () => {
+      if (!user) return;
+      const currentYear = new Date().getFullYear();
+      const { data } = await supabase
+        .from('capital_ledger')
+        .select('entry_type, currency, amount, amount_base, fx_rate_used, created_at')
+        .eq('user_id', user.id)
+        .gte('created_at', `${currentYear}-01-01`)
+        .in('entry_type', ['DEPOSIT', 'WITHDRAWAL']);
+      setLedgerEntries((data as LedgerEntryForYTD[]) || []);
+    };
+    fetchLedger();
+  }, [user, transactions]); // re-fetch when transactions change (may trigger ledger entries)
+
+  // Calculate YTD Return — broker-grade, cashflow-adjusted
   const ytdData = useMemo(() => {
     if (transactions.length === 0 || valuations.length === 0) {
-      return { ytdReturn: 0, ytdPL: 0, ytdFxPL: 0, janValue: 0, cashFxPL: 0 };
+      return { ytdReturn: 0, ytdPL: 0, ytdFxPL: 0, janValue: 0, cashFxPL: 0, navToday: 0, netExternalFlows: 0 };
     }
     return calculateYTDReturn(
       transactions, 
@@ -124,9 +141,10 @@ export default function Overview() {
       cashBalances, 
       settings.baseCurrency as 'USD' | 'ILS',
       fxRates,
-      previousMonthFxRates
+      previousMonthFxRates,
+      ledgerEntries
     );
-  }, [transactions, valuations, cashBalances, settings.baseCurrency, fxRates, previousMonthFxRates]);
+  }, [transactions, valuations, cashBalances, settings.baseCurrency, fxRates, previousMonthFxRates, ledgerEntries]);
 
   // Load RSS feed URL
   useEffect(() => {
@@ -174,7 +192,7 @@ export default function Overview() {
     const engineUnrealizedPct = engineCostBasis > 0 ? (engineUnrealizedPL / engineCostBasis) * 100 : 0;
     
     // FINGERPRINT LOG — proves this version is running
-    console.log("[KPI_ENGINE_VERSION] 2026-02-06-v1", {
+    console.log("[KPI_ENGINE_VERSION] 2026-02-06-v2-cashflow-adjusted", {
       navToday: computedData.totalPortfolioValue,
       holdings: computedData.holdingsValue,
       cash: computedData.cashValue,
@@ -182,40 +200,28 @@ export default function Overview() {
       unrealizedPnl: engineUnrealizedPL,
       unrealizedPct: engineUnrealizedPct.toFixed(2) + '%',
       ytd: ytdData.ytdReturn.toFixed(2) + '%',
-      perfMetrics_totalCost: performanceMetrics.totalCost,
-      perfMetrics_unrealizedPL: adjustedMetrics.unrealizedPL,
     });
     
-    const debugTable = {
-      NAV_today: computedData.totalPortfolioValue,
-      Holdings_value: computedData.holdingsValue,
-      Cash_value: computedData.cashValue,
-      Engine_cost_basis: engineCostBasis,
-      PerfMetrics_totalCost: performanceMetrics.totalCost,
-      Engine_unrealizedPL: engineUnrealizedPL,
-      PerfMetrics_unrealizedPL: adjustedMetrics.unrealizedPL,
-      Engine_unrealized_pct: engineUnrealizedPct.toFixed(2) + '%',
-      PerfMetrics_unrealized_pct: performanceMetrics.totalCost > 0 
-        ? ((adjustedMetrics.unrealizedPL / performanceMetrics.totalCost) * 100).toFixed(2) + '%' 
-        : 'N/A',
-      Realized_PL: performanceMetrics.realizedPL,
-      YTD_return: ytdData.ytdReturn.toFixed(2) + '%',
-      YTD_PL: ytdData.ytdPL,
-      NAV_Jan1: ytdData.janValue,
-      Cash_FX_PL: ytdData.cashFxPL,
-      FX_mode: fxMode,
-    };
-    console.table(debugTable);
+    // Broker-grade YTD audit table
+    console.table({
+      navToday: ytdData.navToday,
+      navJan1: ytdData.janValue,
+      netExternalFlowsYTD: ytdData.netExternalFlows,
+      ytdReturn: ytdData.ytdReturn.toFixed(2) + '%',
+      holdingsMV: computedData.holdingsValue,
+      cashBase: computedData.cashValue,
+      unrealizedPnL: engineUnrealizedPL,
+      unrealizedPct: engineUnrealizedPct.toFixed(2) + '%',
+      realizedPnL: performanceMetrics.realizedPL,
+      cashFxPL: ytdData.cashFxPL,
+      fxMode: fxMode,
+    });
 
-    // Sanity gate: if Realized = 0 and all trades this year, YTD ≈ Unrealized%
-    if (performanceMetrics.realizedPL === 0 && transactions.length > 0) {
-      const currentYear = new Date().getFullYear();
-      const allThisYear = transactions.every(t => t.date >= `${currentYear}-01-01`);
-      if (allThisYear && engineCostBasis > 0) {
-        const diff = Math.abs(ytdData.ytdReturn - engineUnrealizedPct);
-        if (diff > 0.5) {
-          console.warn(`[KPI Consistency] YTD (${ytdData.ytdReturn.toFixed(2)}%) ≠ Engine Unrealized (${engineUnrealizedPct.toFixed(2)}%). Diff: ${diff.toFixed(2)}pp. All trades this year + no realized = should match.`);
-        }
+    // Sanity: if no external flows and no sells, YTD direction should match NAV change direction
+    if (ytdData.netExternalFlows === 0 && performanceMetrics.realizedPL === 0 && ytdData.janValue > 0) {
+      const navChange = ytdData.navToday - ytdData.janValue;
+      if ((navChange > 0 && ytdData.ytdReturn < -0.5) || (navChange < 0 && ytdData.ytdReturn > 0.5)) {
+        console.warn(`[KPI Consistency] NAV moved ${navChange >= 0 ? 'up' : 'down'} but YTD is ${ytdData.ytdReturn.toFixed(2)}%. No external flows or sells — directions should match.`);
       }
     }
     
@@ -304,7 +310,7 @@ export default function Overview() {
           trend={ytdData.ytdReturn >= 0 ? 'up' : ytdData.ytdReturn < 0 ? 'down' : 'neutral'}
           subtitle={new Date().getFullYear().toString()}
           subLabel={fxLabel}
-          tooltip="Performance since Jan 1: (Current total P/L − Jan 1 total P/L) / Portfolio Value at Jan 1. Cashflow-adjusted."
+          tooltip="Performance since Jan 1: (NAV_today − NAV_jan1 − External Flows) / NAV_jan1. Cashflow-adjusted — deposits/withdrawals are excluded."
         />
         <KPICard
           title="Unrealized %"
