@@ -350,7 +350,7 @@ function HoldingRow({
           onChange={e => setEditWeight(e.target.value)}
           onBlur={commitWeight}
           onKeyDown={e => e.key === 'Enter' && commitWeight()}
-          className="w-20 font-mono text-right ml-auto h-8"
+          className="w-20 font-mono text-right ml-auto h-8 text-primary font-semibold"
         />
       </TableCell>
       <TableCell className="py-3">
