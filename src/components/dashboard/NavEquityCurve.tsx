@@ -80,10 +80,10 @@ export function NavEquityCurve({
         }
       });
 
-      // Only add cash to the latest month (we don't have historical cash data)
+      // For historical months we don't have cash data, so NAV = holdingsValue only.
+      // For the latest month, use engine values (single source of truth) which include cash.
       const isLatestMonth = month === lastMonth;
       
-      // For the latest month, use engine values if available (single source of truth)
       if (isLatestMonth && engineNav) {
         return {
           month,
@@ -93,12 +93,10 @@ export function NavEquityCurve({
         };
       }
 
-      const monthCash = 0; // No historical cash data available
-
       return {
         month,
-        nav: holdingsValue + monthCash,
-        cash: monthCash,
+        nav: holdingsValue,
+        cash: 0,
         holdings: holdingsValue
       };
     });
@@ -108,25 +106,39 @@ export function NavEquityCurve({
     return last12;
   }, [transactions, valuations, cashBalances, baseCurrency]);
 
-  // Calculate KPIs
+  // Calculate KPIs — use holdings-only for comparison since historical cash is unavailable
   const kpis = useMemo(() => {
     if (navSeries.length === 0) return null;
 
-    const lastNav = navSeries[navSeries.length - 1]?.nav || 0;
-    const prevNav = navSeries[navSeries.length - 2]?.nav || lastNav;
-    const momChange = prevNav > 0 ? ((lastNav - prevNav) / prevNav) * 100 : 0;
+    const last = navSeries[navSeries.length - 1];
+    const prev = navSeries.length >= 2 ? navSeries[navSeries.length - 2] : null;
+    
+    // MoM: compare holdings only (since prev month has no cash data)
+    // If only 1 data point, MoM = 0
+    const momChange = prev && prev.holdings > 0 
+      ? ((last.holdings - prev.holdings) / prev.holdings) * 100 
+      : 0;
 
-    // YTD calculation
+    // YTD: compare holdings of first month this year vs current holdings
     const currentYear = new Date().getFullYear().toString();
     const yearStart = navSeries.find(n => n.month.startsWith(currentYear));
-    const firstOfYearNav = yearStart?.nav || navSeries[0]?.nav || lastNav;
-    const ytdChange = firstOfYearNav > 0 ? ((lastNav - firstOfYearNav) / firstOfYearNav) * 100 : 0;
+    const firstHoldings = yearStart?.holdings || navSeries[0]?.holdings || 0;
+    const ytdChange = firstHoldings > 0 
+      ? ((last.holdings - firstHoldings) / firstHoldings) * 100 
+      : 0;
 
     return {
-      lastNav,
+      lastNav: last.nav, // Show full NAV (with cash) as the headline
       momChange,
       ytdChange
     };
+  }, [navSeries]);
+
+
+  // Determine if NAV is trending up overall
+  const isOverallPositive = useMemo(() => {
+    if (navSeries.length < 2) return true;
+    return navSeries[navSeries.length - 1].nav >= navSeries[0].nav;
   }, [navSeries]);
 
   // Check for cash data completeness
@@ -154,12 +166,6 @@ export function NavEquityCurve({
   if (navSeries.length === 0) {
     return null;
   }
-
-  // Determine if NAV is trending up overall
-  const isOverallPositive = useMemo(() => {
-    if (navSeries.length < 2) return true;
-    return navSeries[navSeries.length - 1].nav >= navSeries[0].nav;
-  }, [navSeries]);
 
   return (
     <div className="bloomberg-panel animate-fade-in overflow-hidden">
