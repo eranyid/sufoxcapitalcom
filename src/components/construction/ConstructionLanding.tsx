@@ -57,16 +57,16 @@ export function ConstructionLanding({ onSelect }: ConstructionLandingProps) {
         <button
           onClick={() => onSelect('system')}
           className={cn(
-            "group relative p-6 rounded-xl border border-accent/20 bg-card/60 backdrop-blur-md",
-            "hover:border-accent/50 hover:shadow-[0_0_30px_-5px_hsl(var(--accent)/0.3)] transition-all duration-500",
+            "group relative p-6 rounded-xl border border-primary/20 bg-card/60 backdrop-blur-md",
+            "hover:border-primary/50 hover:shadow-[0_0_30px_-5px_hsl(var(--primary)/0.3)] transition-all duration-500",
             "text-left flex flex-col gap-4 cursor-pointer overflow-hidden"
           )}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="relative">
-            <div className="w-12 h-12 rounded-lg bg-accent/15 border border-accent/25 flex items-center justify-center mb-3 group-hover:bg-accent/25 group-hover:shadow-[0_0_15px_-3px_hsl(var(--accent)/0.4)] transition-all duration-300">
-              <Lock className="w-5 h-5 text-accent" />
+            <div className="w-12 h-12 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center mb-3 group-hover:bg-primary/25 group-hover:shadow-[0_0_15px_-3px_hsl(var(--primary)/0.4)] transition-all duration-300">
+              <Lock className="w-5 h-5 text-primary" />
             </div>
             <h3 className="text-lg font-semibold mb-1.5">Build for Policy</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -74,7 +74,7 @@ export function ConstructionLanding({ onSelect }: ConstructionLandingProps) {
             </p>
           </div>
           <div className="relative mt-auto pt-3 border-t border-border/30">
-            <span className="text-[10px] font-mono text-accent/50 uppercase tracking-[0.2em]">
+            <span className="text-[10px] font-mono text-primary/50 uppercase tracking-[0.2em]">
               Define · Lock · Deploy
             </span>
           </div>
