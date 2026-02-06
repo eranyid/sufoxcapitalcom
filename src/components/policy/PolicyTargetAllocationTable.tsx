@@ -341,17 +341,20 @@ function HoldingRow({
       <TableCell className="font-mono font-semibold text-primary py-3">{holding.ticker}</TableCell>
       <TableCell className="text-sm text-muted-foreground py-3">{holding.name || '—'}</TableCell>
       <TableCell className="text-right py-3">
-        <Input
-          type="number"
-          min={0}
-          max={100}
-          step={0.1}
-          value={editWeight}
-          onChange={e => setEditWeight(e.target.value)}
-          onBlur={commitWeight}
-          onKeyDown={e => e.key === 'Enter' && commitWeight()}
-          className="w-20 font-mono text-right ml-auto h-8 text-primary font-semibold"
-        />
+        <div className="flex items-center justify-end gap-1">
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            step={0.1}
+            value={editWeight}
+            onChange={e => setEditWeight(e.target.value)}
+            onBlur={commitWeight}
+            onKeyDown={e => e.key === 'Enter' && commitWeight()}
+            className="w-20 font-mono text-right h-8 text-primary font-semibold"
+          />
+          <span className="text-primary font-mono font-semibold text-sm">%</span>
+        </div>
       </TableCell>
       <TableCell className="py-3">
         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onRemove(holding.id)}>
