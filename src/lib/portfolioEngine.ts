@@ -211,9 +211,6 @@ export function computePortfolioData(
     if (!hasValuation) {
       missingValuationCount++;
     }
-    const costBasis = pos.totalCost;
-    const unrealizedPL = currentValue - costBasis;
-    const plPercent = costBasis > 0 ? (unrealizedPL / costBasis) * 100 : 0;
     
     // Use stored entry FX rate if available, otherwise calculate weighted average
     // from transactions with stored rates, or fall back to approximation
@@ -237,16 +234,21 @@ export function computePortfolioData(
         }, 0);
         entryFxRate = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : currentFxRate;
       } else if (tx.fxRateAtEntry !== undefined) {
-        // Single transaction has stored rate
         entryFxRate = tx.fxRateAtEntry;
       } else {
-        // Fallback: approximate from cost basis
         entryFxRate = currentFxRate; // Last resort approximation
       }
     }
     
+    // CRITICAL: costBasis must be in BASE currency
+    // pos.totalCost is in LOCAL currency (from calculatePositions)
+    // Multiply by entryFxRate to convert to base currency
+    const costBasis = pos.totalCost * entryFxRate;
+    const unrealizedPL = currentValue - costBasis;
+    const plPercent = costBasis > 0 ? (unrealizedPL / costBasis) * 100 : 0;
+    
     // Separate Market P/L from FX P/L using accurate entry FX rate
-    // Market P/L: price change at constant FX
+    // Market P/L: price change at constant FX (both costBasis and valueAtEntryFx are in base currency)
     const valueAtEntryFx = pos.quantity * currentPrice * entryFxRate;
     const marketPL = valueAtEntryFx - costBasis;
     const marketPLPercent = costBasis > 0 ? (marketPL / costBasis) * 100 : 0;
