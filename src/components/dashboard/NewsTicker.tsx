@@ -105,10 +105,10 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
 
   return (
     <div className="w-full bg-card border border-border rounded-md overflow-hidden">
-      <div className="flex items-center h-7">
+      <div className="flex items-center h-9">
         {/* Label */}
-        <div className="flex-shrink-0 px-3 border-r border-border h-full flex items-center bg-muted/30">
-          <span className="text-[10px] font-mono text-primary font-semibold tracking-wider whitespace-nowrap">
+        <div className="flex-shrink-0 px-4 border-r border-border h-full flex items-center bg-muted/30">
+          <span className="text-xs font-mono text-primary font-semibold tracking-wider whitespace-nowrap">
             LIVE NEWS
           </span>
         </div>
@@ -136,7 +136,7 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
               <button
                 key={`${item.link}-${index}`}
                 onClick={() => handleItemClick(item.link)}
-                className="inline-flex items-center text-[10px] md:text-[11px] font-mono hover:text-primary transition-colors px-2 group flex-shrink-0"
+                className="inline-flex items-center text-xs md:text-[13px] font-mono hover:text-primary transition-colors px-3 group flex-shrink-0"
               >
                 <span className="text-primary/70 mr-1.5">{item.formattedTime}</span>
                 {item.source && (
