@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { AnalysisShareCard } from './AnalysisShareCard';
+import { ShareAnalysisDialog } from './ShareAnalysisDialog';
 
 interface MessageThreadProps {
   conversation: Conversation | null;
@@ -16,13 +17,15 @@ interface MessageThreadProps {
   loading: boolean;
   onSendMessage: (content: string) => Promise<void>;
   onSendFile: (file: File) => Promise<void>;
+  onSendAnalysis: (analysisId: string, analysisType: string, analysisTitle: string, snapshot?: Record<string, unknown>) => Promise<void>;
   onBack?: () => void;
 }
 
-export function MessageThread({ conversation, messages, loading, onSendMessage, onSendFile, onBack }: MessageThreadProps) {
+export function MessageThread({ conversation, messages, loading, onSendMessage, onSendFile, onSendAnalysis, onBack }: MessageThreadProps) {
   const { user } = useAuth();
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [showShareAnalysis, setShowShareAnalysis] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -208,6 +211,14 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
           >
             <Paperclip size={14} />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
+            onClick={() => setShowShareAnalysis(true)}
+          >
+            <BarChart3 size={14} />
+          </Button>
           <Input
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -226,6 +237,15 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
           </Button>
         </div>
       </div>
+
+      <ShareAnalysisDialog
+        open={showShareAnalysis}
+        onOpenChange={setShowShareAnalysis}
+        onShareAnalysis={(id, type, title, snapshot) => {
+          onSendAnalysis(id, type, title, snapshot);
+          setShowShareAnalysis(false);
+        }}
+      />
     </div>
   );
 }
