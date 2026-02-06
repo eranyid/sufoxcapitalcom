@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BarChart3, Search, FileText, TrendingUp, Target, FlaskConical, CheckSquare, FolderKanban, Calendar, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -196,19 +195,29 @@ export function ShareAnalysisDialog({ open, onOpenChange, onShareAnalysis }: Sha
         </DialogHeader>
 
         <div className="space-y-3">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full grid grid-cols-3 h-8">
-              <TabsTrigger value="analysis" className="text-[10px] gap-1 h-7">
-                <BarChart3 size={10} /> Analysis
-              </TabsTrigger>
-              <TabsTrigger value="task" className="text-[10px] gap-1 h-7">
-                <CheckSquare size={10} /> Tasks
-              </TabsTrigger>
-              <TabsTrigger value="project" className="text-[10px] gap-1 h-7">
-                <FolderKanban size={10} /> Projects
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex gap-1 border border-border rounded-md p-0.5">
+            {[
+              { value: 'analysis', label: 'Analysis', icon: BarChart3 },
+              { value: 'task', label: 'Tasks', icon: CheckSquare },
+              { value: 'project', label: 'Projects', icon: FolderKanban },
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => { setActiveTab(tab.value); setSearch(''); }}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1 text-[10px] font-medium py-1.5 rounded transition-colors",
+                    activeTab === tab.value
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                  )}
+                >
+                  <Icon size={10} /> {tab.label}
+                </button>
+              );
+            })}
+          </div>
 
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
