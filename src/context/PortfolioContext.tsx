@@ -411,7 +411,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       );
       setPerformanceMetrics(perfMetrics);
       
-      const riskMet = calculateRiskMetrics(transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns);
+      const riskMet = calculateRiskMetrics(transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns, cashBalances, baseCurrency, fxRates);
       setRiskMetrics(riskMet);
       
       // Run consistency checks against computed data
@@ -443,7 +443,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       );
       setPerformanceMetrics(perfMetrics);
       
-      const riskMet = calculateRiskMetrics(transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns);
+      const riskMet = calculateRiskMetrics(transactions, valuations, settings.riskFreeRate, settings.benchmarkReturns, cashBalances, baseCurrency, fxRates);
       setRiskMetrics(riskMet);
     } else {
       // Even without holdings, show cash value as Total Portfolio Value
