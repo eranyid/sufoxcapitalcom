@@ -49,7 +49,7 @@ type SortDirection = 'asc' | 'desc';
 
 export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) {
   const { user } = useAuth();
-  const { settings } = usePortfolio();
+  const { settings, fxRates } = usePortfolio();
   const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>('currentValue');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -98,11 +98,25 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
 
       // FALLBACK: Use cost basis if no valuation exists
       const hasValuation = !!val;
-      const currentFxRate = val?.fxRate || 1;
+      
+      // Derive FX rate: from valuation, or from fxRates context for non-base-currency assets
+      let currentFxRate = 1;
+      if (val?.fxRate) {
+        currentFxRate = val.fxRate;
+      } else if (tx.currency !== (settings.baseCurrency || 'USD') && fxRates[tx.currency] && fxRates[tx.currency] > 0) {
+        // fxRates is "1 USD = X currency", so conversion factor to USD = 1/rate
+        currentFxRate = 1 / fxRates[tx.currency];
+      }
+      
       const localPrice = hasValuation ? val.pricePerUnit : pos.avgCost;
-      const currentPrice = localPrice * (hasValuation ? currentFxRate : 1);
+      const currentPrice = localPrice * currentFxRate;
       const currentValue = pos.quantity * currentPrice;
-      const costBasis = pos.quantity * pos.avgCost;
+      // Cost basis in base currency
+      const tickerBuys = transactions.filter(t => t.ticker === ticker && t.transactionType === 'buy');
+      const totalCostBase = tickerBuys.reduce((sum, t) => sum + (t.costBase || t.quantity * t.pricePerUnit * (t.fxRateAtEntry || currentFxRate)), 0);
+      const totalQtyBought = tickerBuys.reduce((sum, t) => sum + t.quantity, 0);
+      const avgCostBase = totalQtyBought > 0 ? totalCostBase / totalQtyBought : pos.avgCost;
+      const costBasis = pos.quantity * avgCostBase;
       
       // If missing valuation, show 0% P/L (cost = value)
       const plAmount = hasValuation ? currentValue - costBasis : 0;
