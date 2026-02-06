@@ -38,6 +38,7 @@ export interface Message {
   analysis_type: string | null;
   analysis_title: string | null;
   analysis_snapshot: Record<string, unknown> | null;
+  reply_to_id: string | null;
   created_at: string;
   sender_profile?: { display_name: string | null; email: string | null; avatar_url: string | null };
 }
@@ -281,13 +282,14 @@ export function useMessages(conversationId: string | null) {
     return () => { supabase.removeChannel(channel); };
   }, [conversationId, user]);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, replyToId?: string) => {
     if (!conversationId || !user || !content.trim()) return;
     await supabase.from('messages').insert([{
       conversation_id: conversationId,
       sender_id: user.id,
       message_type: 'text',
       content: content.trim(),
+      reply_to_id: replyToId || null,
     }]);
     // Update conversation updated_at
     await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId);

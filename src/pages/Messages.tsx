@@ -37,7 +37,7 @@ const Messages = () => {
           conversation={selectedConversation}
           messages={messages}
           loading={msgLoading}
-          onSendMessage={sendMessage}
+          onSendMessage={(content, replyToId) => sendMessage(content, replyToId)}
           onSendFile={sendFile}
           onSendAnalysis={sendAnalysisShare}
           onBack={isMobile ? () => setSelectedConvId(null) : undefined}
