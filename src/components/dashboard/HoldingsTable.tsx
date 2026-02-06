@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { ArrowUpDown, ArrowUp, ArrowDown, Building2, Briefcase, AlertTriangle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EmptyState } from '@/components/ui/empty-state';
+import { TickerLink } from '@/components/TickerLink';
 
 interface HoldingsTableProps {
   transactions: Transaction[];
@@ -294,7 +295,7 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
               )}>
                 <TableCell className="font-mono text-xs text-primary font-medium">
                   <div className="flex items-center gap-1.5">
-                    {holding.ticker}
+                    <TickerLink ticker={holding.ticker} className="font-mono text-xs text-primary font-medium" />
                     {holding.missingValuation && (
                       <TooltipProvider delayDuration={100}>
                         <Tooltip>
