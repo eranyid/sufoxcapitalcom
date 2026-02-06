@@ -104,16 +104,16 @@ export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTable
       {/* Header */}
       <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-muted/30 border-b border-border/50 text-xs">
         <div className="col-span-3">
-          <SortButton field="name">Name</SortButton>
+          <span className="text-muted-foreground font-medium">Name</span>
         </div>
         <div className="col-span-4">
-          <SortButton field="allocation">Allocation</SortButton>
+          <span className="text-muted-foreground font-medium">Allocation</span>
         </div>
         <div className="col-span-2">
-          <SortButton field="assetType">Class</SortButton>
+          <span className="text-muted-foreground font-medium">Class</span>
         </div>
         <div className="col-span-2">
-          <span className="text-muted-foreground">Liquidity</span>
+          <span className="text-muted-foreground font-medium">Liquidity</span>
         </div>
         <div className="col-span-1 text-right">
           <span className="text-muted-foreground sr-only">Actions</span>
