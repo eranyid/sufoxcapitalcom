@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Send, Paperclip, BarChart3, ArrowLeft, FileText, Image, File, CalendarPlus } from 'lucide-react';
+import { Send, Paperclip, BarChart3, ArrowLeft, FileText, Image, File, CalendarPlus, Reply, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -16,7 +16,7 @@ interface MessageThreadProps {
   conversation: Conversation | null;
   messages: Message[];
   loading: boolean;
-  onSendMessage: (content: string) => Promise<void>;
+  onSendMessage: (content: string, replyToId?: string) => Promise<void>;
   onSendFile: (file: File) => Promise<void>;
   onSendAnalysis: (analysisId: string, analysisType: string, analysisTitle: string, snapshot?: Record<string, unknown>) => Promise<void>;
   onBack?: () => void;
@@ -28,8 +28,10 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
   const [sending, setSending] = useState(false);
   const [showShareAnalysis, setShowShareAnalysis] = useState(false);
   const [showCalendarInvite, setShowCalendarInvite] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,9 +40,15 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
   const handleSend = async () => {
     if (!input.trim() || sending) return;
     setSending(true);
-    await onSendMessage(input);
+    await onSendMessage(input, replyTo?.id);
     setInput('');
+    setReplyTo(null);
     setSending(false);
+  };
+
+  const handleReply = (msg: Message) => {
+    setReplyTo(msg);
+    inputRef.current?.focus();
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +78,24 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
     if (data?.signedUrl) {
       window.open(data.signedUrl, '_blank');
     }
+  };
+
+  const getReplyPreview = (msg: Message) => {
+    if (msg.message_type === 'text') return msg.content?.substring(0, 80) || '';
+    if (msg.message_type === 'file') return `📎 ${msg.file_name}`;
+    if (msg.message_type === 'analysis_share') return `📊 ${msg.analysis_title}`;
+    return '';
+  };
+
+  const getReplyAuthor = (msg: Message) => {
+    if (msg.sender_id === user?.id) return 'You';
+    return msg.sender_profile?.display_name || msg.sender_profile?.email || 'Unknown';
+  };
+
+  // Find the original message for a reply
+  const findMessage = (id: string | null) => {
+    if (!id) return null;
+    return messages.find(m => m.id === id) || null;
   };
 
   if (!conversation) {
@@ -137,9 +163,10 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
             {group.msgs.map(msg => {
               const isOwn = msg.sender_id === user?.id;
               const senderName = msg.sender_profile?.display_name || msg.sender_profile?.email || 'Unknown';
+              const repliedMsg = findMessage(msg.reply_to_id);
 
               return (
-                <div key={msg.id} className={cn("mb-2", isOwn ? "flex justify-end" : "flex justify-start")}>
+                <div key={msg.id} className={cn("mb-2 group", isOwn ? "flex justify-end" : "flex justify-start")}>
                   <div className={cn("max-w-[75%] md:max-w-[60%]")}>
                     {/* Sender name */}
                     {!isOwn && (
@@ -152,9 +179,21 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
                     )}
 
                     <div className={cn(
-                      "rounded-md px-3 py-2",
+                      "rounded-md px-3 py-2 relative",
                       isOwn ? "bg-primary/15 border border-primary/20" : "bg-muted/40 border border-border"
                     )}>
+                      {/* Reply quote */}
+                      {repliedMsg && (
+                        <div className="mb-1.5 pl-2 border-l-2 border-primary/40 bg-primary/5 rounded-r-sm py-1 px-1.5">
+                          <p className="text-[9px] text-primary font-semibold">
+                            {getReplyAuthor(repliedMsg)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {getReplyPreview(repliedMsg)}
+                          </p>
+                        </div>
+                      )}
+
                       {msg.message_type === 'text' && (
                         <p className="text-xs text-foreground whitespace-pre-wrap">{msg.content}</p>
                       )}
@@ -185,6 +224,19 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
                           analysisId={msg.analysis_id || undefined}
                         />
                       )}
+
+                      {/* Reply button */}
+                      <button
+                        onClick={() => handleReply(msg)}
+                        className={cn(
+                          "absolute -top-2 opacity-0 group-hover:opacity-100 transition-opacity",
+                          "bg-card border border-border rounded-full p-1 hover:bg-primary/10 hover:text-primary",
+                          isOwn ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
+                        )}
+                        title="Reply"
+                      >
+                        <Reply size={10} />
+                      </button>
                     </div>
 
                     <p className={cn(
@@ -201,6 +253,20 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
         ))}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Reply preview bar */}
+      {replyTo && (
+        <div className="border-t border-border bg-card/80 px-3 py-2 flex items-center gap-2">
+          <Reply size={12} className="text-primary shrink-0" />
+          <div className="flex-1 min-w-0 pl-2 border-l-2 border-primary/40">
+            <p className="text-[9px] text-primary font-semibold">{getReplyAuthor(replyTo)}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{getReplyPreview(replyTo)}</p>
+          </div>
+          <button onClick={() => setReplyTo(null)} className="text-muted-foreground hover:text-foreground p-0.5">
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       {/* Input bar */}
       <div className="border-t border-border bg-card p-3">
@@ -238,10 +304,11 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
             <CalendarPlus size={14} />
           </Button>
           <Input
+            ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Enter message"
+            placeholder={replyTo ? "Write a reply..." : "Enter message"}
             className="h-8 text-xs bg-muted/20 border-border flex-1"
           />
           <Button
