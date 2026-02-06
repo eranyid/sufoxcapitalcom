@@ -385,6 +385,11 @@ export default function Overview() {
           valuations={valuations} 
           cashBalances={cashBalances}
           baseCurrency={settings.baseCurrency === 'ILS' ? 'ILS' : 'USD'}
+          engineNav={{
+            totalValue: computedData.totalPortfolioValue,
+            holdingsValue: computedData.holdingsValue,
+            cashValue: computedData.cashValue
+          }}
         />
       )}
 
