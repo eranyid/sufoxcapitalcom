@@ -24,6 +24,7 @@ interface PipelineSummaryProps {
   wizardData: WizardData;
   erResults: AssetERResult[];
   positions: Position[];
+  saveToPolicy?: boolean;
 }
 
 const CHART_COLORS = [
@@ -37,7 +38,7 @@ const CHART_COLORS = [
   'hsl(200, 80%, 50%)',
 ];
 
-export function PipelineSummary({ wizardData, erResults, positions }: PipelineSummaryProps) {
+export function PipelineSummary({ wizardData, erResults, positions, saveToPolicy = true }: PipelineSummaryProps) {
   const navigate = useNavigate();
   const { saveTarget } = useTargetAllocation();
 
@@ -113,14 +114,18 @@ export function PipelineSummary({ wizardData, erResults, positions }: PipelineSu
           <div>
             <h2 className="text-xl font-bold">Pipeline Summary</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Review your complete target allocation before exporting to Policy
+              {saveToPolicy ? 'Review your complete target allocation before exporting to Policy' : 'Review your complete target allocation analysis'}
             </p>
           </div>
         </div>
-        <Button onClick={handleExportToPolicy} size="lg" className="gap-2" disabled={!isBalanced}>
-          <ArrowRight className="h-4 w-4" />
-          Export to Policy
-        </Button>
+        {saveToPolicy ? (
+          <Button onClick={handleExportToPolicy} size="lg" className="gap-2" disabled={!isBalanced}>
+            <ArrowRight className="h-4 w-4" />
+            Export to Policy
+          </Button>
+        ) : (
+          <Badge variant="outline" className="font-mono text-xs">Analysis Only</Badge>
+        )}
       </div>
 
       {/* KPI Cards */}
