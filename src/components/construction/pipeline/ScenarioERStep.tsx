@@ -102,8 +102,7 @@ export function ScenarioERStep({ assetClasses, riskFreeRate, onResultsChange, on
 
   // Update probability
   const updateProbability = (key: ScenarioKey, value: number) => {
-    const clamped = Math.min(1, Math.max(0, value));
-    setProbabilities(prev => ({ ...prev, [key]: clamped }));
+    setProbabilities(prev => ({ ...prev, [key]: value }));
   };
 
   // Update asset return
