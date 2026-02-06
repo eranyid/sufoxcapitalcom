@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, Save, Check } from 'lucide-react';
 import { 
   WizardData, 
@@ -26,11 +25,11 @@ import { ReviewStep } from './steps/ReviewStep';
 
 const STEPS = [
   { id: 1, title: 'Objective & Constraints' },
-  { id: 2, title: 'Geography Allocation' },
+  { id: 2, title: 'Geography' },
   { id: 3, title: 'Asset Classes' },
-  { id: 4, title: 'Alternative Investments' },
-  { id: 5, title: 'Implementation Buckets' },
-  { id: 6, title: 'Review & Save' },
+  { id: 4, title: 'Alternatives' },
+  { id: 5, title: 'Buckets' },
+  { id: 6, title: 'Review' },
 ];
 
 interface ConstructionWizardProps {
@@ -46,7 +45,6 @@ export function ConstructionWizard({ initialData, onDataChange, onSaveComplete }
   const [isSaved, setIsSaved] = useState(false);
   const { saveTarget } = useTargetAllocation();
 
-  // Sync data changes to parent
   const handleSetWizardData = (updater: WizardData | ((prev: WizardData) => WizardData)) => {
     setWizardData(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
@@ -55,40 +53,30 @@ export function ConstructionWizard({ initialData, onDataChange, onSaveComplete }
     });
   };
 
-  const progress = (currentStep / STEPS.length) * 100;
-
   const updateObjective = (value: ObjectiveType) => {
     handleSetWizardData(prev => ({ ...prev, objective: value }));
   };
-
   const updateRiskLevel = (value: RiskLevel) => {
     handleSetWizardData(prev => ({ ...prev, riskLevel: value }));
   };
-
   const updateHorizon = (value: HorizonType) => {
     handleSetWizardData(prev => ({ ...prev, horizon: value }));
   };
-
   const updateConstraints = (value: TargetConstraints) => {
     handleSetWizardData(prev => ({ ...prev, constraints: value }));
   };
-
   const updateGeography = (value: GeographyAllocation) => {
     handleSetWizardData(prev => ({ ...prev, geography: value }));
   };
-
   const updateAssetClasses = (value: AssetClassAllocation) => {
     handleSetWizardData(prev => ({ ...prev, assetClasses: value }));
   };
-
   const updateBuckets = (value: BucketConfig[]) => {
     handleSetWizardData(prev => ({ ...prev, buckets: value }));
   };
-
   const updateAlternatives = (value: AlternativesAllocation) => {
     handleSetWizardData(prev => ({ ...prev, alternatives: value }));
   };
-
   const updateAlternativeConfigs = (value: AlternativeConfig[]) => {
     handleSetWizardData(prev => ({ ...prev, alternativeConfigs: value }));
   };
@@ -153,36 +141,13 @@ export function ConstructionWizard({ initialData, onDataChange, onSaveComplete }
           />
         );
       case 2:
-        return (
-          <GeographyStep
-            geography={wizardData.geography}
-            onUpdate={updateGeography}
-          />
-        );
+        return <GeographyStep geography={wizardData.geography} onUpdate={updateGeography} />;
       case 3:
-        return (
-          <AssetClassStep
-            assetClasses={wizardData.assetClasses}
-            constraints={wizardData.constraints}
-            onUpdate={updateAssetClasses}
-          />
-        );
+        return <AssetClassStep assetClasses={wizardData.assetClasses} constraints={wizardData.constraints} onUpdate={updateAssetClasses} />;
       case 4:
-        return (
-          <AlternativesStep
-            alternatives={wizardData.alternatives}
-            configs={wizardData.alternativeConfigs}
-            onUpdateAlternatives={updateAlternatives}
-            onUpdateConfigs={updateAlternativeConfigs}
-          />
-        );
+        return <AlternativesStep alternatives={wizardData.alternatives} configs={wizardData.alternativeConfigs} onUpdateAlternatives={updateAlternatives} onUpdateConfigs={updateAlternativeConfigs} />;
       case 5:
-        return (
-          <BucketsStep
-            buckets={wizardData.buckets}
-            onUpdate={updateBuckets}
-          />
-        );
+        return <BucketsStep buckets={wizardData.buckets} onUpdate={updateBuckets} />;
       case 6:
         return <ReviewStep data={wizardData} isSaved={isSaved} />;
       default:
@@ -191,147 +156,89 @@ export function ConstructionWizard({ initialData, onDataChange, onSaveComplete }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Futuristic Progress Header */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-4">
-            {STEPS.map((step, index) => (
-              <button
-                key={step.id}
-                onClick={() => step.id < currentStep && setCurrentStep(step.id)}
-                className={cn(
-                  "group flex items-center gap-2 transition-all duration-300",
-                  step.id === currentStep && "scale-105",
-                  step.id < currentStep && "cursor-pointer",
-                  step.id > currentStep && "cursor-not-allowed opacity-50"
-                )}
-                disabled={step.id > currentStep}
-              >
-                <div className="relative">
-                  {/* Glow effect for active step */}
-                  {step.id === currentStep && (
-                    <div className="absolute inset-0 bg-primary/40 blur-md animate-pulse" />
-                  )}
-                  <div
-                    className={cn(
-                      "relative w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono font-bold border-2 transition-all duration-300",
-                      step.id === currentStep && "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30",
-                      step.id < currentStep && "bg-primary/20 text-primary border-primary/40 group-hover:border-primary group-hover:bg-primary/30",
-                      step.id > currentStep && "bg-muted/30 border-muted-foreground/30 text-muted-foreground/50"
-                    )}
-                  >
-                    {step.id < currentStep ? <Check size={14} /> : step.id}
-                  </div>
-                </div>
-                <span className={cn(
-                  "hidden md:inline text-xs font-medium transition-colors",
-                  step.id === currentStep && "text-primary",
-                  step.id < currentStep && "text-muted-foreground group-hover:text-primary",
-                  step.id > currentStep && "text-muted-foreground/50"
-                )}>
-                  {step.title}
-                </span>
-                {/* Connector line */}
-                {index < STEPS.length - 1 && (
-                  <div className={cn(
-                    "hidden md:block w-8 h-px transition-colors",
-                    step.id < currentStep ? "bg-primary/50" : "bg-border"
-                  )} />
-                )}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
-              Phase
-            </span>
-            <span className="text-xs font-mono font-bold text-primary">
-              {currentStep}/{STEPS.length}
-            </span>
-          </div>
+    <div className="space-y-5">
+      {/* Step Navigator — compact pill bar */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/15 border border-border/30 overflow-x-auto">
+          {STEPS.map((step) => (
+            <button
+              key={step.id}
+              onClick={() => step.id < currentStep && setCurrentStep(step.id)}
+              disabled={step.id > currentStep}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-all",
+                step.id === currentStep && "bg-card border border-primary/30 text-foreground shadow-sm",
+                step.id < currentStep && "text-primary/70 hover:bg-muted/20 cursor-pointer",
+                step.id > currentStep && "text-muted-foreground/40 cursor-not-allowed"
+              )}
+            >
+              <span className={cn(
+                "w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold shrink-0",
+                step.id === currentStep && "bg-primary text-primary-foreground",
+                step.id < currentStep && "bg-primary/15 text-primary",
+                step.id > currentStep && "bg-muted/30 text-muted-foreground/40"
+              )}>
+                {step.id < currentStep ? <Check size={10} /> : step.id}
+              </span>
+              <span className="hidden sm:inline">{step.title}</span>
+            </button>
+          ))}
         </div>
-        
-        {/* Enhanced Progress Bar */}
-        <div className="relative h-1 bg-muted/30 rounded-full overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-          <div 
-            className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-          <div 
-            className="absolute top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"
-            style={{ left: `${Math.max(0, progress - 5)}%` }}
-          />
-        </div>
+        <span className="text-[10px] font-mono text-muted-foreground/50 shrink-0">
+          {currentStep}/{STEPS.length}
+        </span>
       </div>
 
-      {/* Step Content with animation container */}
-      <div className="min-h-[320px] relative">
-        <div className="absolute -inset-4 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
-        <div className="relative">
-          {renderStep()}
-        </div>
+      {/* Progress — thin line */}
+      <div className="h-0.5 bg-muted/20 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary/70 transition-all duration-500 ease-out rounded-full"
+          style={{ width: `${(currentStep / STEPS.length) * 100}%` }}
+        />
       </div>
 
-      {/* Futuristic Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+      {/* Step Content */}
+      <div className="min-h-[300px]">
+        {renderStep()}
+      </div>
+
+      {/* Navigation */}
+      <div className="flex items-center justify-between pt-3 border-t border-border/30">
         <Button
-          variant="outline"
+          variant="ghost"
           onClick={handleBack}
           disabled={currentStep === 1}
-          className="gap-2 border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all"
+          className="gap-1.5 text-xs h-8"
         >
-          <ChevronLeft size={16} />
-          <span className="hidden sm:inline">Back</span>
+          <ChevronLeft size={14} />
+          Back
         </Button>
 
-        <div className="flex items-center gap-2">
-          {currentStep === STEPS.length ? (
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || isSaved}
-              className={cn(
-                "gap-2 relative overflow-hidden transition-all",
-                isSaved && "bg-primary/20 text-primary border border-primary/30"
-              )}
-            >
-              {/* Button glow effect */}
-              {!isSaved && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-shimmer" />
-              )}
-              {isSaved ? (
-                <>
-                  <Check size={16} />
-                  <span className="font-mono">SAVED</span>
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  <span className="font-mono">{isSaving ? 'SAVING...' : 'DEPLOY TARGET'}</span>
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceed()}
-              className="gap-2 relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <span className="font-mono">NEXT</span>
-              <ChevronRight size={16} />
-            </Button>
-          )}
-        </div>
+        {currentStep === STEPS.length ? (
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || isSaved}
+            className={cn("gap-1.5 text-xs font-mono h-8", isSaved && "bg-primary/15 text-primary border border-primary/30")}
+          >
+            {isSaved ? <><Check size={14} /> SAVED</> : <><Save size={14} /> {isSaving ? 'SAVING...' : 'DEPLOY TARGET'}</>}
+          </Button>
+        ) : (
+          <Button
+            onClick={handleNext}
+            disabled={!canProceed()}
+            className="gap-1.5 text-xs font-mono h-8"
+          >
+            NEXT <ChevronRight size={14} />
+          </Button>
+        )}
       </div>
 
-      {/* Validation Message */}
+      {/* Validation */}
       {!canProceed() && currentStep >= 2 && currentStep <= 5 && (
-        <div className="flex items-center justify-center gap-2 p-2 bg-destructive/10 border border-destructive/30 rounded-lg">
-          <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-          <p className="text-xs text-destructive font-mono">
-            VALIDATION ERROR: Allocations must sum to 100%
+        <div className="flex items-center gap-2 px-3 py-2 bg-destructive/8 border border-destructive/20 rounded-lg">
+          <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+          <p className="text-[11px] text-destructive font-mono">
+            Allocations must sum to 100%
           </p>
         </div>
       )}
