@@ -214,6 +214,16 @@ export default function Construction() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <ImportFromAnalysisDialog
+                    onImport={handleImportFromAnalysis}
+                    existingNames={positions.map(p => p.name)}
+                    trigger={
+                      <Button variant="outline" className="gap-2 font-mono text-xs">
+                        <Building2 size={14} />
+                        Import from Analysis
+                      </Button>
+                    }
+                  />
                   <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
                   <Button
                     onClick={() => { setPhase3Complete(true); setCurrentPhase(4); }}
