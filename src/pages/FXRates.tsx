@@ -254,18 +254,44 @@ export default function FXRates() {
         if (error) throw error;
         toast.success('FX rate updated');
       } else {
-        // Insert new
-        const { error } = await supabase.from('fx_rates').insert({
-          user_id: user.id,
-          from_currency: formData.fromCurrency,
-          to_currency: formData.toCurrency,
-          rate: rateNum,
-          rate_date: formData.rateDate,
-          source: formData.source || 'manual',
-        });
+        // UPSERT: Check if rate exists for same currency pair + same month
+        const rateMonth = formData.rateDate.slice(0, 7); // YYYY-MM
+        const { data: existingRates } = await supabase
+          .from('fx_rates')
+          .select('id, rate_date')
+          .eq('user_id', user.id)
+          .eq('from_currency', formData.fromCurrency)
+          .eq('to_currency', formData.toCurrency)
+          .gte('rate_date', `${rateMonth}-01`)
+          .lte('rate_date', `${rateMonth}-31`);
 
-        if (error) throw error;
-        toast.success('FX rate added');
+        if (existingRates && existingRates.length > 0) {
+          // Update existing rate for this month
+          const { error } = await supabase
+            .from('fx_rates')
+            .update({
+              rate: rateNum,
+              rate_date: formData.rateDate,
+              source: formData.source || 'manual',
+            })
+            .eq('id', existingRates[0].id);
+
+          if (error) throw error;
+          toast.success('FX rate updated (same month)');
+        } else {
+          // Insert new
+          const { error } = await supabase.from('fx_rates').insert({
+            user_id: user.id,
+            from_currency: formData.fromCurrency,
+            to_currency: formData.toCurrency,
+            rate: rateNum,
+            rate_date: formData.rateDate,
+            source: formData.source || 'manual',
+          });
+
+          if (error) throw error;
+          toast.success('FX rate added');
+        }
       }
 
       handleCloseDialog();
