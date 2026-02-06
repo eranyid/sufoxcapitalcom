@@ -123,18 +123,13 @@ export default function Construction() {
       </Helmet>
 
       <div className="space-y-5">
-        {/* Compact Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="text-xs font-mono gap-1 h-7 px-2" onClick={() => setMode(null)}>
-              ← Back
-            </Button>
-            <div className="h-4 w-px bg-border/40" />
-            <h1 className="text-lg font-bold tracking-tight">Portfolio Construction</h1>
-          </div>
-          <span className="text-[10px] font-mono text-muted-foreground/60 tracking-wider hidden sm:block">
-            TARGET → ER → ALLOCATION → REVIEW
-          </span>
+        {/* Minimal Header */}
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" className="text-xs font-mono gap-1 h-7 px-2" onClick={() => setMode(null)}>
+            ← Back
+          </Button>
+          <div className="h-4 w-px bg-border/30" />
+          <h1 className="text-base font-semibold tracking-tight">Portfolio Construction</h1>
         </div>
 
         {/* Pipeline Phase Navigation */}
