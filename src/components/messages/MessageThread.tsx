@@ -182,6 +182,7 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
                           type={msg.analysis_type || 'unknown'}
                           snapshot={msg.analysis_snapshot}
                           senderName={senderName}
+                          analysisId={msg.analysis_id || undefined}
                         />
                       )}
                     </div>
