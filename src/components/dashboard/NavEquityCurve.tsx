@@ -284,13 +284,7 @@ export function NavEquityCurve({
                   axisLine={false}
                   tickLine={false}
                 />
-                <YAxis 
-                  tick={{ fill: '#9CA3AF', fontSize: 9 }}
-                  tickFormatter={formatCurrency}
-                  axisLine={false}
-                  tickLine={false}
-                  width={55}
-                />
+                <YAxis hide />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: '#0F0F0F', 
@@ -366,13 +360,7 @@ export function NavEquityCurve({
                   axisLine={false}
                   tickLine={false}
                 />
-                <YAxis 
-                  tick={{ fill: '#9CA3AF', fontSize: 9 }}
-                  tickFormatter={formatCurrency}
-                  axisLine={false}
-                  tickLine={false}
-                  width={55}
-                />
+                <YAxis hide />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: '#0F0F0F', 
