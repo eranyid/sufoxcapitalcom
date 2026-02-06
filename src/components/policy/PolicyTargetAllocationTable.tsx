@@ -17,6 +17,45 @@ interface KnownAsset {
   source: 'holdings' | 'research';
 }
 
+function useCurrentWeights(): Map<string, number> {
+  const { user } = useAuth();
+  const { session, isContextSet } = useSession();
+  const [weights, setWeights] = useState<Map<string, number>>(new Map());
+  const clientId = session.scope === 'client' ? session.clientId : null;
+
+  useEffect(() => {
+    if (!user?.id || !isContextSet) return;
+
+    const fetchWeights = async () => {
+      let query = supabase
+        .from('holdings_snapshot')
+        .select('ticker, total_cost_base')
+        .eq('user_id', user.id);
+      if (clientId) query = query.eq('client_id', clientId);
+      else query = query.is('client_id', null);
+
+      const { data } = await query;
+      if (!data || data.length === 0) { setWeights(new Map()); return; }
+
+      const totalValue = data.reduce((sum, h) => sum + (h.total_cost_base || 0), 0);
+      const map = new Map<string, number>();
+      if (totalValue > 0) {
+        data.forEach(h => {
+          if (h.ticker) {
+            const pct = ((h.total_cost_base || 0) / totalValue) * 100;
+            map.set(h.ticker, Math.round(pct * 10) / 10);
+          }
+        });
+      }
+      setWeights(map);
+    };
+
+    fetchWeights();
+  }, [user?.id, isContextSet, clientId]);
+
+  return weights;
+}
+
 function useKnownAssets(): KnownAsset[] {
   const { user } = useAuth();
   const { session, isContextSet } = useSession();
@@ -73,6 +112,7 @@ function useKnownAssets(): KnownAsset[] {
 export function PolicyTargetAllocationTable() {
   const { holdings, isLoading, addHolding, updateHolding, removeHolding } = usePolicyTargetHoldings();
   const knownAssets = useKnownAssets();
+  const currentWeights = useCurrentWeights();
   const [mode, setMode] = useState<'select' | 'manual'>('select');
   const [selectedTicker, setSelectedTicker] = useState('');
   const [newTicker, setNewTicker] = useState('');
@@ -292,13 +332,14 @@ export function PolicyTargetAllocationTable() {
                 <TableRow className="bg-muted/20 hover:bg-muted/20">
                   <TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70 h-9">Ticker</TableHead>
                   <TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70 h-9">Name</TableHead>
-                  <TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70 h-9 text-right">Weight %</TableHead>
+                  <TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70 h-9 text-right">Current %</TableHead>
+                  <TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70 h-9 text-right">Target %</TableHead>
                   <TableHead className="w-10 h-9" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {holdings.map((h, i) => (
-                  <HoldingRow key={h.id} holding={h} index={i} onUpdate={updateHolding} onRemove={removeHolding} />
+                  <HoldingRow key={h.id} holding={h} index={i} currentWeight={currentWeights.get(h.ticker)} onUpdate={updateHolding} onRemove={removeHolding} />
                 ))}
               </TableBody>
             </Table>
@@ -317,11 +358,13 @@ export function PolicyTargetAllocationTable() {
 function HoldingRow({
   holding,
   index,
+  currentWeight,
   onUpdate,
   onRemove,
 }: {
   holding: PolicyTargetHolding;
   index: number;
+  currentWeight: number | undefined;
   onUpdate: (id: string, u: Partial<Pick<PolicyTargetHolding, 'ticker' | 'name' | 'target_weight'>>) => void;
   onRemove: (id: string) => void;
 }) {
@@ -336,10 +379,29 @@ function HoldingRow({
     }
   };
 
+  const diff = currentWeight != null ? currentWeight - holding.target_weight : null;
+
   return (
     <TableRow className={index % 2 === 0 ? 'bg-transparent' : 'bg-muted/5'}>
       <TableCell className="font-mono font-semibold text-primary py-3">{holding.ticker}</TableCell>
       <TableCell className="text-sm text-muted-foreground py-3">{holding.name || '—'}</TableCell>
+      <TableCell className="text-right py-3">
+        <div className="flex items-center justify-end gap-1">
+          {currentWeight != null ? (
+            <>
+              <span className="font-mono text-sm text-foreground">{currentWeight.toFixed(1)}</span>
+              <span className="font-mono text-sm text-muted-foreground">%</span>
+              {diff != null && Math.abs(diff) >= 0.5 && (
+                <span className={`font-mono text-[10px] ml-1 ${diff > 0 ? 'text-emerald-400' : 'text-destructive'}`}>
+                  {diff > 0 ? '+' : ''}{diff.toFixed(1)}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="font-mono text-xs text-muted-foreground/50">—</span>
+          )}
+        </div>
+      </TableCell>
       <TableCell className="text-right py-3">
         <div className="flex items-center justify-end gap-1">
           <Input
