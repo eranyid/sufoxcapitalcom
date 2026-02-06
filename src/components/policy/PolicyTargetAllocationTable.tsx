@@ -123,11 +123,54 @@ function useCurrentWeights(): Map<string, number> {
         totalMarketValue += marketValue;
       }
 
-      // 4. Convert to percentages
+      // 5. Add cash balances to total portfolio value (NAV)
+      let cQuery = supabase
+        .from('cash_balances')
+        .select('usd, eur, ils, gbp, chf, jpy')
+        .eq('user_id', user.id);
+      if (clientId) cQuery = cQuery.eq('client_id', clientId);
+      else cQuery = cQuery.is('client_id', null);
+
+      const { data: cashRows } = await cQuery;
+      let totalCashUsd = 0;
+      if (cashRows && cashRows.length > 0) {
+        const c = cashRows[0];
+        totalCashUsd += c.usd || 0;
+        // Convert non-USD cash using fx_rates fallback
+        const currencyMap: Record<string, number | null> = { EUR: c.eur, ILS: c.ils, GBP: c.gbp, CHF: c.chf, JPY: c.jpy };
+        for (const [cur, amount] of Object.entries(currencyMap)) {
+          if (amount && amount > 0) {
+            const rate = fxFallback.get(cur);
+            if (rate && rate > 0) {
+              totalCashUsd += amount / rate;
+            } else {
+              // If no FX rate available, try fetching it
+              if (!fxFallback.has(cur)) {
+                const { data: rateData } = await supabase
+                  .from('fx_rates')
+                  .select('rate')
+                  .eq('user_id', user.id)
+                  .eq('from_currency', cur)
+                  .eq('to_currency', 'USD')
+                  .order('rate_date', { ascending: false })
+                  .limit(1);
+                if (rateData?.[0]?.rate) {
+                  totalCashUsd += amount / rateData[0].rate;
+                  fxFallback.set(cur, rateData[0].rate);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      const totalNav = totalMarketValue + totalCashUsd;
+
+      // 6. Convert to percentages relative to total NAV (holdings + cash)
       const map = new Map<string, number>();
-      if (totalMarketValue > 0) {
+      if (totalNav > 0) {
         for (const [ticker, mv] of marketValues) {
-          map.set(ticker, Math.round((mv / totalMarketValue) * 1000) / 10);
+          map.set(ticker, Math.round((mv / totalNav) * 1000) / 10);
         }
       }
       setWeights(map);
