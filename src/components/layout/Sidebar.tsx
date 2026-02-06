@@ -24,6 +24,7 @@ import { ReportsIcon } from '@/components/icons/ReportsIcon';
 import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
+import { MessagesIcon } from '@/components/icons/MessagesIcon';
  
  import { WorkspacesIcon } from '@/components/icons/WorkspacesIcon';
 import { LucideIcon } from 'lucide-react';
@@ -74,6 +75,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'OPERATIONS',
     items: [
+      { path: '/messages', icon: MessagesIcon, label: 'Messages' },
       { path: '/backoffice', icon: BackOfficeIcon, label: 'Back Office' },
       { path: '/calendar', icon: CalendarIcon, label: 'Calendar' },
       { path: '/reports', icon: ReportsIcon, label: 'Reports' },
