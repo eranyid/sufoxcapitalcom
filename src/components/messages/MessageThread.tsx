@@ -119,7 +119,13 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
+      <div
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-1 relative"
+        style={{
+          backgroundImage: `radial-gradient(circle, hsl(var(--foreground) / 0.04) 1px, transparent 1px)`,
+          backgroundSize: '14px 14px',
+        }}
+      >
         {loading && <p className="text-xs text-muted-foreground text-center py-4">Loading...</p>}
         {groupedByDate.map(group => (
           <div key={group.date}>
