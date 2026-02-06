@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useConversations, useMessages } from '@/hooks/useConversations';
 import { ConversationList } from '@/components/messages/ConversationList';
 import { MessageThread } from '@/components/messages/MessageThread';
+import { DottedGridBackground } from '@/components/DottedGridBackground';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -18,32 +19,40 @@ const Messages = () => {
   const showList = isMobile ? selectedConvId === null : true;
 
   return (
-    <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] flex rounded-md overflow-hidden border border-border bg-card">
-      {/* Conversation List */}
-      {showList && (
-        <div className={cn("flex-shrink-0", isMobile ? "w-full" : "w-72")}>
-          <ConversationList
-            conversations={conversations}
-            selectedId={selectedConvId}
-            onSelect={setSelectedConvId}
-            onNewConversation={createConversation}
-          />
-        </div>
-      )}
+    <DottedGridBackground
+      dotSize={1}
+      dotSpacing={14}
+      opacity={0.08}
+      fadeEdges={false}
+      className="h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]"
+    >
+      <div className="h-full flex rounded-md overflow-hidden border border-border bg-card/80 backdrop-blur-sm">
+        {/* Conversation List */}
+        {showList && (
+          <div className={cn("flex-shrink-0", isMobile ? "w-full" : "w-72")}>
+            <ConversationList
+              conversations={conversations}
+              selectedId={selectedConvId}
+              onSelect={setSelectedConvId}
+              onNewConversation={createConversation}
+            />
+          </div>
+        )}
 
-      {/* Message Thread */}
-      {showThread && (
-        <MessageThread
-          conversation={selectedConversation}
-          messages={messages}
-          loading={msgLoading}
-          onSendMessage={sendMessage}
-          onSendFile={sendFile}
-          onSendAnalysis={sendAnalysisShare}
-          onBack={isMobile ? () => setSelectedConvId(null) : undefined}
-        />
-      )}
-    </div>
+        {/* Message Thread */}
+        {showThread && (
+          <MessageThread
+            conversation={selectedConversation}
+            messages={messages}
+            loading={msgLoading}
+            onSendMessage={sendMessage}
+            onSendFile={sendFile}
+            onSendAnalysis={sendAnalysisShare}
+            onBack={isMobile ? () => setSelectedConvId(null) : undefined}
+          />
+        )}
+      </div>
+    </DottedGridBackground>
   );
 };
 
