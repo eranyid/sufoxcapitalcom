@@ -1,6 +1,4 @@
-import { BarChart3, Eye, CheckSquare, FolderKanban, CalendarPlus, MapPin, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { BarChart3, CheckSquare, FolderKanban, CalendarPlus, MapPin, Clock, AlertCircle, Calendar } from 'lucide-react';
 
 interface AnalysisShareCardProps {
   title: string;
@@ -39,53 +37,105 @@ function getAccentColor(type: string) {
   return 'border-primary/30 bg-primary/5';
 }
 
-function getViewRoute(type: string, id?: string): string | null {
-  if (!id) return null;
-  switch (type) {
-    case 'task': return `/backoffice/tasks`;
-    case 'project': return `/projects/${id}`;
-    case 'calendar_event': return `/calendar`;
-    case 'research_note':
-    case 'research':
-    case 'calculator':
-      return `/research`;
-    default:
-      return `/analysis`;
-  }
-}
+const urgencyColors: Record<string, string> = {
+  urgent: 'text-destructive',
+  high: 'text-orange-400',
+  medium: 'text-yellow-400',
+  low: 'text-muted-foreground',
+};
 
-export function AnalysisShareCard({ title, type, snapshot, senderName, analysisId }: AnalysisShareCardProps) {
-  const navigate = useNavigate();
+export function AnalysisShareCard({ title, type, snapshot, senderName }: AnalysisShareCardProps) {
   const statusLabel = snapshot?.status as string | undefined;
+  const urgency = snapshot?.urgency as string | undefined;
+  const dueDate = snapshot?.due_date as string | undefined;
+  const targetDate = snapshot?.target_date as string | undefined;
+  const priority = snapshot?.priority as string | undefined;
+  const healthStatus = snapshot?.health_status as string | undefined;
+  const owner = snapshot?.owner as string | undefined;
+  const description = snapshot?.description as string | undefined;
+  const summary = snapshot?.summary as string | undefined;
+  const ticker = snapshot?.ticker as string | undefined;
   const dateLabel = snapshot?.date as string | undefined;
   const timeLabel = snapshot?.time as string | undefined;
   const locationLabel = snapshot?.location as string | undefined;
-  const description = snapshot?.description as string | undefined;
-
-  const route = getViewRoute(type, analysisId);
 
   return (
-    <div className={`border rounded-md p-2.5 space-y-2 ${getAccentColor(type)}`}>
+    <div className={`border rounded-md p-2.5 space-y-1.5 ${getAccentColor(type)}`}>
+      {/* Header */}
       <div className="flex items-center gap-2">
-        <div className="h-7 w-7 rounded bg-primary/20 flex items-center justify-center">
+        <div className="h-7 w-7 rounded bg-primary/20 flex items-center justify-center shrink-0">
           {getIcon(type)}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-foreground truncate">{title}</p>
-          <div className="flex items-center gap-2">
-            <p className="text-[10px] text-primary font-mono uppercase tracking-wider">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-primary font-mono uppercase tracking-wider">
               {typeLabels[type] || type}
-            </p>
+            </span>
             {statusLabel && (
               <span className="text-[10px] text-muted-foreground font-mono uppercase">
-                {statusLabel.replace('_', ' ')}
+                {statusLabel.replace(/_/g, ' ')}
               </span>
             )}
           </div>
         </div>
       </div>
+
+      {/* Task details */}
+      {type === 'task' && (
+        <div className="space-y-1 pt-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            {urgency && urgency !== 'none' && (
+              <span className={`text-[10px] font-mono uppercase ${urgencyColors[urgency] || 'text-muted-foreground'}`}>
+                ● {urgency}
+              </span>
+            )}
+            {owner && (
+              <span className="text-[10px] text-muted-foreground font-mono">
+                → {owner}
+              </span>
+            )}
+            {dueDate && (
+              <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                <Calendar size={8} /> {new Date(dueDate).toLocaleDateString('en-GB')}
+              </span>
+            )}
+          </div>
+          {description && (
+            <p className="text-[10px] text-muted-foreground line-clamp-3">{description}</p>
+          )}
+        </div>
+      )}
+
+      {/* Project details */}
+      {type === 'project' && (
+        <div className="space-y-1 pt-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            {priority && (
+              <span className="text-[10px] text-primary/80 font-mono uppercase">
+                {priority}
+              </span>
+            )}
+            {healthStatus && (
+              <span className="text-[10px] text-muted-foreground font-mono uppercase flex items-center gap-0.5">
+                <AlertCircle size={8} /> {healthStatus}
+              </span>
+            )}
+            {targetDate && (
+              <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                <Calendar size={8} /> {new Date(targetDate).toLocaleDateString('en-GB')}
+              </span>
+            )}
+          </div>
+          {description && (
+            <p className="text-[10px] text-muted-foreground line-clamp-3">{description}</p>
+          )}
+        </div>
+      )}
+
+      {/* Calendar event details */}
       {type === 'calendar_event' && (dateLabel || timeLabel || locationLabel) && (
-        <div className="space-y-0.5">
+        <div className="space-y-0.5 pt-0.5">
           {dateLabel && (
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
               <Clock size={8} /> {dateLabel} {timeLabel && `· ${timeLabel}`}
@@ -98,20 +148,18 @@ export function AnalysisShareCard({ title, type, snapshot, senderName, analysisI
           )}
         </div>
       )}
-      {type !== 'calendar_event' && description && (
-        <p className="text-[10px] text-muted-foreground line-clamp-2">{description}</p>
+
+      {/* Analysis details */}
+      {type !== 'task' && type !== 'project' && type !== 'calendar_event' && (
+        <div className="space-y-1 pt-0.5">
+          {ticker && (
+            <span className="text-[10px] text-primary font-mono">{ticker}</span>
+          )}
+          {(summary || description) && (
+            <p className="text-[10px] text-muted-foreground line-clamp-3">{summary || description}</p>
+          )}
+        </div>
       )}
-      <div className="flex items-center gap-1.5">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-6 text-[10px] flex-1 gap-1"
-          onClick={() => route && navigate(route)}
-          disabled={!route}
-        >
-          <Eye size={10} /> View
-        </Button>
-      </div>
     </div>
   );
 }
