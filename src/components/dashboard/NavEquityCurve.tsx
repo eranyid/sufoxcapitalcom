@@ -58,6 +58,23 @@ export function NavEquityCurve({
       holdingsMap[month] = holdings;
     });
 
+    // Calculate cash in base currency using dynamic FX (imported from calculations)
+    const totalCash = baseCurrency === 'USD' 
+      ? cashBalances.USD 
+        + (cashBalances.EUR > 0 ? cashBalances.EUR / 0.92 : 0)
+        + (cashBalances.ILS > 0 ? cashBalances.ILS / 3.7 : 0)
+        + (cashBalances.GBP > 0 ? cashBalances.GBP / 0.79 : 0)
+        + (cashBalances.CHF > 0 ? cashBalances.CHF / 0.88 : 0)
+        + (cashBalances.JPY > 0 ? cashBalances.JPY / 149.5 : 0)
+      : cashBalances.ILS 
+        + (cashBalances.USD * 3.7)
+        + (cashBalances.EUR * (3.7 / 0.92))
+        + (cashBalances.GBP * (3.7 / 0.79))
+        + (cashBalances.CHF * (3.7 / 0.88))
+        + (cashBalances.JPY * (3.7 / 149.5));
+
+    const lastMonth = months[months.length - 1];
+
     // Calculate NAV for each month
     const navData: NavDataPoint[] = months.map(month => {
       const holdings = holdingsMap[month] || {};
@@ -75,16 +92,14 @@ export function NavEquityCurve({
         }
       });
 
-      // For cash, we use current cash balance for all months (simplified)
-      // In a real system, you'd track historical cash balances
-      const totalCash = baseCurrency === 'USD' 
-        ? cashBalances.USD + (cashBalances.EUR * 1.08) + (cashBalances.ILS / 3.6)
-        : cashBalances.ILS + (cashBalances.USD * 3.6) + (cashBalances.EUR * 3.9);
+      // Only add cash to the latest month (we don't have historical cash data)
+      const isLatestMonth = month === lastMonth;
+      const monthCash = isLatestMonth ? totalCash : 0;
 
       return {
         month,
-        nav: holdingsValue + totalCash,
-        cash: totalCash,
+        nav: holdingsValue + monthCash,
+        cash: monthCash,
         holdings: holdingsValue
       };
     });
