@@ -910,17 +910,48 @@ export function calculateYTDReturn(
     ytdReturn = (ytdPL / janValue) * 100;
   } else {
     // New account started this year — no Jan 1 NAV.
-    // Return = unrealized % (all positions are new this year).
+    // Since all positions were opened this year and there are no sells,
+    // YTD = Unrealized % = (MV - CostBasis) / CostBasis.
+    // CostBasis here must match the portfolioEngine exactly:
+    //   - USD assets: totalCost is already in USD (pricePerUnit is USD)
+    //   - Foreign assets: totalCost is in local currency, convert with entryFx
+    // calculatePositions stores totalCost in LOCAL currency (qty * localPrice + fees).
+    // For USD assets entryFx=1 so totalCost is already USD.
+    // For ILS assets entryFx=ILS/USD (e.g. 0.3225), so totalCost(ILS) * entryFx = USD.
     let totalCostBase = 0;
     for (const [ticker, pos] of Object.entries(positions)) {
       if (pos.quantity <= 0) continue;
-      const tx = transactions.find(t => t.ticker === ticker);
-      const entryFx = tx?.fxRateAtEntry || 1;
-      totalCostBase += pos.totalCost * entryFx;
+      // Find the FIRST buy transaction to get the currency
+      const buyTxs = transactions.filter(t => t.ticker === ticker && t.transactionType === 'buy');
+      if (buyTxs.length === 0) continue;
+      const currency = buyTxs[0].currency;
+      if (currency === baseCurrency || currency === 'USD') {
+        // totalCost is already in base currency
+        totalCostBase += pos.totalCost;
+      } else {
+        // totalCost is in local currency — convert using weighted avg entry FX
+        // Calculate weighted average entry FX for this ticker
+        let totalQty = 0;
+        let weightedFxSum = 0;
+        for (const tx of buyTxs) {
+          const fx = tx.fxRateAtEntry || 1;
+          weightedFxSum += tx.quantity * fx;
+          totalQty += tx.quantity;
+        }
+        const avgEntryFx = totalQty > 0 ? weightedFxSum / totalQty : 1;
+        totalCostBase += pos.totalCost * avgEntryFx;
+      }
     }
     const unrealizedPL = holdingsMV - totalCostBase;
     ytdPL = unrealizedPL;
     ytdReturn = totalCostBase > 0 ? (unrealizedPL / totalCostBase) * 100 : 0;
+    
+    console.log("[YTD Fallback] No Jan1 NAV — using Unrealized %", {
+      holdingsMV: holdingsMV.toFixed(2),
+      totalCostBase: totalCostBase.toFixed(2),
+      unrealizedPL: unrealizedPL.toFixed(2),
+      ytdReturn: ytdReturn.toFixed(2) + '%',
+    });
   }
   
   // ──────────────────────────────────────────────
