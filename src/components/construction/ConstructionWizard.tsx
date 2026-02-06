@@ -33,49 +33,64 @@ const STEPS = [
   { id: 6, title: 'Review & Save' },
 ];
 
-export function ConstructionWizard() {
+interface ConstructionWizardProps {
+  initialData?: WizardData;
+  onDataChange?: (data: WizardData) => void;
+  onSaveComplete?: () => void;
+}
+
+export function ConstructionWizard({ initialData, onDataChange, onSaveComplete }: ConstructionWizardProps = {}) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [wizardData, setWizardData] = useState<WizardData>(DEFAULT_WIZARD_DATA);
+  const [wizardData, setWizardData] = useState<WizardData>(initialData || DEFAULT_WIZARD_DATA);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const { saveTarget } = useTargetAllocation();
 
+  // Sync data changes to parent
+  const handleSetWizardData = (updater: WizardData | ((prev: WizardData) => WizardData)) => {
+    setWizardData(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      onDataChange?.(next);
+      return next;
+    });
+  };
+
   const progress = (currentStep / STEPS.length) * 100;
 
   const updateObjective = (value: ObjectiveType) => {
-    setWizardData(prev => ({ ...prev, objective: value }));
+    handleSetWizardData(prev => ({ ...prev, objective: value }));
   };
 
   const updateRiskLevel = (value: RiskLevel) => {
-    setWizardData(prev => ({ ...prev, riskLevel: value }));
+    handleSetWizardData(prev => ({ ...prev, riskLevel: value }));
   };
 
   const updateHorizon = (value: HorizonType) => {
-    setWizardData(prev => ({ ...prev, horizon: value }));
+    handleSetWizardData(prev => ({ ...prev, horizon: value }));
   };
 
   const updateConstraints = (value: TargetConstraints) => {
-    setWizardData(prev => ({ ...prev, constraints: value }));
+    handleSetWizardData(prev => ({ ...prev, constraints: value }));
   };
 
   const updateGeography = (value: GeographyAllocation) => {
-    setWizardData(prev => ({ ...prev, geography: value }));
+    handleSetWizardData(prev => ({ ...prev, geography: value }));
   };
 
   const updateAssetClasses = (value: AssetClassAllocation) => {
-    setWizardData(prev => ({ ...prev, assetClasses: value }));
+    handleSetWizardData(prev => ({ ...prev, assetClasses: value }));
   };
 
   const updateBuckets = (value: BucketConfig[]) => {
-    setWizardData(prev => ({ ...prev, buckets: value }));
+    handleSetWizardData(prev => ({ ...prev, buckets: value }));
   };
 
   const updateAlternatives = (value: AlternativesAllocation) => {
-    setWizardData(prev => ({ ...prev, alternatives: value }));
+    handleSetWizardData(prev => ({ ...prev, alternatives: value }));
   };
 
   const updateAlternativeConfigs = (value: AlternativeConfig[]) => {
-    setWizardData(prev => ({ ...prev, alternativeConfigs: value }));
+    handleSetWizardData(prev => ({ ...prev, alternativeConfigs: value }));
   };
 
   const canProceed = (): boolean => {
@@ -119,6 +134,7 @@ export function ConstructionWizard() {
       const id = await saveTarget(wizardData);
       if (id) {
         setIsSaved(true);
+        onSaveComplete?.();
       }
     } finally {
       setIsSaving(false);
