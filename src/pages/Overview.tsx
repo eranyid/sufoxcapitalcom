@@ -164,6 +164,42 @@ export default function Overview() {
 
   const hasData = performanceMetrics !== null;
 
+  // === DEBUG: KPI consistency validation ===
+  useEffect(() => {
+    if (!hasData || !adjustedMetrics) return;
+    
+    const debugTable = {
+      NAV_today: adjustedMetrics.totalValue,
+      Holdings_value: adjustedMetrics.holdingsValue,
+      Cash_value: adjustedMetrics.cashValue,
+      Total_cost_base: performanceMetrics.totalCost,
+      Unrealized_PL: adjustedMetrics.unrealizedPL,
+      Unrealized_pct: performanceMetrics.totalCost > 0 
+        ? ((adjustedMetrics.unrealizedPL / performanceMetrics.totalCost) * 100).toFixed(2) + '%' 
+        : 'N/A',
+      Realized_PL: performanceMetrics.realizedPL,
+      YTD_return: ytdData.ytdReturn.toFixed(2) + '%',
+      YTD_PL: ytdData.ytdPL,
+      NAV_Jan1: ytdData.janValue,
+      Cash_FX_PL: ytdData.cashFxPL,
+      FX_mode: fxMode,
+    };
+    console.table(debugTable);
+
+    // Sanity gate: if Realized = 0 and all trades this year, YTD ≈ Unrealized%
+    if (performanceMetrics.realizedPL === 0 && transactions.length > 0) {
+      const currentYear = new Date().getFullYear();
+      const allThisYear = transactions.every(t => t.date >= `${currentYear}-01-01`);
+      if (allThisYear && performanceMetrics.totalCost > 0) {
+        const unrealizedPct = (adjustedMetrics.unrealizedPL / performanceMetrics.totalCost) * 100;
+        const diff = Math.abs(ytdData.ytdReturn - unrealizedPct);
+        if (diff > 0.5) {
+          console.warn(`[KPI Consistency] YTD (${ytdData.ytdReturn.toFixed(2)}%) ≠ Unrealized (${unrealizedPct.toFixed(2)}%). Diff: ${diff.toFixed(2)}pp. All trades this year + no realized = should match.`);
+        }
+      }
+    }
+  }, [hasData, adjustedMetrics, performanceMetrics, ytdData, fxMode, transactions]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -242,7 +278,7 @@ export default function Overview() {
           trend={ytdData.ytdReturn >= 0 ? 'up' : ytdData.ytdReturn < 0 ? 'down' : 'neutral'}
           subtitle={new Date().getFullYear().toString()}
           subLabel={fxLabel}
-          tooltip="Year-to-date return: (Realized + Unrealized P/L since Jan 1) / Portfolio Value at Jan 1"
+          tooltip="Performance since Jan 1: (Current total P/L − Jan 1 total P/L) / Portfolio Value at Jan 1. Cashflow-adjusted."
         />
         <KPICard
           title="Unrealized %"
@@ -251,9 +287,7 @@ export default function Overview() {
             : '0.00%'}
           trend={hasData && adjustedMetrics && adjustedMetrics.unrealizedPL >= 0 ? 'up' : 'down'}
           subLabel={fxLabel}
-          tooltip={fxMode === 'real' 
-            ? "Unrealized gain/loss percentage vs cost basis, including FX impact" 
-            : "Unrealized gain/loss percentage vs cost basis, excluding FX impact"}
+          tooltip="Open positions P/L since purchase (all-time): (Market Value − Cost Basis) / Cost Basis"
         />
         <KPICard
           title="Unrealized P/L"
@@ -263,9 +297,7 @@ export default function Overview() {
           warning={computedData.missingValuationCount > 0 
             ? `${computedData.missingValuationCount} holding${computedData.missingValuationCount > 1 ? 's' : ''} missing valuation` 
             : undefined}
-          tooltip={fxMode === 'real' 
-            ? "Unrealized profit/loss including FX impact, measured in base currency" 
-            : "Unrealized profit/loss from price changes only, excluding FX impact"}
+          tooltip="Open positions P/L since purchase (all-time) in base currency"
         />
         <KPICard
           title="Realized P/L"
