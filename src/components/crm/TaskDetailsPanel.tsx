@@ -248,7 +248,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
         </div>
 
         {/* Tabs - Mobile optimized */}
-        <Tabs defaultValue="updates" className="flex-1 flex flex-col min-h-0">
+        <Tabs defaultValue="updates" className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <TabsList className="flex-shrink-0 w-full justify-start rounded-none border-b border-border bg-transparent h-auto p-0 overflow-x-auto">
             <TabsTrigger 
               value="updates" 
@@ -273,13 +273,13 @@ export function TaskDetailsPanel({ task, isOpen, onClose, onUpdate, onDelete }: 
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="updates" className="flex-1 m-0 overflow-hidden">
+          <TabsContent value="updates" className="flex-1 m-0 overflow-y-auto">
             <TaskUpdatesTab taskId={task.id} />
           </TabsContent>
-          <TabsContent value="files" className="flex-1 m-0 overflow-hidden">
+          <TabsContent value="files" className="flex-1 m-0 overflow-y-auto">
             <TaskFilesTab taskId={task.id} />
           </TabsContent>
-          <TabsContent value="activity" className="flex-1 m-0 overflow-hidden">
+          <TabsContent value="activity" className="flex-1 m-0 overflow-y-auto">
             <TaskActivityLogTab taskId={task.id} />
           </TabsContent>
         </Tabs>
