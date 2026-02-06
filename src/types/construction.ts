@@ -117,7 +117,7 @@ export interface TargetAllocationLine {
 }
 
 export const GEOGRAPHY_PRESETS = {
-  israel_tilt: { israel: 40, usa: 35, europe: 15, other: 10 },
+  israel_tilt: { israel: 25, usa: 60, europe: 10, other: 5 },
   global: { israel: 20, usa: 40, europe: 25, other: 15 },
   us_centric: { israel: 10, usa: 60, europe: 20, other: 10 },
   eu_centric: { israel: 15, usa: 25, europe: 45, other: 15 },
@@ -211,9 +211,9 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   },
   geography: {
     israel: 25,
-    usa: 45,
-    europe: 20,
-    other: 10,
+    usa: 60,
+    europe: 10,
+    other: 5,
   },
   assetClasses: {
     equities: 65,
