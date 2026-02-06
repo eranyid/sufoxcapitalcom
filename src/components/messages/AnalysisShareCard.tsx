@@ -1,11 +1,13 @@
-import { BarChart3, Download, Eye, CheckSquare, FolderKanban, CalendarPlus, MapPin, Clock } from 'lucide-react';
+import { BarChart3, Eye, CheckSquare, FolderKanban, CalendarPlus, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface AnalysisShareCardProps {
   title: string;
   type: string;
   snapshot: Record<string, unknown> | null;
   senderName: string;
+  analysisId?: string;
 }
 
 const typeLabels: Record<string, string> = {
@@ -37,12 +39,30 @@ function getAccentColor(type: string) {
   return 'border-primary/30 bg-primary/5';
 }
 
-export function AnalysisShareCard({ title, type, snapshot, senderName }: AnalysisShareCardProps) {
+function getViewRoute(type: string, id?: string): string | null {
+  if (!id) return null;
+  switch (type) {
+    case 'task': return `/backoffice/tasks`;
+    case 'project': return `/projects/${id}`;
+    case 'calendar_event': return `/calendar`;
+    case 'research_note':
+    case 'research':
+    case 'calculator':
+      return `/research`;
+    default:
+      return `/analysis`;
+  }
+}
+
+export function AnalysisShareCard({ title, type, snapshot, senderName, analysisId }: AnalysisShareCardProps) {
+  const navigate = useNavigate();
   const statusLabel = snapshot?.status as string | undefined;
   const dateLabel = snapshot?.date as string | undefined;
   const timeLabel = snapshot?.time as string | undefined;
   const locationLabel = snapshot?.location as string | undefined;
   const description = snapshot?.description as string | undefined;
+
+  const route = getViewRoute(type, analysisId);
 
   return (
     <div className={`border rounded-md p-2.5 space-y-2 ${getAccentColor(type)}`}>
@@ -82,7 +102,13 @@ export function AnalysisShareCard({ title, type, snapshot, senderName }: Analysi
         <p className="text-[10px] text-muted-foreground line-clamp-2">{description}</p>
       )}
       <div className="flex items-center gap-1.5">
-        <Button variant="outline" size="sm" className="h-6 text-[10px] flex-1 gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-6 text-[10px] flex-1 gap-1"
+          onClick={() => route && navigate(route)}
+          disabled={!route}
+        >
           <Eye size={10} /> View
         </Button>
       </div>
