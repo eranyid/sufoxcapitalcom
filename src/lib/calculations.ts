@@ -661,6 +661,27 @@ export function calculatePerformanceMetrics(
     const val = latestVals[ticker];
     const tx = transactions.find(t => t.ticker === ticker);
     
+    // Calculate entryFxRate for this ticker (needed for both active and closed positions)
+    let entryFxRate = 1;
+    if (tx && tx.currency !== baseCurrency) {
+      // Weighted average from all buy transactions for this ticker
+      const tickerBuys = transactions.filter(t => 
+        t.ticker === ticker && 
+        t.transactionType === 'buy' &&
+        t.fxRateAtEntry !== undefined
+      );
+      if (tickerBuys.length > 0) {
+        const totalCostLocal = tickerBuys.reduce((sum, t) => sum + (t.costLocal || t.quantity * t.pricePerUnit + t.fees), 0);
+        const weightedFxSum = tickerBuys.reduce((sum, t) => {
+          const costLocal = t.costLocal || (t.quantity * t.pricePerUnit + t.fees);
+          return sum + (t.fxRateAtEntry! * costLocal);
+        }, 0);
+        entryFxRate = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : (tx.fxRateAtEntry || 1);
+      } else {
+        entryFxRate = tx.fxRateAtEntry || 1;
+      }
+    }
+    
     if (pos.quantity > 0 && tx) {
       const hasValuation = !!val;
       const currentPriceLocal = hasValuation ? val.pricePerUnit : pos.avgCost;
@@ -677,38 +698,11 @@ export function calculatePerformanceMetrics(
         currentFxRate = tx.fxRateAtEntry || 1;
       }
       
-      // Use stored entry FX rate if available
-      let entryFxRate: number;
-      if (tx.currency === baseCurrency) {
-        entryFxRate = 1;
-      } else if (tx.fxRateAtEntry !== undefined) {
-        entryFxRate = tx.fxRateAtEntry;
-      } else {
-        // Weighted average from all buy transactions for this ticker
-        const tickerBuys = transactions.filter(t => 
-          t.ticker === ticker && 
-          t.transactionType === 'buy' &&
-          t.fxRateAtEntry !== undefined
-        );
-        if (tickerBuys.length > 0) {
-          const totalCostLocal = tickerBuys.reduce((sum, t) => sum + (t.costLocal || t.quantity * t.pricePerUnit + t.fees), 0);
-          const weightedFxSum = tickerBuys.reduce((sum, t) => {
-            const costLocal = t.costLocal || (t.quantity * t.pricePerUnit + t.fees);
-            return sum + (t.fxRateAtEntry! * costLocal);
-          }, 0);
-          entryFxRate = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : currentFxRate;
-        } else {
-          entryFxRate = currentFxRate; // Fallback approximation
-        }
-      }
-      
       // Current value in base currency
       const currentValue = pos.quantity * currentPriceLocal * currentFxRate;
       holdingsValue += currentValue;
       
       // Convert cost basis to base currency
-      // pos.totalCost is in local currency (from calculatePositions)
-      // For same-currency assets, entryFxRate = 1, so no change
       const totalCostBase = pos.totalCost * entryFxRate;
       
       if (hasValuation) {
@@ -721,8 +715,8 @@ export function calculatePerformanceMetrics(
         fxPL += posFxPL;
       }
     }
-    // Convert cost and realized P/L to base currency
-    const costFxRate = tx ? (tx.currency === baseCurrency ? 1 : (tx.fxRateAtEntry || 1)) : 1;
+    // Convert cost and realized P/L to base currency using consistent weighted entryFxRate
+    const costFxRate = tx ? (tx.currency === baseCurrency ? 1 : entryFxRate) : 1;
     totalCost += pos.totalCost * costFxRate;
     realizedPL += pos.realizedPL * costFxRate;
   }

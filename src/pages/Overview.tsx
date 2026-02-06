@@ -164,17 +164,38 @@ export default function Overview() {
 
   const hasData = performanceMetrics !== null;
 
-  // === DEBUG: KPI consistency validation ===
+  // === RUNTIME FINGERPRINT + KPI VALIDATION ===
   useEffect(() => {
     if (!hasData || !adjustedMetrics) return;
     
+    // Cross-check: computedData (portfolioEngine) vs performanceMetrics (calculations.ts)
+    const engineUnrealizedPL = computedData.holdings.reduce((sum, h) => sum + h.unrealizedPL, 0);
+    const engineCostBasis = computedData.holdings.reduce((sum, h) => sum + h.costBasis, 0);
+    const engineUnrealizedPct = engineCostBasis > 0 ? (engineUnrealizedPL / engineCostBasis) * 100 : 0;
+    
+    // FINGERPRINT LOG — proves this version is running
+    console.log("[KPI_ENGINE_VERSION] 2026-02-06-v1", {
+      navToday: computedData.totalPortfolioValue,
+      holdings: computedData.holdingsValue,
+      cash: computedData.cashValue,
+      costBasisUSD: engineCostBasis,
+      unrealizedPnl: engineUnrealizedPL,
+      unrealizedPct: engineUnrealizedPct.toFixed(2) + '%',
+      ytd: ytdData.ytdReturn.toFixed(2) + '%',
+      perfMetrics_totalCost: performanceMetrics.totalCost,
+      perfMetrics_unrealizedPL: adjustedMetrics.unrealizedPL,
+    });
+    
     const debugTable = {
-      NAV_today: adjustedMetrics.totalValue,
-      Holdings_value: adjustedMetrics.holdingsValue,
-      Cash_value: adjustedMetrics.cashValue,
-      Total_cost_base: performanceMetrics.totalCost,
-      Unrealized_PL: adjustedMetrics.unrealizedPL,
-      Unrealized_pct: performanceMetrics.totalCost > 0 
+      NAV_today: computedData.totalPortfolioValue,
+      Holdings_value: computedData.holdingsValue,
+      Cash_value: computedData.cashValue,
+      Engine_cost_basis: engineCostBasis,
+      PerfMetrics_totalCost: performanceMetrics.totalCost,
+      Engine_unrealizedPL: engineUnrealizedPL,
+      PerfMetrics_unrealizedPL: adjustedMetrics.unrealizedPL,
+      Engine_unrealized_pct: engineUnrealizedPct.toFixed(2) + '%',
+      PerfMetrics_unrealized_pct: performanceMetrics.totalCost > 0 
         ? ((adjustedMetrics.unrealizedPL / performanceMetrics.totalCost) * 100).toFixed(2) + '%' 
         : 'N/A',
       Realized_PL: performanceMetrics.realizedPL,
@@ -190,15 +211,20 @@ export default function Overview() {
     if (performanceMetrics.realizedPL === 0 && transactions.length > 0) {
       const currentYear = new Date().getFullYear();
       const allThisYear = transactions.every(t => t.date >= `${currentYear}-01-01`);
-      if (allThisYear && performanceMetrics.totalCost > 0) {
-        const unrealizedPct = (adjustedMetrics.unrealizedPL / performanceMetrics.totalCost) * 100;
-        const diff = Math.abs(ytdData.ytdReturn - unrealizedPct);
+      if (allThisYear && engineCostBasis > 0) {
+        const diff = Math.abs(ytdData.ytdReturn - engineUnrealizedPct);
         if (diff > 0.5) {
-          console.warn(`[KPI Consistency] YTD (${ytdData.ytdReturn.toFixed(2)}%) ≠ Unrealized (${unrealizedPct.toFixed(2)}%). Diff: ${diff.toFixed(2)}pp. All trades this year + no realized = should match.`);
+          console.warn(`[KPI Consistency] YTD (${ytdData.ytdReturn.toFixed(2)}%) ≠ Engine Unrealized (${engineUnrealizedPct.toFixed(2)}%). Diff: ${diff.toFixed(2)}pp. All trades this year + no realized = should match.`);
         }
       }
     }
-  }, [hasData, adjustedMetrics, performanceMetrics, ytdData, fxMode, transactions]);
+    
+    // Cross-engine consistency check
+    const costDiff = Math.abs(engineCostBasis - performanceMetrics.totalCost);
+    if (costDiff > 1) {
+      console.warn(`[ENGINE MISMATCH] portfolioEngine costBasis=$${engineCostBasis.toFixed(0)} vs performanceMetrics totalCost=$${performanceMetrics.totalCost.toFixed(0)} (diff: $${costDiff.toFixed(0)})`);
+    }
+  }, [hasData, adjustedMetrics, performanceMetrics, ytdData, fxMode, transactions, computedData]);
 
   if (loading) {
     return (
