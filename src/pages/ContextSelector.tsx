@@ -119,7 +119,7 @@
        </div>
 
        {/* Main orbital composition - vertical on mobile, horizontal on desktop */}
-       <div className="relative flex flex-col md:flex-row items-center justify-center px-6 md:px-0 pt-8 pb-8 md:py-0">
+       <div className="relative flex flex-col md:flex-row items-center justify-center px-6 md:px-0 pt-8 pb-8 md:py-0 gap-8 md:gap-0">
  
          {/* Central Logo with orbital rings */}
          <div 
@@ -184,140 +184,139 @@
             </div>
          </div>
  
-          {/* Cards container - stacked on mobile, absolute on desktop */}
-          <div className="flex flex-col md:contents gap-5 w-full md:w-auto max-w-[320px] md:max-w-none relative z-30">
-         
-         {/* Personal Account Card */}
+          {/* Personal Card - ABOVE logo on mobile, left on desktop */}
+          <div className="md:contents order-first md:order-none w-full max-w-[320px] md:max-w-none">
           <button
             onClick={(e) => { e.stopPropagation(); handleEnterPersonal(); }}
-            className="group md:absolute z-10 animate-fade-in w-full md:w-auto isolate"
+            className="group md:absolute z-30 animate-fade-in w-full md:w-auto isolate"
             style={{ 
               left: isMobile ? undefined : '-380px',
               animationDelay: '0.3s', 
               animationFillMode: 'backwards',
             }}
           >
-           {/* Hover glow */}
-           <div 
-             className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-             style={{
-               background: 'radial-gradient(ellipse at 80% 50%, rgba(180, 140, 60, 0.2) 0%, transparent 60%)',
-               filter: 'blur(20px)',
-             }}
-           />
-           
-           {/* Card with curved inner edge */}
-           <div 
-             className="relative flex items-center gap-4 md:gap-6 px-6 md:px-10 py-5 md:py-7 backdrop-blur-xl border border-[rgba(180,140,60,0.15)] group-hover:border-[rgba(180,140,60,0.35)] transition-all duration-500 md:group-hover:-translate-x-2 group-hover:shadow-[0_0_40px_rgba(180,140,60,0.1)]"
-             style={{
-               background: 'linear-gradient(135deg, rgba(25,25,30,0.85) 0%, rgba(20,20,25,0.75) 100%)',
-               borderRadius: isMobile ? '20px' : '24px 100px 100px 24px',
-               minWidth: isMobile ? undefined : '280px',
-             }}
-           >
-             {/* Icon */}
-             <div className="relative flex-shrink-0">
-               <div 
-                 className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                 style={{
-                   background: 'radial-gradient(circle, rgba(180, 140, 60, 0.3) 0%, transparent 70%)',
-                   filter: 'blur(12px)',
-                   transform: 'scale(2)',
-                 }}
-               />
-               <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(180,140,60,0.2)] to-[rgba(180,140,60,0.05)] border border-[rgba(180,140,60,0.25)] group-hover:border-[rgba(180,140,60,0.45)] transition-colors duration-500">
-                  <img src={ProfileIcon} alt="" className="h-5 w-5 md:h-7 md:w-7" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(30%) saturate(600%) hue-rotate(10deg) brightness(95%)' }} />
-               </div>
-             </div>
-             
-             {/* Text */}
-             <div className="flex-1 text-left">
-               <h2 className="text-base md:text-lg font-medium text-white/90 tracking-wide mb-0.5 md:mb-1">Personal</h2>
-               <p className="text-[11px] md:text-xs text-white/40 tracking-wide">Your portfolio & research</p>
-             </div>
-             
-             {/* Arrow indicator */}
-             <ChevronRight className="h-4 w-4 md:h-5 md:w-5 text-[#c4a54d]/50 group-hover:text-[#c4a54d] group-hover:translate-x-1 transition-all duration-300" />
-           </div>
-         </button>
- 
-         {/* Clients Card */}
+            {/* Hover glow */}
+            <div 
+              className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+              style={{
+                background: 'radial-gradient(ellipse at 80% 50%, rgba(180, 140, 60, 0.2) 0%, transparent 60%)',
+                filter: 'blur(20px)',
+              }}
+            />
+            
+            {/* Card with curved inner edge */}
+            <div 
+              className="relative flex items-center gap-4 md:gap-6 px-6 md:px-10 py-5 md:py-7 backdrop-blur-xl border border-[rgba(180,140,60,0.15)] group-hover:border-[rgba(180,140,60,0.35)] transition-all duration-500 md:group-hover:-translate-x-2 group-hover:shadow-[0_0_40px_rgba(180,140,60,0.1)]"
+              style={{
+                background: 'linear-gradient(135deg, rgba(25,25,30,0.85) 0%, rgba(20,20,25,0.75) 100%)',
+                borderRadius: isMobile ? '20px' : '24px 100px 100px 24px',
+                minWidth: isMobile ? undefined : '280px',
+              }}
+            >
+              {/* Icon */}
+              <div className="relative flex-shrink-0">
+                <div 
+                  className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: 'radial-gradient(circle, rgba(180, 140, 60, 0.3) 0%, transparent 70%)',
+                    filter: 'blur(12px)',
+                    transform: 'scale(2)',
+                  }}
+                />
+                <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(180,140,60,0.2)] to-[rgba(180,140,60,0.05)] border border-[rgba(180,140,60,0.25)] group-hover:border-[rgba(180,140,60,0.45)] transition-colors duration-500">
+                   <img src={ProfileIcon} alt="" className="h-5 w-5 md:h-7 md:w-7" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(30%) saturate(600%) hue-rotate(10deg) brightness(95%)' }} />
+                </div>
+              </div>
+              
+              {/* Text */}
+              <div className="flex-1 text-left">
+                <h2 className="text-base md:text-lg font-medium text-white/90 tracking-wide mb-0.5 md:mb-1">Personal</h2>
+                <p className="text-[11px] md:text-xs text-white/40 tracking-wide">Your portfolio & research</p>
+              </div>
+              
+              {/* Arrow indicator */}
+              <ChevronRight className="h-4 w-4 md:h-5 md:w-5 text-[#c4a54d]/50 group-hover:text-[#c4a54d] group-hover:translate-x-1 transition-all duration-300" />
+            </div>
+          </button>
+          </div>
+
+          {/* Clients Card - BELOW logo on mobile, right on desktop */}
+          <div className="md:contents order-last md:order-none w-full max-w-[320px] md:max-w-none">
           <button
             onClick={(e) => { e.stopPropagation(); setShowClientsModal(true); }}
-            className="group md:absolute z-10 animate-fade-in w-full md:w-auto isolate"
+            className="group md:absolute z-30 animate-fade-in w-full md:w-auto isolate"
             style={{ 
               right: isMobile ? undefined : '-380px',
               animationDelay: '0.4s', 
               animationFillMode: 'backwards',
             }}
           >
-           {/* Hover glow */}
-           <div 
-             className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-             style={{
-               background: 'radial-gradient(ellipse at 20% 50%, rgba(60, 120, 180, 0.2) 0%, transparent 60%)',
-               filter: 'blur(20px)',
-             }}
-           />
-           
-           {/* Card with curved inner edge (mirrored) */}
-           <div 
-             className="relative flex items-center gap-4 md:gap-6 px-6 md:px-10 py-5 md:py-7 backdrop-blur-xl border border-[rgba(60,120,180,0.15)] group-hover:border-[rgba(60,120,180,0.35)] transition-all duration-500 md:group-hover:translate-x-2 group-hover:shadow-[0_0_40px_rgba(60,120,180,0.1)]"
-             style={{
-               background: 'linear-gradient(225deg, rgba(25,25,30,0.85) 0%, rgba(20,20,25,0.75) 100%)',
-               borderRadius: isMobile ? '20px' : '100px 24px 24px 100px',
-               minWidth: isMobile ? undefined : '280px',
-             }}
-           >
-             {/* Arrow indicator (on left for symmetry - desktop only) */}
-             {!isMobile && <ChevronRight className="h-5 w-5 text-[#5a9bd4]/50 group-hover:text-[#5a9bd4] group-hover:-translate-x-1 transition-all duration-300 rotate-180" />}
-             
-             {/* Icon - shown first on mobile */}
-             {isMobile && (
-               <div className="relative flex-shrink-0">
-                 <div 
-                   className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                   style={{
-                     background: 'radial-gradient(circle, rgba(60, 120, 180, 0.3) 0%, transparent 70%)',
-                     filter: 'blur(12px)',
-                     transform: 'scale(2)',
-                   }}
-                 />
-                 <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(60,120,180,0.2)] to-[rgba(60,120,180,0.05)] border border-[rgba(60,120,180,0.25)] group-hover:border-[rgba(60,120,180,0.45)] transition-colors duration-500">
-                    <img src={PeopleIcon} alt="" className="h-5 w-5" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(50%) saturate(400%) hue-rotate(175deg) brightness(95%)' }} />
-                 </div>
-               </div>
-             )}
-             
-             {/* Text */}
-             <div className={`flex-1 ${isMobile ? 'text-left' : 'text-right'}`}>
-               <h2 className="text-base md:text-lg font-medium text-white/90 tracking-wide mb-0.5 md:mb-1">Clients</h2>
-               <p className="text-[11px] md:text-xs text-white/40 tracking-wide">Manage client portfolios</p>
-             </div>
-             
-             {/* Icon - shown last on desktop */}
-             {!isMobile && (
-               <div className="relative flex-shrink-0">
-                 <div 
-                   className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                   style={{
-                     background: 'radial-gradient(circle, rgba(60, 120, 180, 0.3) 0%, transparent 70%)',
-                     filter: 'blur(12px)',
-                     transform: 'scale(2)',
-                   }}
-                 />
-                 <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(60,120,180,0.2)] to-[rgba(60,120,180,0.05)] border border-[rgba(60,120,180,0.25)] group-hover:border-[rgba(60,120,180,0.45)] transition-colors duration-500">
-                    <img src={PeopleIcon} alt="" className="h-7 w-7" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(50%) saturate(400%) hue-rotate(175deg) brightness(95%)' }} />
-                 </div>
-               </div>
-             )}
-             
-             {/* Arrow indicator - mobile */}
-             {isMobile && <ChevronRight className="h-4 w-4 text-[#5a9bd4]/50 group-hover:text-[#5a9bd4] group-hover:translate-x-1 transition-all duration-300" />}
-           </div>
-         </button>
-         
-         </div>
+            {/* Hover glow */}
+            <div 
+              className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+              style={{
+                background: 'radial-gradient(ellipse at 20% 50%, rgba(60, 120, 180, 0.2) 0%, transparent 60%)',
+                filter: 'blur(20px)',
+              }}
+            />
+            
+            {/* Card with curved inner edge (mirrored) */}
+            <div 
+              className="relative flex items-center gap-4 md:gap-6 px-6 md:px-10 py-5 md:py-7 backdrop-blur-xl border border-[rgba(60,120,180,0.15)] group-hover:border-[rgba(60,120,180,0.35)] transition-all duration-500 md:group-hover:translate-x-2 group-hover:shadow-[0_0_40px_rgba(60,120,180,0.1)]"
+              style={{
+                background: 'linear-gradient(225deg, rgba(25,25,30,0.85) 0%, rgba(20,20,25,0.75) 100%)',
+                borderRadius: isMobile ? '20px' : '100px 24px 24px 100px',
+                minWidth: isMobile ? undefined : '280px',
+              }}
+            >
+              {/* Arrow indicator (on left for symmetry - desktop only) */}
+              {!isMobile && <ChevronRight className="h-5 w-5 text-[#5a9bd4]/50 group-hover:text-[#5a9bd4] group-hover:-translate-x-1 transition-all duration-300 rotate-180" />}
+              
+              {/* Icon - shown first on mobile */}
+              {isMobile && (
+                <div className="relative flex-shrink-0">
+                  <div 
+                    className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(60, 120, 180, 0.3) 0%, transparent 70%)',
+                      filter: 'blur(12px)',
+                      transform: 'scale(2)',
+                    }}
+                  />
+                  <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(60,120,180,0.2)] to-[rgba(60,120,180,0.05)] border border-[rgba(60,120,180,0.25)] group-hover:border-[rgba(60,120,180,0.45)] transition-colors duration-500">
+                     <img src={PeopleIcon} alt="" className="h-5 w-5" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(50%) saturate(400%) hue-rotate(175deg) brightness(95%)' }} />
+                  </div>
+                </div>
+              )}
+              
+              {/* Text */}
+              <div className={`flex-1 ${isMobile ? 'text-left' : 'text-right'}`}>
+                <h2 className="text-base md:text-lg font-medium text-white/90 tracking-wide mb-0.5 md:mb-1">Clients</h2>
+                <p className="text-[11px] md:text-xs text-white/40 tracking-wide">Manage client portfolios</p>
+              </div>
+              
+              {/* Icon - shown last on desktop */}
+              {!isMobile && (
+                <div className="relative flex-shrink-0">
+                  <div 
+                    className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(60, 120, 180, 0.3) 0%, transparent 70%)',
+                      filter: 'blur(12px)',
+                      transform: 'scale(2)',
+                    }}
+                  />
+                  <div className="relative p-4 rounded-full bg-gradient-to-br from-[rgba(60,120,180,0.2)] to-[rgba(60,120,180,0.05)] border border-[rgba(60,120,180,0.25)] group-hover:border-[rgba(60,120,180,0.45)] transition-colors duration-500">
+                     <img src={PeopleIcon} alt="" className="h-7 w-7" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(50%) saturate(400%) hue-rotate(175deg) brightness(95%)' }} />
+                  </div>
+                </div>
+              )}
+              
+              {/* Arrow indicator - mobile */}
+              {isMobile && <ChevronRight className="h-4 w-4 text-[#5a9bd4]/50 group-hover:text-[#5a9bd4] group-hover:translate-x-1 transition-all duration-300" />}
+            </div>
+          </button>
+          </div>
        </div>
 
        {/* Footer caption */}
