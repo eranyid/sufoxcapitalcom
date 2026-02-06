@@ -9,7 +9,7 @@ const Messages = () => {
   const isMobile = useIsMobile();
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const { conversations, loading: convLoading, createConversation } = useConversations();
-  const { messages, loading: msgLoading, sendMessage, sendFile } = useMessages(selectedConvId);
+  const { messages, loading: msgLoading, sendMessage, sendFile, sendAnalysisShare } = useMessages(selectedConvId);
 
   const selectedConversation = conversations.find(c => c.id === selectedConvId) || null;
 
@@ -39,6 +39,7 @@ const Messages = () => {
           loading={msgLoading}
           onSendMessage={sendMessage}
           onSendFile={sendFile}
+          onSendAnalysis={sendAnalysisShare}
           onBack={isMobile ? () => setSelectedConvId(null) : undefined}
         />
       )}
