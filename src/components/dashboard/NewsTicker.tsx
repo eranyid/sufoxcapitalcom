@@ -106,8 +106,8 @@ export function NewsTicker({ rssUrl }: NewsTickerProps) {
   return (
     <div className="w-full bg-card border border-border rounded-md overflow-hidden">
       <div className="flex items-center h-9">
-        {/* Label */}
-        <div className="flex-shrink-0 px-4 border-r border-border h-full flex items-center bg-muted/30">
+        {/* Label - hidden on mobile */}
+        <div className="hidden md:flex flex-shrink-0 px-4 border-r border-border h-full items-center bg-muted/30">
           <span className="text-xs font-mono text-primary font-semibold tracking-wider whitespace-nowrap">
             LIVE NEWS
           </span>
