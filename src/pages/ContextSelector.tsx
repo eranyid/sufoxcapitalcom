@@ -184,19 +184,19 @@
             </div>
          </div>
  
-         {/* Cards container - stacked on mobile, absolute on desktop */}
-         <div className="flex flex-col md:contents gap-4 w-full md:w-auto max-w-[320px] md:max-w-none">
+          {/* Cards container - stacked on mobile, absolute on desktop */}
+          <div className="flex flex-col md:contents gap-5 w-full md:w-auto max-w-[320px] md:max-w-none relative z-30">
          
          {/* Personal Account Card */}
-         <button
-           onClick={handleEnterPersonal}
-           className="group md:absolute z-10 animate-fade-in w-full md:w-auto"
-           style={{ 
-             left: isMobile ? undefined : '-380px',
-             animationDelay: '0.3s', 
-             animationFillMode: 'backwards',
-           }}
-         >
+          <button
+            onClick={(e) => { e.stopPropagation(); handleEnterPersonal(); }}
+            className="group md:absolute z-10 animate-fade-in w-full md:w-auto isolate"
+            style={{ 
+              left: isMobile ? undefined : '-380px',
+              animationDelay: '0.3s', 
+              animationFillMode: 'backwards',
+            }}
+          >
            {/* Hover glow */}
            <div 
              className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
@@ -242,15 +242,15 @@
          </button>
  
          {/* Clients Card */}
-         <button
-           onClick={() => setShowClientsModal(true)}
-           className="group md:absolute z-10 animate-fade-in w-full md:w-auto"
-           style={{ 
-             right: isMobile ? undefined : '-380px',
-             animationDelay: '0.4s', 
-             animationFillMode: 'backwards',
-           }}
-         >
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowClientsModal(true); }}
+            className="group md:absolute z-10 animate-fade-in w-full md:w-auto isolate"
+            style={{ 
+              right: isMobile ? undefined : '-380px',
+              animationDelay: '0.4s', 
+              animationFillMode: 'backwards',
+            }}
+          >
            {/* Hover glow */}
            <div 
              className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
