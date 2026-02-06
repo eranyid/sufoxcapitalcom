@@ -122,30 +122,19 @@ export default function Construction() {
         <meta name="description" content="Unified portfolio construction pipeline — Target Allocation, Expected Return Analysis, and Allocation Builder" />
       </Helmet>
 
-      <div className="space-y-6">
-        {/* Mode indicator + back */}
-        <div className="flex items-center gap-2 mb-2">
-          <Button variant="ghost" size="sm" className="text-xs font-mono gap-1" onClick={() => setMode(null)}>
-            ← Back
-          </Button>
-          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider px-2 py-0.5 rounded bg-muted/30 border border-border/30">
-            {mode === 'system' ? '🔒 Policy Mode' : '📊 Analysis Mode'}
+      <div className="space-y-5">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="text-xs font-mono gap-1 h-7 px-2" onClick={() => setMode(null)}>
+              ← Back
+            </Button>
+            <div className="h-4 w-px bg-border/40" />
+            <h1 className="text-lg font-bold tracking-tight">Portfolio Construction</h1>
+          </div>
+          <span className="text-[10px] font-mono text-muted-foreground/60 tracking-wider hidden sm:block">
+            TARGET → ER → ALLOCATION → REVIEW
           </span>
-        </div>
-        {/* Page Header */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full" />
-            <div className="relative p-3 bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 rounded-xl">
-              <Layers className="w-6 h-6 text-primary" />
-            </div>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Portfolio Construction</h1>
-            <p className="text-xs text-muted-foreground mt-0.5 font-mono">
-              TARGET → EXPECTED RETURN → ALLOCATION → POLICY
-            </p>
-          </div>
         </div>
 
         {/* Pipeline Phase Navigation */}
