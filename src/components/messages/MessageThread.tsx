@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Send, Paperclip, BarChart3, ArrowLeft, FileText, Image, File } from 'lucide-react';
+import { Send, Paperclip, BarChart3, ArrowLeft, FileText, Image, File, CalendarPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { AnalysisShareCard } from './AnalysisShareCard';
 import { ShareAnalysisDialog } from './ShareAnalysisDialog';
+import { SendCalendarInviteDialog } from './SendCalendarInviteDialog';
 
 interface MessageThreadProps {
   conversation: Conversation | null;
@@ -26,6 +27,7 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [showShareAnalysis, setShowShareAnalysis] = useState(false);
+  const [showCalendarInvite, setShowCalendarInvite] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -219,6 +221,15 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
           >
             <BarChart3 size={14} />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
+            onClick={() => setShowCalendarInvite(true)}
+            title="Send calendar invite"
+          >
+            <CalendarPlus size={14} />
+          </Button>
           <Input
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -245,6 +256,12 @@ export function MessageThread({ conversation, messages, loading, onSendMessage, 
           onSendAnalysis(id, type, title, snapshot);
           setShowShareAnalysis(false);
         }}
+      />
+
+      <SendCalendarInviteDialog
+        open={showCalendarInvite}
+        onOpenChange={setShowCalendarInvite}
+        onSendInvite={onSendAnalysis}
       />
     </div>
   );
