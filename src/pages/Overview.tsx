@@ -425,18 +425,6 @@ export default function Overview() {
         <HoldingsTable transactions={transactions} valuations={valuations} />
       )}
 
-      {/* Drawdown Chart */}
-      {hasData ? (
-        <DrawdownChart data={performanceMetrics.drawdownSeries} />
-      ) : (
-        <div className="bloomberg-panel p-6 sm:p-8 text-center">
-          <BarChart3 className="h-8 w-8 sm:h-10 sm:w-10 mx-auto text-muted-foreground mb-3" />
-          <h3 className="text-sm font-medium mb-1 text-primary">No Data Available</h3>
-          <p className="text-muted-foreground text-xs max-w-md mx-auto">
-            Add transactions and monthly valuations to see portfolio analytics.
-          </p>
-        </div>
-      )}
       </div>
     </div>
   );
