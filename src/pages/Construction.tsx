@@ -6,6 +6,7 @@ import { ConstructionWizard } from '@/components/construction/ConstructionWizard
 import { PipelineHeader } from '@/components/construction/pipeline/PipelineHeader';
 import { ScenarioERStep } from '@/components/construction/pipeline/ScenarioERStep';
 import { PipelineSummary } from '@/components/construction/pipeline/PipelineSummary';
+import { ConstructionLanding, type ConstructionMode } from '@/components/construction/ConstructionLanding';
 import type { PipelinePhase } from '@/types/constructionPipeline';
 import type { AssetERResult } from '@/types/constructionPipeline';
 import type { WizardData } from '@/types/construction';
@@ -39,6 +40,9 @@ import { calculateTotalAllocation } from '@/lib/allocationAnalytics';
 import { toast } from 'sonner';
 
 export default function Construction() {
+  // Mode selection
+  const [mode, setMode] = useState<ConstructionMode | null>(null);
+
   // Pipeline state
   const [currentPhase, setCurrentPhase] = useState<PipelinePhase>(1);
   const [phase1Complete, setPhase1Complete] = useState(false);
@@ -99,6 +103,18 @@ export default function Construction() {
     if (position) toast.success(`Removed "${position.name}"`);
   };
 
+  // Landing page - no mode selected yet
+  if (!mode) {
+    return (
+      <>
+        <Helmet>
+          <title>Portfolio Construction | SUFOX Capital</title>
+        </Helmet>
+        <ConstructionLanding onSelect={setMode} />
+      </>
+    );
+  }
+
   return (
     <>
       <Helmet>
@@ -107,6 +123,15 @@ export default function Construction() {
       </Helmet>
 
       <div className="space-y-6">
+        {/* Mode indicator + back */}
+        <div className="flex items-center gap-2 mb-2">
+          <Button variant="ghost" size="sm" className="text-xs font-mono gap-1" onClick={() => setMode(null)}>
+            ← Back
+          </Button>
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider px-2 py-0.5 rounded bg-muted/30 border border-border/30">
+            {mode === 'system' ? '🔒 Policy Mode' : '📊 Analysis Mode'}
+          </span>
+        </div>
         {/* Page Header */}
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -307,6 +332,7 @@ export default function Construction() {
                 wizardData={wizardData}
                 erResults={erResults}
                 positions={positions}
+                saveToPolicy={mode === 'system'}
               />
             </div>
           )}
