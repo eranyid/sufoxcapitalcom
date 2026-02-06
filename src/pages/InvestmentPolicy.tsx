@@ -3,21 +3,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Save, FileText, Scale, Loader2, Upload, X, Trash2, RefreshCw, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, Target, MapPin, PieChart, ArrowRight, Sparkles, Settings2 } from 'lucide-react';
+import { Save, FileText, Scale, Loader2, Upload, X, Trash2, RefreshCw, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { useTargetAllocation } from '@/hooks/useTargetAllocation';
-import { useNavigate } from 'react-router-dom';
 import { PolicyTargetAllocationTable } from '@/components/policy/PolicyTargetAllocationTable';
-import { OBJECTIVE_LABELS, RISK_LABELS } from '@/types/construction';
-import { cn } from '@/lib/utils';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
@@ -34,38 +27,8 @@ const defaultPolicy: PolicyFormData = {
   special_constraints: '',
 };
 
-const HORIZON_LABELS: Record<string, string> = {
-  short_term: '1-3 Years',
-  medium_term: '3-7 Years',
-  long_term: '7+ Years',
-};
-
-const GEO_LABELS: Record<string, string> = {
-  israel: 'Israel',
-  usa: 'USA',
-  europe: 'Europe',
-  other: 'Other',
-};
-
-const ASSET_CLASS_LABELS: Record<string, string> = {
-  equities: 'Equities',
-  bonds: 'Bonds',
-  hedging: 'Hedging',
-  alternatives: 'Alternatives',
-  cash: 'Cash',
-};
-
-const ASSET_CLASS_COLORS: Record<string, string> = {
-  equities: 'bg-primary',
-  bonds: 'bg-blue-500',
-  hedging: 'bg-amber-500',
-  alternatives: 'bg-purple-500',
-  cash: 'bg-emerald-500',
-};
-
 export default function InvestmentPolicy() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [policy, setPolicy] = useState<PolicyFormData>(defaultPolicy);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -83,7 +46,7 @@ export default function InvestmentPolicy() {
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
 
-  const { activeTarget, targetLines, isLoading: isLoadingTarget } = useTargetAllocation();
+  
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -337,25 +300,7 @@ export default function InvestmentPolicy() {
     }
   };
 
-  // Parse target lines into geography and asset class maps
-  const geographyData = targetLines
-    .filter(l => l.dimension_type === 'geography')
-    .reduce((acc, l) => ({ ...acc, [l.key]: l.target_weight }), {} as Record<string, number>);
-    
-  const assetClassData = targetLines
-    .filter(l => l.dimension_type === 'asset_class')
-    .reduce((acc, l) => ({ ...acc, [l.key]: l.target_weight }), {} as Record<string, number>);
-
-  const bucketsData = targetLines
-    .filter(l => l.dimension_type === 'bucket')
-    .map(l => ({
-      key: l.key,
-      label: (l.metadata_json?.label as string) || l.key,
-      weight: l.target_weight,
-      implementation: l.metadata_json?.implementation as string,
-    }));
-
-  if (isLoading || isLoadingTarget) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -461,128 +406,6 @@ export default function InvestmentPolicy() {
           Save Investment Policy
         </Button>
       </div>
-
-      {/* Divider */}
-      <Separator className="my-4" />
-
-      {/* Target Allocation Summary (from Construction Wizard) */}
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                Target Allocation
-              </CardTitle>
-              <CardDescription>
-                {activeTarget ? `Active: ${activeTarget.name}` : 'No target allocation configured'}
-              </CardDescription>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate('/construction')}
-              className="gap-2"
-            >
-              <Settings2 className="h-4 w-4" />
-              {activeTarget ? 'Edit' : 'Configure'}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          {activeTarget ? (
-            <div className="space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge variant="secondary" className="gap-1.5 px-3 py-1">
-                  <Sparkles className="h-3 w-3" />
-                  {OBJECTIVE_LABELS[activeTarget.objective as keyof typeof OBJECTIVE_LABELS] || activeTarget.objective}
-                </Badge>
-                <Badge variant="secondary" className="gap-1.5 px-3 py-1">
-                  <Target className="h-3 w-3" />
-                  {RISK_LABELS[activeTarget.risk_level as keyof typeof RISK_LABELS] || activeTarget.risk_level} Risk
-                </Badge>
-                <Badge variant="secondary" className="gap-1.5 px-3 py-1">
-                  {HORIZON_LABELS[activeTarget.horizon] || activeTarget.horizon}
-                </Badge>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <PieChart className="h-4 w-4 text-primary" />
-                  <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Asset Allocation</Label>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                  {Object.entries(assetClassData).map(([key, weight]) => (
-                    <div key={key} className="p-4 rounded-xl bg-card border border-border/50 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">{ASSET_CLASS_LABELS[key] || key}</span>
-                        <span className="font-mono text-lg font-semibold text-foreground">{weight}%</span>
-                      </div>
-                      <Progress value={weight} className={cn("h-1.5", ASSET_CLASS_COLORS[key])} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Geographic Allocation</Label>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {Object.entries(geographyData).map(([key, weight]) => (
-                    <div key={key} className="p-4 rounded-xl bg-card border border-border/50 text-center">
-                      <span className="text-xs text-muted-foreground block mb-1">{GEO_LABELS[key] || key}</span>
-                      <span className="font-mono text-2xl font-semibold text-foreground">{weight}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {bucketsData.length > 0 && (
-                <>
-                  <Separator />
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <PieChart className="h-4 w-4 text-primary" />
-                      <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Implementation Buckets</Label>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                      {bucketsData.map((bucket) => (
-                        <div key={bucket.key} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-foreground truncate">{bucket.label}</span>
-                            <span className="font-mono text-sm font-semibold text-primary">{bucket.weight}%</span>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground capitalize">{bucket.implementation?.replace(/_/g, ' ')}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                <Target className="h-8 w-8 text-primary/60" />
-              </div>
-              <h3 className="text-sm font-semibold mb-2">No Target Allocation</h3>
-              <p className="text-muted-foreground text-xs max-w-sm mx-auto mb-4">
-                Create a target allocation using the Portfolio Construction wizard to define your investment structure.
-              </p>
-              <Button onClick={() => navigate('/construction')} className="gap-2">
-                Configure Target
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Prospectus PDF Viewer Modal */}
       <Dialog open={isProspectusOpen} onOpenChange={setIsProspectusOpen}>
