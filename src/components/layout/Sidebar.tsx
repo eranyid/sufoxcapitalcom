@@ -29,6 +29,7 @@ import { MessagesIcon } from '@/components/icons/MessagesIcon';
  import { WorkspacesIcon } from '@/components/icons/WorkspacesIcon';
 import { LucideIcon } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface NavItem {
   path: string;
@@ -94,11 +95,13 @@ const navGroups: NavGroup[] = [
 function NavGroupSection({ 
   group, 
   collapsed,
-  isFirst
+  isFirst,
+  unreadMessages,
 }: { 
   group: NavGroup; 
   collapsed: boolean;
   isFirst: boolean;
+  unreadMessages?: boolean;
 }) {
   if (collapsed) {
     return (
@@ -111,13 +114,16 @@ function NavGroupSection({
               to={path}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center justify-center h-8 w-8 mx-auto rounded-md transition-all duration-200",
+                  "relative flex items-center justify-center h-8 w-8 mx-auto rounded-md transition-all duration-200",
                   "hover:bg-primary/10 hover:text-primary",
                   isActive && "bg-primary/15 text-primary shadow-sm shadow-primary/20"
                 )
               }
             >
               <Icon size={14} />
+              {path === '/messages' && unreadMessages && (
+                <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-success rounded-full border border-sidebar" />
+              )}
             </NavLink>
           ))}
         </div>
@@ -143,6 +149,9 @@ function NavGroupSection({
           >
             <Icon size={14} className="shrink-0" />
             <span>{label}</span>
+            {path === '/messages' && unreadMessages && (
+              <span className="ml-auto w-2 h-2 bg-success rounded-full animate-pulse" />
+            )}
           </NavLink>
         ))}
       </div>
@@ -155,6 +164,7 @@ export function Sidebar() {
   const { user, signOut, isAdmin } = useAuth();
   const { clearContext } = useSession();
   const navigate = useNavigate();
+  const hasUnread = useUnreadMessages();
   
   const handleSwitchContext = () => {
     clearContext();
@@ -212,7 +222,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 py-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted/30">
         {navGroups.map((group, index) => (
-          <NavGroupSection key={group.title} group={group} collapsed={collapsed} isFirst={index === 0} />
+          <NavGroupSection key={group.title} group={group} collapsed={collapsed} isFirst={index === 0} unreadMessages={hasUnread} />
         ))}
 
         {/* Admin Link */}
