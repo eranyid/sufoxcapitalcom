@@ -31,6 +31,7 @@ const analysisTypeIcons: Record<string, typeof BarChart3> = {
 };
 
 const typeLabels: Record<string, string> = {
+  company: 'Company',
   valuation: 'Valuation',
   research_note: 'Research Note',
   scenario: 'Scenario',
@@ -61,7 +62,16 @@ export function ShareAnalysisDialog({ open, onOpenChange, onShareAnalysis }: Sha
     setActiveTab('analysis');
 
     const fetchAll = async () => {
-      // Fetch analyses
+      // Fetch analyses (companies from CRM / Analysis page)
+      const { data: companiesData } = await supabase
+        .from('crm_companies')
+        .select('id, company_name, ticker, status, sector, geography, thesis_summary, confidence_level')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+
+      // Also fetch research entries
       const { data: researchData } = await supabase
         .from('company_research_entries')
         .select('id, title, entry_type, ticker, updated_at, output_summary')
@@ -69,14 +79,32 @@ export function ShareAnalysisDialog({ open, onOpenChange, onShareAnalysis }: Sha
         .order('updated_at', { ascending: false })
         .limit(50);
 
-      setAnalyses((researchData || []).map(item => ({
+      const companyItems: ShareItem[] = (companiesData || []).map(item => ({
+        id: item.id,
+        title: item.company_name,
+        itemType: 'analysis' as const,
+        subType: 'company',
+        meta: item.ticker,
+        snapshot: {
+          ticker: item.ticker,
+          status: item.status,
+          sector: item.sector,
+          geography: item.geography,
+          description: item.thesis_summary,
+          confidence: item.confidence_level,
+        },
+      }));
+
+      const researchItems: ShareItem[] = (researchData || []).map(item => ({
         id: item.id,
         title: item.title,
-        itemType: 'analysis',
+        itemType: 'analysis' as const,
         subType: item.entry_type,
         meta: item.ticker,
         snapshot: { ticker: item.ticker, summary: item.output_summary },
-      })));
+      }));
+
+      setAnalyses([...companyItems, ...researchItems]);
 
       // Fetch tasks
       const { data: tasksData } = await supabase
