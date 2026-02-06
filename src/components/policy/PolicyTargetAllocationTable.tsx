@@ -132,27 +132,33 @@ export function PolicyTargetAllocationTable() {
     : !!newTicker.trim() && !!newWeight;
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-primary/20 shadow-[0_0_20px_hsl(var(--primary)/0.08)]">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base uppercase tracking-wider">
               <Crosshair className="h-5 w-5 text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.6)]" />
-              <span className="drop-shadow-[0_0_8px_hsl(var(--primary)/0.4)]">Manual Target Allocation</span>
+              <span className="text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.4)]">Manual Target Allocation</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="mt-1 text-xs">
               Define your target portfolio weights per security — ticker and % of total portfolio
             </CardDescription>
           </div>
           <Badge
             variant={Math.abs(totalWeight - 100) < 0.5 ? 'default' : 'secondary'}
-            className="font-mono text-sm px-3 py-1"
+            className={`font-mono text-sm px-4 py-1.5 ${
+              Math.abs(totalWeight - 100) < 0.5
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                : totalWeight > 100
+                  ? 'bg-destructive/15 text-destructive border border-destructive/30'
+                  : 'border border-border'
+            }`}
           >
             {totalWeight.toFixed(1)}% / 100%
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {/* Mode toggle */}
         <div className="flex items-center gap-2">
           <Button
@@ -182,7 +188,7 @@ export function PolicyTargetAllocationTable() {
         {mode === 'select' ? (
           <div className="grid grid-cols-[1fr_100px_40px] gap-2 items-end">
             <div>
-              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block">Select Security</label>
+              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block tracking-wider">Select Security</label>
               <Select value={selectedTicker} onValueChange={setSelectedTicker}>
                 <SelectTrigger className="font-mono">
                   <SelectValue placeholder="Choose from portfolio..." />
@@ -198,7 +204,7 @@ export function PolicyTargetAllocationTable() {
               </Select>
             </div>
             <div>
-              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block">Weight %</label>
+              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block tracking-wider">Weight %</label>
               <Input
                 type="number"
                 min={0}
@@ -218,7 +224,7 @@ export function PolicyTargetAllocationTable() {
         ) : (
           <div className="grid grid-cols-[1fr_1.5fr_100px_40px] gap-2 items-end">
             <div>
-              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block">Ticker</label>
+              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block tracking-wider">Ticker</label>
               <Input
                 value={newTicker}
                 onChange={e => setNewTicker(e.target.value)}
@@ -228,7 +234,7 @@ export function PolicyTargetAllocationTable() {
               />
             </div>
             <div>
-              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block">Name (optional)</label>
+              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block tracking-wider">Name (optional)</label>
               <Input
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
@@ -237,7 +243,7 @@ export function PolicyTargetAllocationTable() {
               />
             </div>
             <div>
-              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block">Weight %</label>
+              <label className="text-[10px] uppercase text-muted-foreground font-mono mb-1 block tracking-wider">Weight %</label>
               <Input
                 type="number"
                 min={0}
@@ -256,28 +262,50 @@ export function PolicyTargetAllocationTable() {
           </div>
         )}
 
+        {/* Allocation progress bar */}
+        {holdings.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  Math.abs(totalWeight - 100) < 0.5
+                    ? 'bg-emerald-500'
+                    : totalWeight > 100
+                      ? 'bg-destructive'
+                      : 'bg-primary'
+                }`}
+                style={{ width: `${Math.min(totalWeight, 100)}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+              <span>{holdings.length} securities</span>
+              <span>{(100 - totalWeight).toFixed(1)}% remaining</span>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         {holdings.length > 0 ? (
-          <div className="border border-border rounded-lg overflow-hidden">
+          <div className="border border-border/60 rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="font-mono text-[10px] uppercase">Ticker</TableHead>
-                  <TableHead className="font-mono text-[10px] uppercase">Name</TableHead>
-                  <TableHead className="font-mono text-[10px] uppercase text-right">Weight %</TableHead>
-                  <TableHead className="w-10" />
+                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                  <TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70 h-9">Ticker</TableHead>
+                  <TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70 h-9">Name</TableHead>
+                  <TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70 h-9 text-right">Weight %</TableHead>
+                  <TableHead className="w-10 h-9" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {holdings.map(h => (
-                  <HoldingRow key={h.id} holding={h} onUpdate={updateHolding} onRemove={removeHolding} />
+                {holdings.map((h, i) => (
+                  <HoldingRow key={h.id} holding={h} index={i} onUpdate={updateHolding} onRemove={removeHolding} />
                 ))}
               </TableBody>
             </Table>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            <Crosshair className="h-8 w-8 mx-auto mb-2 opacity-40" />
+          <div className="text-center py-10 text-muted-foreground text-sm border border-dashed border-border/40 rounded-lg">
+            <Crosshair className="h-8 w-8 mx-auto mb-2 opacity-30" />
             <p>No target holdings defined yet. Add a security above.</p>
           </div>
         )}
@@ -288,10 +316,12 @@ export function PolicyTargetAllocationTable() {
 
 function HoldingRow({
   holding,
+  index,
   onUpdate,
   onRemove,
 }: {
   holding: PolicyTargetHolding;
+  index: number;
   onUpdate: (id: string, u: Partial<Pick<PolicyTargetHolding, 'ticker' | 'name' | 'target_weight'>>) => void;
   onRemove: (id: string) => void;
 }) {
@@ -307,10 +337,10 @@ function HoldingRow({
   };
 
   return (
-    <TableRow>
-      <TableCell className="font-mono font-semibold text-primary">{holding.ticker}</TableCell>
-      <TableCell className="text-sm text-muted-foreground">{holding.name || '—'}</TableCell>
-      <TableCell className="text-right">
+    <TableRow className={index % 2 === 0 ? 'bg-transparent' : 'bg-muted/5'}>
+      <TableCell className="font-mono font-semibold text-primary py-3">{holding.ticker}</TableCell>
+      <TableCell className="text-sm text-muted-foreground py-3">{holding.name || '—'}</TableCell>
+      <TableCell className="text-right py-3">
         <Input
           type="number"
           min={0}
@@ -323,7 +353,7 @@ function HoldingRow({
           className="w-20 font-mono text-right ml-auto h-8"
         />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onRemove(holding.id)}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
