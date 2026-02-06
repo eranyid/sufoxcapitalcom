@@ -706,18 +706,25 @@ export function calculatePerformanceMetrics(
       const currentValue = pos.quantity * currentPriceLocal * currentFxRate;
       holdingsValue += currentValue;
       
+      // Convert cost basis to base currency
+      // pos.totalCost is in local currency (from calculatePositions)
+      // For same-currency assets, entryFxRate = 1, so no change
+      const totalCostBase = pos.totalCost * entryFxRate;
+      
       if (hasValuation) {
         // Calculate separated P/L components with accurate entry FX
         const valueAtEntryFx = pos.quantity * currentPriceLocal * entryFxRate;
-        const posMarketPL = valueAtEntryFx - pos.totalCost;
+        const posMarketPL = valueAtEntryFx - totalCostBase;
         const posFxPL = pos.quantity * currentPriceLocal * (currentFxRate - entryFxRate);
         
         marketPL += posMarketPL;
         fxPL += posFxPL;
       }
     }
-    totalCost += pos.totalCost;
-    realizedPL += pos.realizedPL;
+    // Convert cost and realized P/L to base currency
+    const costFxRate = tx ? (tx.currency === baseCurrency ? 1 : (tx.fxRateAtEntry || 1)) : 1;
+    totalCost += pos.totalCost * costFxRate;
+    realizedPL += pos.realizedPL * costFxRate;
   }
   
   // Calculate cash in base currency using dynamic FX rates
@@ -836,15 +843,20 @@ export function calculateYTDReturn(
   
   for (const [ticker, pos] of Object.entries(positions)) {
     const val = latestVals[ticker];
+    const tx = transactions.find(t => t.ticker === ticker);
     if (val && pos.quantity > 0) {
       const currentFxRate = val.fxRate || 1;
       const entryFxRate = entryFxRates[ticker] || 1;
       const currentValue = pos.quantity * val.pricePerUnit * currentFxRate;
-      currentUnrealizedPL += currentValue - pos.totalCost;
+      // Convert cost basis to base currency
+      const totalCostBase = pos.totalCost * entryFxRate;
+      currentUnrealizedPL += currentValue - totalCostBase;
       // FX P/L = quantity * local_price * (current_fx - entry_fx)
       currentFxPL += pos.quantity * val.pricePerUnit * (currentFxRate - entryFxRate);
     }
-    currentRealizedPL += pos.realizedPL;
+    // Convert realized P/L to base currency
+    const realizedFxRate = tx ? (entryFxRates[ticker] || (tx.fxRateAtEntry || 1)) : 1;
+    currentRealizedPL += pos.realizedPL * realizedFxRate;
   }
   
   // Get Jan 1st P/L state (realized + unrealized at Dec 31 previous year)
@@ -855,15 +867,18 @@ export function calculateYTDReturn(
   
   for (const [ticker, pos] of Object.entries(positionsAtJan)) {
     const val = decValuations.find(v => v.ticker === ticker);
+    const tx = txBeforeYear.find(t => t.ticker === ticker);
     if (val && pos.quantity > 0) {
       const janFxRate = val.fxRate || 1;
       const entryFxRate = janEntryFxRates[ticker] || 1;
       const janValueCalc = pos.quantity * val.pricePerUnit * janFxRate;
-      janUnrealizedPL += janValueCalc - pos.totalCost;
+      const totalCostBase = pos.totalCost * entryFxRate;
+      janUnrealizedPL += janValueCalc - totalCostBase;
       // FX P/L at Jan 1: quantity * local_price * (jan_fx - entry_fx)
       janFxPL += pos.quantity * val.pricePerUnit * (janFxRate - entryFxRate);
     }
-    janRealizedPL += pos.realizedPL;
+    const realizedFxRate = tx ? (janEntryFxRates[ticker] || (tx.fxRateAtEntry || 1)) : 1;
+    janRealizedPL += pos.realizedPL * realizedFxRate;
   }
   
   // Calculate FX P/L on cash balances (foreign currency cash)
