@@ -6,6 +6,7 @@ import { ConstructionWizard } from '@/components/construction/ConstructionWizard
 import { PipelineHeader } from '@/components/construction/pipeline/PipelineHeader';
 import { ScenarioERStep } from '@/components/construction/pipeline/ScenarioERStep';
 import { PipelineSummary } from '@/components/construction/pipeline/PipelineSummary';
+import { PipelineFullAnalysis } from '@/components/construction/pipeline/PipelineFullAnalysis';
 import { ConstructionLanding, type ConstructionMode } from '@/components/construction/ConstructionLanding';
 import type { PipelinePhase } from '@/types/constructionPipeline';
 import type { AssetERResult } from '@/types/constructionPipeline';
@@ -49,6 +50,7 @@ export default function Construction() {
   const [phase1Complete, setPhase1Complete] = useState(false);
   const [phase2Complete, setPhase2Complete] = useState(false);
   const [phase3Complete, setPhase3Complete] = useState(false);
+  const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   
   // Data flow between phases
   const [wizardData, setWizardData] = useState<WizardData>(DEFAULT_WIZARD_DATA);
@@ -345,13 +347,25 @@ export default function Construction() {
           )}
 
           {/* Phase 4: Summary & Export */}
-          {currentPhase === 4 && (
+          {currentPhase === 4 && !showFullAnalysis && (
             <div className="relative">
               <PipelineSummary
                 wizardData={wizardData}
                 erResults={erResults}
                 positions={positions}
                 saveToPolicy={mode === 'system'}
+                onOpenAnalysis={() => setShowFullAnalysis(true)}
+              />
+            </div>
+          )}
+
+          {/* Phase 5: Full Analysis (Sandbox only) */}
+          {showFullAnalysis && (
+            <div className="relative">
+              <PipelineFullAnalysis
+                wizardData={wizardData}
+                erResults={erResults}
+                positions={positions}
               />
             </div>
           )}

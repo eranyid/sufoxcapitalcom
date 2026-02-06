@@ -25,6 +25,7 @@ interface PipelineSummaryProps {
   erResults: AssetERResult[];
   positions: Position[];
   saveToPolicy?: boolean;
+  onOpenAnalysis?: () => void;
 }
 
 const CHART_COLORS = [
@@ -38,7 +39,7 @@ const CHART_COLORS = [
   'hsl(200, 80%, 50%)',
 ];
 
-export function PipelineSummary({ wizardData, erResults, positions, saveToPolicy = true }: PipelineSummaryProps) {
+export function PipelineSummary({ wizardData, erResults, positions, saveToPolicy = true, onOpenAnalysis }: PipelineSummaryProps) {
   const navigate = useNavigate();
   const { saveTarget } = useTargetAllocation();
 
@@ -301,10 +302,17 @@ export function PipelineSummary({ wizardData, erResults, positions, saveToPolicy
             </span>
           )}
         </p>
-        <Button onClick={handleExportToPolicy} size="lg" className="gap-2 font-mono" disabled={!isBalanced}>
-          <Download className="h-4 w-4" />
-          DEPLOY TO POLICY
-        </Button>
+        {saveToPolicy ? (
+          <Button onClick={handleExportToPolicy} size="lg" className="gap-2 font-mono" disabled={!isBalanced}>
+            <Download className="h-4 w-4" />
+            DEPLOY TO POLICY
+          </Button>
+        ) : (
+          <Button onClick={() => onOpenAnalysis?.()} size="lg" className="gap-2 font-mono">
+            <ArrowRight className="h-4 w-4" />
+            FULL ANALYSIS
+          </Button>
+        )}
       </div>
     </div>
   );
