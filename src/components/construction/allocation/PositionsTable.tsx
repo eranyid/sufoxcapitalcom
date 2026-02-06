@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Trash2, ArrowUpDown, ArrowDown, ArrowUp, TrendingUp, Minus, Plus, GripVertical } from 'lucide-react';
+import { Trash2, TrendingUp, Minus, Plus, GripVertical } from 'lucide-react';
 import { Position, ASSET_TYPE_LABELS, REGION_LABELS, LIQUIDITY_LABELS, ASSET_TYPE_COLORS } from '@/types/allocationBuilder';
 import { cn } from '@/lib/utils';
 
@@ -13,8 +13,6 @@ interface PositionsTableProps {
   onDelete: (id: string) => void;
 }
 
-type SortField = 'name' | 'allocation' | 'assetType' | 'region' | 'sector';
-type SortDirection = 'asc' | 'desc';
 
 const ASSET_TYPE_STYLES: Record<string, string> = {
   equity: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
@@ -27,40 +25,10 @@ const ASSET_TYPE_STYLES: Record<string, string> = {
 };
 
 export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTableProps) {
-  const [sortField, setSortField] = useState<SortField>('allocation');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [activeSlider, setActiveSlider] = useState<string | null>(null);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-
-  const sortedPositions = [...positions].sort((a, b) => {
-    let comparison = 0;
-    switch (sortField) {
-      case 'name':
-        comparison = a.name.localeCompare(b.name);
-        break;
-      case 'allocation':
-        comparison = a.allocation - b.allocation;
-        break;
-      case 'assetType':
-        comparison = a.assetType.localeCompare(b.assetType);
-        break;
-      case 'region':
-        comparison = a.region.localeCompare(b.region);
-        break;
-      case 'sector':
-        comparison = a.sector.localeCompare(b.sector);
-        break;
-    }
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
+  // No sorting — maintain insertion order
+  const sortedPositions = positions;
 
   const handleAllocationChange = (id: string, newValue: number) => {
     const clampedValue = Math.max(0, Math.min(100, newValue));
@@ -72,22 +40,6 @@ export function PositionsTable({ positions, onUpdate, onDelete }: PositionsTable
     handleAllocationChange(position.id, newValue);
   };
 
-  const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
-    <button 
-      className={cn(
-        "flex items-center gap-1.5 text-xs font-medium transition-colors",
-        sortField === field ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-      )}
-      onClick={() => handleSort(field)}
-    >
-      {children}
-      {sortField === field ? (
-        sortDirection === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
-      ) : (
-        <ArrowUpDown size={12} className="opacity-40" />
-      )}
-    </button>
-  );
 
   if (positions.length === 0) {
     return (
