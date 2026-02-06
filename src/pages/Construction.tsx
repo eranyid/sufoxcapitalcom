@@ -20,10 +20,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Grid3X3, PieChart, GitBranch, BarChart3,
-  Plus, Trash2, RotateCcw, CheckCircle2, AlertTriangle 
+  Plus, Trash2, RotateCcw, CheckCircle2, AlertTriangle, Building2
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AddPositionDialog } from '@/components/construction/allocation/AddPositionDialog';
+import { ImportFromAnalysisDialog } from '@/components/construction/allocation/ImportFromAnalysisDialog';
 import { PositionsTable } from '@/components/construction/allocation/PositionsTable';
 import { AllocationDonutChart } from '@/components/construction/allocation/AllocationDonutChart';
 import { ExposureBarChart } from '@/components/construction/allocation/ExposureBarChart';
@@ -89,6 +90,17 @@ export default function Construction() {
     };
     setPositions(prev => [...prev, position]);
     toast.success(`Added "${newPosition.name}" (${newPosition.allocation}%)`);
+  };
+
+  const handleImportFromAnalysis = (imported: Omit<Position, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    const newPositions = imported.map(p => ({
+      ...p,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+    setPositions(prev => [...prev, ...newPositions]);
+    toast.success(`Imported ${imported.length} position${imported.length > 1 ? 's' : ''} from Analysis`);
   };
 
   const handleUpdatePosition = (id: string, updates: Partial<Position>) => {
@@ -234,12 +246,24 @@ export default function Construction() {
                   {positions.length === 0 ? (
                     <Card className="border-dashed border-2 border-border/50">
                       <CardContent className="py-12 text-center">
-                        <Layers className="mx-auto mb-4 text-muted-foreground" size={40} />
+                        <Building2 className="mx-auto mb-4 text-muted-foreground" size={40} />
                         <h3 className="text-lg font-medium mb-2">No Positions Yet</h3>
                         <p className="text-sm text-muted-foreground mb-4">
-                          Add positions to build your target allocation
+                          Import companies from Analysis or add manually
                         </p>
-                        <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
+                        <div className="flex items-center justify-center gap-3">
+                          <ImportFromAnalysisDialog
+                            onImport={handleImportFromAnalysis}
+                            existingNames={positions.map(p => p.name)}
+                            trigger={
+                              <Button className="gap-2">
+                                <Building2 size={14} />
+                                Import from Analysis
+                              </Button>
+                            }
+                          />
+                          <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
+                        </div>
                       </CardContent>
                     </Card>
                   ) : (
