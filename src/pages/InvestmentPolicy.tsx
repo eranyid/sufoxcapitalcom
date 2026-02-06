@@ -354,6 +354,9 @@ export default function InvestmentPolicy() {
         </div>
       </div>
 
+      {/* Manual Target Allocation */}
+      <PolicyTargetAllocationTable />
+
       {/* Strategy & Philosophy */}
       <Card>
         <CardHeader>
@@ -395,9 +398,6 @@ export default function InvestmentPolicy() {
           />
         </CardContent>
       </Card>
-
-      {/* Manual Target Allocation */}
-      <PolicyTargetAllocationTable />
 
       {/* Save Button */}
       <div className="flex justify-end pt-4">
