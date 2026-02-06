@@ -1,4 +1,4 @@
-import { BarChart3, Download, Eye, CheckSquare, FolderKanban } from 'lucide-react';
+import { BarChart3, Download, Eye, CheckSquare, FolderKanban, CalendarPlus, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AnalysisShareCardProps {
@@ -19,24 +19,29 @@ const typeLabels: Record<string, string> = {
   calculator: 'Calculator',
   task: 'Task',
   project: 'Project',
+  calendar_event: 'Calendar Invite',
   unknown: 'Analysis',
 };
 
 function getIcon(type: string) {
   if (type === 'task') return <CheckSquare size={14} className="text-primary" />;
   if (type === 'project') return <FolderKanban size={14} className="text-primary" />;
+  if (type === 'calendar_event') return <CalendarPlus size={14} className="text-primary" />;
   return <BarChart3 size={14} className="text-primary" />;
 }
 
 function getAccentColor(type: string) {
   if (type === 'task') return 'border-accent/30 bg-accent/5';
   if (type === 'project') return 'border-secondary/30 bg-secondary/5';
+  if (type === 'calendar_event') return 'border-orange-500/30 bg-orange-500/5';
   return 'border-primary/30 bg-primary/5';
 }
 
 export function AnalysisShareCard({ title, type, snapshot, senderName }: AnalysisShareCardProps) {
   const statusLabel = snapshot?.status as string | undefined;
-  const urgencyLabel = snapshot?.urgency as string | undefined;
+  const dateLabel = snapshot?.date as string | undefined;
+  const timeLabel = snapshot?.time as string | undefined;
+  const locationLabel = snapshot?.location as string | undefined;
   const description = snapshot?.description as string | undefined;
 
   return (
@@ -59,7 +64,21 @@ export function AnalysisShareCard({ title, type, snapshot, senderName }: Analysi
           </div>
         </div>
       </div>
-      {description && (
+      {type === 'calendar_event' && (dateLabel || timeLabel || locationLabel) && (
+        <div className="space-y-0.5">
+          {dateLabel && (
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <Clock size={8} /> {dateLabel} {timeLabel && `· ${timeLabel}`}
+            </p>
+          )}
+          {locationLabel && (
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <MapPin size={8} /> {locationLabel}
+            </p>
+          )}
+        </div>
+      )}
+      {type !== 'calendar_event' && description && (
         <p className="text-[10px] text-muted-foreground line-clamp-2">{description}</p>
       )}
       <div className="flex items-center gap-1.5">
