@@ -92,10 +92,14 @@ export function getLatestValuations(valuations: MonthlyValuation[]) {
 }
 
 // Calculate portfolio value at a specific month
+// Now supports optional cash balances for NAV-inclusive calculation
 export function calculatePortfolioValue(
   transactions: Transaction[],
   valuations: MonthlyValuation[],
-  month: string
+  month: string,
+  cashBalances?: { USD: number; EUR: number; ILS: number; GBP?: number; CHF?: number; JPY?: number },
+  baseCurrency?: 'USD' | 'ILS',
+  fxRates?: FxRatesMap
 ) {
   const positions = calculatePositions(
     transactions.filter(tx => tx.date <= `${month}-31`)
@@ -104,23 +108,46 @@ export function calculatePortfolioValue(
   const monthValuations = valuations.filter(v => v.month === month);
   const valMap = new Map(monthValuations.map(v => [v.ticker, v]));
   
-  let totalValue = 0;
+  let holdingsValue = 0;
   
   for (const [ticker, pos] of Object.entries(positions)) {
+    if (pos.quantity <= 0) continue;
     const valuation = valMap.get(ticker);
-    if (valuation && pos.quantity > 0) {
+    if (valuation) {
       const fxRate = valuation.fxRate || 1;
-      totalValue += pos.quantity * valuation.pricePerUnit * fxRate;
+      holdingsValue += pos.quantity * valuation.pricePerUnit * fxRate;
+    } else {
+      // Fallback: use avgCost with proper FX conversion
+      const tx = transactions.find(t => t.ticker === ticker);
+      if (tx) {
+        let fallbackFx = 1;
+        if (tx.currency !== (baseCurrency || 'USD') && fxRates) {
+          const rate = fxRates[tx.currency];
+          if (rate && rate > 0) {
+            fallbackFx = (baseCurrency || 'USD') === 'USD' ? (1 / rate) : rate;
+          }
+        }
+        holdingsValue += pos.quantity * pos.avgCost * fallbackFx;
+      }
     }
   }
   
-  return totalValue;
+  // Add cash if provided
+  const cashValue = cashBalances 
+    ? calculateTotalCashInBaseCurrency(cashBalances, baseCurrency || 'USD', fxRates)
+    : 0;
+  
+  return holdingsValue + cashValue;
 }
 
 // Calculate monthly returns
+// Now supports cash-inclusive NAV for accurate risk metrics
 export function calculateMonthlyReturns(
   transactions: Transaction[],
-  valuations: MonthlyValuation[]
+  valuations: MonthlyValuation[],
+  cashBalances?: CashBalancesInput,
+  baseCurrency?: 'USD' | 'ILS',
+  fxRates?: FxRatesMap
 ): { month: string; return: number; value: number }[] {
   const months = [...new Set(valuations.map(v => v.month))].sort();
   const returns: { month: string; return: number; value: number }[] = [];
@@ -128,7 +155,10 @@ export function calculateMonthlyReturns(
   let prevValue = 0;
   
   for (const month of months) {
-    const value = calculatePortfolioValue(transactions, valuations, month);
+    const value = calculatePortfolioValue(
+      transactions, valuations, month,
+      cashBalances, baseCurrency, fxRates
+    );
     
     // Calculate cash flows for the month
     const monthTxs = transactions.filter(tx => tx.date.startsWith(month));
@@ -141,6 +171,8 @@ export function calculateMonthlyReturns(
     if (prevValue > 0) {
       // Time-weighted return calculation
       monthReturn = ((value - prevValue - cashFlow) / prevValue) * 100;
+      // Cap individual monthly returns to prevent extreme outliers
+      monthReturn = Math.max(-50, Math.min(50, monthReturn));
     } else if (value > 0) {
       monthReturn = 0; // First month
     }
@@ -694,13 +726,20 @@ export function calculatePerformanceMetrics(
   const rawTotalReturn = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
   const totalReturn = Math.max(-500, Math.min(500, rawTotalReturn));
   
-  const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
+  const monthlyReturns = calculateMonthlyReturns(transactions, valuations, cashBalances, baseCurrency, fxRates);
   const cumulativeReturns = calculateCumulativeReturns(monthlyReturns);
   const returns = monthlyReturns.map(r => r.return);
   
-  const volatility = calculateVolatility(returns);
-  const sharpeRatio = calculateSharpeRatio(returns, riskFreeRate);
-  const { maxDrawdown, drawdownSeries } = calculateDrawdown(cumulativeReturns);
+  // Apply sanity bounds to risk metrics
+  // With very few data points or bad data, these can be extreme
+  const rawVolatility = calculateVolatility(returns);
+  const volatility = returns.length < 3 ? 0 : Math.min(rawVolatility, 200); // Cap at 200%
+  
+  const rawSharpe = calculateSharpeRatio(returns, riskFreeRate);
+  const sharpeRatio = returns.length < 3 ? 0 : Math.max(-10, Math.min(10, rawSharpe));
+  
+  const { maxDrawdown: rawMaxDrawdown, drawdownSeries } = calculateDrawdown(cumulativeReturns);
+  const maxDrawdown = Math.min(rawMaxDrawdown, 100); // Cap at 100% (can't lose more than everything)
   const winLossRatio = calculateWinLossRatio(transactions);
   
   // Cash flows for IRR (based on holdings only)
@@ -1120,23 +1159,33 @@ export function calculateTWR(monthlyReturns: { month: string; return: number }[]
 }
 
 // Full risk metrics calculation
+// Now accepts cash/FX for NAV-inclusive risk calculations
 export function calculateRiskMetrics(
   transactions: Transaction[],
   valuations: MonthlyValuation[],
   riskFreeRate: number,
-  benchmarkReturns: number[]
+  benchmarkReturns: number[],
+  cashBalances?: CashBalancesInput,
+  baseCurrency?: 'USD' | 'ILS',
+  fxRates?: FxRatesMap
 ): RiskMetrics {
-  const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
+  const monthlyReturns = calculateMonthlyReturns(transactions, valuations, cashBalances, baseCurrency, fxRates);
   const returns = monthlyReturns.map(r => r.return);
   
-  const volatility = calculateVolatility(returns);
-  const sharpeRatio = calculateSharpeRatio(returns, riskFreeRate);
-  const sortinoRatio = calculateSortinoRatio(returns, riskFreeRate);
+  // Apply sanity bounds
+  const rawVol = calculateVolatility(returns);
+  const volatility = returns.length < 3 ? 0 : Math.min(rawVol, 200);
+  
+  const rawSharpe = calculateSharpeRatio(returns, riskFreeRate);
+  const sharpeRatio = returns.length < 3 ? 0 : Math.max(-10, Math.min(10, rawSharpe));
+  
+  const sortinoRatio = returns.length < 3 ? 0 : Math.max(-10, Math.min(10, calculateSortinoRatio(returns, riskFreeRate)));
   const var95 = calculateVaR(returns, 0.95);
   const var99 = calculateVaR(returns, 0.99);
   
   const cumulativeReturns = calculateCumulativeReturns(monthlyReturns);
-  const { maxDrawdown } = calculateDrawdown(cumulativeReturns);
+  const { maxDrawdown: rawMaxDD } = calculateDrawdown(cumulativeReturns);
+  const maxDrawdown = Math.min(rawMaxDD, 100);
   
   const beta = calculateBeta(returns, benchmarkReturns);
   const trackingError = calculateTrackingError(returns, benchmarkReturns);

@@ -178,9 +178,35 @@ export function computePortfolioData(
     // FALLBACK: If no valuation exists, use cost basis as current value
     // This prevents misleading -100% P/L for assets without price data
     const hasValuation = !!val;
-    const currentFxRate = val?.fxRate || 1;
     const currentPrice = hasValuation ? val.pricePerUnit : pos.avgCost;
-    const currentValue = pos.quantity * currentPrice * (hasValuation ? currentFxRate : 1);
+    
+    // FX rate: use valuation's FX if available, otherwise derive from fxRates map or transaction
+    // CRITICAL: For non-base-currency assets without valuations, we must still apply FX conversion
+    let currentFxRate: number;
+    if (hasValuation && val.fxRate) {
+      currentFxRate = val.fxRate;
+    } else if (tx.currency === baseCurrency) {
+      currentFxRate = 1;
+    } else if (fxRates) {
+      // Use current FX rates from the rates map
+      // fxRates is in USD/{Currency} format: 1 USD = X {Currency}
+      // To convert FROM currency TO USD: amount / rate
+      const rate = fxRates[tx.currency];
+      if (rate && rate > 0) {
+        // For USD-base display: we need to convert local currency to USD
+        // currentValue should be in base currency (USD)
+        // price is in local currency, so: qty * price_local / rate = value_USD
+        // But the existing code uses qty * price * fxRate where fxRate converts TO base
+        // So fxRate for ILS→USD = 1/3.10 ≈ 0.3226
+        currentFxRate = baseCurrency === 'USD' ? (1 / rate) : rate;
+      } else {
+        currentFxRate = tx.fxRateAtEntry || 1;
+      }
+    } else {
+      currentFxRate = tx.fxRateAtEntry || 1;
+    }
+    
+    const currentValue = pos.quantity * currentPrice * currentFxRate;
     
     if (!hasValuation) {
       missingValuationCount++;
