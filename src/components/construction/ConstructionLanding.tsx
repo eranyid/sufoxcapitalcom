@@ -39,7 +39,7 @@ export function ConstructionLanding({ onSelect }: ConstructionLandingProps) {
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="relative">
             <div className="w-12 h-12 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center mb-3 group-hover:bg-primary/25 group-hover:shadow-[0_0_15px_-3px_hsl(var(--primary)/0.4)] transition-all duration-300">
-              <FlaskConical className="w-5 h-5 text-primary" />
+              <BarChart3 className="w-5 h-5 text-primary" />
             </div>
             <h3 className="text-lg font-semibold mb-1.5">Sandbox Mode</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
