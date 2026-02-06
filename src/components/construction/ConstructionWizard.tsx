@@ -36,9 +36,10 @@ interface ConstructionWizardProps {
   initialData?: WizardData;
   onDataChange?: (data: WizardData) => void;
   onSaveComplete?: () => void;
+  sandboxMode?: boolean;
 }
 
-export function ConstructionWizard({ initialData, onDataChange, onSaveComplete }: ConstructionWizardProps = {}) {
+export function ConstructionWizard({ initialData, onDataChange, onSaveComplete, sandboxMode = false }: ConstructionWizardProps = {}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [wizardData, setWizardData] = useState<WizardData>(initialData || DEFAULT_WIZARD_DATA);
   const [isSaving, setIsSaving] = useState(false);
@@ -215,13 +216,22 @@ export function ConstructionWizard({ initialData, onDataChange, onSaveComplete }
         </Button>
 
         {currentStep === STEPS.length ? (
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || isSaved}
-            className={cn("gap-1.5 text-xs font-mono h-8", isSaved && "bg-primary/15 text-primary border border-primary/30")}
-          >
-            {isSaved ? <><Check size={14} /> SAVED</> : <><Save size={14} /> {isSaving ? 'SAVING...' : 'DEPLOY TARGET'}</>}
-          </Button>
+          sandboxMode ? (
+            <Button
+              onClick={() => onSaveComplete?.()}
+              className="gap-1.5 text-xs font-mono h-8"
+            >
+              CONTINUE <ChevronRight size={14} />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || isSaved}
+              className={cn("gap-1.5 text-xs font-mono h-8", isSaved && "bg-primary/15 text-primary border border-primary/30")}
+            >
+              {isSaved ? <><Check size={14} /> SAVED</> : <><Save size={14} /> {isSaving ? 'SAVING...' : 'DEPLOY TARGET'}</>}
+            </Button>
+          )
         ) : (
           <Button
             onClick={handleNext}
