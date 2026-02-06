@@ -245,13 +245,17 @@ export function ScenarioERStep({ assetClasses, riskFreeRate, onResultsChange, on
                       </div>
                     </td>
                     {SCENARIO_KEYS.map(key => (
-                      <td key={key} className="px-3 py-2.5 text-center">
-                        <span className={cn(
-                          "font-mono text-xs",
-                          asset.returns[key] >= 0 ? "text-emerald-400" : "text-rose-400"
-                        )}>
-                          {asset.returns[key].toFixed(1)}%
-                        </span>
+                      <td key={key} className="px-2 py-2.5 text-center">
+                        <Input
+                          type="number"
+                          value={asset.returns[key]}
+                          onChange={(e) => updateReturn(i, key, parseFloat(e.target.value) || 0)}
+                          className={cn(
+                            "w-full h-7 text-xs font-mono text-center border-border/30",
+                            asset.returns[key] >= 0 ? "text-emerald-400" : "text-rose-400"
+                          )}
+                          step="0.5"
+                        />
                       </td>
                     ))}
                     <td className="px-3 py-2.5 text-center">
