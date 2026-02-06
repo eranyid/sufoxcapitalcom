@@ -34,7 +34,7 @@ export function PipelineHeader({ currentPhase, onPhaseClick, phase1Complete, pha
   };
 
   return (
-    <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/15 border border-border/30">
+    <div className="flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl bg-muted/15 border border-border/30 overflow-x-auto">
       {PHASES.map((phase, index) => {
         const Icon = phase.icon;
         const isActive = currentPhase === phase.id;
@@ -47,19 +47,19 @@ export function PipelineHeader({ currentPhase, onPhaseClick, phase1Complete, pha
             onClick={() => isClickable && onPhaseClick(phase.id)}
             disabled={!isClickable}
             className={cn(
-              "flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all duration-200",
+              "flex-1 flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-200 min-w-0",
               isActive && "bg-card border border-primary/30 shadow-sm",
               !isActive && isClickable && "hover:bg-muted/20 cursor-pointer",
               !isClickable && "opacity-30 cursor-not-allowed"
             )}
           >
             <div className={cn(
-              "w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors",
+              "w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center shrink-0 transition-colors",
               isActive && "bg-primary/20 text-primary",
               isComplete && !isActive && "bg-primary/10 text-primary",
               !isActive && !isComplete && "bg-muted/30 text-muted-foreground/50"
             )}>
-              {isComplete && !isActive ? <Check size={13} /> : <Icon size={13} />}
+              {isComplete && !isActive ? <Check size={12} /> : <Icon size={12} />}
             </div>
             <div className="hidden md:block text-left min-w-0">
               <div className={cn(

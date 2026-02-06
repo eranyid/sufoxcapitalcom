@@ -107,20 +107,20 @@ export function PipelineSummary({ wizardData, erResults, positions, saveToPolicy
   return (
     <div className="space-y-6">
       {/* Summary Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-            <FileCheck className="h-6 w-6 text-primary" />
+          <div className="p-2 sm:p-2.5 rounded-xl bg-primary/10 border border-primary/20">
+            <FileCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Pipeline Summary</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {saveToPolicy ? 'Review your complete target allocation before exporting to Policy' : 'Review your complete target allocation analysis'}
+            <h2 className="text-lg sm:text-xl font-bold">Pipeline Summary</h2>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+              {saveToPolicy ? 'Review before exporting to Policy' : 'Review your allocation analysis'}
             </p>
           </div>
         </div>
         {saveToPolicy ? (
-          <Button onClick={handleExportToPolicy} size="lg" className="gap-2" disabled={!isBalanced}>
+          <Button onClick={handleExportToPolicy} size="sm" className="gap-2 w-full sm:w-auto" disabled={!isBalanced}>
             <ArrowRight className="h-4 w-4" />
             Export to Policy
           </Button>
@@ -289,26 +289,26 @@ export function PipelineSummary({ wizardData, erResults, positions, saveToPolicy
 
       {/* Export Actions */}
       <Separator className="border-primary/20" />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
           {isBalanced ? (
             <span className="flex items-center gap-1.5 text-emerald-400">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Allocation is balanced at 100% — Ready to export
+              Allocation balanced — Ready to export
             </span>
           ) : (
             <span className="text-amber-400">
-              Allocation is {totalAllocation.toFixed(1)}% — Adjust to 100% before exporting
+              Allocation is {totalAllocation.toFixed(1)}% — Adjust to 100%
             </span>
           )}
         </p>
         {saveToPolicy ? (
-          <Button onClick={handleExportToPolicy} size="lg" className="gap-2 font-mono" disabled={!isBalanced}>
+          <Button onClick={handleExportToPolicy} className="gap-2 font-mono w-full sm:w-auto" disabled={!isBalanced}>
             <Download className="h-4 w-4" />
             DEPLOY TO POLICY
           </Button>
         ) : (
-          <Button onClick={() => onOpenAnalysis?.()} size="lg" className="gap-2 font-mono">
+          <Button onClick={() => onOpenAnalysis?.()} className="gap-2 font-mono w-full sm:w-auto">
             <ArrowRight className="h-4 w-4" />
             FULL ANALYSIS
           </Button>
