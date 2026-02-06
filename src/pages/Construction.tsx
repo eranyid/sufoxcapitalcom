@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Layers } from 'lucide-react';
+import { Layers, Equal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConstructionWizard } from '@/components/construction/ConstructionWizard';
 import { PipelineHeader } from '@/components/construction/pipeline/PipelineHeader';
@@ -117,6 +117,18 @@ export default function Construction() {
     if (position) toast.success(`Removed "${position.name}"`);
   };
 
+  const handleEqualWeight = () => {
+    if (positions.length === 0) return;
+    const equalWeight = Number((100 / positions.length).toFixed(1));
+    const remainder = Number((100 - equalWeight * positions.length).toFixed(1));
+    setPositions(prev => prev.map((p, i) => ({
+      ...p,
+      allocation: i === 0 ? equalWeight + remainder : equalWeight,
+      updatedAt: new Date().toISOString(),
+    })));
+    toast.success(`Equal weight: ${equalWeight.toFixed(1)}% × ${positions.length} positions`);
+  };
+
   // Landing page - no mode selected yet
   if (!mode) {
     return (
@@ -226,6 +238,10 @@ export default function Construction() {
                       </Button>
                     }
                   />
+                  <Button variant="outline" className="gap-2 font-mono text-xs" onClick={handleEqualWeight} disabled={positions.length === 0}>
+                    <Equal size={14} />
+                    Equal Weight
+                  </Button>
                   <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
                   <Button
                     onClick={() => { setPhase3Complete(true); setCurrentPhase(4); }}
