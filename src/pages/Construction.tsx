@@ -151,6 +151,7 @@ export default function Construction() {
               <ConstructionWizardPhase1
                 wizardData={wizardData}
                 onWizardDataChange={setWizardData}
+                sandboxMode={mode === 'analysis'}
                 onComplete={() => {
                   setPhase1Complete(true);
                   setCurrentPhase(2);
@@ -332,10 +333,12 @@ function ConstructionWizardPhase1({
   wizardData,
   onWizardDataChange,
   onComplete,
+  sandboxMode,
 }: {
   wizardData: WizardData;
   onWizardDataChange: (data: WizardData) => void;
   onComplete: () => void;
+  sandboxMode: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -343,6 +346,7 @@ function ConstructionWizardPhase1({
         initialData={wizardData}
         onDataChange={onWizardDataChange}
         onSaveComplete={onComplete}
+        sandboxMode={sandboxMode}
       />
     </div>
   );
