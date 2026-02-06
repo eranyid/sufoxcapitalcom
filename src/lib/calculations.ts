@@ -661,8 +661,21 @@ export function calculatePerformanceMetrics(
     const val = latestVals[ticker];
     const tx = transactions.find(t => t.ticker === ticker);
     
-    if (val && pos.quantity > 0 && tx) {
-      const currentFxRate = val.fxRate || 1;
+    if (pos.quantity > 0 && tx) {
+      const hasValuation = !!val;
+      const currentPriceLocal = hasValuation ? val.pricePerUnit : pos.avgCost;
+      
+      // Derive FX rate: from valuation, or from fxRates context, or entry rate
+      let currentFxRate: number;
+      if (hasValuation && val.fxRate) {
+        currentFxRate = val.fxRate;
+      } else if (tx.currency === baseCurrency) {
+        currentFxRate = 1;
+      } else if (fxRates && fxRates[tx.currency] && fxRates[tx.currency] > 0) {
+        currentFxRate = baseCurrency === 'USD' ? (1 / fxRates[tx.currency]) : fxRates[tx.currency];
+      } else {
+        currentFxRate = tx.fxRateAtEntry || 1;
+      }
       
       // Use stored entry FX rate if available
       let entryFxRate: number;
@@ -689,22 +702,19 @@ export function calculatePerformanceMetrics(
         }
       }
       
-      const currentPriceLocal = val.pricePerUnit;
-      
       // Current value in base currency
       const currentValue = pos.quantity * currentPriceLocal * currentFxRate;
       holdingsValue += currentValue;
       
-      // Calculate separated P/L components with accurate entry FX
-      // Market P/L: what would be the P/L if FX stayed the same (use entry FX)
-      const valueAtEntryFx = pos.quantity * currentPriceLocal * entryFxRate;
-      const posMarketPL = valueAtEntryFx - pos.totalCost;
-      
-      // FX P/L: difference from FX rate change
-      const posFxPL = pos.quantity * currentPriceLocal * (currentFxRate - entryFxRate);
-      
-      marketPL += posMarketPL;
-      fxPL += posFxPL;
+      if (hasValuation) {
+        // Calculate separated P/L components with accurate entry FX
+        const valueAtEntryFx = pos.quantity * currentPriceLocal * entryFxRate;
+        const posMarketPL = valueAtEntryFx - pos.totalCost;
+        const posFxPL = pos.quantity * currentPriceLocal * (currentFxRate - entryFxRate);
+        
+        marketPL += posMarketPL;
+        fxPL += posFxPL;
+      }
     }
     totalCost += pos.totalCost;
     realizedPL += pos.realizedPL;
