@@ -27,20 +27,37 @@ function useCurrentWeights(): Map<string, number> {
     if (!user?.id || !isContextSet) return;
 
     const fetchWeights = async () => {
-      // 1. Get all active holdings (quantity > 0)
-      let hQuery = supabase
-        .from('holdings_snapshot')
-        .select('ticker, quantity, asset_currency')
+      // 1. Build net quantities from transactions (source of truth)
+      let tQuery = supabase
+        .from('transactions')
+        .select('ticker, transaction_type, quantity, currency')
         .eq('user_id', user.id)
-        .gt('quantity', 0);
-      if (clientId) hQuery = hQuery.eq('client_id', clientId);
-      else hQuery = hQuery.is('client_id', null);
+        .is('deleted_at', null);
+      if (clientId) tQuery = tQuery.eq('client_id', clientId);
+      else tQuery = tQuery.is('client_id', null);
 
-      const { data: holdings } = await hQuery;
-      if (!holdings || holdings.length === 0) { setWeights(new Map()); return; }
+      const { data: txns } = await tQuery;
+      if (!txns || txns.length === 0) { setWeights(new Map()); return; }
+
+      // Aggregate net quantity & currency per ticker
+      const tickerInfo = new Map<string, { qty: number; currency: string }>();
+      txns.forEach(t => {
+        if (!t.ticker) return;
+        const prev = tickerInfo.get(t.ticker) || { qty: 0, currency: t.currency || 'USD' };
+        const sign = t.transaction_type === 'sell' ? -1 : 1;
+        prev.qty += sign * (t.quantity || 0);
+        tickerInfo.set(t.ticker, prev);
+      });
+
+      // Remove fully sold positions
+      for (const [k, v] of tickerInfo) {
+        if (v.qty <= 0) tickerInfo.delete(k);
+      }
+
+      if (tickerInfo.size === 0) { setWeights(new Map()); return; }
 
       // 2. Get latest valuation per ticker
-      const tickers = holdings.map(h => h.ticker);
+      const tickers = Array.from(tickerInfo.keys());
       let vQuery = supabase
         .from('valuations')
         .select('ticker, price_per_unit, fx_rate, month')
@@ -61,23 +78,22 @@ function useCurrentWeights(): Map<string, number> {
         }
       });
 
-      // 3. Calculate market value per holding = quantity * price / fxRate (if foreign currency)
+      // 3. Calculate market value = qty * latest price, converted to USD base
       const marketValues = new Map<string, number>();
       let totalMarketValue = 0;
 
-      holdings.forEach(h => {
-        const priceInfo = latestPrice.get(h.ticker);
-        if (!priceInfo) return; // skip if no valuation
+      for (const [ticker, info] of tickerInfo) {
+        const priceInfo = latestPrice.get(ticker);
+        if (!priceInfo) continue;
 
-        let marketValue = h.quantity * priceInfo.price;
-        // Convert to USD base if fx_rate provided (fx_rate = units of foreign currency per 1 USD)
-        if (priceInfo.fxRate && priceInfo.fxRate > 0 && h.asset_currency !== 'USD') {
+        let marketValue = info.qty * priceInfo.price;
+        if (priceInfo.fxRate && priceInfo.fxRate > 0 && info.currency !== 'USD') {
           marketValue = marketValue / priceInfo.fxRate;
         }
 
-        marketValues.set(h.ticker, marketValue);
+        marketValues.set(ticker, marketValue);
         totalMarketValue += marketValue;
-      });
+      }
 
       // 4. Convert to percentages
       const map = new Map<string, number>();
