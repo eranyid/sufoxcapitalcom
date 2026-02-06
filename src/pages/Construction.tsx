@@ -150,12 +150,12 @@ export default function Construction() {
 
       <div className="space-y-5">
         {/* Minimal Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="text-xs font-mono gap-1 h-7 px-2" onClick={() => setMode(null)}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="ghost" size="sm" className="text-xs font-mono gap-1 h-7 px-1.5 sm:px-2" onClick={() => setMode(null)}>
             ← Back
           </Button>
           <div className="h-4 w-px bg-border/30" />
-          <h1 className="text-base font-semibold tracking-tight">Portfolio Construction</h1>
+          <h1 className="text-sm sm:text-base font-semibold tracking-tight">Portfolio Construction</h1>
         </div>
 
         {/* Pipeline Phase Navigation */}
@@ -206,7 +206,7 @@ export default function Construction() {
             <div className="relative space-y-3">
               {/* Allocation Status Bar */}
               <div className={cn(
-                "flex items-center justify-between px-4 py-3 rounded-xl border transition-all",
+                "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-3 sm:px-4 py-3 rounded-xl border transition-all",
                 isBalanced
                   ? "bg-emerald-500/5 border-emerald-500/20"
                   : isOver
@@ -215,38 +215,39 @@ export default function Construction() {
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center",
+                    "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0",
                     isBalanced ? "bg-emerald-500/20" : isOver ? "bg-destructive/20" : "bg-amber-500/20"
                   )}>
-                    {isBalanced ? <CheckCircle2 size={16} className="text-emerald-500" /> : <AlertTriangle size={16} className={isOver ? "text-destructive" : "text-amber-500"} />}
+                    {isBalanced ? <CheckCircle2 size={14} className="text-emerald-500" /> : <AlertTriangle size={14} className={isOver ? "text-destructive" : "text-amber-500"} />}
                   </div>
                   <div>
-                    <span className={cn("font-mono text-xl font-bold", isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400")}>
+                    <span className={cn("font-mono text-lg sm:text-xl font-bold", isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400")}>
                       {totalAllocation.toFixed(1)}%
                     </span>
-                    <span className="text-sm text-muted-foreground ml-2">{positions.length} positions</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground ml-2">{positions.length} positions</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto">
                   <ImportFromAnalysisDialog
                     onImport={handleImportFromAnalysis}
                     existingNames={positions.map(p => p.name)}
                     trigger={
-                      <Button variant="outline" className="gap-2 font-mono text-xs">
-                        <Building2 size={14} />
-                        Import from Analysis
+                      <Button variant="outline" size="sm" className="gap-1.5 font-mono text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3">
+                        <Building2 size={12} />
+                        <span className="hidden xs:inline">Import</span>
                       </Button>
                     }
                   />
-                  <Button variant="outline" className="gap-2 font-mono text-xs" onClick={handleEqualWeight} disabled={positions.length === 0}>
-                    <Equal size={14} />
-                    Equal Weight
+                  <Button variant="outline" size="sm" className="gap-1.5 font-mono text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3" onClick={handleEqualWeight} disabled={positions.length === 0}>
+                    <Equal size={12} />
+                    <span className="hidden xs:inline">Equal</span>
                   </Button>
                   <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
                   <Button
                     onClick={() => { setPhase3Complete(true); setCurrentPhase(4); }}
                     disabled={!isBalanced}
-                    className="gap-2 font-mono"
+                    size="sm"
+                    className="gap-1.5 font-mono text-[10px] sm:text-xs h-7 sm:h-8 ml-auto sm:ml-0"
                   >
                     FINALIZE →
                   </Button>

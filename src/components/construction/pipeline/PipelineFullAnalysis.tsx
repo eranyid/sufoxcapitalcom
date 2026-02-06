@@ -212,18 +212,18 @@ export function PipelineFullAnalysis({ wizardData, erResults, positions }: Pipel
   return (
     <div className="space-y-6">
       {/* Full Analysis Header */}
-      <div className="text-center space-y-2 py-4">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-mono text-primary">
+      <div className="text-center space-y-2 py-3 sm:py-4">
+        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[10px] sm:text-xs font-mono text-primary">
           <Activity size={12} /> FULL PIPELINE ANALYSIS
         </div>
-        <h2 className="text-2xl font-bold tracking-tight">Portfolio Construction Report</h2>
-        <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Portfolio Construction Report</h2>
+        <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto px-4">
           Comprehensive breakdown of target allocation, expected returns, risk profile, and portfolio structure
         </p>
       </div>
 
       {/* Master KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
         {[
           { label: 'Portfolio E(r)', value: `${portfolioER.toFixed(2)}%`, icon: TrendingUp, color: 'text-emerald-400' },
           { label: 'Weighted σ', value: `${portfolioVol.toFixed(2)}%`, icon: Shield, color: 'text-rose-400' },
@@ -246,7 +246,7 @@ export function PipelineFullAnalysis({ wizardData, erResults, positions }: Pipel
 
       {/* Tabbed Analysis */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted/20 p-1 h-9 w-full grid grid-cols-5">
+        <TabsList className="bg-muted/20 p-1 h-9 w-full grid grid-cols-5 overflow-x-auto">
           <TabsTrigger value="overview" className="text-[10px] sm:text-xs gap-1 data-[state=active]:bg-card">
             <Compass size={12} /> Overview
           </TabsTrigger>
@@ -267,7 +267,7 @@ export function PipelineFullAnalysis({ wizardData, erResults, positions }: Pipel
         {/* ===== OVERVIEW TAB ===== */}
         <TabsContent value="overview" className="space-y-4">
           {/* Strategy Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <BloombergPanel title="Investment Profile" titleIcon={<Compass className="h-4 w-4 text-primary" />}>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
@@ -448,7 +448,7 @@ export function PipelineFullAnalysis({ wizardData, erResults, positions }: Pipel
               </BloombergPanel>
 
               {/* Scenario Bar Chart */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <BloombergPanel title="Return by Scenario" titleIcon={<BarChart3 className="h-4 w-4 text-primary" />}>
                   <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -499,7 +499,7 @@ export function PipelineFullAnalysis({ wizardData, erResults, positions }: Pipel
 
         {/* ===== STRUCTURE TAB ===== */}
         <TabsContent value="structure" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Asset Type Pie */}
             <BloombergPanel title="By Asset Type" titleIcon={<PieChart className="h-4 w-4 text-primary" />}>
               <div className="h-[250px]">
@@ -666,8 +666,8 @@ export function PipelineFullAnalysis({ wizardData, erResults, positions }: Pipel
           {/* Alternatives Breakdown */}
           {alternativesBreakdown.length > 0 && wizardData.assetClasses.alternatives > 0 && (
             <BloombergPanel title="Alternatives Breakdown" titleIcon={<Zap className="h-4 w-4 text-primary" />}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="h-[220px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="h-[200px] sm:h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPie>
                       <Pie data={alternativesBreakdown} cx="50%" cy="50%" innerRadius={40} outerRadius={80} paddingAngle={2} dataKey="value"
