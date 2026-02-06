@@ -268,7 +268,8 @@ export default function Companies() {
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">
-          <Table>
+          {/* Desktop Table */}
+          <Table className="hidden md:table">
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="font-semibold w-[30%]">Company Name</TableHead>
@@ -284,7 +285,6 @@ export default function Companies() {
                 const config = STATUS_CONFIG[group.status];
                 return (
                   <React.Fragment key={group.status}>
-                    {/* Group header row with status label */}
                     <TableRow className="hover:bg-transparent bg-muted/10">
                       <TableCell 
                         colSpan={6} 
@@ -354,6 +354,57 @@ export default function Companies() {
               })}
             </TableBody>
           </Table>
+
+          {/* Mobile Card List */}
+          <div className="md:hidden divide-y divide-border">
+            {groupedCompanies.map((group, groupIndex) => {
+              const config = STATUS_CONFIG[group.status];
+              return (
+                <React.Fragment key={group.status}>
+                  <div className={`px-3 py-2 bg-muted/10 ${groupIndex > 0 ? 'border-t-2 border-border/50' : ''}`}>
+                    <div className={`inline-flex items-center gap-2 ${config?.text || 'text-muted-foreground'}`}>
+                      {config?.icon}
+                      <span className="text-xs font-semibold uppercase tracking-wider">
+                        {config?.label || group.status.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-1">
+                        ({group.companies.length})
+                      </span>
+                    </div>
+                  </div>
+                  {group.companies.map(company => {
+                    const convictionConfig = CONVICTION_CONFIG[company.confidence_level || 'core'];
+                    return (
+                      <div
+                        key={company.id}
+                        className="px-3 py-3 flex items-center gap-3 cursor-pointer hover:bg-muted/50 active:bg-muted/70 transition-colors"
+                        onClick={() => navigate(`/analysis/company/${company.id}`)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{company.company_name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {company.ticker && (
+                              <span className="font-mono text-[11px] bg-muted px-1.5 py-0.5 rounded">
+                                {company.ticker}
+                              </span>
+                            )}
+                            {company.sector && (
+                              <span className="text-[11px] text-muted-foreground truncate">{company.sector}</span>
+                            )}
+                          </div>
+                        </div>
+                        {convictionConfig && (
+                          <span className={`text-[11px] px-2 py-0.5 rounded whitespace-nowrap ${convictionConfig.color}`}>
+                            {convictionConfig.label}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
       )}
 
