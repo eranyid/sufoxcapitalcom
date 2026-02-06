@@ -1,159 +1,339 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Target, 
-  ArrowRight, 
-  Sparkles,
-  Layers,
-  Gem,
-} from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { ConstructionWizard } from '@/components/construction/ConstructionWizard';
+import { PipelineHeader } from '@/components/construction/pipeline/PipelineHeader';
+import { ScenarioERStep } from '@/components/construction/pipeline/ScenarioERStep';
+import { PipelineSummary } from '@/components/construction/pipeline/PipelineSummary';
+import type { PipelinePhase } from '@/types/constructionPipeline';
+import type { AssetERResult } from '@/types/constructionPipeline';
+import type { WizardData } from '@/types/construction';
+import { DEFAULT_WIZARD_DATA } from '@/types/construction';
+import type { Position } from '@/types/allocationBuilder';
 
-type ActiveWizard = 'selection' | 'target';
+// Inline Allocation Builder (simplified from the full page)
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Grid3X3, PieChart, GitBranch, BarChart3,
+  Plus, Trash2, RotateCcw, CheckCircle2, AlertTriangle 
+} from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { AddPositionDialog } from '@/components/construction/allocation/AddPositionDialog';
+import { PositionsTable } from '@/components/construction/allocation/PositionsTable';
+import { AllocationDonutChart } from '@/components/construction/allocation/AllocationDonutChart';
+import { ExposureBarChart } from '@/components/construction/allocation/ExposureBarChart';
+import { AllocationTreemap } from '@/components/construction/allocation/AllocationTreemap';
+import { AllocationSankey } from '@/components/construction/allocation/AllocationSankey';
+import { PositionSizeHistogram } from '@/components/construction/allocation/PositionSizeHistogram';
+import { StructuralInsightsPanel } from '@/components/construction/allocation/StructuralInsightsPanel';
+import { StyleRadarChart } from '@/components/construction/allocation/StyleRadarChart';
+import { GeographicAllocationMap } from '@/components/construction/allocation/GeographicAllocationMap';
+import { LiquidityFunnelChart } from '@/components/construction/allocation/LiquidityFunnelChart';
+import { CurrencySunburstChart } from '@/components/construction/allocation/CurrencySunburstChart';
+import { TargetComparisonChart } from '@/components/construction/allocation/TargetComparisonChart';
+import { calculateTotalAllocation } from '@/lib/allocationAnalytics';
+import { toast } from 'sonner';
 
 export default function Construction() {
-  const navigate = useNavigate();
-  const [activeWizard, setActiveWizard] = useState<ActiveWizard>('selection');
+  // Pipeline state
+  const [currentPhase, setCurrentPhase] = useState<PipelinePhase>(1);
+  const [phase1Complete, setPhase1Complete] = useState(false);
+  const [phase2Complete, setPhase2Complete] = useState(false);
+  const [phase3Complete, setPhase3Complete] = useState(false);
+  
+  // Data flow between phases
+  const [wizardData, setWizardData] = useState<WizardData>(DEFAULT_WIZARD_DATA);
+  const [erResults, setErResults] = useState<AssetERResult[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
 
-  if (activeWizard === 'target') {
-    return (
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => setActiveWizard('selection')} className="gap-2">
-          ← Back to Selection
-        </Button>
-        <ConstructionWizard />
-      </div>
-    );
-  }
+  // Phase 3 state
+  const [activeTab, setActiveTab] = useState<string>('positions');
+  const [groupBy, setGroupBy] = useState<'assetType' | 'region' | 'sector' | 'currency' | 'liquidityBucket'>('assetType');
+  const isMobile = useIsMobile();
+  const totalAllocation = useMemo(() => calculateTotalAllocation(positions), [positions]);
+  const isBalanced = Math.abs(totalAllocation - 100) < 0.01;
+  const isOver = totalAllocation > 100;
+
+  // Asset classes from wizard for ER step
+  const assetClassesForER = useMemo(() => {
+    const labels: Record<string, string> = {
+      equities: 'Equities',
+      bonds: 'Fixed Income',
+      hedging: 'Hedging',
+      alternatives: 'Alternatives',
+      cash: 'Cash',
+    };
+    return Object.entries(wizardData.assetClasses)
+      .filter(([_, weight]) => weight > 0)
+      .map(([key, weight]) => ({
+        name: labels[key] || key,
+        weight,
+      }));
+  }, [wizardData.assetClasses]);
+
+  // Position handlers
+  const handleAddPosition = (newPosition: Omit<Position, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const position: Position = {
+      ...newPosition,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setPositions(prev => [...prev, position]);
+    toast.success(`Added "${newPosition.name}" (${newPosition.allocation}%)`);
+  };
+
+  const handleUpdatePosition = (id: string, updates: Partial<Position>) => {
+    setPositions(prev => prev.map(p =>
+      p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+    ));
+  };
+
+  const handleDeletePosition = (id: string) => {
+    const position = positions.find(p => p.id === id);
+    setPositions(prev => prev.filter(p => p.id !== id));
+    if (position) toast.success(`Removed "${position.name}"`);
+  };
 
   return (
-    <div className="min-h-[calc(100vh-120px)] flex flex-col">
-      {/* Hero Section */}
-      <div className="relative mb-12">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 blur-3xl -z-10" />
-        
-        <div className="flex items-center gap-4 mb-4">
+    <>
+      <Helmet>
+        <title>Portfolio Construction | SUFOX Capital</title>
+        <meta name="description" content="Unified portfolio construction pipeline — Target Allocation, Expected Return Analysis, and Allocation Builder" />
+      </Helmet>
+
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex items-center gap-3">
           <div className="relative">
             <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full" />
             <div className="relative p-3 bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 rounded-xl">
-              <Layers className="w-8 h-8 text-primary" />
+              <Layers className="w-6 h-6 text-primary" />
             </div>
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Portfolio Construction</h1>
-            <p className="text-muted-foreground mt-1">
-              Design your strategic allocation framework
+            <h1 className="text-2xl font-bold tracking-tight">Portfolio Construction</h1>
+            <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+              TARGET → EXPECTED RETURN → ALLOCATION → POLICY
             </p>
           </div>
         </div>
 
-        {/* Quick Actions Bar */}
-        <div className="flex items-center gap-6 mt-6 py-4 px-6 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Quick Actions:</span>
-          </div>
-          <button
-            onClick={() => navigate('/construction/allocation')}
-            className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-          >
-            <Gem className="w-3 h-3" />
-            Allocation Builder
-            <ArrowRight className="w-3 h-3" />
-          </button>
-          <div className="h-4 w-px bg-border" />
-          <button
-            onClick={() => navigate('/policy')}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-          >
-            View Investment Policy
-            <ArrowRight className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
+        {/* Pipeline Phase Navigation */}
+        <PipelineHeader
+          currentPhase={currentPhase}
+          onPhaseClick={setCurrentPhase}
+          phase1Complete={phase1Complete}
+          phase2Complete={phase2Complete}
+          phase3Complete={phase3Complete}
+        />
 
-      {/* Single Target Allocation Card */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-        <button
-          onClick={() => setActiveWizard('target')}
-          className={cn(
-            "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm",
-            "p-8 text-left transition-all duration-500",
-            "hover:border-border hover:bg-card hover:shadow-2xl",
-            "hover:-translate-y-2 hover:scale-[1.02]",
-            "focus:outline-none focus:ring-2 focus:ring-primary/50",
-            "group-hover:shadow-emerald-500/20"
+        {/* Phase Content */}
+        <div className="relative min-h-[400px]">
+          <div className="absolute -inset-4 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
+          
+          {/* Phase 1: Target Allocation Wizard */}
+          {currentPhase === 1 && (
+            <div className="relative">
+              <ConstructionWizardPhase1
+                wizardData={wizardData}
+                onWizardDataChange={setWizardData}
+                onComplete={() => {
+                  setPhase1Complete(true);
+                  setCurrentPhase(2);
+                }}
+              />
+            </div>
           )}
-        >
-          <div className={cn(
-            "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-700",
-            "from-emerald-500/30 via-emerald-500/10 to-transparent"
-          )} />
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-          <div className="relative z-10">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 blur-xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500 bg-emerald-400" />
-              <div className="relative transition-all duration-300 transform group-hover:scale-110 text-emerald-400">
-                <Target className="w-10 h-10" />
-              </div>
+          {/* Phase 2: Scenario-Based Expected Return */}
+          {currentPhase === 2 && (
+            <div className="relative">
+              <ScenarioERStep
+                assetClasses={assetClassesForER}
+                riskFreeRate={4.5}
+                onResultsChange={setErResults}
+                onComplete={() => {
+                  setPhase2Complete(true);
+                  setCurrentPhase(3);
+                }}
+              />
             </div>
+          )}
 
-            <div className="mb-4">
-              <h3 className="text-2xl font-bold mb-1 transition-colors group-hover:text-foreground">
-                Target Allocation
-              </h3>
-              <p className="text-sm font-medium text-emerald-400">
-                Direct Builder
-              </p>
-            </div>
-
-            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-              Manually configure your target allocation by asset class, geography, and sector with full control.
-            </p>
-
-            <div className="grid grid-cols-2 gap-2 mb-6">
-              {['Asset Weights', 'Geography Mix', 'Sector Tilt', 'Rebalance Rules'].map((feature) => (
-                <div
-                  key={feature}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground border border-border/30 group-hover:border-border/50 transition-colors"
-                >
-                  {feature}
+          {/* Phase 3: Allocation Builder */}
+          {currentPhase === 3 && (
+            <div className="relative space-y-3">
+              {/* Allocation Status Bar */}
+              <div className={cn(
+                "flex items-center justify-between px-4 py-3 rounded-xl border transition-all",
+                isBalanced
+                  ? "bg-emerald-500/5 border-emerald-500/20"
+                  : isOver
+                    ? "bg-destructive/5 border-destructive/20"
+                    : "bg-amber-500/5 border-amber-500/20"
+              )}>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-9 h-9 rounded-lg flex items-center justify-center",
+                    isBalanced ? "bg-emerald-500/20" : isOver ? "bg-destructive/20" : "bg-amber-500/20"
+                  )}>
+                    {isBalanced ? <CheckCircle2 size={16} className="text-emerald-500" /> : <AlertTriangle size={16} className={isOver ? "text-destructive" : "text-amber-500"} />}
+                  </div>
+                  <div>
+                    <span className={cn("font-mono text-xl font-bold", isBalanced ? "text-emerald-400" : isOver ? "text-destructive" : "text-amber-400")}>
+                      {totalAllocation.toFixed(1)}%
+                    </span>
+                    <span className="text-sm text-muted-foreground ml-2">{positions.length} positions</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-border/30">
-              <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                Start Configuration
-              </span>
-              <div className="p-2 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors text-emerald-400">
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                <div className="flex items-center gap-2">
+                  <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
+                  <Button
+                    onClick={() => { setPhase3Complete(true); setCurrentPhase(4); }}
+                    disabled={!isBalanced}
+                    className="gap-2 font-mono"
+                  >
+                    FINALIZE →
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="absolute -bottom-8 -right-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500">
-            <div className="w-48 h-48">
-              <Target className="w-10 h-10" />
-            </div>
-          </div>
-        </button>
-      </div>
+              {/* Tabs */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
+                <TabsList className="bg-muted/20 p-1 h-9 w-full sm:w-fit grid grid-cols-4 sm:flex">
+                  <TabsTrigger value="positions" className="gap-1 text-[10px] sm:text-xs h-7 px-2 sm:px-4 data-[state=active]:bg-card">
+                    <Grid3X3 size={12} /> Positions
+                  </TabsTrigger>
+                  <TabsTrigger value="charts" className="gap-1 text-[10px] sm:text-xs h-7 px-2 sm:px-4 data-[state=active]:bg-card">
+                    <PieChart size={12} /> Charts
+                  </TabsTrigger>
+                  <TabsTrigger value="flows" className="gap-1 text-[10px] sm:text-xs h-7 px-2 sm:px-4 data-[state=active]:bg-card">
+                    <GitBranch size={12} /> Flows
+                  </TabsTrigger>
+                  <TabsTrigger value="insights" className="gap-1 text-[10px] sm:text-xs h-7 px-2 sm:px-4 data-[state=active]:bg-card">
+                    <BarChart3 size={12} /> Insights
+                  </TabsTrigger>
+                </TabsList>
 
-      {/* Footer CTA */}
-      <div className="mt-12 flex justify-center">
-        <button
-          onClick={() => navigate('/construction/allocation')}
-          className="group flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 border border-primary/30 rounded-xl transition-all duration-300"
-        >
-          <Layers className="w-5 h-5 text-primary" />
-          <span className="font-medium">Open Allocation Builder</span>
-          <ArrowRight className="w-4 h-4 text-primary transform group-hover:translate-x-1 transition-transform" />
-        </button>
+                <TabsContent value="positions" className="space-y-4 mt-2">
+                  {positions.length === 0 ? (
+                    <Card className="border-dashed border-2 border-border/50">
+                      <CardContent className="py-12 text-center">
+                        <Layers className="mx-auto mb-4 text-muted-foreground" size={40} />
+                        <h3 className="text-lg font-medium mb-2">No Positions Yet</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Add positions to build your target allocation
+                        </p>
+                        <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <PositionsTable
+                      positions={positions}
+                      onUpdate={handleUpdatePosition}
+                      onDelete={handleDeletePosition}
+                    />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="charts" className="space-y-4 mt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs text-muted-foreground">Group by:</span>
+                    <Select value={groupBy} onValueChange={(v) => setGroupBy(v as typeof groupBy)}>
+                      <SelectTrigger className="w-36 h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="assetType">Asset Type</SelectItem>
+                        <SelectItem value="region">Region</SelectItem>
+                        <SelectItem value="sector">Sector</SelectItem>
+                        <SelectItem value="currency">Currency</SelectItem>
+                        <SelectItem value="liquidityBucket">Liquidity</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AllocationDonutChart positions={positions} groupBy={groupBy} title={`By ${groupBy}`} />
+                    <ExposureBarChart positions={positions} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AllocationTreemap positions={positions} />
+                    <StyleRadarChart positions={positions} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CurrencySunburstChart positions={positions} />
+                    <LiquidityFunnelChart positions={positions} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <PositionSizeHistogram positions={positions} />
+                    <TargetComparisonChart positions={positions} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="flows" className="space-y-4 mt-2">
+                  <AllocationSankey positions={positions} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AllocationDonutChart positions={positions} groupBy="assetType" title="By Asset Type" />
+                    <AllocationDonutChart positions={positions} groupBy="sector" title="By Sector" />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="insights" className="mt-2">
+                  <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2 space-y-4">
+                      <GeographicAllocationMap positions={positions} />
+                      <TargetComparisonChart positions={positions} />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <CurrencySunburstChart positions={positions} />
+                        <LiquidityFunnelChart positions={positions} />
+                      </div>
+                    </div>
+                    <div>
+                      <StructuralInsightsPanel positions={positions} />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+
+          {/* Phase 4: Summary & Export */}
+          {currentPhase === 4 && (
+            <div className="relative">
+              <PipelineSummary
+                wizardData={wizardData}
+                erResults={erResults}
+                positions={positions}
+              />
+            </div>
+          )}
+        </div>
       </div>
+    </>
+  );
+}
+
+// ============= Phase 1 Wrapper =============
+
+function ConstructionWizardPhase1({
+  wizardData,
+  onWizardDataChange,
+  onComplete,
+}: {
+  wizardData: WizardData;
+  onWizardDataChange: (data: WizardData) => void;
+  onComplete: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <ConstructionWizard
+        initialData={wizardData}
+        onDataChange={onWizardDataChange}
+        onSaveComplete={onComplete}
+      />
     </div>
   );
 }
