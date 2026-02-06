@@ -15,6 +15,7 @@ import { CommandBar } from '@/components/CommandBar';
 import { OnlineStatusIndicator } from '@/components/OnlineStatusIndicator';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationsDrawer } from '@/components/notifications/NotificationsDrawer';
+import { HeaderMessagesWidget } from '@/components/messages/HeaderMessagesWidget';
 import { DottedGridBackground } from '@/components/DottedGridBackground';
 import { getUSMarketSession, getTASEMarketSession, getUSStatusColor, getTASEStatusColor, formatCountdown, TIMEZONE_ISRAEL } from '@/lib/marketSessionEngine';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -204,6 +205,7 @@ export function DashboardLayout() {
               onClick={() => setWatchdogPanelOpen(true)}
             />
             <OnlineStatusIndicator isOnline={isOnline} />
+            <HeaderMessagesWidget />
             <NotificationBell 
               unreadCount={unreadCount} 
               onClick={() => setNotificationsOpen(true)} 
