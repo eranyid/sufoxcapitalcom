@@ -9,6 +9,7 @@ interface AnalysisShareCardProps {
 }
 
 const typeLabels: Record<string, string> = {
+  company: 'Company',
   dcf: 'DCF Valuation',
   risk: 'Risk Analysis',
   allocation: 'Allocation',
