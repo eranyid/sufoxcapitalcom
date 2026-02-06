@@ -27,25 +27,64 @@ function useCurrentWeights(): Map<string, number> {
     if (!user?.id || !isContextSet) return;
 
     const fetchWeights = async () => {
-      let query = supabase
+      // Try holdings_snapshot first
+      let hQuery = supabase
         .from('holdings_snapshot')
         .select('ticker, total_cost_base')
-        .eq('user_id', user.id);
-      if (clientId) query = query.eq('client_id', clientId);
-      else query = query.is('client_id', null);
+        .eq('user_id', user.id)
+        .gt('quantity', 0);
+      if (clientId) hQuery = hQuery.eq('client_id', clientId);
+      else hQuery = hQuery.is('client_id', null);
 
-      const { data } = await query;
-      if (!data || data.length === 0) { setWeights(new Map()); return; }
+      const { data: snapshots } = await hQuery;
 
-      const totalValue = data.reduce((sum, h) => sum + (h.total_cost_base || 0), 0);
+      if (snapshots && snapshots.length > 0) {
+        const totalValue = snapshots.reduce((sum, h) => sum + (h.total_cost_base || 0), 0);
+        const map = new Map<string, number>();
+        if (totalValue > 0) {
+          snapshots.forEach(h => {
+            if (h.ticker) {
+              const pct = ((h.total_cost_base || 0) / totalValue) * 100;
+              map.set(h.ticker, Math.round(pct * 10) / 10);
+            }
+          });
+        }
+        setWeights(map);
+        return;
+      }
+
+      // Fallback: calculate from transactions
+      let tQuery = supabase
+        .from('transactions')
+        .select('ticker, transaction_type, cost_base, quantity')
+        .eq('user_id', user.id)
+        .is('deleted_at', null);
+      if (clientId) tQuery = tQuery.eq('client_id', clientId);
+      else tQuery = tQuery.is('client_id', null);
+
+      const { data: txns } = await tQuery;
+      if (!txns || txns.length === 0) { setWeights(new Map()); return; }
+
+      // Aggregate net cost_base per ticker
+      const tickerCost = new Map<string, number>();
+      txns.forEach(t => {
+        if (!t.ticker) return;
+        const prev = tickerCost.get(t.ticker) || 0;
+        const sign = t.transaction_type === 'sell' ? -1 : 1;
+        tickerCost.set(t.ticker, prev + sign * (t.cost_base || 0));
+      });
+
+      // Remove tickers with zero or negative cost (fully sold)
+      for (const [k, v] of tickerCost) {
+        if (v <= 0) tickerCost.delete(k);
+      }
+
+      const totalValue = Array.from(tickerCost.values()).reduce((a, b) => a + b, 0);
       const map = new Map<string, number>();
       if (totalValue > 0) {
-        data.forEach(h => {
-          if (h.ticker) {
-            const pct = ((h.total_cost_base || 0) / totalValue) * 100;
-            map.set(h.ticker, Math.round(pct * 10) / 10);
-          }
-        });
+        for (const [ticker, cost] of tickerCost) {
+          map.set(ticker, Math.round((cost / totalValue) * 1000) / 10);
+        }
       }
       setWeights(map);
     };
