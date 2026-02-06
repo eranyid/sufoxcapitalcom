@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Brain, 
   Target, 
-  Building2, 
   ArrowRight, 
   Sparkles,
   Layers,
@@ -11,86 +9,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { NeedsBasedWizard } from '@/components/construction/NeedsBasedWizard';
-import { FamilyOfficeWizard } from '@/components/construction/FamilyOfficeWizard';
 import { ConstructionWizard } from '@/components/construction/ConstructionWizard';
 
-type ActiveWizard = 'selection' | 'needs' | 'family' | 'target';
-
-interface PortalCard {
-  id: ActiveWizard;
-  title: string;
-  subtitle: string;
-  description: string;
-  features: string[];
-  icon: React.ReactNode;
-  gradient: string;
-  borderGlow: string;
-  accentColor: string;
-}
-
-const PORTAL_CARDS: PortalCard[] = [
-  {
-    id: 'needs',
-    title: 'Needs Profiling',
-    subtitle: 'Behavioral Assessment',
-    description: 'Define your investment profile through guided questions about goals, risk tolerance, and constraints.',
-    features: ['Risk Assessment', 'Goal Setting', 'Time Horizon', 'Constraints'],
-    icon: <Brain className="w-10 h-10" />,
-    gradient: 'from-blue-500/30 via-blue-500/10 to-transparent',
-    borderGlow: 'group-hover:shadow-blue-500/20',
-    accentColor: 'text-blue-400',
-  },
-  {
-    id: 'family',
-    title: 'Family Office',
-    subtitle: 'Ultra HNW Deep Profiling',
-    description: 'Comprehensive wealth structuring for ₪1B+ portfolios with governance, succession, and multi-generational planning.',
-    features: ['Governance', 'Succession', 'Tax Optimization', 'Illiquidity Budget'],
-    icon: <Building2 className="w-10 h-10" />,
-    gradient: 'from-amber-500/30 via-amber-500/10 to-transparent',
-    borderGlow: 'group-hover:shadow-amber-500/20',
-    accentColor: 'text-amber-400',
-  },
-  {
-    id: 'target',
-    title: 'Target Allocation',
-    subtitle: 'Direct Builder',
-    description: 'Manually configure your target allocation by asset class, geography, and sector with full control.',
-    features: ['Asset Weights', 'Geography Mix', 'Sector Tilt', 'Rebalance Rules'],
-    icon: <Target className="w-10 h-10" />,
-    gradient: 'from-emerald-500/30 via-emerald-500/10 to-transparent',
-    borderGlow: 'group-hover:shadow-emerald-500/20',
-    accentColor: 'text-emerald-400',
-  },
-];
+type ActiveWizard = 'selection' | 'target';
 
 export default function Construction() {
   const navigate = useNavigate();
   const [activeWizard, setActiveWizard] = useState<ActiveWizard>('selection');
-
-  // Render active wizard
-  if (activeWizard === 'needs') {
-    return (
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => setActiveWizard('selection')} className="gap-2">
-          ← Back to Selection
-        </Button>
-        <NeedsBasedWizard />
-      </div>
-    );
-  }
-
-  if (activeWizard === 'family') {
-    return (
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => setActiveWizard('selection')} className="gap-2">
-          ← Back to Selection
-        </Button>
-        <FamilyOfficeWizard />
-      </div>
-    );
-  }
 
   if (activeWizard === 'target') {
     return (
@@ -103,7 +28,6 @@ export default function Construction() {
     );
   }
 
-  // Selection Portal
   return (
     <div className="min-h-[calc(100vh-120px)] flex flex-col">
       {/* Hero Section */}
@@ -150,96 +74,73 @@ export default function Construction() {
         </div>
       </div>
 
-      {/* Portal Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
-        {PORTAL_CARDS.map((card) => (
-          <button
-            key={card.id}
-            onClick={() => setActiveWizard(card.id)}
-            className={cn(
-              "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm",
-              "p-8 text-left transition-all duration-500",
-              "hover:border-border hover:bg-card hover:shadow-2xl",
-              "hover:-translate-y-2 hover:scale-[1.02]",
-              "focus:outline-none focus:ring-2 focus:ring-primary/50",
-              card.borderGlow
-            )}
-          >
+      {/* Single Target Allocation Card */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
+        <button
+          onClick={() => setActiveWizard('target')}
+          className={cn(
+            "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm",
+            "p-8 text-left transition-all duration-500",
+            "hover:border-border hover:bg-card hover:shadow-2xl",
+            "hover:-translate-y-2 hover:scale-[1.02]",
+            "focus:outline-none focus:ring-2 focus:ring-primary/50",
+            "group-hover:shadow-emerald-500/20"
+          )}
+        >
+          <div className={cn(
+            "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-700",
+            "from-emerald-500/30 via-emerald-500/10 to-transparent"
+          )} />
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-            {/* Gradient Background */}
-            <div className={cn(
-              "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-700",
-              card.gradient
-            )} />
-            
-            {/* Animated top line */}
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-            {/* Content */}
-            <div className="relative z-10">
-              {/* Icon with glow */}
-              <div className="relative mb-6">
-                <div className={cn(
-                  "absolute inset-0 blur-xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500",
-                  card.accentColor.replace('text-', 'bg-')
-                )} />
-                <div className={cn(
-                  "relative transition-all duration-300 transform group-hover:scale-110",
-                  card.accentColor
-                )}>
-                  {card.icon}
-                </div>
+          <div className="relative z-10">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 blur-xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500 bg-emerald-400" />
+              <div className="relative transition-all duration-300 transform group-hover:scale-110 text-emerald-400">
+                <Target className="w-10 h-10" />
               </div>
+            </div>
 
-              {/* Title & Subtitle */}
-              <div className="mb-4">
-                <h3 className="text-2xl font-bold mb-1 transition-colors group-hover:text-foreground">
-                  {card.title}
-                </h3>
-                <p className={cn("text-sm font-medium", card.accentColor)}>
-                  {card.subtitle}
-                </p>
-              </div>
-
-              {/* Description */}
-              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                {card.description}
+            <div className="mb-4">
+              <h3 className="text-2xl font-bold mb-1 transition-colors group-hover:text-foreground">
+                Target Allocation
+              </h3>
+              <p className="text-sm font-medium text-emerald-400">
+                Direct Builder
               </p>
+            </div>
 
-              {/* Features Grid */}
-              <div className="grid grid-cols-2 gap-2 mb-6">
-                {card.features.map((feature) => (
-                  <div
-                    key={feature}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground border border-border/30 group-hover:border-border/50 transition-colors"
-                  >
-                    {feature}
-                  </div>
-                ))}
-              </div>
+            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+              Manually configure your target allocation by asset class, geography, and sector with full control.
+            </p>
 
-              {/* CTA */}
-              <div className="flex items-center justify-between pt-4 border-t border-border/30">
-                <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  Start Configuration
-                </span>
-                <div className={cn(
-                  "p-2 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors",
-                  card.accentColor
-                )}>
-                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+            <div className="grid grid-cols-2 gap-2 mb-6">
+              {['Asset Weights', 'Geography Mix', 'Sector Tilt', 'Rebalance Rules'].map((feature) => (
+                <div
+                  key={feature}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground border border-border/30 group-hover:border-border/50 transition-colors"
+                >
+                  {feature}
                 </div>
-              </div>
+              ))}
             </div>
 
-            {/* Large Background Icon */}
-            <div className="absolute -bottom-8 -right-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500">
-              <div className="w-48 h-48">
-                {card.icon}
+            <div className="flex items-center justify-between pt-4 border-t border-border/30">
+              <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Start Configuration
+              </span>
+              <div className="p-2 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors text-emerald-400">
+                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
-          </button>
-        ))}
+          </div>
+
+          <div className="absolute -bottom-8 -right-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500">
+            <div className="w-48 h-48">
+              <Target className="w-10 h-10" />
+            </div>
+          </div>
+        </button>
       </div>
 
       {/* Footer CTA */}
