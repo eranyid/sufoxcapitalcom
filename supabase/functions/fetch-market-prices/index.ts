@@ -69,10 +69,60 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const forceRefresh = body.forceRefresh === true;
     const clientId = body.clientId || null;
+    const adHocSymbols: string[] = body.symbols || []; // Ad-hoc ticker lookup mode
 
-    console.log(`[fetch-market-prices] User: ${userId}, clientId: ${clientId}, force: ${forceRefresh}`);
+    console.log(`[fetch-market-prices] User: ${userId}, clientId: ${clientId}, force: ${forceRefresh}, adHoc: ${adHocSymbols.length}`);
 
-    // 1. Get user holdings
+    // If ad-hoc symbols provided, fetch those directly (no holdings needed)
+    if (adHocSymbols.length > 0) {
+      const now = Math.floor(Date.now() / 1000);
+      const fiveDaysAgo = now - 86400 * 5;
+      const results: any[] = [];
+      const errors: { symbol: string; error: string }[] = [];
+
+      for (const symbol of adHocSymbols) {
+        const finnhubSymbol = toFinnhubSymbol(symbol);
+        try {
+          const url = `${FINNHUB_BASE}/stock/candle?symbol=${encodeURIComponent(finnhubSymbol)}&resolution=D&from=${fiveDaysAgo}&to=${now}&token=${FINNHUB_API_KEY}`;
+          console.log(`[fetch-market-prices] Ad-hoc fetch: ${finnhubSymbol}`);
+          const resp = await fetch(url);
+          if (!resp.ok) {
+            errors.push({ symbol, error: `HTTP ${resp.status}` });
+            continue;
+          }
+          const candle: FinnhubCandle = await resp.json();
+          if (candle.s === "no_data" || !candle.c || candle.c.length === 0) {
+            errors.push({ symbol, error: "no_data" });
+            continue;
+          }
+          const idx = candle.c.length - 1;
+          const priceDate = new Date(candle.t[idx] * 1000).toISOString().slice(0, 10);
+          results.push({
+            id: crypto.randomUUID(),
+            symbol: symbol.toUpperCase(),
+            market: "US",
+            open: candle.o[idx],
+            high: candle.h[idx],
+            low: candle.l[idx],
+            close: candle.c[idx],
+            volume: candle.v[idx],
+            currency: "USD",
+            price_date: priceDate,
+            source: "finnhub",
+            updated_at: new Date().toISOString(),
+          });
+        } catch (err) {
+          errors.push({ symbol, error: String(err) });
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ prices: results, errors: errors.length > 0 ? errors : undefined }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Standard mode: fetch from holdings
     let holdingsQuery = supabaseAdmin
       .from("holdings_snapshot")
       .select("ticker, asset_currency, quantity, client_id")
