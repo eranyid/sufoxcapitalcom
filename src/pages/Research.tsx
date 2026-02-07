@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Search } from 'lucide-react';
 import TradingViewTickerTape from '@/components/dashboard/TradingViewTickerTape';
 import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
+import CountryMetadata from '@/components/dashboard/CountryMetadata';
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
@@ -55,6 +56,11 @@ const Research = () => {
       {/* Economic Indicators */}
       <div className="mt-2">
         <EconomicIndicators />
+      </div>
+
+      {/* Country Metadata */}
+      <div className="mt-2">
+        <CountryMetadata />
       </div>
       
       <div className="section-spacing">
