@@ -59,6 +59,7 @@ const Messages = lazy(() => import("./pages/Messages"));
  const WorkspaceDetail = lazy(() => import("./pages/WorkspaceDetail"));
 const ContextSelector = lazy(() => import("./pages/ContextSelector"));
 const Economy = lazy(() => import("./pages/Economy"));
+const Market = lazy(() => import("./pages/Market"));
 
 const queryClient = new QueryClient();
 
@@ -128,6 +129,11 @@ const App = () => (
                   <Route path="/economy" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Economy />
+                    </Suspense>
+                  } />
+                  <Route path="/market" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Market />
                     </Suspense>
                   } />
                   <Route path="/analysis" element={
