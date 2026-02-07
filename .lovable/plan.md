@@ -1,60 +1,45 @@
 
 
-## Add "Economy" Page
+# Fundamental Analysis — Switch to Finnhub API
 
-Create a new dedicated Economy page that consolidates economic data and indicators into a standalone view, separate from the Research page.
+## Problem
+The current edge function uses AI to generate financial numbers, which are inaccurate. The Finnhub API key is already configured (`FINNHUB_API_KEY`).
 
-### What will be built
+## Solution
+Rewrite the `analyze-fundamental` edge function to pull real data from Finnhub, and use AI only for qualitative text (summary, strengths, risks).
 
-A new page at `/economy` route called "Economy" that includes:
-- The TradingEconomics live widget (currently embedded elsewhere)
-- The FRED Economic Indicators component (currently on the Research page)
-- The TradingView Ticker Tape for live market context
-- All wrapped in the standard page layout with consistent styling
+## Finnhub Endpoints Used
 
-### Changes
+| Endpoint | Data |
+|---|---|
+| `/stock/profile2?symbol=X` | Company name, sector, industry, country, currency, market cap, IPO date |
+| `/stock/metric?symbol=X&metric=all` | P/E, P/B, EV/EBITDA, margins, ROE, ROA, 52w high/low, dividend yield, debt/equity, current ratio, revenue growth, EPS, and more |
+| `/quote?symbol=X` | Current price, change, day high/low |
+| `/stock/financials-reported?symbol=X&freq=annual` | Historical income statement data (revenue, net income, EPS) for charts |
 
-1. **New page file**: `src/pages/Economy.tsx`
-   - TradingView Ticker Tape at the top
-   - TradingEconomics widget (the embed with `cl-pro` dark theme)
-   - FRED Economic Indicators grid below
-   - Page header with "ECONOMY" title and Activity icon
+## Changes
 
-2. **New icon**: `src/components/icons/EconomyIcon.tsx`
-   - Custom icon consistent with existing icon system (Activity/TrendingUp style)
+### 1. Rewrite Edge Function (`supabase/functions/analyze-fundamental/index.ts`)
 
-3. **Route registration**: `src/App.tsx`
-   - Add lazy import for Economy page
-   - Add `/economy` route inside the protected DashboardLayout
+- Fetch all 4 Finnhub endpoints in parallel using the existing `FINNHUB_API_KEY`
+- Map Finnhub response fields to the existing `FundamentalData` interface:
+  - `profile2` provides: company_name, ticker, sector, industry, country, currency, market_cap_b
+  - `metric.metric` provides: pe_ratio (peTTM), pb_ratio (pbAnnual), ps_ratio (psAnnual), ev_ebitda (evEbitdaTTM), gross_margin_pct (grossMarginTTM), operating_margin_pct (operatingMarginTTM), net_margin_pct (netProfitMarginTTM), roe_pct (roeTTM), roa_pct (roaTTM), roic_pct (roicTTM), debt_to_equity (totalDebtToEquityAnnual), current_ratio (currentRatioAnnual), dividend_yield_pct (dividendYieldIndicatedAnnual), eps_ttm (epsTTM), 52w high/low, revenue growth, etc.
+  - `quote` provides: current_price
+  - `financials-reported` provides: revenue_history and margin_history arrays for the charts
+- Keep AI call (Lovable AI gateway) only for generating summary, strengths, and risks text -- passing the real numbers as context
+- If AI call fails, return empty summary/strengths/risks (graceful degradation)
 
-4. **Sidebar navigation**: `src/components/layout/Sidebar.tsx`
-   - Add "Economy" entry under the RESEARCH group (after Research, before Analysis)
-   - Import the new EconomyIcon
+### 2. Minor Frontend Update (`src/pages/Market.tsx`)
 
-5. **Mobile navigation**: `src/components/layout/MobileNav.tsx`
-   - Add Economy to the "More" menu items
+- Change subtitle from "AI-powered" to "Finnhub-powered fundamental data"
+- Add small "Source: Finnhub" badge
+- No structural changes -- the data interface stays identical
 
-### Technical details
+### 3. Error Handling
 
-```text
-File: src/pages/Economy.tsx
-- Import TradingViewTickerTape, EconomicIndicators
-- Embed TradingEconomics widget via useRef/useEffect (same pattern as existing)
-- Standard animate-fade-in wrapper, section-spacing layout
-
-File: src/components/icons/EconomyIcon.tsx
-- SVG icon following existing icon component pattern (size, strokeWidth props)
-
-File: src/App.tsx
-- const Economy = lazy(() => import("./pages/Economy"));
-- <Route path="/economy" element={<Suspense ...><Economy /></Suspense>} />
-
-File: src/components/layout/Sidebar.tsx
-- Add { path: '/economy', icon: EconomyIcon, label: 'Economy' } to RESEARCH group
-
-File: src/components/layout/MobileNav.tsx
-- Add Economy to moreNavItems array
-```
-
-No database changes required.
+- Invalid ticker (empty profile response) returns clear "Ticker not found" error
+- Rate limiting (Finnhub free tier: 60 calls/min) handled with appropriate error message
+- Missing fields from Finnhub returned as null (KPI tiles already handle null gracefully with "---")
+- If `financials-reported` returns no data (some tickers), charts show empty state
 
