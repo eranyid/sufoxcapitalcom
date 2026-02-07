@@ -351,8 +351,31 @@ export default function Market() {
         {/* Results */}
         {data && !loading && (
           <div className="space-y-4">
-            {/* Empty placeholder card for future data */}
-            <div className="bg-card border border-border rounded-lg p-4 min-h-[60px]" />
+            {/* Quick KPI strip */}
+            <div className="bg-card border border-border rounded-lg px-4 py-3">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                {[
+                  { label: 'Market Cap', value: data.market_cap_b, suffix: 'B' },
+                  { label: 'P/E (TTM)', value: data.pe_ratio },
+                  { label: 'Fwd P/E', value: data.forward_pe },
+                  { label: 'Gross Margin', value: data.gross_margin_pct, suffix: '%', color: true },
+                  { label: 'Op. Margin', value: data.operating_margin_pct, suffix: '%', color: true },
+                  { label: 'Rev Growth YoY', value: data.revenue_growth_yoy_pct, suffix: '%', color: true },
+                  { label: 'Earnings Growth', value: data.earnings_growth_yoy_pct, suffix: '%', color: true },
+                  { label: 'Div Yield', value: data.dividend_yield_pct, suffix: '%' },
+                ].filter(k => k.value != null).map(k => (
+                  <div key={k.label} className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{k.label}</span>
+                    <span className={cn(
+                      "text-sm font-bold font-mono",
+                      k.color && k.value != null && k.value > 0 ? "text-emerald-400" : k.color && k.value != null && k.value < 0 ? "text-red-400" : "text-foreground"
+                    )}>
+                      {fmt(k.value, 2, k.suffix || '')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Valuation KPIs */}
             <div>
