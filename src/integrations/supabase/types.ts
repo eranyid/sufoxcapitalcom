@@ -1167,6 +1167,68 @@ export type Database = {
           },
         ]
       }
+      market_prices: {
+        Row: {
+          client_id: string | null
+          close: number
+          created_at: string
+          currency: string
+          high: number | null
+          id: string
+          low: number | null
+          market: string
+          open: number | null
+          price_date: string
+          source: string
+          symbol: string
+          updated_at: string
+          user_id: string
+          volume: number | null
+        }
+        Insert: {
+          client_id?: string | null
+          close: number
+          created_at?: string
+          currency?: string
+          high?: number | null
+          id?: string
+          low?: number | null
+          market?: string
+          open?: number | null
+          price_date: string
+          source?: string
+          symbol: string
+          updated_at?: string
+          user_id: string
+          volume?: number | null
+        }
+        Update: {
+          client_id?: string | null
+          close?: number
+          created_at?: string
+          currency?: string
+          high?: number | null
+          id?: string
+          low?: number | null
+          market?: string
+          open?: number | null
+          price_date?: string
+          source?: string
+          symbol?: string
+          updated_at?: string
+          user_id?: string
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_prices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           analysis_id: string | null
