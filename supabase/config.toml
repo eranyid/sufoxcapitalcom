@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.fetch-fx-rates]
 verify_jwt = false
+
+[functions.analyze-fundamental]
+verify_jwt = false
