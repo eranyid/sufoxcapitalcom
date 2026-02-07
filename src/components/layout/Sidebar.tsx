@@ -13,6 +13,7 @@ import { XRayIcon } from '@/components/icons/XRayIcon';
 import { TransactionsIcon } from '@/components/icons/TransactionsIcon';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
+import { FundamentalsIcon } from '@/components/icons/FundamentalsIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
 import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
@@ -55,7 +56,7 @@ const navGroups: NavGroup[] = [
     title: 'RESEARCH',
     items: [
       { path: '/research', icon: ResearchIcon, label: 'Research' },
-      { path: '/market', icon: PerformanceIcon, label: 'Fundamentals' },
+      { path: '/market', icon: FundamentalsIcon, label: 'Fundamentals' },
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
        { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },
