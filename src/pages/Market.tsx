@@ -318,13 +318,21 @@ export default function Market() {
                       <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Globe className="h-2.5 w-2.5" />{data.country}</Badge>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xl font-bold font-mono text-foreground">
-                      {data.currency === 'ILS' ? '₪' : data.currency === 'EUR' ? '€' : '$'}{fmt(data.current_price)}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      52W: {fmt(data.week_52_low)} – {fmt(data.week_52_high)}
-                    </p>
+                  <div className="text-right shrink-0 flex items-baseline gap-4">
+                    {data.market_cap_b != null && (
+                      <div className="hidden sm:flex flex-col items-end">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Mkt Cap</span>
+                        <span className="text-sm font-bold font-mono text-foreground">{fmt(data.market_cap_b, 2, 'B')}</span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xl font-bold font-mono text-foreground">
+                        {data.currency === 'ILS' ? '₪' : data.currency === 'EUR' ? '€' : '$'}{fmt(data.current_price)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        52W: {fmt(data.week_52_low)} – {fmt(data.week_52_high)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </>
