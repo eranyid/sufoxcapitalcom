@@ -1,128 +1,60 @@
-# Plan: Portfolio Accounting Redesign - Transaction-Driven Valuations
 
-## Status: ✅ COMPLETED
 
-## Problem Analysis
+## Add "Economy" Page
 
-Previously, there was a delay between adding a transaction and seeing the asset in the portfolio. Users had to:
-1. Add a transaction (BUY)
-2. Separately add a valuation for that asset/month
+Create a new dedicated Economy page that consolidates economic data and indicators into a standalone view, separate from the Research page.
 
-This caused confusion and data inconsistency. Assets without valuations showed as $0 or with "No Price" badges.
+### What will be built
 
----
+A new page at `/economy` route called "Economy" that includes:
+- The TradingEconomics live widget (currently embedded elsewhere)
+- The FRED Economic Indicators component (currently on the Research page)
+- The TradingView Ticker Tape for live market context
+- All wrapped in the standard page layout with consistent styling
 
-## Implemented Solution
+### Changes
 
-### New Transaction-Driven Flow
+1. **New page file**: `src/pages/Economy.tsx`
+   - TradingView Ticker Tape at the top
+   - TradingEconomics widget (the embed with `cl-pro` dark theme)
+   - FRED Economic Indicators grid below
+   - Page header with "ECONOMY" title and Activity icon
 
-1. **BUY Transaction → Auto-Creates Valuation**
-   - When a BUY transaction is entered, the system automatically creates a valuation entry for that month
-   - Valuation price = transaction price per unit
-   - Asset appears immediately in portfolio (no delay)
+2. **New icon**: `src/components/icons/EconomyIcon.tsx`
+   - Custom icon consistent with existing icon system (Activity/TrendingUp style)
 
-2. **Later Valuations → Upsert (Update if Exists)**
-   - When adding a valuation for an existing ticker+month, it UPDATES instead of creating duplicate
-   - Each asset has only ONE valuation per month (time-series integrity)
-   - Manual valuation updates overwrite transaction-derived values
+3. **Route registration**: `src/App.tsx`
+   - Add lazy import for Economy page
+   - Add `/economy` route inside the protected DashboardLayout
 
-3. **Data Integrity Rules (Enforced)**
-   - Each asset exists only once per month in valuations
-   - Ticker is normalized to uppercase for consistency
-   - Valuation history is a clean time-series by month
+4. **Sidebar navigation**: `src/components/layout/Sidebar.tsx`
+   - Add "Economy" entry under the RESEARCH group (after Research, before Analysis)
+   - Import the new EconomyIcon
 
----
+5. **Mobile navigation**: `src/components/layout/MobileNav.tsx`
+   - Add Economy to the "More" menu items
 
-## Technical Changes
+### Technical details
 
-### `src/context/PortfolioContext.tsx`
+```text
+File: src/pages/Economy.tsx
+- Import TradingViewTickerTape, EconomicIndicators
+- Embed TradingEconomics widget via useRef/useEffect (same pattern as existing)
+- Standard animate-fade-in wrapper, section-spacing layout
 
-**addTransaction() - Enhanced:**
-```typescript
-// After creating transaction, auto-create valuation for BUY
-if (tx.transactionType === 'buy') {
-  const transactionMonth = tx.date.substring(0, 7); // YYYY-MM
-  
-  // Check if valuation exists for ticker+month
-  const existing = await checkExistingValuation(ticker, month);
-  
-  if (existing) {
-    // UPDATE existing valuation
-    await updateValuation(existing.id, { pricePerUnit, fxRate });
-  } else {
-    // INSERT new valuation from transaction
-    await insertValuation({ ticker, month, pricePerUnit, fxRate });
-  }
-}
+File: src/components/icons/EconomyIcon.tsx
+- SVG icon following existing icon component pattern (size, strokeWidth props)
+
+File: src/App.tsx
+- const Economy = lazy(() => import("./pages/Economy"));
+- <Route path="/economy" element={<Suspense ...><Economy /></Suspense>} />
+
+File: src/components/layout/Sidebar.tsx
+- Add { path: '/economy', icon: EconomyIcon, label: 'Economy' } to RESEARCH group
+
+File: src/components/layout/MobileNav.tsx
+- Add Economy to moreNavItems array
 ```
 
-**addValuation() - Enhanced with Upsert:**
-```typescript
-// Check if valuation exists for ticker+month
-const existing = await checkExistingValuation(ticker, month);
+No database changes required.
 
-if (existing) {
-  // UPDATE existing - no duplicate
-  await updateValuation(existing.id, { ...fields });
-} else {
-  // INSERT new valuation
-  await insertValuation({ ...fields });
-}
-```
-
----
-
-## Expected Behavior
-
-| Scenario | Before (Bug) | After (Fixed) |
-|----------|--------------|---------------|
-| Add BUY transaction | Asset not in portfolio until valuation added | Asset appears immediately with transaction price |
-| Add valuation for existing ticker+month | Creates duplicate | Updates existing valuation |
-| Portfolio value | Delayed/incorrect | Always reflects latest transaction or valuation |
-| Data integrity | Possible duplicates | One valuation per asset per month |
-
----
-
-## Logical Flow Diagram
-
-```
-┌─────────────────────┐
-│  User adds BUY TX   │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│ Transaction saved   │
-│ to database         │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│ Check: Valuation    │
-│ exists for          │
-│ ticker + month?     │
-└──────────┬──────────┘
-           │
-    ┌──────┴──────┐
-    │             │
-   YES           NO
-    │             │
-    ▼             ▼
-┌────────┐  ┌────────────┐
-│ UPDATE │  │ INSERT new │
-│existing│  │ valuation  │
-│  val   │  │ from TX    │
-└────────┘  └────────────┘
-           │
-           ▼
-┌─────────────────────┐
-│ Asset visible in    │
-│ portfolio NOW       │
-└─────────────────────┘
-```
-
----
-
-## Previous Plan: Data Consistency Fix (Archived)
-
-The previous plan addressed cost-basis fallback for missing valuations. This is now less critical since valuations are auto-created, but the fallback still exists as a safety net for legacy data.
