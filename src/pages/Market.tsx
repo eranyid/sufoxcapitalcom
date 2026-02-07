@@ -285,21 +285,50 @@ export default function Market() {
           </div>
         </div>
 
-        {/* Ticker Input */}
+        {/* Ticker Input + Company Header inline */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <div className="flex gap-2 items-center">
-            <Input
-              placeholder="Enter ticker (e.g. AAPL, MSFT, TEVA)"
-              value={ticker}
-              onChange={(e) => setTicker(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
-              className="font-mono text-sm h-10 max-w-xs"
-              disabled={loading}
-            />
-            <Button onClick={handleAnalyze} disabled={loading || !ticker.trim()} className="gap-2 h-10">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              Analyze
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            {/* Input + Button */}
+            <div className="flex gap-2 items-center shrink-0">
+              <Input
+                placeholder="Enter ticker (e.g. AAPL, MSFT, TEVA)"
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
+                className="font-mono text-sm h-10 max-w-xs"
+                disabled={loading}
+              />
+              <Button onClick={handleAnalyze} disabled={loading || !ticker.trim()} className="gap-2 h-10">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                Analyze
+              </Button>
+            </div>
+
+            {/* Company info inline */}
+            {data && !loading && (
+              <>
+                <div className="hidden sm:block w-px h-8 bg-border mx-1" />
+                <div className="flex flex-1 items-center justify-between gap-3 min-w-0">
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-bold text-foreground truncate">{data.company_name}</h2>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <Badge variant="outline" className="font-mono text-[10px] h-5">{data.ticker}</Badge>
+                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Briefcase className="h-2.5 w-2.5" />{data.sector}</Badge>
+                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Building2 className="h-2.5 w-2.5" />{data.industry}</Badge>
+                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Globe className="h-2.5 w-2.5" />{data.country}</Badge>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xl font-bold font-mono text-foreground">
+                      {data.currency === 'ILS' ? '₪' : data.currency === 'EUR' ? '€' : '$'}{fmt(data.current_price)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      52W: {fmt(data.week_52_low)} – {fmt(data.week_52_high)}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -322,28 +351,8 @@ export default function Market() {
         {/* Results */}
         {data && !loading && (
           <div className="space-y-4">
-            {/* Company Header */}
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-bold text-foreground">{data.company_name}</h2>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <Badge variant="outline" className="font-mono">{data.ticker}</Badge>
-                    <Badge variant="secondary" className="gap-1"><Briefcase className="h-3 w-3" />{data.sector}</Badge>
-                    <Badge variant="secondary" className="gap-1"><Building2 className="h-3 w-3" />{data.industry}</Badge>
-                    <Badge variant="secondary" className="gap-1"><Globe className="h-3 w-3" />{data.country}</Badge>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold font-mono text-foreground">
-                    {data.currency === 'ILS' ? '₪' : data.currency === 'EUR' ? '€' : '$'}{fmt(data.current_price)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    52W: {fmt(data.week_52_low)} – {fmt(data.week_52_high)}
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Empty placeholder card for future data */}
+            <div className="bg-card border border-border rounded-lg p-4 min-h-[60px]" />
 
             {/* Valuation KPIs */}
             <div>
