@@ -15,14 +15,16 @@ interface HoldingRow {
   client_id: string | null;
 }
 
-interface FinnhubCandle {
-  c: number[];
-  h: number[];
-  l: number[];
-  o: number[];
-  v: number[];
-  t: number[];
-  s: string;
+// Finnhub /quote response
+interface FinnhubQuote {
+  c: number;  // current price
+  d: number;  // change
+  dp: number; // percent change
+  h: number;  // high of day
+  l: number;  // low of day
+  o: number;  // open
+  pc: number; // previous close
+  t: number;  // timestamp
 }
 
 function toFinnhubSymbol(symbol: string): string {
@@ -31,6 +33,29 @@ function toFinnhubSymbol(symbol: string): string {
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+async function fetchQuote(symbol: string, apiKey: string): Promise<{ quote: FinnhubQuote | null; error: string | null }> {
+  const finnhubSymbol = toFinnhubSymbol(symbol);
+  try {
+    const url = `${FINNHUB_BASE}/quote?symbol=${encodeURIComponent(finnhubSymbol)}&token=${apiKey}`;
+    console.log(`[fetch-market-prices] Fetching quote: ${finnhubSymbol}`);
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error(`Finnhub error for ${finnhubSymbol}: ${resp.status} ${text}`);
+      return { quote: null, error: `HTTP ${resp.status}` };
+    }
+    const quote: FinnhubQuote = await resp.json();
+    // Finnhub returns c=0 for unknown symbols
+    if (!quote || quote.c === 0) {
+      return { quote: null, error: "no_data" };
+    }
+    return { quote, error: null };
+  } catch (err) {
+    console.error(`Error fetching ${symbol}:`, err);
+    return { quote: null, error: String(err) };
+  }
 }
 
 Deno.serve(async (req) => {
@@ -47,11 +72,8 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const authHeader = req.headers.get("Authorization");
-    
-    // Create admin client for DB operations
+
     const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-    
-    // Create user client for auth
     const supabaseUser = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader! } },
     });
@@ -69,51 +91,38 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const forceRefresh = body.forceRefresh === true;
     const clientId = body.clientId || null;
-    const adHocSymbols: string[] = body.symbols || []; // Ad-hoc ticker lookup mode
+    const adHocSymbols: string[] = body.symbols || [];
 
     console.log(`[fetch-market-prices] User: ${userId}, clientId: ${clientId}, force: ${forceRefresh}, adHoc: ${adHocSymbols.length}`);
 
-    // If ad-hoc symbols provided, fetch those directly (no holdings needed)
+    // --- Ad-hoc mode: fetch specific symbols without needing holdings ---
     if (adHocSymbols.length > 0) {
-      const now = Math.floor(Date.now() / 1000);
-      const fiveDaysAgo = now - 86400 * 5;
       const results: any[] = [];
       const errors: { symbol: string; error: string }[] = [];
 
       for (const symbol of adHocSymbols) {
-        const finnhubSymbol = toFinnhubSymbol(symbol);
-        try {
-          const url = `${FINNHUB_BASE}/stock/candle?symbol=${encodeURIComponent(finnhubSymbol)}&resolution=D&from=${fiveDaysAgo}&to=${now}&token=${FINNHUB_API_KEY}`;
-          console.log(`[fetch-market-prices] Ad-hoc fetch: ${finnhubSymbol}`);
-          const resp = await fetch(url);
-          if (!resp.ok) {
-            errors.push({ symbol, error: `HTTP ${resp.status}` });
-            continue;
-          }
-          const candle: FinnhubCandle = await resp.json();
-          if (candle.s === "no_data" || !candle.c || candle.c.length === 0) {
-            errors.push({ symbol, error: "no_data" });
-            continue;
-          }
-          const idx = candle.c.length - 1;
-          const priceDate = new Date(candle.t[idx] * 1000).toISOString().slice(0, 10);
-          results.push({
-            id: crypto.randomUUID(),
-            symbol: symbol.toUpperCase(),
-            market: "US",
-            open: candle.o[idx],
-            high: candle.h[idx],
-            low: candle.l[idx],
-            close: candle.c[idx],
-            volume: candle.v[idx],
-            currency: "USD",
-            price_date: priceDate,
-            source: "finnhub",
-            updated_at: new Date().toISOString(),
-          });
-        } catch (err) {
-          errors.push({ symbol, error: String(err) });
+        const { quote, error } = await fetchQuote(symbol, FINNHUB_API_KEY);
+        if (error || !quote) {
+          errors.push({ symbol, error: error || "unknown" });
+          continue;
         }
+        results.push({
+          id: crypto.randomUUID(),
+          symbol: symbol.toUpperCase(),
+          market: "US",
+          open: quote.o,
+          high: quote.h,
+          low: quote.l,
+          close: quote.c,
+          previousClose: quote.pc,
+          change: quote.d,
+          changePct: quote.dp,
+          volume: null,
+          currency: "USD",
+          price_date: todayStr(),
+          source: "finnhub",
+          updated_at: new Date().toISOString(),
+        });
       }
 
       return new Response(
@@ -122,7 +131,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Standard mode: fetch from holdings
+    // --- Standard mode: fetch from holdings ---
     let holdingsQuery = supabaseAdmin
       .from("holdings_snapshot")
       .select("ticker, asset_currency, quantity, client_id")
@@ -150,10 +159,10 @@ Deno.serve(async (req) => {
 
     const today = todayStr();
 
-    // 2. Check cache for today's prices (skip if force refresh)
+    // Check cache
     let cachedSymbols = new Set<string>();
     let cachedPrices: any[] = [];
-    
+
     if (!forceRefresh) {
       const { data: cached } = await supabaseAdmin
         .from("market_prices")
@@ -167,7 +176,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Find symbols that need fetching
+    // Find symbols that need fetching
     const uniqueHoldings = new Map<string, HoldingRow>();
     for (const h of holdings as HoldingRow[]) {
       if (!cachedSymbols.has(h.ticker)) {
@@ -177,76 +186,45 @@ Deno.serve(async (req) => {
 
     console.log(`[fetch-market-prices] Cached: ${cachedSymbols.size}, To fetch: ${uniqueHoldings.size}`);
 
-    // 4. Fetch from Finnhub (up to 60 calls/min)
     const fetchedPrices: any[] = [];
     const errors: { symbol: string; error: string }[] = [];
 
-    const now = Math.floor(Date.now() / 1000);
-    const oneDayAgo = now - 86400 * 5; // 5 days back to ensure we get data
-
     let fetchCount = 0;
     for (const [symbol, holding] of uniqueHoldings) {
-      const finnhubSymbol = toFinnhubSymbol(symbol);
       const currency = holding.asset_currency || "USD";
 
-      try {
-        // Rate limit: 60 calls/min → delay 1s every 55 requests to stay safe
-        if (fetchCount > 0 && fetchCount % 55 === 0) {
-          console.log(`[fetch-market-prices] Rate limit pause at ${fetchCount} requests`);
-          await new Promise((r) => setTimeout(r, 1100));
-        }
-
-        const url = `${FINNHUB_BASE}/stock/candle?symbol=${encodeURIComponent(finnhubSymbol)}&resolution=D&from=${oneDayAgo}&to=${now}&token=${FINNHUB_API_KEY}`;
-        console.log(`[fetch-market-prices] Fetching: ${finnhubSymbol}`);
-
-        const resp = await fetch(url);
-        if (!resp.ok) {
-          const text = await resp.text();
-          console.error(`Finnhub error for ${finnhubSymbol}: ${resp.status} ${text}`);
-          errors.push({ symbol, error: `HTTP ${resp.status}` });
-          fetchCount++;
-          continue;
-        }
-
-        const candle: FinnhubCandle = await resp.json();
-
-        if (candle.s === "no_data" || !candle.c || candle.c.length === 0) {
-          console.warn(`No data for ${finnhubSymbol}`);
-          errors.push({ symbol, error: "no_data" });
-          fetchCount++;
-          continue;
-        }
-
-        // Take the last candle
-        const idx = candle.c.length - 1;
-        const priceDate = new Date(candle.t[idx] * 1000).toISOString().slice(0, 10);
-
-        const priceRow = {
-          user_id: userId,
-          client_id: clientId,
-          symbol,
-          market: "US",
-          open: candle.o[idx],
-          high: candle.h[idx],
-          low: candle.l[idx],
-          close: candle.c[idx],
-          volume: candle.v[idx],
-          currency,
-          price_date: priceDate,
-          source: "finnhub",
-          updated_at: new Date().toISOString(),
-        };
-
-        fetchedPrices.push(priceRow);
-        fetchCount++;
-      } catch (err) {
-        console.error(`Error fetching ${symbol}:`, err);
-        errors.push({ symbol, error: String(err) });
-        fetchCount++;
+      // Rate limit: 60 calls/min
+      if (fetchCount > 0 && fetchCount % 55 === 0) {
+        console.log(`[fetch-market-prices] Rate limit pause at ${fetchCount} requests`);
+        await new Promise((r) => setTimeout(r, 1100));
       }
+
+      const { quote, error } = await fetchQuote(symbol, FINNHUB_API_KEY);
+      fetchCount++;
+
+      if (error || !quote) {
+        errors.push({ symbol, error: error || "unknown" });
+        continue;
+      }
+
+      fetchedPrices.push({
+        user_id: userId,
+        client_id: clientId,
+        symbol,
+        market: "US",
+        open: quote.o,
+        high: quote.h,
+        low: quote.l,
+        close: quote.c,
+        volume: null,
+        currency,
+        price_date: today,
+        source: "finnhub",
+        updated_at: new Date().toISOString(),
+      });
     }
 
-    // 5. Upsert fetched prices
+    // Upsert fetched prices
     if (fetchedPrices.length > 0) {
       const { error: upsertErr } = await supabaseAdmin
         .from("market_prices")
@@ -257,14 +235,12 @@ Deno.serve(async (req) => {
 
       if (upsertErr) {
         console.error("Upsert error:", upsertErr);
-        // Try individual inserts as fallback
         for (const p of fetchedPrices) {
           await supabaseAdmin.from("market_prices").upsert(p).select();
         }
       }
     }
 
-    // 6. Return all prices (cached + newly fetched)
     const allPrices = [...cachedPrices, ...fetchedPrices];
 
     console.log(`[fetch-market-prices] Returning ${allPrices.length} prices, ${errors.length} errors`);
