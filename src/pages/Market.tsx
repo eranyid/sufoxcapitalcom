@@ -166,8 +166,8 @@ function FinancialStatementsTable({ statements, currency }: { statements: Financ
             <th className="text-left py-2 px-2 text-muted-foreground font-medium sticky left-0 bg-card z-10 min-w-[140px]">
               Item ({sym})
             </th>
-            {statements.map((s) => (
-              <th key={s.period} className="text-right py-2 px-2 text-muted-foreground font-medium min-w-[90px]">
+            {statements.map((s, idx) => (
+              <th key={s.period} className={cn("text-right py-2 px-2 font-medium min-w-[90px]", idx === 0 ? "text-blue-400" : "text-muted-foreground")}>
                 {s.period}
               </th>
             ))}
@@ -196,14 +196,18 @@ function FinancialStatementsTable({ statements, currency }: { statements: Financ
                   )}>
                     {row.label}
                   </td>
-                  {statements.map((s) => {
+                  {statements.map((s, colIdx) => {
                     const val = s[row.key] as number | null;
                     const isEps = row.key === 'eps';
+                    const isLatest = colIdx === 0;
                     return (
                       <td key={s.period} className={cn(
                         "text-right py-1.5 px-2 font-mono",
-                        row.bold ? "font-semibold text-foreground" : "text-foreground/80",
-                        val != null && val < 0 && "text-red-400",
+                        isLatest ? "text-blue-400 font-semibold" : (
+                          row.bold ? "font-semibold text-foreground" : "text-foreground/80"
+                        ),
+                        val != null && val < 0 && !isLatest && "text-red-400",
+                        val != null && val < 0 && isLatest && "text-red-400",
                       )}>
                         {isEps ? fmt(val) : fmtM(val)}
                       </td>
