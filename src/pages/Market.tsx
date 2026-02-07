@@ -360,7 +360,7 @@ export default function Market() {
         {data && !loading && (
           <div className="space-y-4">
             {/* Quick KPI strip */}
-            <div className="bg-card border border-border rounded-lg px-4 py-3">
+            <div className="bg-card border border-border rounded-lg px-4 py-3 space-y-2">
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 {[
                   { label: 'Market Cap', value: data.market_cap_b, suffix: 'B' },
@@ -383,27 +383,33 @@ export default function Market() {
                   </div>
                 ))}
               </div>
+              {latestAnnual && (
+                <>
+                  <div className="border-t border-border" />
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                    {[
+                      { label: 'Total Assets', value: latestAnnual.total_assets, suffix: 'B' },
+                      { label: 'Current Assets', value: latestAnnual.current_assets, suffix: 'B' },
+                      { label: 'Cash', value: latestAnnual.cash_and_equivalents, suffix: 'B' },
+                      { label: 'Total Liabilities', value: latestAnnual.total_liabilities, suffix: 'B' },
+                      { label: 'Current Liabilities', value: latestAnnual.current_liabilities, suffix: 'B' },
+                      { label: 'Total Debt', value: latestAnnual.total_debt, suffix: 'B' },
+                      { label: 'Total Equity', value: latestAnnual.total_equity, suffix: 'B', color: true },
+                    ].filter(k => k.value != null).map(k => (
+                      <div key={k.label} className="flex items-baseline gap-1.5">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{k.label}</span>
+                        <span className={cn(
+                          "text-sm font-bold font-mono",
+                          k.color && k.value != null && k.value > 0 ? "text-emerald-400" : k.color && k.value != null && k.value < 0 ? "text-red-400" : "text-foreground"
+                        )}>
+                          {fmt(k.value / 1e9, 2, k.suffix || '')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-
-
-            {/* Balance Sheet Snapshot KPIs */}
-            {latestAnnual && (
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">
-                  Balance Sheet Snapshot ({latestAnnual.period})
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                  <KpiTile label="Total Assets" value={latestAnnual.total_assets != null ? latestAnnual.total_assets / 1e9 : null} suffix="B" />
-                  <KpiTile label="Current Assets" value={latestAnnual.current_assets != null ? latestAnnual.current_assets / 1e9 : null} suffix="B" />
-                  <KpiTile label="Cash" value={latestAnnual.cash_and_equivalents != null ? latestAnnual.cash_and_equivalents / 1e9 : null} suffix="B" />
-                  <KpiTile label="Total Liabilities" value={latestAnnual.total_liabilities != null ? latestAnnual.total_liabilities / 1e9 : null} suffix="B" />
-                  <KpiTile label="Current Liabilities" value={latestAnnual.current_liabilities != null ? latestAnnual.current_liabilities / 1e9 : null} suffix="B" />
-                  <KpiTile label="Total Debt" value={latestAnnual.total_debt != null ? latestAnnual.total_debt / 1e9 : null} suffix="B" />
-                  <KpiTile label="Total Equity" value={latestAnnual.total_equity != null ? latestAnnual.total_equity / 1e9 : null} suffix="B"
-                    positive={latestAnnual.total_equity != null ? latestAnnual.total_equity > 0 : null} />
-                </div>
-              </div>
-            )}
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
