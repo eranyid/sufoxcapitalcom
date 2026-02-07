@@ -385,48 +385,6 @@ export default function Market() {
               </div>
             </div>
 
-            {/* Valuation KPIs */}
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">Valuation</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                <KpiTile label="Market Cap" value={data.market_cap_b} suffix="B" icon={DollarSign} />
-                <KpiTile label="EV" value={data.enterprise_value_b} suffix="B" />
-                <KpiTile label="P/E (TTM)" value={data.pe_ratio} />
-                <KpiTile label="Fwd P/E" value={data.forward_pe} />
-                <KpiTile label="P/B" value={data.pb_ratio} />
-                <KpiTile label="EV/EBITDA" value={data.ev_ebitda} />
-              </div>
-            </div>
-
-            {/* Profitability KPIs */}
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">Profitability & Returns</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                <KpiTile label="EPS (TTM)" value={data.eps_ttm} icon={TrendingUp} />
-                <KpiTile label="Gross Margin" value={data.gross_margin_pct} suffix="%" positive={data.gross_margin_pct != null ? data.gross_margin_pct > 0 : null} />
-                <KpiTile label="Op. Margin" value={data.operating_margin_pct} suffix="%" positive={data.operating_margin_pct != null ? data.operating_margin_pct > 0 : null} />
-                <KpiTile label="Net Margin" value={data.net_margin_pct} suffix="%" positive={data.net_margin_pct != null ? data.net_margin_pct > 0 : null} />
-                <KpiTile label="ROE" value={data.roe_pct} suffix="%" positive={data.roe_pct != null ? data.roe_pct > 10 : null} />
-                <KpiTile label="ROIC" value={data.roic_pct} suffix="%" />
-              </div>
-            </div>
-
-            {/* Growth & Financial Health + Balance Sheet KPIs */}
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">Growth & Financial Health</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                <KpiTile label="Rev Growth YoY" value={data.revenue_growth_yoy_pct} suffix="%" icon={TrendingUp}
-                  positive={data.revenue_growth_yoy_pct != null ? data.revenue_growth_yoy_pct > 0 : null} />
-                <KpiTile label="Earnings Growth" value={data.earnings_growth_yoy_pct} suffix="%"
-                  positive={data.earnings_growth_yoy_pct != null ? data.earnings_growth_yoy_pct > 0 : null} />
-                <KpiTile label="Revenue TTM" value={data.revenue_ttm_b} suffix="B" />
-                <KpiTile label="FCF TTM" value={data.free_cash_flow_ttm_b} suffix="B"
-                  positive={data.free_cash_flow_ttm_b != null ? data.free_cash_flow_ttm_b > 0 : null} />
-                <KpiTile label="Debt/Equity" value={data.debt_to_equity}
-                  positive={data.debt_to_equity != null ? data.debt_to_equity < 1 : null} />
-                <KpiTile label="Div Yield" value={data.dividend_yield_pct} suffix="%" />
-              </div>
-            </div>
 
             {/* Balance Sheet Snapshot KPIs */}
             {latestAnnual && (
