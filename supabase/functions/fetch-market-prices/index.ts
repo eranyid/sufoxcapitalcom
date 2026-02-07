@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
 
     console.log(`[fetch-market-prices] Cached: ${cachedSymbols.size}, To fetch: ${uniqueHoldings.size}`);
 
-    // 4. Fetch from Finnhub with rate limiting (30 req/sec free tier)
+    // 4. Fetch from Finnhub (up to 60 calls/min)
     const fetchedPrices: any[] = [];
     const errors: { symbol: string; error: string }[] = [];
 
@@ -145,8 +145,9 @@ Deno.serve(async (req) => {
       const currency = market === "IL" ? "ILS" : (holding.asset_currency || "USD");
 
       try {
-        // Rate limit: small delay every 10 requests
-        if (fetchCount > 0 && fetchCount % 10 === 0) {
+        // Rate limit: 60 calls/min → delay 1s every 55 requests to stay safe
+        if (fetchCount > 0 && fetchCount % 55 === 0) {
+          console.log(`[fetch-market-prices] Rate limit pause at ${fetchCount} requests`);
           await new Promise((r) => setTimeout(r, 1100));
         }
 
