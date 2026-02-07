@@ -934,7 +934,7 @@ export type Database = {
           rate_date: string
           source: string | null
           to_currency: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           client_id?: string | null
@@ -945,7 +945,7 @@ export type Database = {
           rate_date: string
           source?: string | null
           to_currency: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           client_id?: string | null
@@ -956,7 +956,7 @@ export type Database = {
           rate_date?: string
           source?: string | null
           to_currency?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
