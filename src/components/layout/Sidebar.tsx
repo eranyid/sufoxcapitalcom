@@ -25,8 +25,6 @@ import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { MessagesIcon } from '@/components/icons/MessagesIcon';
-import { EconomyIcon } from '@/components/icons/EconomyIcon';
- 
  import { WorkspacesIcon } from '@/components/icons/WorkspacesIcon';
 import { LucideIcon } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
@@ -57,7 +55,7 @@ const navGroups: NavGroup[] = [
     title: 'RESEARCH',
     items: [
       { path: '/research', icon: ResearchIcon, label: 'Research' },
-      { path: '/economy', icon: EconomyIcon, label: 'Economy' },
+      
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
        { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },
