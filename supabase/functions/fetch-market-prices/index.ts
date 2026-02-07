@@ -25,12 +25,8 @@ interface FinnhubCandle {
   s: string;
 }
 
-function detectMarket(symbol: string): "US" | "IL" {
-  return /^\d+$/.test(symbol.trim()) ? "IL" : "US";
-}
-
-function toFinnhubSymbol(symbol: string, market: "US" | "IL"): string {
-  return market === "IL" ? `TASE:${symbol}` : symbol.toUpperCase();
+function toFinnhubSymbol(symbol: string): string {
+  return symbol.toUpperCase();
 }
 
 function todayStr(): string {
@@ -140,9 +136,8 @@ Deno.serve(async (req) => {
 
     let fetchCount = 0;
     for (const [symbol, holding] of uniqueHoldings) {
-      const market = detectMarket(symbol);
-      const finnhubSymbol = toFinnhubSymbol(symbol, market);
-      const currency = market === "IL" ? "ILS" : (holding.asset_currency || "USD");
+      const finnhubSymbol = toFinnhubSymbol(symbol);
+      const currency = holding.asset_currency || "USD";
 
       try {
         // Rate limit: 60 calls/min → delay 1s every 55 requests to stay safe
@@ -180,7 +175,7 @@ Deno.serve(async (req) => {
           user_id: userId,
           client_id: clientId,
           symbol,
-          market,
+          market: "US",
           open: candle.o[idx],
           high: candle.h[idx],
           low: candle.l[idx],

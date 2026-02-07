@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { useMarketPrices, MarketPriceRow } from '@/hooks/useMarketPrices';
 import { cn } from '@/lib/utils';
 
@@ -74,7 +73,7 @@ export default function Market() {
               Market Prices
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              EOD prices for portfolio holdings · US & TASE
+              EOD prices for portfolio holdings
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -99,7 +98,7 @@ export default function Market() {
 
         {/* Summary KPIs */}
         {!loading && prices.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-card border border-border rounded-lg p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Market Value</p>
               <p className="text-lg font-bold font-mono text-foreground">${formatNumber(totalMarketValue, 0)}</p>
@@ -107,14 +106,6 @@ export default function Market() {
             <div className="bg-card border border-border rounded-lg p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Holdings</p>
               <p className="text-lg font-bold font-mono text-foreground">{prices.length}</p>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">US Equities</p>
-              <p className="text-lg font-bold font-mono text-foreground">{prices.filter(p => p.market === 'US').length}</p>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">TASE / Israel</p>
-              <p className="text-lg font-bold font-mono text-foreground">{prices.filter(p => p.market === 'IL').length}</p>
             </div>
           </div>
         )}
@@ -157,7 +148,6 @@ export default function Market() {
                   <TableRow className="bg-secondary/30">
                     <TableHead className="text-[10px] uppercase">Symbol</TableHead>
                     <TableHead className="text-[10px] uppercase">Name</TableHead>
-                    <TableHead className="text-[10px] uppercase">Market</TableHead>
                     <TableHead className="text-[10px] uppercase text-right">Last Close</TableHead>
                     <TableHead className="text-[10px] uppercase text-right">Daily Chg</TableHead>
                     <TableHead className="text-[10px] uppercase text-right">High</TableHead>
@@ -177,14 +167,6 @@ export default function Market() {
                       </TableCell>
                       <TableCell className="text-xs text-foreground/80 max-w-[140px] truncate">
                         {row.assetName}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn(
-                          "text-[9px] font-mono",
-                          row.market === 'US' ? 'border-blue-500/50 text-blue-400' : 'border-emerald-500/50 text-emerald-400'
-                        )}>
-                          {row.market === 'US' ? 'US' : 'TASE'}
-                        </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs font-medium">
                         {formatNumber(row.close)}
