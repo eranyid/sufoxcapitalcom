@@ -55,7 +55,7 @@ const navGroups: NavGroup[] = [
     title: 'RESEARCH',
     items: [
       { path: '/research', icon: ResearchIcon, label: 'Research' },
-      
+      { path: '/market', icon: PerformanceIcon, label: 'Market' },
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
        { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },
@@ -70,7 +70,6 @@ const navGroups: NavGroup[] = [
     items: [
       { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
       { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
-      { path: '/market', icon: PerformanceIcon, label: 'Market' },
       { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
     ],
   },
