@@ -285,26 +285,24 @@ export default function Market() {
           </div>
         </div>
 
-        {/* Ticker Input + Company Header inline */}
-        <div className="bg-card border border-border rounded-lg p-4">
+        {/* Unified header block */}
+        <div className="bg-card border border-border rounded-lg px-4 py-3 space-y-2">
+          {/* Row 1: Input + Company info */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            {/* Input + Button */}
             <div className="flex gap-2 items-center shrink-0">
               <Input
                 placeholder="Enter ticker (e.g. AAPL, MSFT, TEVA)"
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
-                className="font-mono text-sm h-10 max-w-xs"
+                className="font-mono text-sm h-9 max-w-[200px]"
                 disabled={loading}
               />
-              <Button onClick={handleAnalyze} disabled={loading || !ticker.trim()} className="gap-2 h-10">
+              <Button onClick={handleAnalyze} disabled={loading || !ticker.trim()} className="gap-2 h-9">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 Analyze
               </Button>
             </div>
-
-            {/* Company info inline */}
             {data && !loading && (
               <>
                 <div className="hidden sm:block w-px h-8 bg-border mx-1" />
@@ -338,30 +336,11 @@ export default function Market() {
               </>
             )}
           </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Analyzing {ticker.toUpperCase()}...</p>
-          </div>
-        )}
-
-        {/* Results */}
-        {data && !loading && (
-          <div className="space-y-4">
-            {/* Quick KPI strip */}
-            <div className="bg-card border border-border rounded-lg px-4 py-3 space-y-2">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {/* KPI metrics rows */}
+          {data && !loading && (
+            <>
+              <div className="border-t border-border" />
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
                 {[
                   { label: 'Market Cap', value: data.market_cap_b, suffix: 'B' },
                   { label: 'P/E (TTM)', value: data.pe_ratio },
@@ -386,7 +365,7 @@ export default function Market() {
               {latestAnnual && (
                 <>
                   <div className="border-t border-border" />
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
                     {[
                       { label: 'Total Assets', value: latestAnnual.total_assets, suffix: 'B' },
                       { label: 'Current Assets', value: latestAnnual.current_assets, suffix: 'B' },
@@ -409,9 +388,29 @@ export default function Market() {
                   </div>
                 </>
               )}
-            </div>
+            </>
+          )}
+        </div>
 
-            {/* Charts Row */}
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Analyzing {ticker.toUpperCase()}...</p>
+          </div>
+        )}
+
+        {/* Results */}
+        {data && !loading && (
+          <div className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Revenue & Net Income Chart */}
               <Card className="bg-card/50 border-border">
