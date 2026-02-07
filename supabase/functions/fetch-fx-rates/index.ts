@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
         if (existing) {
           const { error } = await supabase
             .from("fx_rates")
-            .update({ rate: insert.rate })
+            .update({ rate: insert.rate, created_at: new Date().toISOString() })
             .eq("id", existing.id);
           if (error) console.error(`[fetch-fx-rates] Update error for ${insert.from_currency}/${insert.to_currency}:`, error);
         } else {
@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
         if (existing) {
           await supabase
             .from("fx_rates")
-            .update({ rate: r.rate!, source: "auto" })
+            .update({ rate: r.rate!, source: "auto", created_at: new Date().toISOString() })
             .eq("id", existing.id);
         } else {
           await supabase
