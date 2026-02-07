@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Search, Loader2, TrendingUp, TrendingDown, DollarSign, BarChart3, AlertTriangle, Building2, Globe, Briefcase, ShieldAlert, Sparkles } from 'lucide-react';
+import { Search, Loader2, TrendingUp, TrendingDown, DollarSign, BarChart3, AlertTriangle, Building2, Globe, Briefcase, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,9 +48,6 @@ interface FundamentalData {
   earnings_growth_yoy_pct: number | null;
   revenue_history: Array<{ year: string; revenue_b: number; net_income_b: number; eps: number }>;
   margin_history: Array<{ year: string; gross_margin_pct: number; operating_margin_pct: number; net_margin_pct: number }>;
-  summary: string;
-  strengths: string[];
-  risks: string[];
 }
 
 function fmt(n: number | null | undefined, decimals = 2, suffix = ''): string {
@@ -202,7 +199,6 @@ export default function Market() {
                   </p>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{data.summary}</p>
             </div>
 
             {/* Valuation KPIs */}
@@ -348,48 +344,11 @@ export default function Market() {
               </Card>
             </div>
 
-            {/* Strengths & Risks */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-card/50 border-emerald-500/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2 text-emerald-400">
-                    <TrendingUp className="h-4 w-4" />
-                    Strengths
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {data.strengths?.map((s, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs text-foreground/80">
-                      <span className="text-emerald-400 mt-0.5">●</span>
-                      <span>{s}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card/50 border-red-500/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-400">
-                    <ShieldAlert className="h-4 w-4" />
-                    Key Risks
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {data.risks?.map((r, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs text-foreground/80">
-                      <span className="text-red-400 mt-0.5">●</span>
-                      <span>{r}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Source & Disclaimer */}
             <div className="flex flex-col items-center gap-1">
               <Badge variant="outline" className="text-[9px] font-mono">Source: Finnhub</Badge>
               <p className="text-[9px] text-muted-foreground/50 text-center px-4">
-                Market data provided by Finnhub. Qualitative analysis by AI. This is not investment advice.
+                Market data provided by Finnhub. This is not investment advice.
               </p>
             </div>
           </div>
