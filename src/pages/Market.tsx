@@ -432,7 +432,7 @@ export default function Market() {
                       />
                       <Legend wrapperStyle={{ fontSize: 10 }} />
                       <Bar dataKey="revenue_b" name="Revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="net_income_b" name="Net Income" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="net_income_b" name="Net Income" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
