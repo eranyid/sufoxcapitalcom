@@ -1,46 +1,27 @@
-import { useRef, useEffect } from 'react';
-import { Activity } from 'lucide-react';
+import { useRef, useEffect, useCallback } from 'react';
+import { Activity, TrendingUp, Globe } from 'lucide-react';
 import TradingViewTickerTape from '@/components/dashboard/TradingViewTickerTape';
 import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 
-const TradingEconomicsWidget = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    containerRef.current.innerHTML = '';
-
-    const embed = document.createElement('div');
-    embed.className = 'te-embed';
-    embed.setAttribute('data-widget', 'cl-pro');
-    embed.setAttribute('data-color-theme', 'Dark');
-    containerRef.current.appendChild(embed);
-
-    const script = document.createElement('script');
-    script.src = 'https://embed.tradingeconomics.com/widget.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      if (containerRef.current) containerRef.current.innerHTML = '';
-      script.remove();
-    };
-  }, []);
-
-  return (
-    <div className="w-full bg-card border border-border overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border">
-        <Activity className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
-          TRADING ECONOMICS
-        </span>
-      </div>
-      <div ref={containerRef} style={{ minHeight: 420 }} />
-    </div>
-  );
+// Shared script loader - ensures widget.js is loaded once
+let scriptLoaded = false;
+const loadTEScript = () => {
+  if (scriptLoaded) return;
+  scriptLoaded = true;
+  const script = document.createElement('script');
+  script.src = 'https://embed.tradingeconomics.com/widget.js';
+  script.async = true;
+  document.body.appendChild(script);
 };
 
-const SPXMarketWidget = () => {
+interface TEWidgetBlockProps {
+  title: string;
+  icon: React.ReactNode;
+  minHeight?: number;
+  attrs: Record<string, string>;
+}
+
+const TEWidgetBlock = ({ title, icon, minHeight = 420, attrs }: TEWidgetBlockProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,11 +30,12 @@ const SPXMarketWidget = () => {
 
     const embed = document.createElement('div');
     embed.className = 'te-embed';
-    embed.setAttribute('data-widget', 'tm-pro');
-    embed.setAttribute('data-index', 'SPX:IND');
-    embed.setAttribute('data-index-full-name', 'United States Stock Market Index (US500)');
+    Object.entries(attrs).forEach(([key, value]) => {
+      embed.setAttribute(`data-${key}`, value);
+    });
     containerRef.current.appendChild(embed);
 
+    // Reload widget script to pick up new embeds
     const script = document.createElement('script');
     script.src = 'https://embed.tradingeconomics.com/widget.js';
     script.async = true;
@@ -68,12 +50,12 @@ const SPXMarketWidget = () => {
   return (
     <div className="w-full bg-card border border-border overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border">
-        <Activity className="h-3.5 w-3.5 text-primary" />
+        {icon}
         <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
-          US500 MARKET INDEX
+          {title}
         </span>
       </div>
-      <div ref={containerRef} style={{ minHeight: 420 }} />
+      <div ref={containerRef} style={{ minHeight }} />
     </div>
   );
 };
@@ -94,10 +76,25 @@ const Economy = () => {
       <EconomicIndicators />
 
       {/* SPX Market Index */}
-      <SPXMarketWidget />
+      <TEWidgetBlock
+        title="US500 MARKET INDEX"
+        icon={<TrendingUp className="h-3.5 w-3.5 text-primary" />}
+        attrs={{
+          widget: 'tm-pro',
+          index: 'SPX:IND',
+          'index-full-name': 'United States Stock Market Index (US500)',
+        }}
+      />
 
-      {/* TradingEconomics Widget */}
-      <TradingEconomicsWidget />
+      {/* TradingEconomics Calendar */}
+      <TEWidgetBlock
+        title="TRADING ECONOMICS"
+        icon={<Globe className="h-3.5 w-3.5 text-primary" />}
+        attrs={{
+          widget: 'cl-pro',
+          'color-theme': 'Dark',
+        }}
+      />
     </div>
   );
 };
