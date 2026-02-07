@@ -25,6 +25,7 @@ import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { MessagesIcon } from '@/components/icons/MessagesIcon';
+import { FundamentalsIcon } from '@/components/icons/FundamentalsIcon';
 import {
   Sheet,
   SheetContent,
@@ -34,13 +35,13 @@ import {
 const primaryNavItems = [
   { path: '/', icon: OverviewIcon, label: 'Overview' },
   { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
-  { path: '/risk', icon: RiskIcon, label: 'Risk' },
-  { path: '/research', icon: ResearchIcon, label: 'Research' },
+  { path: '/messages', icon: MessagesIcon, label: 'Messages' },
+  { path: '/market', icon: FundamentalsIcon, label: 'Fundamentals' },
 ];
 
 const moreNavItems = [
-  { path: '/messages', icon: MessagesIcon, label: 'Messages' },
-  
+  { path: '/risk', icon: RiskIcon, label: 'Risk' },
+  { path: '/research', icon: ResearchIcon, label: 'Research' },
   { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
   { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
   { path: '/lab', icon: LabIcon, label: 'Lab' },
