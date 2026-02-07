@@ -27,60 +27,93 @@ function safeNum(v: unknown): number | null {
   return isFinite(n) ? n : null;
 }
 
-function extractFinancials(financialsData: any) {
+interface FinancialPeriod {
+  period: string; // "2024" or "Q3 2024"
+  revenue: number | null;
+  cost_of_revenue: number | null;
+  gross_profit: number | null;
+  operating_expenses: number | null;
+  operating_income: number | null;
+  net_income: number | null;
+  eps: number | null;
+  // Balance sheet
+  total_assets: number | null;
+  current_assets: number | null;
+  total_liabilities: number | null;
+  current_liabilities: number | null;
+  total_equity: number | null;
+  cash_and_equivalents: number | null;
+  total_debt: number | null;
+}
+
+function findConcept(section: any[], concepts: string[]): number | null {
+  if (!Array.isArray(section)) return null;
+  for (const c of concepts) {
+    const item = section.find((row: any) => row.concept === c);
+    if (item?.value != null) return Number(item.value);
+  }
+  return null;
+}
+
+function extractReportData(report: any): Omit<FinancialPeriod, "period"> {
+  const ic = report.report?.ic || [];
+  const bs = report.report?.bs || [];
+
+  const revenue = findConcept(ic, [
+    "us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax",
+    "us-gaap_Revenues",
+    "us-gaap_SalesRevenueNet",
+    "us-gaap_RevenueFromContractWithCustomerIncludingAssessedTax",
+  ]);
+  const costOfRevenue = findConcept(ic, ["us-gaap_CostOfGoodsAndServicesSold", "us-gaap_CostOfRevenue", "us-gaap_CostOfGoodsSold"]);
+  const grossProfit = findConcept(ic, ["us-gaap_GrossProfit"]);
+  const operatingExpenses = findConcept(ic, ["us-gaap_OperatingExpenses"]);
+  const operatingIncome = findConcept(ic, ["us-gaap_OperatingIncomeLoss"]);
+  const netIncome = findConcept(ic, ["us-gaap_NetIncomeLoss", "us-gaap_ProfitLoss"]);
+  const eps = findConcept(ic, ["us-gaap_EarningsPerShareDiluted", "us-gaap_EarningsPerShareBasic"]);
+
+  const totalAssets = findConcept(bs, ["us-gaap_Assets"]);
+  const currentAssets = findConcept(bs, ["us-gaap_AssetsCurrent"]);
+  const totalLiabilities = findConcept(bs, ["us-gaap_Liabilities"]);
+  const currentLiabilities = findConcept(bs, ["us-gaap_LiabilitiesCurrent"]);
+  const totalEquity = findConcept(bs, ["us-gaap_StockholdersEquity", "us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]);
+  const cash = findConcept(bs, ["us-gaap_CashAndCashEquivalentsAtCarryingValue", "us-gaap_CashCashEquivalentsAndShortTermInvestments"]);
+  const totalDebt = findConcept(bs, ["us-gaap_LongTermDebt", "us-gaap_LongTermDebtNoncurrent"]);
+
+  return {
+    revenue, cost_of_revenue: costOfRevenue, gross_profit: grossProfit,
+    operating_expenses: operatingExpenses, operating_income: operatingIncome,
+    net_income: netIncome, eps,
+    total_assets: totalAssets, current_assets: currentAssets,
+    total_liabilities: totalLiabilities, current_liabilities: currentLiabilities,
+    total_equity: totalEquity, cash_and_equivalents: cash, total_debt: totalDebt,
+  };
+}
+
+function extractAllFinancials(annualData: any, quarterlyData: any) {
   const revenue_history: any[] = [];
   const margin_history: any[] = [];
+  const annual_statements: FinancialPeriod[] = [];
+  const quarterly_statements: FinancialPeriod[] = [];
 
-  const reports = financialsData?.data;
-  if (!Array.isArray(reports)) return { revenue_history, margin_history };
-
-  // Get up to 5 annual reports, sorted by year ascending
-  const annualReports = reports
+  // Annual
+  const annualReports = (annualData?.data || [])
     .filter((r: any) => r.form === "10-K" || r.form === "20-F" || r.form === "40-F")
     .slice(0, 5)
     .reverse();
 
   for (const report of annualReports) {
-    const ic = report.report?.ic;
-    if (!Array.isArray(ic)) continue;
-
-    const findConcept = (concepts: string[]) => {
-      for (const c of concepts) {
-        const item = ic.find((row: any) => row.concept === c);
-        if (item?.value != null) return Number(item.value);
-      }
-      return null;
-    };
-
-    const revenue = findConcept([
-      "us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax",
-      "us-gaap_Revenues",
-      "us-gaap_SalesRevenueNet",
-      "us-gaap_RevenueFromContractWithCustomerIncludingAssessedTax",
-    ]);
-    const netIncome = findConcept([
-      "us-gaap_NetIncomeLoss",
-      "us-gaap_ProfitLoss",
-    ]);
-    const grossProfit = findConcept(["us-gaap_GrossProfit"]);
-    const operatingIncome = findConcept([
-      "us-gaap_OperatingIncomeLoss",
-    ]);
-    const eps = findConcept([
-      "us-gaap_EarningsPerShareDiluted",
-      "us-gaap_EarningsPerShareBasic",
-    ]);
-
+    const d = extractReportData(report);
     const year = String(report.year || report.filedDate?.substring(0, 4) || "");
 
-    if (revenue != null) {
-      const revB = revenue / 1e9;
-      const niB = netIncome != null ? netIncome / 1e9 : 0;
-      revenue_history.push({ year, revenue_b: revB, net_income_b: niB, eps: eps ?? 0 });
+    if (d.revenue != null) {
+      const revB = d.revenue / 1e9;
+      const niB = d.net_income != null ? d.net_income / 1e9 : 0;
+      revenue_history.push({ year, revenue_b: revB, net_income_b: niB, eps: d.eps ?? 0 });
 
-      const gm = grossProfit != null && revenue > 0 ? (grossProfit / revenue) * 100 : null;
-      const om = operatingIncome != null && revenue > 0 ? (operatingIncome / revenue) * 100 : null;
-      const nm = netIncome != null && revenue > 0 ? (netIncome / revenue) * 100 : null;
+      const gm = d.gross_profit != null && d.revenue > 0 ? (d.gross_profit / d.revenue) * 100 : null;
+      const om = d.operating_income != null && d.revenue > 0 ? (d.operating_income / d.revenue) * 100 : null;
+      const nm = d.net_income != null && d.revenue > 0 ? (d.net_income / d.revenue) * 100 : null;
       margin_history.push({
         year,
         gross_margin_pct: gm != null ? Math.round(gm * 10) / 10 : 0,
@@ -88,9 +121,25 @@ function extractFinancials(financialsData: any) {
         net_margin_pct: nm != null ? Math.round(nm * 10) / 10 : 0,
       });
     }
+
+    annual_statements.push({ period: year, ...d });
   }
 
-  return { revenue_history, margin_history };
+  // Quarterly
+  const quarterlyReports = (quarterlyData?.data || [])
+    .filter((r: any) => r.form === "10-Q")
+    .slice(0, 8)
+    .reverse();
+
+  for (const report of quarterlyReports) {
+    const d = extractReportData(report);
+    const quarter = report.quarter || "";
+    const year = report.year || report.filedDate?.substring(0, 4) || "";
+    const period = quarter ? `Q${quarter} ${year}` : String(year);
+    quarterly_statements.push({ period, ...d });
+  }
+
+  return { revenue_history, margin_history, annual_statements, quarterly_statements };
 }
 
 serve(async (req) => {
@@ -105,18 +154,17 @@ serve(async (req) => {
 
     const sym = ticker.toUpperCase();
 
-    // Fetch all Finnhub endpoints in parallel
-    const [profile, metrics, quote, financials] = await Promise.all([
+    // Fetch all Finnhub endpoints in parallel (including quarterly)
+    const [profile, metrics, quote, annualFinancials, quarterlyFinancials] = await Promise.all([
       fetchFinnhub(`/stock/profile2?symbol=${sym}`, FINNHUB_API_KEY),
       fetchFinnhub(`/stock/metric?symbol=${sym}&metric=all`, FINNHUB_API_KEY),
       fetchFinnhub(`/quote?symbol=${sym}`, FINNHUB_API_KEY),
       fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=annual`, FINNHUB_API_KEY),
+      fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=quarterly`, FINNHUB_API_KEY),
     ]);
 
     console.log("Profile keys:", Object.keys(profile || {}));
-    console.log("Metric keys:", Object.keys(metrics?.metric || {}).slice(0, 10));
 
-    // Validate ticker exists
     if (!profile || !profile.name) {
       return new Response(
         JSON.stringify({ error: `Ticker "${sym}" not found on Finnhub. Try a US-listed stock symbol.` }),
@@ -125,7 +173,8 @@ serve(async (req) => {
     }
 
     const m = metrics?.metric || {};
-    const { revenue_history, margin_history } = extractFinancials(financials);
+    const { revenue_history, margin_history, annual_statements, quarterly_statements } =
+      extractAllFinancials(annualFinancials, quarterlyFinancials);
 
     const fundamentals = {
       company_name: profile.name || sym,
@@ -164,6 +213,8 @@ serve(async (req) => {
       earnings_growth_yoy_pct: safeNum(m.epsGrowthTTMYoy),
       revenue_history,
       margin_history,
+      annual_statements,
+      quarterly_statements,
     };
 
     return new Response(JSON.stringify({ data: fundamentals }), {
