@@ -1,16 +1,35 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Search, Loader2, TrendingUp, TrendingDown, DollarSign, BarChart3, AlertTriangle, Building2, Globe, Briefcase, Sparkles } from 'lucide-react';
+import { Search, Loader2, TrendingUp, DollarSign, BarChart3, AlertTriangle, Building2, Globe, Briefcase, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts';
+
+interface FinancialPeriod {
+  period: string;
+  revenue: number | null;
+  cost_of_revenue: number | null;
+  gross_profit: number | null;
+  operating_expenses: number | null;
+  operating_income: number | null;
+  net_income: number | null;
+  eps: number | null;
+  total_assets: number | null;
+  current_assets: number | null;
+  total_liabilities: number | null;
+  current_liabilities: number | null;
+  total_equity: number | null;
+  cash_and_equivalents: number | null;
+  total_debt: number | null;
+}
 
 interface FundamentalData {
   company_name: string;
@@ -48,11 +67,21 @@ interface FundamentalData {
   earnings_growth_yoy_pct: number | null;
   revenue_history: Array<{ year: string; revenue_b: number; net_income_b: number; eps: number }>;
   margin_history: Array<{ year: string; gross_margin_pct: number; operating_margin_pct: number; net_margin_pct: number }>;
+  annual_statements: FinancialPeriod[];
+  quarterly_statements: FinancialPeriod[];
 }
 
 function fmt(n: number | null | undefined, decimals = 2, suffix = ''): string {
   if (n == null) return '—';
   return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix;
+}
+
+function fmtM(n: number | null | undefined): string {
+  if (n == null) return '—';
+  if (Math.abs(n) >= 1e9) return (n / 1e9).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'B';
+  if (Math.abs(n) >= 1e6) return (n / 1e6).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + 'M';
+  if (Math.abs(n) >= 1e3) return (n / 1e3).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + 'K';
+  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function KpiTile({ label, value, suffix = '', icon: Icon, positive }: {
@@ -76,6 +105,93 @@ function KpiTile({ label, value, suffix = '', icon: Icon, positive }: {
       )}>
         {fmt(value, 2, suffix)}
       </span>
+    </div>
+  );
+}
+
+function FinancialStatementsTable({ statements, currency }: { statements: FinancialPeriod[]; currency: string }) {
+  if (!statements.length) {
+    return <p className="text-xs text-muted-foreground text-center py-8">No financial statements available</p>;
+  }
+
+  const sym = currency === 'ILS' ? '₪' : currency === 'EUR' ? '€' : '$';
+
+  const rows: { label: string; key: keyof FinancialPeriod; section: string; bold?: boolean }[] = [
+    { label: 'Revenue', key: 'revenue', section: 'income', bold: true },
+    { label: 'Cost of Revenue', key: 'cost_of_revenue', section: 'income' },
+    { label: 'Gross Profit', key: 'gross_profit', section: 'income', bold: true },
+    { label: 'Operating Expenses', key: 'operating_expenses', section: 'income' },
+    { label: 'Operating Income', key: 'operating_income', section: 'income', bold: true },
+    { label: 'Net Income', key: 'net_income', section: 'income', bold: true },
+    { label: 'EPS (Diluted)', key: 'eps', section: 'income' },
+    { label: 'Total Assets', key: 'total_assets', section: 'balance', bold: true },
+    { label: 'Current Assets', key: 'current_assets', section: 'balance' },
+    { label: 'Cash & Equivalents', key: 'cash_and_equivalents', section: 'balance' },
+    { label: 'Total Liabilities', key: 'total_liabilities', section: 'balance', bold: true },
+    { label: 'Current Liabilities', key: 'current_liabilities', section: 'balance' },
+    { label: 'Total Debt', key: 'total_debt', section: 'balance' },
+    { label: 'Total Equity', key: 'total_equity', section: 'balance', bold: true },
+  ];
+
+  let lastSection = '';
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border">
+            <th className="text-left py-2 px-2 text-muted-foreground font-medium sticky left-0 bg-card z-10 min-w-[140px]">
+              Item ({sym})
+            </th>
+            {statements.map((s) => (
+              <th key={s.period} className="text-right py-2 px-2 text-muted-foreground font-medium min-w-[90px]">
+                {s.period}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const showSectionHeader = row.section !== lastSection;
+            lastSection = row.section;
+            return (
+              <>
+                {showSectionHeader && (
+                  <tr key={`section-${row.section}`}>
+                    <td
+                      colSpan={statements.length + 1}
+                      className="pt-3 pb-1 px-2 text-[10px] uppercase tracking-wider text-primary font-semibold"
+                    >
+                      {row.section === 'income' ? 'Income Statement' : 'Balance Sheet'}
+                    </td>
+                  </tr>
+                )}
+                <tr key={row.key} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+                  <td className={cn(
+                    "py-1.5 px-2 sticky left-0 bg-card z-10",
+                    row.bold ? "font-semibold text-foreground" : "text-muted-foreground"
+                  )}>
+                    {row.label}
+                  </td>
+                  {statements.map((s) => {
+                    const val = s[row.key] as number | null;
+                    const isEps = row.key === 'eps';
+                    return (
+                      <td key={s.period} className={cn(
+                        "text-right py-1.5 px-2 font-mono",
+                        row.bold ? "font-semibold text-foreground" : "text-foreground/80",
+                        val != null && val < 0 && "text-red-400",
+                      )}>
+                        {isEps ? fmt(val) : fmtM(val)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -120,11 +236,16 @@ export default function Market() {
     { metric: 'Leverage', value: Math.min(100 - ((data.debt_to_equity ?? 1) / 3 * 100), 100) },
   ] : [];
 
+  // Latest annual statement for balance sheet KPIs
+  const latestAnnual = data?.annual_statements?.length
+    ? data.annual_statements[data.annual_statements.length - 1]
+    : null;
+
   return (
     <>
       <Helmet>
         <title>Fundamental Analysis | SUFOX Capital</title>
-        <meta name="description" content="AI-powered fundamental analysis for any ticker" />
+        <meta name="description" content="Finnhub-powered fundamental analysis for any ticker" />
       </Helmet>
 
       <div className="space-y-4">
@@ -135,7 +256,7 @@ export default function Market() {
               <Sparkles className="h-5 w-5 text-primary" />
               Fundamental Analysis
             </h1>
-             <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Finnhub-powered fundamental data & metrics for any ticker
             </p>
           </div>
@@ -227,7 +348,7 @@ export default function Market() {
               </div>
             </div>
 
-            {/* Growth & Financial Health */}
+            {/* Growth & Financial Health + Balance Sheet KPIs */}
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">Growth & Financial Health</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
@@ -243,6 +364,25 @@ export default function Market() {
                 <KpiTile label="Div Yield" value={data.dividend_yield_pct} suffix="%" />
               </div>
             </div>
+
+            {/* Balance Sheet Snapshot KPIs */}
+            {latestAnnual && (
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">
+                  Balance Sheet Snapshot ({latestAnnual.period})
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  <KpiTile label="Total Assets" value={latestAnnual.total_assets != null ? latestAnnual.total_assets / 1e9 : null} suffix="B" />
+                  <KpiTile label="Current Assets" value={latestAnnual.current_assets != null ? latestAnnual.current_assets / 1e9 : null} suffix="B" />
+                  <KpiTile label="Cash" value={latestAnnual.cash_and_equivalents != null ? latestAnnual.cash_and_equivalents / 1e9 : null} suffix="B" />
+                  <KpiTile label="Total Liabilities" value={latestAnnual.total_liabilities != null ? latestAnnual.total_liabilities / 1e9 : null} suffix="B" />
+                  <KpiTile label="Current Liabilities" value={latestAnnual.current_liabilities != null ? latestAnnual.current_liabilities / 1e9 : null} suffix="B" />
+                  <KpiTile label="Total Debt" value={latestAnnual.total_debt != null ? latestAnnual.total_debt / 1e9 : null} suffix="B" />
+                  <KpiTile label="Total Equity" value={latestAnnual.total_equity != null ? latestAnnual.total_equity / 1e9 : null} suffix="B"
+                    positive={latestAnnual.total_equity != null ? latestAnnual.total_equity > 0 : null} />
+                </div>
+              </div>
+            )}
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -343,6 +483,27 @@ export default function Market() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Financial Statements Table */}
+            <Card className="bg-card/50 border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Financial Statements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="annual" className="w-full">
+                  <TabsList className="mb-3">
+                    <TabsTrigger value="annual">Annual</TabsTrigger>
+                    <TabsTrigger value="quarterly">Quarterly</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="annual">
+                    <FinancialStatementsTable statements={data.annual_statements || []} currency={data.currency} />
+                  </TabsContent>
+                  <TabsContent value="quarterly">
+                    <FinancialStatementsTable statements={data.quarterly_statements || []} currency={data.currency} />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
 
             {/* Source & Disclaimer */}
             <div className="flex flex-col items-center gap-1">
