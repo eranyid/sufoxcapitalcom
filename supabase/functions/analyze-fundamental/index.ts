@@ -44,6 +44,12 @@ interface FinancialPeriod {
   total_equity: number | null;
   cash_and_equivalents: number | null;
   total_debt: number | null;
+  // Cash flow
+  operating_cash_flow: number | null;
+  capital_expenditures: number | null;
+  free_cash_flow: number | null;
+  investing_cash_flow: number | null;
+  financing_cash_flow: number | null;
 }
 
 function findConcept(section: any[], concepts: string[]): number | null {
@@ -58,6 +64,7 @@ function findConcept(section: any[], concepts: string[]): number | null {
 function extractReportData(report: any): Omit<FinancialPeriod, "period"> {
   const ic = report.report?.ic || [];
   const bs = report.report?.bs || [];
+  const cf = report.report?.cf || [];
 
   const revenue = findConcept(ic, [
     "us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -80,6 +87,28 @@ function extractReportData(report: any): Omit<FinancialPeriod, "period"> {
   const cash = findConcept(bs, ["us-gaap_CashAndCashEquivalentsAtCarryingValue", "us-gaap_CashCashEquivalentsAndShortTermInvestments"]);
   const totalDebt = findConcept(bs, ["us-gaap_LongTermDebt", "us-gaap_LongTermDebtNoncurrent"]);
 
+  // Cash flow
+  const operatingCashFlow = findConcept(cf, [
+    "us-gaap_NetCashProvidedByUsedInOperatingActivities",
+    "us-gaap_NetCashProvidedByOperatingActivities",
+  ]);
+  const capex = findConcept(cf, [
+    "us-gaap_PaymentsToAcquirePropertyPlantAndEquipment",
+    "us-gaap_PaymentsToAcquireProductiveAssets",
+  ]);
+  const investingCashFlow = findConcept(cf, [
+    "us-gaap_NetCashProvidedByUsedInInvestingActivities",
+    "us-gaap_NetCashProvidedByInvestingActivities",
+  ]);
+  const financingCashFlow = findConcept(cf, [
+    "us-gaap_NetCashProvidedByUsedInFinancingActivities",
+    "us-gaap_NetCashProvidedByFinancingActivities",
+  ]);
+
+  const fcf = operatingCashFlow != null && capex != null
+    ? operatingCashFlow - Math.abs(capex)
+    : null;
+
   return {
     revenue, cost_of_revenue: costOfRevenue, gross_profit: grossProfit,
     operating_expenses: operatingExpenses, operating_income: operatingIncome,
@@ -87,6 +116,9 @@ function extractReportData(report: any): Omit<FinancialPeriod, "period"> {
     total_assets: totalAssets, current_assets: currentAssets,
     total_liabilities: totalLiabilities, current_liabilities: currentLiabilities,
     total_equity: totalEquity, cash_and_equivalents: cash, total_debt: totalDebt,
+    operating_cash_flow: operatingCashFlow, capital_expenditures: capex,
+    free_cash_flow: fcf, investing_cash_flow: investingCashFlow,
+    financing_cash_flow: financingCashFlow,
   };
 }
 

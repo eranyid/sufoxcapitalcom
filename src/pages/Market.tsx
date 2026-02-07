@@ -29,6 +29,11 @@ interface FinancialPeriod {
   total_equity: number | null;
   cash_and_equivalents: number | null;
   total_debt: number | null;
+  operating_cash_flow: number | null;
+  capital_expenditures: number | null;
+  free_cash_flow: number | null;
+  investing_cash_flow: number | null;
+  financing_cash_flow: number | null;
 }
 
 interface FundamentalData {
@@ -132,6 +137,11 @@ function FinancialStatementsTable({ statements, currency }: { statements: Financ
     { label: 'Current Liabilities', key: 'current_liabilities', section: 'balance' },
     { label: 'Total Debt', key: 'total_debt', section: 'balance' },
     { label: 'Total Equity', key: 'total_equity', section: 'balance', bold: true },
+    { label: 'Operating Cash Flow', key: 'operating_cash_flow', section: 'cashflow', bold: true },
+    { label: 'Capital Expenditures', key: 'capital_expenditures', section: 'cashflow' },
+    { label: 'Free Cash Flow', key: 'free_cash_flow', section: 'cashflow', bold: true },
+    { label: 'Investing Cash Flow', key: 'investing_cash_flow', section: 'cashflow' },
+    { label: 'Financing Cash Flow', key: 'financing_cash_flow', section: 'cashflow' },
   ];
 
   let lastSection = '';
@@ -163,7 +173,7 @@ function FinancialStatementsTable({ statements, currency }: { statements: Financ
                       colSpan={statements.length + 1}
                       className="pt-3 pb-1 px-2 text-[10px] uppercase tracking-wider text-primary font-semibold"
                     >
-                      {row.section === 'income' ? 'Income Statement' : 'Balance Sheet'}
+                      {row.section === 'income' ? 'Income Statement' : row.section === 'balance' ? 'Balance Sheet' : 'Cash Flow Statement'}
                     </td>
                   </tr>
                 )}
