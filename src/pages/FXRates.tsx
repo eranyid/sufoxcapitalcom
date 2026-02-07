@@ -11,31 +11,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Banknote, Plus, Pencil, Trash2, Loader2, ArrowRightLeft, RefreshCw, Calendar, Repeat } from 'lucide-react';
+import { Banknote, Pencil, Trash2, Loader2, RefreshCw, Calendar, Repeat, CheckCircle2, AlertTriangle, XCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getSupportedCurrencies, getDefaultFxRate, FxRate } from '@/lib/fxService';
 import { CashCurrency } from '@/types/investment';
-
 import { MonthlyFxRatesForm } from '@/components/fx/MonthlyFxRatesForm';
 
 const CURRENCY_SYMBOLS: Record<CashCurrency, string> = {
-  USD: '$',
-  EUR: '€',
-  ILS: '₪',
-  GBP: '£',
-  CHF: 'Fr',
-  JPY: '¥'
+  USD: '$', EUR: '€', ILS: '₪', GBP: '£', CHF: 'Fr', JPY: '¥'
 };
 
 const CURRENCY_NAMES: Record<CashCurrency, string> = {
-  USD: 'US Dollar',
-  EUR: 'Euro',
-  ILS: 'Israeli Shekel',
-  GBP: 'British Pound',
-  CHF: 'Swiss Franc',
-  JPY: 'Japanese Yen'
+  USD: 'US Dollar', EUR: 'Euro', ILS: 'Israeli Shekel',
+  GBP: 'British Pound', CHF: 'Swiss Franc', JPY: 'Japanese Yen'
 };
+
+const AUTO_PAIRS = ['USD/EUR', 'USD/ILS', 'USD/GBP', 'USD/CHF', 'USD/JPY'];
 
 interface FxRateFormData {
   fromCurrency: string;
@@ -46,12 +38,15 @@ interface FxRateFormData {
 }
 
 const initialFormData: FxRateFormData = {
-  fromCurrency: 'USD',
-  toCurrency: 'ILS',
-  rate: '',
-  rateDate: new Date().toISOString().split('T')[0],
-  source: 'manual',
+  fromCurrency: 'USD', toCurrency: 'ILS', rate: '',
+  rateDate: new Date().toISOString().split('T')[0], source: 'manual',
 };
+
+interface AutoRate {
+  pair: string;
+  rate: number;
+  updatedAt: string;
+}
 
 export default function FXRates() {
   const { user } = useAuth();
@@ -62,7 +57,14 @@ export default function FXRates() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRate, setEditingRate] = useState<FxRate | null>(null);
   const [formData, setFormData] = useState<FxRateFormData>(initialFormData);
-  
+
+  // Auto FX state
+  const [autoRates, setAutoRates] = useState<AutoRate[]>([]);
+  const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null);
+  const [fetchStatus, setFetchStatus] = useState<'ok' | 'partial' | 'error' | 'idle'>('idle');
+  const [isFetching, setIsFetching] = useState(false);
+  const [recentAutoUpdates, setRecentAutoUpdates] = useState<any[]>([]);
+
   // Currency conversion state
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [convertFrom, setConvertFrom] = useState<CashCurrency>('USD');
@@ -74,7 +76,7 @@ export default function FXRates() {
 
   const currencies = getSupportedCurrencies();
 
-  // Fetch FX rates
+  // Fetch all manual FX rates
   const fetchRates = async () => {
     if (!user) return;
     setIsLoading(true);
@@ -85,57 +87,115 @@ export default function FXRates() {
         .eq('user_id', user.id)
         .order('rate_date', { ascending: false })
         .limit(200);
-
       if (error) throw error;
-
       setRates(
-        (data || []).map((r) => ({
-          id: r.id,
-          userId: r.user_id,
-          fromCurrency: r.from_currency,
-          toCurrency: r.to_currency,
-          rate: Number(r.rate),
-          rateDate: r.rate_date,
-          source: r.source || 'manual',
-          createdAt: r.created_at,
+        (data || []).map((r: any) => ({
+          id: r.id, userId: r.user_id, fromCurrency: r.from_currency,
+          toCurrency: r.to_currency, rate: Number(r.rate),
+          rateDate: r.rate_date, source: r.source || 'manual', createdAt: r.created_at,
         }))
       );
     } catch (error: any) {
       toast.error('Failed to load FX rates');
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Fetch latest auto rates (system + user)
+  const fetchAutoRates = async () => {
+    if (!user) return;
+    try {
+      // Get latest rate per pair - both system (null user_id) and user-specific
+      const results: AutoRate[] = [];
+      const recentRows: any[] = [];
+
+      for (const pair of AUTO_PAIRS) {
+        const [from, to] = pair.split('/');
+        
+        // Try user-specific first, then system
+        const { data } = await supabase
+          .from('fx_rates')
+          .select('*')
+          .eq('from_currency', from)
+          .eq('to_currency', to)
+          .eq('source', 'auto')
+          .order('rate_date', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (data && data.length > 0) {
+          const row = data[0] as any;
+          results.push({
+            pair,
+            rate: Number(row.rate),
+            updatedAt: row.created_at,
+          });
+        }
+      }
+
+      // Get recent 10 auto updates
+      const { data: recent } = await supabase
+        .from('fx_rates')
+        .select('*')
+        .eq('source', 'auto')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      setAutoRates(results);
+      setRecentAutoUpdates(recent || []);
+
+      if (results.length > 0) {
+        const latest = results.reduce((a, b) => 
+          new Date(a.updatedAt) > new Date(b.updatedAt) ? a : b
+        );
+        setLastFetchedAt(latest.updatedAt);
+        setFetchStatus(results.length === AUTO_PAIRS.length ? 'ok' : 'partial');
+      }
+    } catch (err) {
+      console.error('[FXRates] Failed to fetch auto rates:', err);
+    }
+  };
+
   useEffect(() => {
     fetchRates();
+    fetchAutoRates();
   }, [user]);
 
-  const handleOpenDialog = (rate?: FxRate) => {
-    if (rate) {
-      setEditingRate(rate);
-      setFormData({
-        fromCurrency: rate.fromCurrency,
-        toCurrency: rate.toCurrency,
-        rate: rate.rate.toString(),
-        rateDate: rate.rateDate,
-        source: rate.source,
+  // Manual fetch now
+  const handleFetchNow = async () => {
+    setIsFetching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-fx-rates', {
+        body: {},
       });
-    } else {
-      setEditingRate(null);
-      setFormData(initialFormData);
+      
+      if (error) throw error;
+
+      if (data?.status === 'ok') {
+        toast.success(`All ${data.savedCount} FX rates updated`);
+        setFetchStatus('ok');
+      } else if (data?.status === 'partial') {
+        toast.warning(`${data.savedCount} rates updated, some failed`);
+        setFetchStatus('partial');
+      } else {
+        toast.error('Failed to fetch FX rates');
+        setFetchStatus('error');
+      }
+
+      setLastFetchedAt(data?.fetchedAt || new Date().toISOString());
+      await fetchAutoRates();
+      await fetchRates();
+      await refreshFxRates();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to fetch FX rates');
+      setFetchStatus('error');
+    } finally {
+      setIsFetching(false);
     }
-    setIsDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingRate(null);
-    setFormData(initialFormData);
-  };
-
-  // When exchange rate changes, calculate received amount
+  // Convert currency handlers
   const handleExchangeRateChange = (value: string) => {
     setExchangeRate(value);
     const rate = parseFloat(value);
@@ -145,7 +205,6 @@ export default function FXRates() {
     }
   };
 
-  // When convert amount changes, recalculate received if rate is set
   const handleConvertAmountChange = (value: string) => {
     setConvertAmount(value);
     const rate = parseFloat(exchangeRate);
@@ -155,7 +214,6 @@ export default function FXRates() {
     }
   };
 
-  // When received amount changes manually, calculate implied rate
   const handleReceivedAmountChange = (value: string) => {
     setReceivedAmount(value);
     const received = parseFloat(value);
@@ -168,150 +226,94 @@ export default function FXRates() {
   const impliedRate = useMemo(() => {
     const from = parseFloat(convertAmount);
     const to = parseFloat(receivedAmount);
-    if (!isNaN(from) && from > 0 && !isNaN(to) && to > 0) {
-      return to / from;
-    }
+    if (!isNaN(from) && from > 0 && !isNaN(to) && to > 0) return to / from;
     return null;
   }, [convertAmount, receivedAmount]);
 
   const handleConvertCurrency = async () => {
     const fromAmt = parseFloat(convertAmount);
     const toAmt = parseFloat(receivedAmount);
-    
-    if (isNaN(fromAmt) || fromAmt <= 0) {
-      toast.error('Enter a valid amount to convert');
-      return;
-    }
-    if (isNaN(toAmt) || toAmt <= 0) {
-      toast.error('Enter a valid received amount');
-      return;
-    }
-    if (convertFrom === convertTo) {
-      toast.error('Currencies must be different');
-      return;
-    }
-    if (cashBalances[convertFrom] < fromAmt) {
-      toast.error(`Insufficient ${convertFrom} balance`);
-      return;
-    }
-
+    if (isNaN(fromAmt) || fromAmt <= 0) { toast.error('Enter a valid amount to convert'); return; }
+    if (isNaN(toAmt) || toAmt <= 0) { toast.error('Enter a valid received amount'); return; }
+    if (convertFrom === convertTo) { toast.error('Currencies must be different'); return; }
+    if (cashBalances[convertFrom] < fromAmt) { toast.error(`Insufficient ${convertFrom} balance`); return; }
     setIsConverting(true);
     try {
       const success = await convertCurrency(convertFrom, convertTo, fromAmt, toAmt);
       if (success) {
         toast.success(`Converted ${CURRENCY_SYMBOLS[convertFrom]}${fromAmt.toLocaleString()} to ${CURRENCY_SYMBOLS[convertTo]}${toAmt.toLocaleString()}`);
         setIsConvertDialogOpen(false);
-        setConvertAmount('');
-        setReceivedAmount('');
-        setExchangeRate('');
-      } else {
-        toast.error('Conversion failed');
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Conversion failed');
-    } finally {
-      setIsConverting(false);
-    }
+        setConvertAmount(''); setReceivedAmount(''); setExchangeRate('');
+      } else { toast.error('Conversion failed'); }
+    } catch (err: any) { toast.error(err.message || 'Conversion failed'); }
+    finally { setIsConverting(false); }
   };
+
+  // Manual rate CRUD
+  const handleOpenDialog = (rate?: FxRate) => {
+    if (rate) {
+      setEditingRate(rate);
+      setFormData({ fromCurrency: rate.fromCurrency, toCurrency: rate.toCurrency,
+        rate: rate.rate.toString(), rateDate: rate.rateDate, source: rate.source });
+    } else {
+      setEditingRate(null); setFormData(initialFormData);
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => { setIsDialogOpen(false); setEditingRate(null); setFormData(initialFormData); };
 
   const handleSubmit = async () => {
     if (!user) return;
-
-    // Validation
-    if (!formData.fromCurrency || !formData.toCurrency) {
-      toast.error('Please select both currencies');
-      return;
-    }
-    if (formData.fromCurrency === formData.toCurrency) {
-      toast.error('Currencies must be different');
-      return;
-    }
+    if (!formData.fromCurrency || !formData.toCurrency) { toast.error('Please select both currencies'); return; }
+    if (formData.fromCurrency === formData.toCurrency) { toast.error('Currencies must be different'); return; }
     const rateNum = parseFloat(formData.rate);
-    if (isNaN(rateNum) || rateNum <= 0) {
-      toast.error('Please enter a valid positive rate');
-      return;
-    }
-    if (!formData.rateDate) {
-      toast.error('Please select a date');
-      return;
-    }
+    if (isNaN(rateNum) || rateNum <= 0) { toast.error('Please enter a valid positive rate'); return; }
+    if (!formData.rateDate) { toast.error('Please select a date'); return; }
 
     setIsSaving(true);
     try {
       if (editingRate) {
-        // Update existing
-        const { error } = await supabase
-          .from('fx_rates')
-          .update({
-            from_currency: formData.fromCurrency,
-            to_currency: formData.toCurrency,
-            rate: rateNum,
-            rate_date: formData.rateDate,
-            source: formData.source || 'manual',
-          })
-          .eq('id', editingRate.id);
-
+        const { error } = await supabase.from('fx_rates').update({
+          from_currency: formData.fromCurrency, to_currency: formData.toCurrency,
+          rate: rateNum, rate_date: formData.rateDate, source: formData.source || 'manual',
+        }).eq('id', editingRate.id);
         if (error) throw error;
         toast.success('FX rate updated');
       } else {
-        // UPSERT: Check if rate exists for same currency pair + same month
-        const rateMonth = formData.rateDate.slice(0, 7); // YYYY-MM
-        const { data: existingRates } = await supabase
-          .from('fx_rates')
-          .select('id, rate_date')
-          .eq('user_id', user.id)
-          .eq('from_currency', formData.fromCurrency)
+        const rateMonth = formData.rateDate.slice(0, 7);
+        const { data: existingRates } = await supabase.from('fx_rates').select('id, rate_date')
+          .eq('user_id', user.id).eq('from_currency', formData.fromCurrency)
           .eq('to_currency', formData.toCurrency)
-          .gte('rate_date', `${rateMonth}-01`)
-          .lte('rate_date', `${rateMonth}-31`);
+          .gte('rate_date', `${rateMonth}-01`).lte('rate_date', `${rateMonth}-31`);
 
         if (existingRates && existingRates.length > 0) {
-          // Update existing rate for this month
-          const { error } = await supabase
-            .from('fx_rates')
-            .update({
-              rate: rateNum,
-              rate_date: formData.rateDate,
-              source: formData.source || 'manual',
-            })
-            .eq('id', existingRates[0].id);
-
+          const { error } = await supabase.from('fx_rates').update({
+            rate: rateNum, rate_date: formData.rateDate, source: formData.source || 'manual',
+          }).eq('id', existingRates[0].id);
           if (error) throw error;
           toast.success('FX rate updated (same month)');
         } else {
-          // Insert new
           const { error } = await supabase.from('fx_rates').insert({
-            user_id: user.id,
-            from_currency: formData.fromCurrency,
-            to_currency: formData.toCurrency,
-            rate: rateNum,
-            rate_date: formData.rateDate,
-            source: formData.source || 'manual',
+            user_id: user.id, from_currency: formData.fromCurrency,
+            to_currency: formData.toCurrency, rate: rateNum,
+            rate_date: formData.rateDate, source: formData.source || 'manual',
           });
-
           if (error) throw error;
           toast.success('FX rate added');
         }
       }
-
-      handleCloseDialog();
-      fetchRates();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to save FX rate');
-    } finally {
-      setIsSaving(false);
-    }
+      handleCloseDialog(); fetchRates();
+    } catch (error: any) { toast.error(error.message || 'Failed to save FX rate'); }
+    finally { setIsSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase.from('fx_rates').delete().eq('id', id);
       if (error) throw error;
-      toast.success('FX rate deleted');
-      fetchRates();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete FX rate');
-    }
+      toast.success('FX rate deleted'); fetchRates();
+    } catch (error: any) { toast.error(error.message || 'Failed to delete FX rate'); }
   };
 
   const handleFillDefault = () => {
@@ -319,7 +321,6 @@ export default function FXRates() {
     setFormData((prev) => ({ ...prev, rate: defaultRate.toFixed(4) }));
   };
 
-  // Group rates by currency pair for display
   const groupedByPair = rates.reduce((acc, rate) => {
     const key = `${rate.fromCurrency}/${rate.toCurrency}`;
     if (!acc[key]) acc[key] = [];
@@ -327,10 +328,18 @@ export default function FXRates() {
     return acc;
   }, {} as Record<string, FxRate[]>);
 
-  const handleFxRatesSaved = async () => {
-    await fetchRates();
-    await refreshFxRates();
+  const handleFxRatesSaved = async () => { await fetchRates(); await refreshFxRates(); };
+
+  const StatusIcon = () => {
+    switch (fetchStatus) {
+      case 'ok': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'partial': return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case 'error': return <XCircle className="h-4 w-4 text-red-500" />;
+      default: return <Clock className="h-4 w-4 text-muted-foreground" />;
+    }
   };
+
+  const statusLabel = fetchStatus === 'ok' ? 'OK' : fetchStatus === 'partial' ? 'Partial' : fetchStatus === 'error' ? 'Error' : 'Idle';
 
   return (
     <div className="section-spacing animate-fade-in">
@@ -339,19 +348,40 @@ export default function FXRates() {
         <MonthlyFxRatesForm onRatesSaved={handleFxRatesSaved} />
       </div>
 
+      {/* Header with status & fetch button */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4 gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-primary uppercase tracking-wide flex items-center gap-2">
             <Banknote className="h-6 w-6" />
             FX Rates
           </h1>
-          <p className="text-muted-foreground text-sm mt-1 font-mono">
-            Manage historical exchange rates for accurate portfolio valuation
-          </p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-muted-foreground text-sm font-mono">
+              Manage exchange rates for portfolio valuation
+            </p>
+            <div className="flex items-center gap-1.5">
+              <StatusIcon />
+              <Badge variant={fetchStatus === 'ok' ? 'default' : fetchStatus === 'partial' ? 'secondary' : 'outline'} className="text-[10px] uppercase">
+                {statusLabel}
+              </Badge>
+            </div>
+            {lastFetchedAt && (
+              <span className="text-[10px] text-muted-foreground font-mono">
+                Last: {format(new Date(lastFetchedAt), 'MMM d, HH:mm')}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
-
-          {/* Convert Currency Dialog */}
+          <Button 
+            variant="outline" 
+            onClick={handleFetchNow} 
+            disabled={isFetching}
+            className="border-primary/30 hover:border-primary"
+          >
+            {isFetching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Fetch FX Now
+          </Button>
           <Dialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="default" className="bg-primary">
@@ -367,19 +397,14 @@ export default function FXRates() {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                {/* From Currency */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>From</Label>
                     <Select value={convertFrom} onValueChange={(v) => setConvertFrom(v as CashCurrency)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {(Object.keys(CURRENCY_NAMES) as CashCurrency[]).map((cur) => (
-                          <SelectItem key={cur} value={cur}>
-                            {cur} - {CURRENCY_NAMES[cur]}
-                          </SelectItem>
+                          <SelectItem key={cur} value={cur}>{cur} - {CURRENCY_NAMES[cur]}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -390,14 +415,10 @@ export default function FXRates() {
                   <div className="space-y-2">
                     <Label>To</Label>
                     <Select value={convertTo} onValueChange={(v) => setConvertTo(v as CashCurrency)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {(Object.keys(CURRENCY_NAMES) as CashCurrency[]).map((cur) => (
-                          <SelectItem key={cur} value={cur}>
-                            {cur} - {CURRENCY_NAMES[cur]}
-                          </SelectItem>
+                          <SelectItem key={cur} value={cur}>{cur} - {CURRENCY_NAMES[cur]}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -406,63 +427,31 @@ export default function FXRates() {
                     </p>
                   </div>
                 </div>
-
-                {/* Amount to convert */}
                 <div className="space-y-2">
                   <Label>Amount to Convert ({convertFrom})</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={convertAmount}
-                    onChange={(e) => handleConvertAmountChange(e.target.value)}
-                    placeholder={`Amount in ${convertFrom}`}
-                  />
+                  <Input type="number" step="0.01" min="0" value={convertAmount}
+                    onChange={(e) => handleConvertAmountChange(e.target.value)} placeholder={`Amount in ${convertFrom}`} />
                 </div>
-
-                {/* Exchange Rate */}
                 <div className="space-y-2">
                   <Label>Exchange Rate</Label>
-                  <Input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={exchangeRate}
-                    onChange={(e) => handleExchangeRateChange(e.target.value)}
-                    placeholder={`1 ${convertFrom} = ? ${convertTo}`}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter the rate at which the conversion was executed
-                  </p>
+                  <Input type="number" step="0.0001" min="0" value={exchangeRate}
+                    onChange={(e) => handleExchangeRateChange(e.target.value)} placeholder={`1 ${convertFrom} = ? ${convertTo}`} />
+                  <p className="text-xs text-muted-foreground">Enter the rate at which the conversion was executed</p>
                 </div>
-
-                {/* Received amount */}
                 <div className="space-y-2">
                   <Label>Amount Received ({convertTo})</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={receivedAmount}
-                    onChange={(e) => handleReceivedAmountChange(e.target.value)}
-                    placeholder={`Amount in ${convertTo}`}
-                  />
+                  <Input type="number" step="0.01" min="0" value={receivedAmount}
+                    onChange={(e) => handleReceivedAmountChange(e.target.value)} placeholder={`Amount in ${convertTo}`} />
                 </div>
-
-                {/* Implied rate */}
                 {impliedRate && (
                   <div className="p-3 bg-muted/50 rounded-md">
                     <p className="text-sm text-muted-foreground">Final Rate</p>
-                    <p className="text-lg font-mono font-medium text-primary">
-                      1 {convertFrom} = {impliedRate.toFixed(4)} {convertTo}
-                    </p>
+                    <p className="text-lg font-mono font-medium text-primary">1 {convertFrom} = {impliedRate.toFixed(4)} {convertTo}</p>
                   </div>
                 )}
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsConvertDialogOpen(false)}>
-                  Cancel
-                </Button>
+                <Button variant="outline" onClick={() => setIsConvertDialogOpen(false)}>Cancel</Button>
                 <Button onClick={handleConvertCurrency} disabled={isConverting || convertFrom === convertTo}>
                   {isConverting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Convert
@@ -471,6 +460,31 @@ export default function FXRates() {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+
+      {/* Live Auto Rates Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6">
+        {AUTO_PAIRS.map((pair) => {
+          const autoRate = autoRates.find((r) => r.pair === pair);
+          return (
+            <Card key={pair} className="relative">
+              <CardContent className="pt-4 pb-3">
+                <div className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1">{pair}</div>
+                <div className="text-xl font-bold font-mono text-primary tabular-nums">
+                  {autoRate ? autoRate.rate.toFixed(4) : '—'}
+                </div>
+                {autoRate && (
+                  <div className="text-[9px] text-muted-foreground font-mono mt-1">
+                    Updated {format(new Date(autoRate.updatedAt), 'HH:mm')}
+                  </div>
+                )}
+                {!autoRate && (
+                  <div className="text-[9px] text-muted-foreground mt-1">No auto data</div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Stats */}
@@ -503,8 +517,53 @@ export default function FXRates() {
         </Card>
       </div>
 
+      {/* Recent Auto Updates */}
+      {recentAutoUpdates.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-primary" />
+              Recent Auto Updates
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Time</TableHead>
+                    <TableHead className="text-xs">Pair</TableHead>
+                    <TableHead className="text-xs text-right">Rate</TableHead>
+                    <TableHead className="text-xs">Source</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentAutoUpdates.map((row: any) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="text-xs font-mono text-muted-foreground">
+                        {format(new Date(row.created_at), 'MMM d, HH:mm')}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono font-medium">
+                        <span className="text-primary">{row.from_currency}</span>
+                        <span className="text-muted-foreground">/</span>
+                        {row.to_currency}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono text-right tabular-nums">
+                        {Number(row.rate).toFixed(4)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] capitalize">{row.source}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Rates Table */}
+      {/* Historical Rates Table */}
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -544,25 +603,14 @@ export default function FXRates() {
                         <span className="text-muted-foreground mx-1">/</span>
                         <span>{rate.toCurrency}</span>
                       </TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">
-                        {rate.rate.toFixed(4)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {format(new Date(rate.rateDate), 'MMM d, yyyy')}
-                      </TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{rate.rate.toFixed(4)}</TableCell>
+                      <TableCell className="text-muted-foreground">{format(new Date(rate.rateDate), 'MMM d, yyyy')}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {rate.source}
-                        </Badge>
+                        <Badge variant="outline" className="text-xs capitalize">{rate.source}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleOpenDialog(rate)}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(rate)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
@@ -575,18 +623,12 @@ export default function FXRates() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Delete FX Rate?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This will permanently delete the {rate.fromCurrency}/{rate.toCurrency}{' '}
-                                  rate from {format(new Date(rate.rateDate), 'MMM d, yyyy')}.
+                                  This will permanently delete the {rate.fromCurrency}/{rate.toCurrency} rate from {format(new Date(rate.rateDate), 'MMM d, yyyy')}.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(rate.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDelete(rate.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -605,9 +647,7 @@ export default function FXRates() {
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="text-sm text-muted-foreground">Default Rates (Fallback)</CardTitle>
-          <CardDescription>
-            Used when no historical rate is available for a given date
-          </CardDescription>
+          <CardDescription>Used when no historical rate is available for a given date</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
@@ -615,14 +655,9 @@ export default function FXRates() {
               <div key={from} className="text-center p-2 bg-muted/50 rounded">
                 <div className="font-mono text-primary font-medium">{from}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {currencies
-                    .filter((to) => to !== from)
-                    .slice(0, 2)
-                    .map((to) => (
-                      <div key={to}>
-                        → {to}: {getDefaultFxRate(from, to).toFixed(2)}
-                      </div>
-                    ))}
+                  {currencies.filter((to) => to !== from).slice(0, 2).map((to) => (
+                    <div key={to}>→ {to}: {getDefaultFxRate(from, to).toFixed(2)}</div>
+                  ))}
                 </div>
               </div>
             ))}
