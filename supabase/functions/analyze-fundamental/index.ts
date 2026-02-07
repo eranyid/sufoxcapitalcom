@@ -93,73 +93,6 @@ function extractFinancials(financialsData: any) {
   return { revenue_history, margin_history };
 }
 
-async function getAIQualitative(ticker: string, profile: any, metrics: any): Promise<{
-  summary: string;
-  strengths: string[];
-  risks: string[];
-}> {
-  try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return { summary: "", strengths: [], risks: [] };
-
-    const context = `Company: ${profile.name || ticker}, Sector: ${profile.finnhubIndustry || "N/A"}, Country: ${profile.country || "N/A"}, Market Cap: $${((profile.marketCapitalization || 0) / 1000).toFixed(1)}B, P/E: ${metrics?.metric?.peTTM ?? "N/A"}, ROE: ${metrics?.metric?.roeTTM ?? "N/A"}%, Net Margin: ${metrics?.metric?.netProfitMarginTTM ?? "N/A"}%, Revenue Growth: ${metrics?.metric?.revenueGrowthTTMYoy ?? "N/A"}%, Debt/Equity: ${metrics?.metric?.totalDebtToEquityAnnual ?? "N/A"}`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "You are a concise equity analyst. Given real financial data, provide a brief business summary, key strengths, and key risks. Use the tool provided.",
-          },
-          {
-            role: "user",
-            content: `Provide qualitative analysis for: ${context}`,
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "provide_qualitative",
-              description: "Return qualitative analysis",
-              parameters: {
-                type: "object",
-                properties: {
-                  summary: { type: "string", description: "2-3 sentence business overview" },
-                  strengths: { type: "array", items: { type: "string" }, description: "3-4 key strengths" },
-                  risks: { type: "array", items: { type: "string" }, description: "3-4 key risks" },
-                },
-                required: ["summary", "strengths", "risks"],
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "provide_qualitative" } },
-      }),
-    });
-
-    if (!response.ok) {
-      console.error(`AI qualitative call failed: ${response.status}`);
-      return { summary: "", strengths: [], risks: [] };
-    }
-
-    const result = await response.json();
-    const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) return { summary: "", strengths: [], risks: [] };
-
-    return JSON.parse(toolCall.function.arguments);
-  } catch (e) {
-    console.error("AI qualitative error:", e);
-    return { summary: "", strengths: [], risks: [] };
-  }
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -194,9 +127,6 @@ serve(async (req) => {
     const m = metrics?.metric || {};
     const { revenue_history, margin_history } = extractFinancials(financials);
 
-    // Get AI qualitative analysis (non-blocking)
-    const qualitative = await getAIQualitative(sym, profile, metrics);
-
     const fundamentals = {
       company_name: profile.name || sym,
       ticker: profile.ticker || sym,
@@ -217,8 +147,7 @@ serve(async (req) => {
       dividend_yield_pct: safeNum(m.dividendYieldIndicatedAnnual),
       payout_ratio_pct: safeNum(m.payoutRatioAnnual),
       eps_ttm: safeNum(m.epsTTM),
-      revenue_ttm_b: safeNum(m.revenuePerShareTTM && m.marketCapitalization 
-        ? null : null), // Finnhub doesn't directly give revenue TTM in metric
+      revenue_ttm_b: null,
       net_income_ttm_b: null,
       ebitda_ttm_b: null,
       free_cash_flow_ttm_b: safeNum(m.freeCashFlowPerShareTTM && profile.shareOutstanding
@@ -235,9 +164,6 @@ serve(async (req) => {
       earnings_growth_yoy_pct: safeNum(m.epsGrowthTTMYoy),
       revenue_history,
       margin_history,
-      summary: qualitative.summary,
-      strengths: qualitative.strengths,
-      risks: qualitative.risks,
     };
 
     return new Response(JSON.stringify({ data: fundamentals }), {
