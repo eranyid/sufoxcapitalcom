@@ -91,6 +91,7 @@ function KpiTile({ label, value, suffix = '', icon: Icon, positive }: {
   icon?: any;
   positive?: boolean | null;
 }) {
+  if (value == null) return null;
   return (
     <div className="bg-card border border-border rounded-lg p-3 flex flex-col gap-1">
       <div className="flex items-center gap-1.5">
