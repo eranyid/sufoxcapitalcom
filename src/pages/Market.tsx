@@ -105,9 +105,9 @@ export default function Market() {
 
       const fetched = data.prices?.[0];
       if (fetched) {
-        const dailyChangePct = fetched.open && fetched.open > 0
+        const dailyChangePct = fetched.changePct ?? (fetched.open && fetched.open > 0
           ? ((fetched.close - fetched.open) / fetched.open) * 100
-          : null;
+          : null);
         setAdHocPrices(prev => [...prev, { ...fetched, dailyChangePct }]);
         setTickerInput('');
         toast({ title: 'Success', description: `${symbol}: $${fetched.close}` });
