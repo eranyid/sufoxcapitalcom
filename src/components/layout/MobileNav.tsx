@@ -23,6 +23,7 @@ import { AnalysisIcon } from '@/components/icons/AnalysisIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
+import { EconomyIcon } from '@/components/icons/EconomyIcon';
  
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { MessagesIcon } from '@/components/icons/MessagesIcon';
@@ -41,6 +42,7 @@ const primaryNavItems = [
 
 const moreNavItems = [
   { path: '/messages', icon: MessagesIcon, label: 'Messages' },
+  { path: '/economy', icon: EconomyIcon, label: 'Economy' },
   { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
   { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
   { path: '/lab', icon: LabIcon, label: 'Lab' },
