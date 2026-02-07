@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Calendar, Loader2, Copy, Save, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, subMonths, startOfMonth } from 'date-fns';
@@ -55,6 +56,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
     JPY: null
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [valueComparison, setValueComparison] = useState<ValueComparison | null>(null);
   
@@ -253,14 +255,22 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
   };
 
   return (
-    <Card className="bg-card/50 border-primary/20">
+    <Card className={`bg-card/50 border-primary/20 ${!isEnabled ? 'opacity-80' : ''}`}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-primary" />
-          Monthly FX Rates
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-primary" />
+            Monthly FX Rates
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground uppercase font-mono">
+              {isEnabled ? 'Manual Entry' : 'Disabled'}
+            </span>
+            <Switch checked={isEnabled} onCheckedChange={setIsEnabled} />
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      {isEnabled && <CardContent className="space-y-4">
         {/* Value Comparison Banner */}
         {valueComparison && (
           <div className={`rounded-lg p-3 border ${valueComparison.diff >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-destructive/10 border-destructive/30'}`}>
@@ -370,7 +380,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
         <p className="text-[9px] text-muted-foreground text-center">
           Enter rate as: 1 USD = X {'{Currency}'} (e.g., 1 USD = 3.6 ILS)
         </p>
-      </CardContent>
+      </CardContent>}
     </Card>
   );
 }
