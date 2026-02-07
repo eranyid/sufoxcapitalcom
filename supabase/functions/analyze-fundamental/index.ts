@@ -186,13 +186,20 @@ serve(async (req) => {
 
     const sym = ticker.toUpperCase();
 
-    // Fetch all Finnhub endpoints in parallel (including quarterly)
-    const [profile, metrics, quote, annualFinancials, quarterlyFinancials] = await Promise.all([
+    // Date range for news: last 30 days
+    const now = new Date();
+    const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const toStr = now.toISOString().split('T')[0];
+    const fromStr = from.toISOString().split('T')[0];
+
+    // Fetch all Finnhub endpoints in parallel (including quarterly + news)
+    const [profile, metrics, quote, annualFinancials, quarterlyFinancials, companyNews] = await Promise.all([
       fetchFinnhub(`/stock/profile2?symbol=${sym}`, FINNHUB_API_KEY),
       fetchFinnhub(`/stock/metric?symbol=${sym}&metric=all`, FINNHUB_API_KEY),
       fetchFinnhub(`/quote?symbol=${sym}`, FINNHUB_API_KEY),
       fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=annual`, FINNHUB_API_KEY),
       fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=quarterly`, FINNHUB_API_KEY),
+      fetchFinnhub(`/company-news?symbol=${sym}&from=${fromStr}&to=${toStr}`, FINNHUB_API_KEY).catch(() => []),
     ]);
 
     console.log("Profile keys:", Object.keys(profile || {}));
@@ -207,6 +214,20 @@ serve(async (req) => {
     const m = metrics?.metric || {};
     const { revenue_history, margin_history, annual_statements, quarterly_statements } =
       extractAllFinancials(annualFinancials, quarterlyFinancials);
+
+    // Process company news (limit to 20 most recent)
+    const news = Array.isArray(companyNews)
+      ? companyNews.slice(0, 20).map((n: any) => ({
+          headline: n.headline || '',
+          summary: n.summary || '',
+          source: n.source || '',
+          url: n.url || '',
+          datetime: n.datetime ? n.datetime * 1000 : null, // convert to ms
+          related: n.related || sym,
+          image: n.image || '',
+          category: n.category || '',
+        }))
+      : [];
 
     const fundamentals = {
       company_name: profile.name || sym,
@@ -247,6 +268,7 @@ serve(async (req) => {
       margin_history,
       annual_statements,
       quarterly_statements,
+      news,
     };
 
     return new Response(JSON.stringify({ data: fundamentals }), {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Search, Loader2, TrendingUp, DollarSign, BarChart3, AlertTriangle, Building2, Globe, Briefcase, Sparkles } from 'lucide-react';
+import { Search, Loader2, TrendingUp, DollarSign, BarChart3, AlertTriangle, Building2, Globe, Briefcase, Sparkles, Newspaper, ExternalLink, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +34,17 @@ interface FinancialPeriod {
   free_cash_flow: number | null;
   investing_cash_flow: number | null;
   financing_cash_flow: number | null;
+}
+
+interface NewsItem {
+  headline: string;
+  summary: string;
+  source: string;
+  url: string;
+  datetime: number | null;
+  related: string;
+  image: string;
+  category: string;
 }
 
 interface FundamentalData {
@@ -74,6 +85,7 @@ interface FundamentalData {
   margin_history: Array<{ year: string; gross_margin_pct: number; operating_margin_pct: number; net_margin_pct: number }>;
   annual_statements: FinancialPeriod[];
   quarterly_statements: FinancialPeriod[];
+  news: NewsItem[];
 }
 
 function fmt(n: number | null | undefined, decimals = 2, suffix = ''): string {
@@ -515,6 +527,63 @@ export default function Market() {
                 </Tabs>
               </CardContent>
             </Card>
+
+            {/* Company News */}
+            {data.news && data.news.length > 0 && (
+              <Card className="bg-card/50 border-border">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Newspaper className="h-4 w-4 text-primary" />
+                    Company News
+                    <Badge variant="secondary" className="text-[10px] ml-auto">{data.news.length} articles</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {data.news.map((item, i) => (
+                      <a
+                        key={i}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex gap-3 p-2.5 rounded-lg border border-border/40 hover:border-primary/40 hover:bg-muted/30 transition-all group"
+                      >
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt=""
+                            className="w-16 h-16 rounded object-cover flex-shrink-0 bg-muted"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-relaxed">
+                            {item.headline}
+                          </p>
+                          {item.summary && (
+                            <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                              {item.summary}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1.5">
+                            {item.source && (
+                              <span className="text-[10px] text-primary/70 font-medium">{item.source}</span>
+                            )}
+                            {item.datetime && (
+                              <span className="text-[10px] text-muted-foreground/60 flex items-center gap-0.5">
+                                <Clock className="h-2.5 w-2.5" />
+                                {new Date(item.datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            )}
+                            <ExternalLink className="h-2.5 w-2.5 text-muted-foreground/40 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Source & Disclaimer */}
             <div className="flex flex-col items-center gap-1">
