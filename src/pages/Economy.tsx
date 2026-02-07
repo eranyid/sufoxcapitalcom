@@ -86,6 +86,13 @@ const Economy = () => {
         }}
       />
 
+      {/* Markets Table */}
+      <TEWidgetBlock
+        title="MARKETS OVERVIEW"
+        icon={<Activity className="h-3.5 w-3.5 text-primary" />}
+        attrs={{ widget: 'mt-pro' }}
+      />
+
       {/* TradingEconomics Calendar */}
       <TEWidgetBlock
         title="TRADING ECONOMICS"
