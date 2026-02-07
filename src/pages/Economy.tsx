@@ -40,6 +40,44 @@ const TradingEconomicsWidget = () => {
   );
 };
 
+const SPXMarketWidget = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    containerRef.current.innerHTML = '';
+
+    const embed = document.createElement('div');
+    embed.className = 'te-embed';
+    embed.setAttribute('data-widget', 'tm-pro');
+    embed.setAttribute('data-index', 'SPX:IND');
+    embed.setAttribute('data-index-full-name', 'United States Stock Market Index (US500)');
+    containerRef.current.appendChild(embed);
+
+    const script = document.createElement('script');
+    script.src = 'https://embed.tradingeconomics.com/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (containerRef.current) containerRef.current.innerHTML = '';
+      script.remove();
+    };
+  }, []);
+
+  return (
+    <div className="w-full bg-card border border-border overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border">
+        <Activity className="h-3.5 w-3.5 text-primary" />
+        <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
+          US500 MARKET INDEX
+        </span>
+      </div>
+      <div ref={containerRef} style={{ minHeight: 420 }} />
+    </div>
+  );
+};
+
 const Economy = () => {
   return (
     <div className="space-y-4 animate-fade-in">
@@ -54,6 +92,9 @@ const Economy = () => {
 
       {/* FRED Indicators */}
       <EconomicIndicators />
+
+      {/* SPX Market Index */}
+      <SPXMarketWidget />
 
       {/* TradingEconomics Widget */}
       <TradingEconomicsWidget />
