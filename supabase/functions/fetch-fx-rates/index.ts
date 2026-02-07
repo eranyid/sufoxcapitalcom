@@ -32,7 +32,7 @@ async function fetchWithRetry(url: string, retries = MAX_RETRIES): Promise<Respo
     }
     if (attempt < retries) await sleep(RETRY_DELAY_MS);
   }
-  throw new Error(`Failed to fetch ${url} after ${retries + 1} attempts`);
+  throw new Error(`Failed to fetch after ${retries + 1} attempts`);
 }
 
 interface RateResult {
@@ -72,7 +72,6 @@ async function fetchRates(): Promise<{ results: RateResult[]; fetchedAt: string 
     }
   } catch (err: any) {
     console.error("[fetch-fx-rates] API call failed:", err.message);
-    // All pairs fail
     for (const pair of PAIRS) {
       results.push({
         pair: `${pair.from}/${pair.to}`,
@@ -128,11 +127,7 @@ Deno.serve(async (req) => {
     }));
 
     if (inserts.length > 0) {
-      // For system rates (cron), upsert with null user_id
-      // We need to handle the upsert manually since the unique constraint
-      // is on (user_id, from_currency, to_currency, rate_date)
       for (const insert of inserts) {
-        // Check if exists
         let query = supabase
           .from("fx_rates")
           .select("id")
