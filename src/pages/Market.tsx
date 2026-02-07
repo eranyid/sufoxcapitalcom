@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart,
 } from 'recharts';
 
 interface FinancialPeriod {
@@ -465,27 +465,66 @@ export default function Market() {
                 </CardContent>
               </Card>
 
-              {/* EPS History */}
+              {/* Balance Sheet Chart */}
               <Card className="bg-card/50 border-border">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-primary" />
-                    EPS History
+                    Balance Sheet
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={data.revenue_history} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                      <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
-                        formatter={(v: number) => [`${v.toFixed(2)}`, '']}
-                      />
-                      <Bar dataKey="eps" name="EPS" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {(() => {
+                    const bsData = data.annual_statements
+                      .filter(s => s.total_assets != null)
+                      .slice(-5)
+                      .map(s => ({
+                        year: s.period.slice(0, 4),
+                        total_assets_b: (s.total_assets ?? 0) / 1e9,
+                        total_liabilities_b: (s.total_liabilities ?? 0) / 1e9,
+                        debt_to_assets_pct: s.total_assets ? ((s.total_debt ?? 0) / s.total_assets) * 100 : 0,
+                      }));
+                    const latestBs = bsData.length > 0 ? bsData[bsData.length - 1] : null;
+                    return (
+                      <>
+                        <ResponsiveContainer width="100%" height={240}>
+                          <ComposedChart data={bsData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                            <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                            <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v: number) => `${v.toFixed(0)}B`} />
+                            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v: number) => `${v.toFixed(0)}%`} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                              formatter={(v: number, name: string) => {
+                                if (name === 'Debt/Assets') return [`${v.toFixed(2)}%`, name];
+                                return [`$${v.toFixed(1)}B`, name];
+                              }}
+                            />
+                            <Bar yAxisId="left" dataKey="total_assets_b" name="Total Assets" fill="hsl(var(--foreground))" opacity={0.7} radius={[4, 4, 0, 0]} />
+                            <Bar yAxisId="left" dataKey="total_liabilities_b" name="Total Liabilities" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                            <Line yAxisId="right" type="monotone" dataKey="debt_to_assets_pct" name="Debt/Assets" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 3 }} />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                        {latestBs && (
+                          <div className="mt-3 space-y-1.5 text-xs border-t border-border pt-3">
+                            <p className="text-muted-foreground font-medium mb-2">{latestBs.year} (Billions USD)</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-foreground opacity-70" /> <span className="text-muted-foreground">TOTAL ASSETS</span></div>
+                              <span className="font-mono text-foreground">{(latestBs.total_assets_b * 1000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#3B82F6' }} /> <span className="text-muted-foreground">TOTAL LIABILITIES</span></div>
+                              <span className="font-mono text-foreground">{(latestBs.total_liabilities_b * 1000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-destructive" /> <span className="text-muted-foreground">DEBT TO ASSETS</span></div>
+                              <span className="font-mono text-foreground">{latestBs.debt_to_assets_pct.toFixed(2)}%</span>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </CardContent>
               </Card>
 
