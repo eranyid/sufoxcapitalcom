@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart,
 } from 'recharts';
+import { EtfView, type EtfData } from '@/components/market/EtfView';
 
 interface FinancialPeriod {
   period: string;
@@ -48,6 +49,7 @@ interface NewsItem {
 }
 
 interface FundamentalData {
+  asset_type?: 'stock';
   company_name: string;
   ticker: string;
   sector: string;
@@ -222,7 +224,7 @@ function FinancialStatementsTable({ statements, currency }: { statements: Financ
 export default function Market() {
   const [ticker, setTicker] = useState('');
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<FundamentalData | null>(null);
+  const [data, setData] = useState<FundamentalData | EtfData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -242,7 +244,8 @@ export default function Market() {
       if (!result?.data) throw new Error('No data returned');
 
       setData(result.data);
-      toast({ title: `${result.data.company_name}`, description: 'Fundamental data loaded' });
+      const label = result.data.asset_type === 'etf' ? result.data.name : result.data.company_name;
+      toast({ title: label, description: `${result.data.asset_type === 'etf' ? 'ETF' : 'Fundamental'} data loaded` });
     } catch (err: any) {
       setError(err.message);
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -251,17 +254,20 @@ export default function Market() {
     }
   };
 
-  const radarData = data ? [
-    { metric: 'Profitability', value: Math.min((data.net_margin_pct ?? 0) / 30 * 100, 100) },
-    { metric: 'Growth', value: Math.min(Math.abs(data.revenue_growth_yoy_pct ?? 0) / 30 * 100, 100) },
-    { metric: 'Valuation', value: Math.min(100 - ((data.pe_ratio ?? 25) / 50 * 100), 100) },
-    { metric: 'Efficiency', value: Math.min((data.roe_pct ?? 0) / 30 * 100, 100) },
-    { metric: 'Leverage', value: Math.min(100 - ((data.debt_to_equity ?? 1) / 3 * 100), 100) },
+  const isEtf = data?.asset_type === 'etf';
+  const stockData = data && !isEtf ? data as FundamentalData : null;
+
+  const radarData = stockData ? [
+    { metric: 'Profitability', value: Math.min((stockData.net_margin_pct ?? 0) / 30 * 100, 100) },
+    { metric: 'Growth', value: Math.min(Math.abs(stockData.revenue_growth_yoy_pct ?? 0) / 30 * 100, 100) },
+    { metric: 'Valuation', value: Math.min(100 - ((stockData.pe_ratio ?? 25) / 50 * 100), 100) },
+    { metric: 'Efficiency', value: Math.min((stockData.roe_pct ?? 0) / 30 * 100, 100) },
+    { metric: 'Leverage', value: Math.min(100 - ((stockData.debt_to_equity ?? 1) / 3 * 100), 100) },
   ] : [];
 
   // Latest annual statement for balance sheet KPIs
-  const latestAnnual = data?.annual_statements?.length
-    ? data.annual_statements[data.annual_statements.length - 1]
+  const latestAnnual = stockData?.annual_statements?.length
+    ? stockData.annual_statements[stockData.annual_statements.length - 1]
     : null;
 
   return (
@@ -303,53 +309,70 @@ export default function Market() {
                 Analyze
               </Button>
             </div>
-            {data && !loading && (
+            {data && !loading && !isEtf && stockData && (
               <>
                 <div className="hidden sm:block w-px h-8 bg-border mx-1" />
                 <div className="flex flex-1 items-center justify-between gap-3 min-w-0">
                   <div className="min-w-0">
-                    <h2 className="text-sm font-bold text-foreground truncate">{data.company_name}</h2>
+                    <h2 className="text-sm font-bold text-foreground truncate">{stockData.company_name}</h2>
                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <Badge variant="outline" className="font-mono text-[10px] h-5">{data.ticker}</Badge>
-                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Briefcase className="h-2.5 w-2.5" />{data.sector}</Badge>
-                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Building2 className="h-2.5 w-2.5" />{data.industry}</Badge>
-                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Globe className="h-2.5 w-2.5" />{data.country}</Badge>
+                      <Badge variant="outline" className="font-mono text-[10px] h-5">{stockData.ticker}</Badge>
+                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Briefcase className="h-2.5 w-2.5" />{stockData.sector}</Badge>
+                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Building2 className="h-2.5 w-2.5" />{stockData.industry}</Badge>
+                      <Badge variant="secondary" className="gap-1 text-[10px] h-5"><Globe className="h-2.5 w-2.5" />{stockData.country}</Badge>
                     </div>
                   </div>
                   <div className="text-right shrink-0 flex items-baseline gap-4">
-                    {data.market_cap_b != null && (
+                    {stockData.market_cap_b != null && (
                       <div className="hidden sm:flex flex-col items-end">
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Mkt Cap</span>
-                        <span className="text-sm font-bold font-mono text-foreground">{fmt(data.market_cap_b, 2, 'B')}</span>
+                        <span className="text-sm font-bold font-mono text-foreground">{fmt(stockData.market_cap_b, 2, 'B')}</span>
                       </div>
                     )}
                     <div>
                       <p className="text-xl font-bold font-mono text-foreground">
-                        {data.currency === 'ILS' ? '₪' : data.currency === 'EUR' ? '€' : '$'}{fmt(data.current_price)}
+                        {stockData.currency === 'ILS' ? '₪' : stockData.currency === 'EUR' ? '€' : '$'}{fmt(stockData.current_price)}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        52W: {fmt(data.week_52_low)} – {fmt(data.week_52_high)}
+                        52W: {fmt(stockData.week_52_low)} – {fmt(stockData.week_52_high)}
                       </p>
                     </div>
                   </div>
                 </div>
               </>
             )}
+            {data && !loading && isEtf && (
+              <>
+                <div className="hidden sm:block w-px h-8 bg-border mx-1" />
+                <div className="flex flex-1 items-center justify-between gap-3 min-w-0">
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-bold text-foreground truncate">{(data as EtfData).name}</h2>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <Badge variant="outline" className="font-mono text-[10px] h-5">{data.ticker}</Badge>
+                      <Badge className="text-[10px] h-5 bg-primary/20 text-primary border-primary/30">ETF</Badge>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xl font-bold font-mono text-foreground">${fmt(data.current_price)}</p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-          {/* KPI metrics rows */}
-          {data && !loading && (
+          {/* KPI metrics rows — stock only */}
+          {stockData && !loading && (
             <>
               <div className="border-t border-border" />
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
                 {[
-                  { label: 'Market Cap', value: data.market_cap_b, suffix: 'B' },
-                  { label: 'P/E (TTM)', value: data.pe_ratio },
-                  { label: 'Fwd P/E', value: data.forward_pe },
-                  { label: 'Gross Margin', value: data.gross_margin_pct, suffix: '%', color: true },
-                  { label: 'Op. Margin', value: data.operating_margin_pct, suffix: '%', color: true },
-                  { label: 'Rev Growth YoY', value: data.revenue_growth_yoy_pct, suffix: '%', color: true },
-                  { label: 'Earnings Growth', value: data.earnings_growth_yoy_pct, suffix: '%', color: true },
-                  { label: 'Div Yield', value: data.dividend_yield_pct, suffix: '%' },
+                  { label: 'Market Cap', value: stockData.market_cap_b, suffix: 'B' },
+                  { label: 'P/E (TTM)', value: stockData.pe_ratio },
+                  { label: 'Fwd P/E', value: stockData.forward_pe },
+                  { label: 'Gross Margin', value: stockData.gross_margin_pct, suffix: '%', color: true },
+                  { label: 'Op. Margin', value: stockData.operating_margin_pct, suffix: '%', color: true },
+                  { label: 'Rev Growth YoY', value: stockData.revenue_growth_yoy_pct, suffix: '%', color: true },
+                  { label: 'Earnings Growth', value: stockData.earnings_growth_yoy_pct, suffix: '%', color: true },
+                  { label: 'Div Yield', value: stockData.dividend_yield_pct, suffix: '%' },
                 ].filter(k => k.value != null).map(k => (
                   <div key={k.label} className="flex items-baseline gap-1.5">
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{k.label}</span>
@@ -408,8 +431,13 @@ export default function Market() {
           </div>
         )}
 
-        {/* Results */}
-        {data && !loading && (
+        {/* Results — ETF */}
+        {data && !loading && isEtf && (
+          <EtfView data={data as EtfData} />
+        )}
+
+        {/* Results — Stock */}
+        {stockData && !loading && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Revenue & Net Income Chart */}
@@ -422,7 +450,7 @@ export default function Market() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={data.revenue_history} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <BarChart data={stockData.revenue_history} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                       <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                       <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `${v}B`} />
@@ -448,7 +476,7 @@ export default function Market() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={240}>
-                    <LineChart data={data.margin_history} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <LineChart data={stockData.margin_history} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                       <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                       <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `${v}%`} />
@@ -475,7 +503,7 @@ export default function Market() {
                 </CardHeader>
                 <CardContent>
                   {(() => {
-                    const bsData = data.annual_statements
+                    const bsData = stockData.annual_statements
                       .filter(s => s.total_assets != null)
                       .slice(-5)
                       .map(s => ({
@@ -561,28 +589,28 @@ export default function Market() {
                     <TabsTrigger value="quarterly">Quarterly</TabsTrigger>
                   </TabsList>
                   <TabsContent value="annual">
-                    <FinancialStatementsTable statements={data.annual_statements || []} currency={data.currency} />
+                    <FinancialStatementsTable statements={stockData.annual_statements || []} currency={stockData.currency} />
                   </TabsContent>
                   <TabsContent value="quarterly">
-                    <FinancialStatementsTable statements={data.quarterly_statements || []} currency={data.currency} />
+                    <FinancialStatementsTable statements={stockData.quarterly_statements || []} currency={stockData.currency} />
                   </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
 
             {/* Company News */}
-            {data.news && data.news.length > 0 && (
+            {stockData.news && stockData.news.length > 0 && (
               <Card className="bg-card/50 border-border">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Newspaper className="h-4 w-4 text-primary" />
                     Company News
-                    <Badge variant="secondary" className="text-[10px] ml-auto">{data.news.length} articles</Badge>
+                    <Badge variant="secondary" className="text-[10px] ml-auto">{stockData.news.length} articles</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                    {data.news.map((item, i) => (
+                    {stockData.news.map((item, i) => (
                       <a
                         key={i}
                         href={item.url}

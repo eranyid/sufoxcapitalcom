@@ -27,8 +27,10 @@ function safeNum(v: unknown): number | null {
   return isFinite(n) ? n : null;
 }
 
+// ── Stock helpers ──
+
 interface FinancialPeriod {
-  period: string; // "2024" or "Q3 2024"
+  period: string;
   revenue: number | null;
   cost_of_revenue: number | null;
   gross_profit: number | null;
@@ -36,7 +38,6 @@ interface FinancialPeriod {
   operating_income: number | null;
   net_income: number | null;
   eps: number | null;
-  // Balance sheet
   total_assets: number | null;
   current_assets: number | null;
   total_liabilities: number | null;
@@ -44,7 +45,6 @@ interface FinancialPeriod {
   total_equity: number | null;
   cash_and_equivalents: number | null;
   total_debt: number | null;
-  // Cash flow
   operating_cash_flow: number | null;
   capital_expenditures: number | null;
   free_cash_flow: number | null;
@@ -87,7 +87,6 @@ function extractReportData(report: any): Omit<FinancialPeriod, "period"> {
   const cash = findConcept(bs, ["us-gaap_CashAndCashEquivalentsAtCarryingValue", "us-gaap_CashCashEquivalentsAndShortTermInvestments"]);
   const totalDebt = findConcept(bs, ["us-gaap_LongTermDebt", "us-gaap_LongTermDebtNoncurrent"]);
 
-  // Cash flow
   const operatingCashFlow = findConcept(cf, [
     "us-gaap_NetCashProvidedByUsedInOperatingActivities",
     "us-gaap_NetCashProvidedByOperatingActivities",
@@ -128,7 +127,6 @@ function extractAllFinancials(annualData: any, quarterlyData: any) {
   const annual_statements: FinancialPeriod[] = [];
   const quarterly_statements: FinancialPeriod[] = [];
 
-  // Annual
   const annualReports = (annualData?.data || [])
     .filter((r: any) => r.form === "10-K" || r.form === "20-F" || r.form === "40-F")
     .slice(0, 5)
@@ -157,7 +155,6 @@ function extractAllFinancials(annualData: any, quarterlyData: any) {
     annual_statements.push({ period: year, ...d });
   }
 
-  // Quarterly
   const quarterlyReports = (quarterlyData?.data || [])
     .filter((r: any) => r.form === "10-Q")
     .slice(0, 8)
@@ -173,6 +170,53 @@ function extractAllFinancials(annualData: any, quarterlyData: any) {
 
   return { revenue_history, margin_history, annual_statements, quarterly_statements };
 }
+
+// ── ETF helpers ──
+
+function buildEtfResponse(sym: string, etfProfile: any, holdings: any, sectors: any, countries: any, quote: any, news: any[]) {
+  const profile = etfProfile?.profile || etfProfile || {};
+  
+  const holdingsList = Array.isArray(holdings?.holdings)
+    ? holdings.holdings.slice(0, 25).map((h: any) => ({
+        symbol: h.symbol || h.cusip || '',
+        name: h.name || '',
+        share: h.share ?? 0,
+        percent: h.percent != null ? h.percent * 100 : 0,
+      }))
+    : [];
+
+  const sectorExposure = Array.isArray(sectors?.sectorExposure)
+    ? sectors.sectorExposure.map((s: any) => ({
+        sector: s.sector || 'Other',
+        percentage: s.exposure != null ? s.exposure * 100 : 0,
+      })).filter((s: any) => s.percentage > 0)
+    : [];
+
+  const countryExposure = Array.isArray(countries?.countryExposure)
+    ? countries.countryExposure.map((c: any) => ({
+        country: c.country || 'Other',
+        percentage: c.exposure != null ? c.exposure * 100 : 0,
+      })).filter((c: any) => c.percentage > 0)
+    : [];
+
+  return {
+    asset_type: "etf",
+    name: profile.name || sym,
+    ticker: sym,
+    current_price: safeNum(quote?.c),
+    aum: safeNum(profile.aum),
+    expense_ratio: safeNum(profile.expenseRatio),
+    inception_date: profile.inceptionDate || null,
+    description: profile.description || null,
+    nav: safeNum(profile.nav),
+    holdings: holdingsList,
+    sector_exposure: sectorExposure,
+    country_exposure: countryExposure,
+    news,
+  };
+}
+
+// ── Main handler ──
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -192,86 +236,147 @@ serve(async (req) => {
     const toStr = now.toISOString().split('T')[0];
     const fromStr = from.toISOString().split('T')[0];
 
-    // Fetch all Finnhub endpoints in parallel (including quarterly + news)
-    const [profile, metrics, quote, annualFinancials, quarterlyFinancials, companyNews] = await Promise.all([
-      fetchFinnhub(`/stock/profile2?symbol=${sym}`, FINNHUB_API_KEY),
-      fetchFinnhub(`/stock/metric?symbol=${sym}&metric=all`, FINNHUB_API_KEY),
-      fetchFinnhub(`/quote?symbol=${sym}`, FINNHUB_API_KEY),
-      fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=annual`, FINNHUB_API_KEY),
-      fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=quarterly`, FINNHUB_API_KEY),
-      fetchFinnhub(`/company-news?symbol=${sym}&from=${fromStr}&to=${toStr}`, FINNHUB_API_KEY).catch(() => []),
-    ]);
-
+    // Step 1: Try stock profile
+    const profile = await fetchFinnhub(`/stock/profile2?symbol=${sym}`, FINNHUB_API_KEY);
     console.log("Profile keys:", Object.keys(profile || {}));
 
-    if (!profile || !profile.name) {
+    // Step 2: If stock profile exists → stock flow
+    if (profile && profile.name) {
+      const [metrics, quote, annualFinancials, quarterlyFinancials, companyNews] = await Promise.all([
+        fetchFinnhub(`/stock/metric?symbol=${sym}&metric=all`, FINNHUB_API_KEY),
+        fetchFinnhub(`/quote?symbol=${sym}`, FINNHUB_API_KEY),
+        fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=annual`, FINNHUB_API_KEY),
+        fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=quarterly`, FINNHUB_API_KEY),
+        fetchFinnhub(`/company-news?symbol=${sym}&from=${fromStr}&to=${toStr}`, FINNHUB_API_KEY).catch(() => []),
+      ]);
+
+      const m = metrics?.metric || {};
+      const { revenue_history, margin_history, annual_statements, quarterly_statements } =
+        extractAllFinancials(annualFinancials, quarterlyFinancials);
+
+      const news = Array.isArray(companyNews)
+        ? companyNews.slice(0, 20).map((n: any) => ({
+            headline: n.headline || '',
+            summary: n.summary || '',
+            source: n.source || '',
+            url: n.url || '',
+            datetime: n.datetime ? n.datetime * 1000 : null,
+            related: n.related || sym,
+            image: n.image || '',
+            category: n.category || '',
+          }))
+        : [];
+
+      const fundamentals = {
+        asset_type: "stock",
+        company_name: profile.name || sym,
+        ticker: profile.ticker || sym,
+        sector: profile.finnhubIndustry || "N/A",
+        industry: profile.finnhubIndustry || "N/A",
+        country: profile.country || "N/A",
+        currency: profile.currency || "USD",
+        market_cap_b: safeNum(profile.marketCapitalization ? profile.marketCapitalization / 1000 : null),
+        enterprise_value_b: safeNum(m.enterpriseValueTTM ? m.enterpriseValueTTM / 1e6 : null),
+        current_price: safeNum(quote?.c),
+        week_52_high: safeNum(m["52WeekHigh"]),
+        week_52_low: safeNum(m["52WeekLow"]),
+        pe_ratio: safeNum(m.peTTM),
+        forward_pe: safeNum(m.peAnnual),
+        pb_ratio: safeNum(m.pbAnnual),
+        ps_ratio: safeNum(m.psAnnual),
+        ev_ebitda: safeNum(m.currentEv ? m.currentEv / (m.ebitdaTTM || 1) : m.evEbitdaTTM),
+        dividend_yield_pct: safeNum(m.dividendYieldIndicatedAnnual),
+        payout_ratio_pct: safeNum(m.payoutRatioAnnual),
+        eps_ttm: safeNum(m.epsTTM),
+        revenue_ttm_b: null,
+        net_income_ttm_b: null,
+        ebitda_ttm_b: null,
+        free_cash_flow_ttm_b: safeNum(m.freeCashFlowPerShareTTM && profile.shareOutstanding
+          ? (m.freeCashFlowPerShareTTM * profile.shareOutstanding) / 1e9 : null),
+        gross_margin_pct: safeNum(m.grossMarginTTM),
+        operating_margin_pct: safeNum(m.operatingMarginTTM),
+        net_margin_pct: safeNum(m.netProfitMarginTTM),
+        roe_pct: safeNum(m.roeTTM),
+        roa_pct: safeNum(m.roaTTM),
+        roic_pct: safeNum(m.roicTTM),
+        debt_to_equity: safeNum(m.totalDebtToEquityAnnual),
+        current_ratio: safeNum(m.currentRatioAnnual),
+        revenue_growth_yoy_pct: safeNum(m.revenueGrowthTTMYoy),
+        earnings_growth_yoy_pct: safeNum(m.epsGrowthTTMYoy),
+        revenue_history,
+        margin_history,
+        annual_statements,
+        quarterly_statements,
+        news,
+      };
+
+      return new Response(JSON.stringify({ data: fundamentals }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Step 3: Try ETF profile (may require paid Finnhub plan)
+    console.log(`Stock profile empty for ${sym}, trying ETF...`);
+    let etfProfile: any = null;
+    try {
+      etfProfile = await fetchFinnhub(`/etf/profile?symbol=${sym}`, FINNHUB_API_KEY);
+    } catch (e) {
+      // 403 = free tier doesn't have ETF access; try basic ETF detection via quote
+      console.log(`ETF profile fetch failed: ${e instanceof Error ? e.message : e}`);
+    }
+
+    // Check if we got ETF data
+    const etfProfileData = etfProfile?.profile || etfProfile || {};
+    const hasFullEtfData = etfProfileData.name || etfProfileData.description || etfProfileData.aum;
+
+    // Even without ETF profile, check if quote returns data (basic ETF detection)
+    let basicQuote: any = null;
+    if (!hasFullEtfData) {
+      try {
+        basicQuote = await fetchFinnhub(`/quote?symbol=${sym}`, FINNHUB_API_KEY);
+      } catch { /* ignore */ }
+    }
+
+    const hasBasicQuote = basicQuote && basicQuote.c && basicQuote.c > 0;
+
+    if (!hasFullEtfData && !hasBasicQuote) {
       return new Response(
-        JSON.stringify({ error: `Ticker "${sym}" not found on Finnhub. Try a US-listed stock symbol.` }),
+        JSON.stringify({ error: `Ticker "${sym}" not found on Finnhub. Try a US-listed stock or ETF symbol.` }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const m = metrics?.metric || {};
-    const { revenue_history, margin_history, annual_statements, quarterly_statements } =
-      extractAllFinancials(annualFinancials, quarterlyFinancials);
+    // Step 4: ETF flow
+    console.log(`ETF detected: ${sym} (full profile: ${hasFullEtfData})`);
+    // Only fetch ETF-specific endpoints if we have full access; otherwise use basic quote
+    const etfQuote = basicQuote || await fetchFinnhub(`/quote?symbol=${sym}`, FINNHUB_API_KEY);
+    
+    let etfHoldings: any = null, etfSectors: any = null, etfCountries: any = null;
+    if (hasFullEtfData) {
+      [etfHoldings, etfSectors, etfCountries] = await Promise.all([
+        fetchFinnhub(`/etf/holdings?symbol=${sym}`, FINNHUB_API_KEY).catch(() => null),
+        fetchFinnhub(`/etf/sector?symbol=${sym}`, FINNHUB_API_KEY).catch(() => null),
+        fetchFinnhub(`/etf/country?symbol=${sym}`, FINNHUB_API_KEY).catch(() => null),
+      ]);
+    }
 
-    // Process company news (limit to 20 most recent)
-    const news = Array.isArray(companyNews)
-      ? companyNews.slice(0, 20).map((n: any) => ({
+    const etfNewsRaw = await fetchFinnhub(`/company-news?symbol=${sym}&from=${fromStr}&to=${toStr}`, FINNHUB_API_KEY).catch(() => []);
+    const news = Array.isArray(etfNewsRaw)
+      ? etfNewsRaw.slice(0, 20).map((n: any) => ({
           headline: n.headline || '',
           summary: n.summary || '',
           source: n.source || '',
           url: n.url || '',
-          datetime: n.datetime ? n.datetime * 1000 : null, // convert to ms
+          datetime: n.datetime ? n.datetime * 1000 : null,
           related: n.related || sym,
           image: n.image || '',
           category: n.category || '',
         }))
       : [];
 
-    const fundamentals = {
-      company_name: profile.name || sym,
-      ticker: profile.ticker || sym,
-      sector: profile.finnhubIndustry || "N/A",
-      industry: profile.finnhubIndustry || "N/A",
-      country: profile.country || "N/A",
-      currency: profile.currency || "USD",
-      market_cap_b: safeNum(profile.marketCapitalization ? profile.marketCapitalization / 1000 : null),
-      enterprise_value_b: safeNum(m.enterpriseValueTTM ? m.enterpriseValueTTM / 1e6 : null),
-      current_price: safeNum(quote?.c),
-      week_52_high: safeNum(m["52WeekHigh"]),
-      week_52_low: safeNum(m["52WeekLow"]),
-      pe_ratio: safeNum(m.peTTM),
-      forward_pe: safeNum(m.peAnnual),
-      pb_ratio: safeNum(m.pbAnnual),
-      ps_ratio: safeNum(m.psAnnual),
-      ev_ebitda: safeNum(m.currentEv ? m.currentEv / (m.ebitdaTTM || 1) : m.evEbitdaTTM),
-      dividend_yield_pct: safeNum(m.dividendYieldIndicatedAnnual),
-      payout_ratio_pct: safeNum(m.payoutRatioAnnual),
-      eps_ttm: safeNum(m.epsTTM),
-      revenue_ttm_b: null,
-      net_income_ttm_b: null,
-      ebitda_ttm_b: null,
-      free_cash_flow_ttm_b: safeNum(m.freeCashFlowPerShareTTM && profile.shareOutstanding
-        ? (m.freeCashFlowPerShareTTM * profile.shareOutstanding) / 1e9 : null),
-      gross_margin_pct: safeNum(m.grossMarginTTM),
-      operating_margin_pct: safeNum(m.operatingMarginTTM),
-      net_margin_pct: safeNum(m.netProfitMarginTTM),
-      roe_pct: safeNum(m.roeTTM),
-      roa_pct: safeNum(m.roaTTM),
-      roic_pct: safeNum(m.roicTTM),
-      debt_to_equity: safeNum(m.totalDebtToEquityAnnual),
-      current_ratio: safeNum(m.currentRatioAnnual),
-      revenue_growth_yoy_pct: safeNum(m.revenueGrowthTTMYoy),
-      earnings_growth_yoy_pct: safeNum(m.epsGrowthTTMYoy),
-      revenue_history,
-      margin_history,
-      annual_statements,
-      quarterly_statements,
-      news,
-    };
+    const etfData = buildEtfResponse(sym, etfProfile, etfHoldings, etfSectors, etfCountries, etfQuote, news);
 
-    return new Response(JSON.stringify({ data: fundamentals }), {
+    return new Response(JSON.stringify({ data: etfData }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
