@@ -60,6 +60,7 @@ const Messages = lazy(() => import("./pages/Messages"));
 const ContextSelector = lazy(() => import("./pages/ContextSelector"));
 
 const Market = lazy(() => import("./pages/Market"));
+const Test = lazy(() => import("./pages/Test"));
 
 const queryClient = new QueryClient();
 
@@ -283,6 +284,11 @@ const App = () => (
                   <Route path="/companies" element={<Navigate to="/analysis" replace />} />
                   <Route path="/companies/:companyId" element={<Navigate to="/analysis/:companyId" replace />} />
                   <Route path="/backoffice/tasks" element={<Navigate to="/backoffice/issues" replace />} />
+                  <Route path="/test" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Test />
+                    </Suspense>
+                  } />
                 </Route>
                 {/* Public pages - accessible without auth */}
                 <Route path="/disclaimer" element={
