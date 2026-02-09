@@ -204,7 +204,9 @@ serve(async (req) => {
 
     console.log("Profile keys:", Object.keys(profile || {}));
 
-    if (!profile || !profile.name) {
+    // For ETFs (e.g. SPY, QQQ) profile2 returns empty — fallback gracefully
+    const hasProfile = profile && profile.name;
+    if (!hasProfile && (!quote || quote.c == null || quote.c === 0)) {
       return new Response(
         JSON.stringify({ error: `Ticker "${sym}" not found on Finnhub. Try a US-listed stock symbol.` }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -230,13 +232,13 @@ serve(async (req) => {
       : [];
 
     const fundamentals = {
-      company_name: profile.name || sym,
-      ticker: profile.ticker || sym,
-      sector: profile.finnhubIndustry || "N/A",
-      industry: profile.finnhubIndustry || "N/A",
-      country: profile.country || "N/A",
-      currency: profile.currency || "USD",
-      market_cap_b: safeNum(profile.marketCapitalization ? profile.marketCapitalization / 1000 : null),
+      company_name: profile?.name || sym,
+      ticker: profile?.ticker || sym,
+      sector: profile?.finnhubIndustry || "N/A",
+      industry: profile?.finnhubIndustry || "N/A",
+      country: profile?.country || "N/A",
+      currency: profile?.currency || "USD",
+      market_cap_b: safeNum(profile?.marketCapitalization ? profile.marketCapitalization / 1000 : null),
       enterprise_value_b: safeNum(m.enterpriseValueTTM ? m.enterpriseValueTTM / 1e6 : null),
       current_price: safeNum(quote?.c),
       week_52_high: safeNum(m["52WeekHigh"]),
@@ -252,7 +254,7 @@ serve(async (req) => {
       revenue_ttm_b: null,
       net_income_ttm_b: null,
       ebitda_ttm_b: null,
-      free_cash_flow_ttm_b: safeNum(m.freeCashFlowPerShareTTM && profile.shareOutstanding
+      free_cash_flow_ttm_b: safeNum(m.freeCashFlowPerShareTTM && profile?.shareOutstanding
         ? (m.freeCashFlowPerShareTTM * profile.shareOutstanding) / 1e9 : null),
       gross_margin_pct: safeNum(m.grossMarginTTM),
       operating_margin_pct: safeNum(m.operatingMarginTTM),

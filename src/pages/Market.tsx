@@ -422,7 +422,7 @@ export default function Market() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={data.revenue_history} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <BarChart data={data.revenue_history || []} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                       <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                       <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `${v}B`} />
@@ -448,7 +448,7 @@ export default function Market() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={240}>
-                    <LineChart data={data.margin_history} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <LineChart data={data.margin_history || []} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                       <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                       <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `${v}%`} />
@@ -475,7 +475,7 @@ export default function Market() {
                 </CardHeader>
                 <CardContent>
                   {(() => {
-                    const bsData = data.annual_statements
+                    const bsData = (data.annual_statements || [])
                       .filter(s => s.total_assets != null)
                       .slice(-5)
                       .map(s => ({
