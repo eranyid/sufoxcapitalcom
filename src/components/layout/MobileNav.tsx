@@ -47,7 +47,7 @@ const moreNavItems = [
   { path: '/lab', icon: LabIcon, label: 'Lab' },
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
-  { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },
+  
   { path: '/xray', icon: XRayIcon, label: 'X-Ray' },
   
   { path: '/policy', icon: PolicyIcon, label: 'Policy' },
