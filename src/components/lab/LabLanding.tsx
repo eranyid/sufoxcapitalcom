@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { Blocks, Zap, ArrowRight } from 'lucide-react';
+import { Zap, ArrowRight } from 'lucide-react';
+import { AllocationIcon } from '@/components/icons/AllocationIcon';
 import { RebalanceIcon } from '@/components/icons/RebalanceIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
@@ -47,7 +48,7 @@ export function LabLanding({ onSelectMode }: LabLandingProps) {
       id: 'allocation',
       label: 'Allocation',
       description: 'Interactive weight builder with drift tracking and exposure analytics.',
-      icon: Blocks,
+      icon: AllocationIcon,
       accent: 'from-violet-500/20 to-violet-500/5',
       glowColor: 'group-hover:shadow-violet-500/20',
       onClick: () => navigate('/construction/allocation'),
