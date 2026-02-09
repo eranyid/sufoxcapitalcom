@@ -19,6 +19,7 @@ import {
 import { LabIcon } from '@/components/icons/LabIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
+import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
 import { ChartBuilderView } from '@/components/lab/ChartBuilderView';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
 import { cn } from '@/lib/utils';
@@ -652,7 +653,7 @@ export default function Lab() {
           {/* Landing View */}
           {labMode === 'landing' && (
             <div className="flex-1 flex items-center justify-center p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-5xl w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 max-w-5xl w-full">
                 {/* Pipeline Card */}
                 <button
                   onClick={() => setLabMode('pipeline')}
@@ -710,6 +711,18 @@ export default function Lab() {
                   <div className="text-center">
                     <div className="text-sm font-semibold text-foreground">Rebalance</div>
                     <div className="text-xs text-muted-foreground mt-1">Tax-optimized rebalancing</div>
+                  </div>
+                </button>
+
+                {/* Scenarios Card */}
+                <button
+                  onClick={() => navigate('/scenarios')}
+                  className="group flex flex-col items-center gap-4 p-8 rounded-lg border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all"
+                >
+                  <ScenariosIcon size={40} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-foreground">Scenarios</div>
+                    <div className="text-xs text-muted-foreground mt-1">Stress tests & simulations</div>
                   </div>
                 </button>
               </div>
