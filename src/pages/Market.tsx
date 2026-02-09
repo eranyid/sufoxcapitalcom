@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart,
 } from 'recharts';
+import FinancialStatementsChart from '@/components/fundamentals/FinancialStatementsChart';
 
 interface FinancialPeriod {
   period: string;
@@ -548,6 +549,12 @@ export default function Market() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Financial Statements Stacked Chart */}
+            <FinancialStatementsChart
+              annualStatements={data.annual_statements || []}
+              quarterlyStatements={data.quarterly_statements || []}
+            />
 
             {/* Financial Statements Table */}
             <Card className="bg-card/50 border-border">
