@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
+import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import { ChartBuilderView } from '@/components/lab/ChartBuilderView';
+import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
 import { cn } from '@/lib/utils';
 import { 
   AnalyticsBlock, 
@@ -140,7 +142,7 @@ export default function Lab() {
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
-  const [labMode, setLabMode] = useState<'landing' | 'pipeline' | 'chart'>('landing');
+  const [labMode, setLabMode] = useState<'landing' | 'pipeline' | 'chart' | 'research' | 'rebalance'>('landing');
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   
@@ -676,7 +678,7 @@ export default function Lab() {
           {/* Landing View */}
           {labMode === 'landing' && (
             <div className="flex-1 flex items-center justify-center p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-5xl w-full">
                 {/* Pipeline Card */}
                 <button
                   onClick={() => setLabMode('pipeline')}
@@ -710,6 +712,30 @@ export default function Lab() {
                   <div className="text-center">
                     <div className="text-sm font-semibold text-foreground">Allocation</div>
                     <div className="text-xs text-muted-foreground mt-1">Portfolio weight builder</div>
+                  </div>
+                </button>
+
+                {/* Research Card */}
+                <button
+                  onClick={() => setLabMode('research')}
+                  className="group flex flex-col items-center gap-4 p-8 rounded-lg border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all"
+                >
+                  <ResearchIcon size={40} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-foreground">Research</div>
+                    <div className="text-xs text-muted-foreground mt-1">Deep dive analysis</div>
+                  </div>
+                </button>
+
+                {/* Rebalance Card */}
+                <button
+                  onClick={() => setLabMode('rebalance')}
+                  className="group flex flex-col items-center gap-4 p-8 rounded-lg border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all"
+                >
+                  <Play className="h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-foreground">Rebalance</div>
+                    <div className="text-xs text-muted-foreground mt-1">Tax-optimized rebalancing</div>
                   </div>
                 </button>
               </div>
@@ -767,6 +793,14 @@ export default function Lab() {
               />
             </div>
           </div>
+          ) : labMode === 'rebalance' ? (
+            <div className="flex-1 overflow-auto p-4">
+              <RebalanceTool />
+            </div>
+          ) : labMode === 'research' ? (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <p className="text-sm font-mono">Research workspace — coming soon</p>
+            </div>
           ) : null}
           
           {/* Mobile FABs */}
