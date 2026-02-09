@@ -27,14 +27,18 @@ const Research = () => {
         <EconomicIndicators />
       </div>
       <div className="mt-4 section-spacing">
-        <h2 className="text-lg font-mono text-foreground tracking-tight mb-3">STOCK HEATMAP</h2>
-        <div className="rounded border border-border overflow-hidden">
+        <div className="w-full bg-card border border-border overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border">
+            <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">STOCK HEATMAP</span>
+          </div>
           <TradingViewStockHeatmap />
         </div>
       </div>
       <div className="mt-4 section-spacing">
-        <h2 className="text-lg font-mono text-foreground tracking-tight mb-3">UPCOMING ECONOMIC EVENTS</h2>
-        <div className="rounded border border-border overflow-hidden">
+        <div className="w-full bg-card border border-border overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border">
+            <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">UPCOMING ECONOMIC EVENTS</span>
+          </div>
           <TradingViewEconomicCalendar height={1000} />
         </div>
       </div>
