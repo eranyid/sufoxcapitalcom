@@ -45,8 +45,6 @@ const moreNavItems = [
   { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
   { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
   { path: '/lab', icon: LabIcon, label: 'Lab' },
-   
-  { path: '/charts', icon: ChartsIcon, label: 'Charts' },
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/scenarios', icon: ScenariosIcon, label: 'Scenarios' },

@@ -16,6 +16,8 @@ import {
   X,
 } from 'lucide-react';
 import { LabIcon } from '@/components/icons/LabIcon';
+import { ChartsIcon } from '@/components/icons/ChartsIcon';
+import { ChartBuilderView } from '@/components/lab/ChartBuilderView';
 import { cn } from '@/lib/utils';
 import { 
   AnalyticsBlock, 
@@ -137,6 +139,7 @@ export default function Lab() {
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
+  const [labMode, setLabMode] = useState<'pipeline' | 'chart'>('pipeline');
   const isMobile = useIsMobile();
   
   // Compute validation errors whenever blocks change
@@ -450,8 +453,37 @@ export default function Lab() {
           {/* Toolbar */}
           <div className="border-b border-border bg-card px-2 sm:px-4 py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              {/* Mode Toggle */}
+              <div className="flex items-center bg-muted rounded-md p-0.5 gap-0.5">
+                <button
+                  onClick={() => setLabMode('pipeline')}
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors",
+                    labMode === 'pipeline'
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <LabIcon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Pipeline</span>
+                </button>
+                <button
+                  onClick={() => setLabMode('chart')}
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors",
+                    labMode === 'chart'
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <ChartsIcon size={14} />
+                  <span className="hidden sm:inline">Chart</span>
+                </button>
+              </div>
+
+              {labMode === 'pipeline' && (
+              <>
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                <LabIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                 <Input
                   value={pipelineName}
                   onChange={(e) => setPipelineName(e.target.value)}
@@ -459,7 +491,6 @@ export default function Lab() {
                   placeholder="Pipeline..."
                 />
               </div>
-              {/* Data source indicator - hide on mobile */}
               <Badge 
                 variant={availableAssets.length > 0 ? "default" : "secondary"} 
                 className="text-[9px] sm:text-[10px] gap-1 hidden sm:flex"
@@ -470,10 +501,13 @@ export default function Lab() {
                   : 'No data'
                 }
               </Badge>
+              </>
+              )}
             </div>
 
+            {labMode === 'pipeline' && (
             <div className="flex items-center gap-1 sm:gap-2">
-              {/* Undo/Redo buttons - icons only on mobile */}
+              {/* Undo/Redo buttons */}
               <div className="flex items-center border-r border-border pr-1 sm:pr-2 mr-0.5 sm:mr-1">
                 <Button
                   variant="ghost"
@@ -497,7 +531,6 @@ export default function Lab() {
                 </Button>
               </div>
               
-              {/* Load/Save/Clear - Dropdown on mobile */}
               {isMobile ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -625,9 +658,13 @@ export default function Lab() {
                 </Button>
               </div>
             </div>
+            )}
           </div>
 
           {/* Main Content */}
+          {labMode === 'chart' ? (
+            <ChartBuilderView />
+          ) : (
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             {/* Left Panel - Block Library (Desktop only, Sheet on mobile) */}
             <div className="hidden md:block w-56 shrink-0">
@@ -675,9 +712,10 @@ export default function Lab() {
               />
             </div>
           </div>
+          )}
           
           {/* Mobile FABs */}
-          {isMobile && (
+          {isMobile && labMode === 'pipeline' && (
             <div className="fixed bottom-20 right-4 flex flex-col gap-2 z-50">
               {/* Add Block FAB */}
               <Sheet open={mobileLibraryOpen} onOpenChange={setMobileLibraryOpen}>
