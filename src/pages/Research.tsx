@@ -5,7 +5,7 @@ import EconomicIndicators from '@/components/dashboard/EconomicIndicators';
 
 import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
 import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
-import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
+
 import { BlackLittermanOptimizer } from '@/components/research/BlackLittermanOptimizer';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { calculateAssetMonthlyReturns, calculateCorrelationMatrix } from '@/lib/calculations';
@@ -93,10 +93,6 @@ const Research = () => {
           <BlackLittermanOptimizer />
         </div>
 
-        {/* Rebalance Tool (Unified with Tax Optimization) */}
-        <div className="mt-4">
-          <RebalanceTool />
-        </div>
       </div>
     </div>
   );
