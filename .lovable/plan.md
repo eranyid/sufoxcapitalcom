@@ -1,38 +1,36 @@
 
+# יצירת עמוד Test עם TradingView Stock Heatmap
 
-## Switch FX Rates Data Source to Finnhub
+## סקירה
+יצירת עמוד חדש בשם "Test" עם ווידג'ט Stock Heatmap של TradingView (כמו בתמונה שהעלית -- treemap של מניות לפי סקטור, גודל לפי שווי שוק, צבע לפי שינוי יומי).
 
-### What Changes
-Replace the current `open.er-api.com` free API with Finnhub's `/forex/rates` endpoint in the `fetch-fx-rates` edge function, for consistency with the rest of the platform (market prices, fundamental analysis all use Finnhub).
+## מה ייבנה
 
-### Why
-- Single data provider across the platform = consistent data quality and fewer external dependencies.
-- The `FINNHUB_API_KEY` secret is already configured -- no new credentials needed.
+### 1. קומפוננטת Heatmap חדשה
+קובץ: `src/components/dashboard/TradingViewStockHeatmap.tsx`
 
-### Implementation Details
+- הטמעת ווידג'ט בדיוק כמו ה-Pattern של `TradingViewTickerTape` הקיים (script injection + useRef + useEffect)
+- Script: `https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js`
+- הגדרות: S&P 500, קיבוץ לפי סקטור, גודל לפי market cap, צבע לפי שינוי יומי, dark theme
+- גובה ~600px, רוחב מלא
+- הסתרת copyright
 
-**File: `supabase/functions/fetch-fx-rates/index.ts`**
+### 2. עמוד Test חדש
+קובץ: `src/pages/Test.tsx`
 
-1. **Update `fetchRates()` function** to call Finnhub instead of open.er-api.com:
-   - Endpoint: `https://finnhub.io/api/v1/forex/rates?base=USD&token={FINNHUB_API_KEY}`
-   - Pass the API key from `Deno.env.get("FINNHUB_API_KEY")`
-   - Parse the response: Finnhub returns `{ base: "USD", quote: { EUR: 0.92, ILS: 3.70, ... } }`
-   - Map each pair from the `quote` object, same logic as current code but adapted to the new response shape
+- עמוד פשוט שמציג את ה-Heatmap ברוחב מלא
+- כותרת "Stock Heatmap"
 
-2. **Update the main handler** to read and pass `FINNHUB_API_KEY` to `fetchRates()`:
-   - Add `const FINNHUB_API_KEY = Deno.env.get("FINNHUB_API_KEY")` at the start
-   - Throw a clear error if key is missing
-   - Pass key into `fetchRates(apiKey)`
+### 3. הוספת Route
+קובץ: `src/App.tsx`
 
-3. **Update source label** from `"auto"` to `"finnhub"` in upsert records for traceability.
+- הוספת route `/test` עם lazy loading, בתוך ה-DashboardLayout (מוגן)
 
-4. **No changes needed** to:
-   - The database schema (same `fx_rates` table)
-   - The frontend FX Rates page
-   - The cron schedule
-   - The upsert/save logic (identical flow, just different data source)
+## פרטים טכניים
 
-### Risk Considerations
-- Finnhub free tier has rate limits (60 calls/min) but the FX rates endpoint is a single call for all pairs, so no concern.
-- ILS may or may not be available in Finnhub forex rates. If missing, the function will report it as an error for that pair (graceful degradation, same as current behavior).
+**קבצים חדשים:**
+- `src/components/dashboard/TradingViewStockHeatmap.tsx`
+- `src/pages/Test.tsx`
 
+**קבצים שישתנו:**
+- `src/App.tsx` -- הוספת import + route
