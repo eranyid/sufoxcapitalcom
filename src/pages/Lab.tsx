@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { 
   Play, 
@@ -139,8 +140,9 @@ export default function Lab() {
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
-  const [labMode, setLabMode] = useState<'pipeline' | 'chart'>('pipeline');
+  const [labMode, setLabMode] = useState<'landing' | 'pipeline' | 'chart'>('landing');
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   // Compute validation errors whenever blocks change
   useEffect(() => {
@@ -450,10 +452,19 @@ export default function Lab() {
         onDragCancel={handleDragCancel}
       >
         <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] flex flex-col bg-background">
-          {/* Toolbar */}
+          {/* Toolbar - hidden on landing */}
+          {labMode !== 'landing' && (
           <div className="border-b border-border bg-card px-2 sm:px-4 py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              {/* Mode Toggle */}
+              {/* Back to landing + Mode Toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground"
+                onClick={() => setLabMode('landing')}
+              >
+                ← Lab
+              </Button>
               <div className="flex items-center bg-muted rounded-md p-0.5 gap-0.5">
                 <button
                   onClick={() => setLabMode('pipeline')}
@@ -660,11 +671,55 @@ export default function Lab() {
             </div>
             )}
           </div>
+          )}
+
+          {/* Landing View */}
+          {labMode === 'landing' && (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl w-full">
+                {/* Pipeline Card */}
+                <button
+                  onClick={() => setLabMode('pipeline')}
+                  className="group flex flex-col items-center gap-4 p-8 rounded-lg border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all"
+                >
+                  <LabIcon className="h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-foreground">Pipeline</div>
+                    <div className="text-xs text-muted-foreground mt-1">Build analytics pipelines</div>
+                  </div>
+                </button>
+
+                {/* Chart Card */}
+                <button
+                  onClick={() => setLabMode('chart')}
+                  className="group flex flex-col items-center gap-4 p-8 rounded-lg border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all"
+                >
+                  <ChartsIcon size={40} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-foreground">Chart Builder</div>
+                    <div className="text-xs text-muted-foreground mt-1">Custom visualizations</div>
+                  </div>
+                </button>
+
+                {/* Allocation Card */}
+                <button
+                  onClick={() => navigate('/construction/allocation')}
+                  className="group flex flex-col items-center gap-4 p-8 rounded-lg border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all"
+                >
+                  <Blocks className="h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-foreground">Allocation</div>
+                    <div className="text-xs text-muted-foreground mt-1">Portfolio weight builder</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Main Content */}
           {labMode === 'chart' ? (
             <ChartBuilderView />
-          ) : (
+          ) : labMode === 'pipeline' ? (
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             {/* Left Panel - Block Library (Desktop only, Sheet on mobile) */}
             <div className="hidden md:block w-56 shrink-0">
@@ -712,7 +767,7 @@ export default function Lab() {
               />
             </div>
           </div>
-          )}
+          ) : null}
           
           {/* Mobile FABs */}
           {isMobile && labMode === 'pipeline' && (
