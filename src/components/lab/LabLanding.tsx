@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { Blocks, Play, Zap, ArrowRight } from 'lucide-react';
+import { Blocks, Zap, ArrowRight } from 'lucide-react';
+import { RebalanceIcon } from '@/components/icons/RebalanceIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
@@ -64,7 +65,7 @@ export function LabLanding({ onSelectMode }: LabLandingProps) {
       id: 'rebalance',
       label: 'Rebalance',
       description: 'Tax-aware trade optimizer with lot-level tracking.',
-      icon: Play,
+      icon: RebalanceIcon,
       accent: 'from-rose-500/20 to-rose-500/5',
       glowColor: 'group-hover:shadow-rose-500/20',
       onClick: () => onSelectMode('rebalance'),
