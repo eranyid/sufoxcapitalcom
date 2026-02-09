@@ -489,7 +489,12 @@ export default function Lab() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] flex flex-col bg-background">
+        <div className={cn(
+          "flex flex-col bg-background",
+          labMode === 'landing' 
+            ? "min-h-[calc(100vh-64px)] pb-20 md:pb-0" 
+            : "h-[calc(100vh-64px)]"
+        )}>
           {/* Toolbar - hidden on landing */}
           {labMode !== 'landing' && (
           <div className="border-b border-border bg-card px-2 sm:px-4 py-2 flex items-center justify-between gap-2">
