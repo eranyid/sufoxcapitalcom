@@ -56,7 +56,6 @@ const navGroups: NavGroup[] = [
     title: 'RESEARCH',
     items: [
       { path: '/research', icon: ResearchIcon, label: 'Research' },
-      { path: '/market', icon: FundamentalsIcon, label: 'Fundamentals' },
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
        { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },

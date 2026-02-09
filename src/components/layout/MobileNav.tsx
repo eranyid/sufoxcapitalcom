@@ -36,7 +36,6 @@ const primaryNavItems = [
   { path: '/', icon: OverviewIcon, label: 'Overview' },
   { path: '/performance', icon: PerformanceIcon, label: 'Performance' },
   { path: '/messages', icon: MessagesIcon, label: 'Messages' },
-  { path: '/market', icon: FundamentalsIcon, label: 'Fundamentals' },
 ];
 
 const moreNavItems = [
