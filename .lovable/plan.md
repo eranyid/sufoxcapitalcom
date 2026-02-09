@@ -1,11 +1,16 @@
 
 
-## Fix: Upcoming Economic Events Height (1200px)
+## Add Card Background to STOCK HEATMAP and UPCOMING ECONOMIC EVENTS
 
-The TradingViewEconomicCalendar widget height reverted. I will set it back to 1200px in the Research page.
+Both sections will be wrapped in a `bg-card` container to match the dark card background used by the ECONOMIC INDICATORS widget, with a header bar styled consistently.
 
-### Technical Details
+### Changes
 
-**File:** `src/pages/Research.tsx`
-- Change the `height` prop on `TradingViewEconomicCalendar` from its current value back to `1200`.
+**File: `src/pages/Research.tsx`**
+
+1. **STOCK HEATMAP section (lines 29-33)**: Wrap in `bg-card border border-border` container with a styled header bar (`bg-secondary/50`) containing the title, matching the ECONOMIC INDICATORS pattern.
+
+2. **UPCOMING ECONOMIC EVENTS section (lines 35-39)**: Same treatment -- `bg-card border border-border` container with a styled header bar.
+
+Both headers will move inside the card container with the same `px-3 py-1.5 bg-secondary/50 border-b border-border` styling and `text-[10px] font-semibold text-primary uppercase tracking-wider` text style used by the ECONOMIC INDICATORS header.
 
