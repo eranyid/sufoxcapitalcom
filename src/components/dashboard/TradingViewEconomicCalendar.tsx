@@ -35,7 +35,7 @@ export default function TradingViewEconomicCalendar({ height = 600 }: Props) {
   }, []);
 
   return (
-    <div className="tradingview-widget-container" ref={containerRef} style={{ height }}>
+    <div className="tradingview-widget-container h-full" ref={containerRef} style={height ? { height } : undefined}>
       <div className="tradingview-widget-container__widget" />
     </div>
   );
