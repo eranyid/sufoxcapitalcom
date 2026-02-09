@@ -2,9 +2,9 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, TrendingUp } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 
 interface FinancialPeriod {
@@ -104,6 +104,7 @@ function fmtB(v: number): string {
 export default function FinancialStatementsChart({ annualStatements, quarterlyStatements }: Props) {
   const [freq, setFreq] = useState<'FY' | 'QTR'>('FY');
   const [tab, setTab] = useState<StatementTab>('income');
+  const [chartMode, setChartMode] = useState<'bar' | 'line'>('bar');
 
   const statements = freq === 'FY' ? annualStatements : quarterlyStatements;
   const fields = getFields(tab);
@@ -135,6 +136,25 @@ export default function FinancialStatementsChart({ annualStatements, quarterlySt
             Financial Statements
           </CardTitle>
           <div className="flex items-center gap-1.5">
+            <Button
+              variant={chartMode === 'bar' ? 'default' : 'outline'}
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => setChartMode('bar')}
+              title="Bar Chart"
+            >
+              <BarChart3 className="h-3 w-3" />
+            </Button>
+            <Button
+              variant={chartMode === 'line' ? 'default' : 'outline'}
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => setChartMode('line')}
+              title="Line Chart"
+            >
+              <TrendingUp className="h-3 w-3" />
+            </Button>
+            <div className="w-px h-4 bg-border mx-0.5" />
             <Button
               variant={freq === 'FY' ? 'default' : 'outline'}
               size="sm"
@@ -168,48 +188,52 @@ export default function FinancialStatementsChart({ annualStatements, quarterlySt
                 <p className="text-xs text-muted-foreground text-center py-12">
                   No {freq === 'QTR' ? 'quarterly' : 'annual'} data available
                 </p>
-              ) : (
+              ) : chartMode === 'bar' ? (
                 <ResponsiveContainer width="100%" height={340}>
                   <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                    <XAxis
-                      dataKey="period"
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      interval={0}
-                      angle={-30}
-                      textAnchor="end"
-                      height={50}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      tickFormatter={(v) => fmtB(v)}
-                    />
+                    <XAxis dataKey="period" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} interval={0} angle={-30} textAnchor="end" height={50} />
+                    <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => fmtB(v)} />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: 8,
-                        fontSize: 11,
-                      }}
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
                       formatter={(v: number, name: string) => {
                         const label = activeFields.find(f => f.key === name)?.label || name;
                         return [fmtB(v), label];
                       }}
                     />
-                    <Legend
-                      wrapperStyle={{ fontSize: 10, paddingTop: 8 }}
-                      formatter={(value) => activeFields.find(f => f.key === value)?.label || value}
-                    />
+                    <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} formatter={(value) => activeFields.find(f => f.key === value)?.label || value} />
                     {activeFields.map((f) => (
-                      <Bar
-                        key={f.key}
-                        dataKey={f.key}
-                        name={f.key}
-                        fill={COLORS[f.key as keyof typeof COLORS] || 'hsl(var(--primary))'}
-                        radius={[2, 2, 0, 0]}
-                      />
+                      <Bar key={f.key} dataKey={f.key} name={f.key} fill={COLORS[f.key as keyof typeof COLORS] || 'hsl(var(--primary))'} radius={[2, 2, 0, 0]} />
                     ))}
                   </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height={340}>
+                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis dataKey="period" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} interval={0} angle={-30} textAnchor="end" height={50} />
+                    <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => fmtB(v)} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                      formatter={(v: number, name: string) => {
+                        const label = activeFields.find(f => f.key === name)?.label || name;
+                        return [fmtB(v), label];
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} formatter={(value) => activeFields.find(f => f.key === value)?.label || value} />
+                    {activeFields.map((f) => (
+                      <Line
+                        key={f.key}
+                        type="monotone"
+                        dataKey={f.key}
+                        name={f.key}
+                        stroke={COLORS[f.key as keyof typeof COLORS] || 'hsl(var(--primary))'}
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: COLORS[f.key as keyof typeof COLORS] || 'hsl(var(--primary))' }}
+                        activeDot={{ r: 5 }}
+                      />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
               )}
             </TabsContent>
