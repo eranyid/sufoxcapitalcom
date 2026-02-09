@@ -1,38 +1,101 @@
 
 
-## Switch FX Rates Data Source to Finnhub
+# זיהוי אוטומטי ETF / מניה עם תצוגה מותאמת (ללא AI)
 
-### What Changes
-Replace the current `open.er-api.com` free API with Finnhub's `/forex/rates` endpoint in the `fetch-fx-rates` edge function, for consistency with the rest of the platform (market prices, fundamental analysis all use Finnhub).
+## סקירה
+הרחבת ה-Edge Function `analyze-fundamental` כך שיזהה אוטומטית אם הטיקר הוא ETF או מניה, ויחזיר נתונים מותאמים מ-Finnhub בלבד (ללא שום חיבור AI). בצד ה-UI, העמוד יציג תצוגה שונה לכל סוג נכס.
 
-### Why
-- Single data provider across the platform = consistent data quality and fewer external dependencies.
-- The `FINNHUB_API_KEY` secret is already configured -- no new credentials needed.
+## לוגיקת זיהוי
 
-### Implementation Details
+```text
+1. קריאה ל-/stock/profile2?symbol=XXX
+2. אם יש profile.name --> זו מניה (STOCK) --> הזרימה הקיימת
+3. אם profile ריק --> קריאה ל-/etf/profile?symbol=XXX
+4. אם יש נתוני ETF --> זה ETF --> זרימת ETF ייעודית
+5. אם גם ETF ריק --> 404 "Ticker not found"
+```
 
-**File: `supabase/functions/fetch-fx-rates/index.ts`**
+## שינויים
 
-1. **Update `fetchRates()` function** to call Finnhub instead of open.er-api.com:
-   - Endpoint: `https://finnhub.io/api/v1/forex/rates?base=USD&token={FINNHUB_API_KEY}`
-   - Pass the API key from `Deno.env.get("FINNHUB_API_KEY")`
-   - Parse the response: Finnhub returns `{ base: "USD", quote: { EUR: 0.92, ILS: 3.70, ... } }`
-   - Map each pair from the `quote` object, same logic as current code but adapted to the new response shape
+### 1. Edge Function (`supabase/functions/analyze-fundamental/index.ts`)
 
-2. **Update the main handler** to read and pass `FINNHUB_API_KEY` to `fetchRates()`:
-   - Add `const FINNHUB_API_KEY = Deno.env.get("FINNHUB_API_KEY")` at the start
-   - Throw a clear error if key is missing
-   - Pass key into `fetchRates(apiKey)`
+**ETF Detection:**
+- לאחר ש-`/stock/profile2` מחזיר פרופיל ריק, ננסה `/etf/profile?symbol=XXX&isin=`
+- אם נמצא ETF, קריאות מקבילות ל-4 endpoints:
+  - `/etf/profile` -- שם, AUM, expense ratio, inception date, description
+  - `/etf/holdings` -- רשימת אחזקות עם ticker, name, share, percent
+  - `/etf/sector` -- חשיפה סקטוריאלית (sector name + percentage)
+  - `/etf/country` -- חשיפה גיאוגרפית (country + percentage)
+  - `/quote` -- מחיר נוכחי
+  - `/company-news` -- חדשות (אותו endpoint, עובד גם ל-ETF)
 
-3. **Update source label** from `"auto"` to `"finnhub"` in upsert records for traceability.
+**Response חדש עבור ETF:**
+```text
+{
+  asset_type: "etf",
+  name: "SPDR S&P 500 ETF Trust",
+  ticker: "SPY",
+  current_price: 520.45,
+  aum: 500000000000,          // בדולרים
+  expense_ratio: 0.0945,      // באחוזים
+  inception_date: "1993-01-22",
+  description: "...",
+  nav: 519.80,
+  holdings: [
+    { symbol: "AAPL", name: "Apple Inc", share: 150000, percent: 7.2 },
+    ...
+  ],
+  sector_exposure: [
+    { sector: "Technology", percentage: 32.5 },
+    ...
+  ],
+  country_exposure: [
+    { country: "US", percentage: 98.5 },
+    ...
+  ],
+  news: [ ... ]   // אותו פורמט כמו מניות
+}
+```
 
-4. **No changes needed** to:
-   - The database schema (same `fx_rates` table)
-   - The frontend FX Rates page
-   - The cron schedule
-   - The upsert/save logic (identical flow, just different data source)
+**Response קיים למניות** -- ללא שינוי, רק הוספת `asset_type: "stock"`.
 
-### Risk Considerations
-- Finnhub free tier has rate limits (60 calls/min) but the FX rates endpoint is a single call for all pairs, so no concern.
-- ILS may or may not be available in Finnhub forex rates. If missing, the function will report it as an error for that pair (graceful degradation, same as current behavior).
+### 2. Frontend (`src/pages/Market.tsx`)
+
+**שינויים:**
+- הוספת `EtfData` interface חדש
+- שינוי state ל-union type שתומך בשני סוגי הנתונים
+- בדיקת `asset_type` מה-response לקביעת התצוגה
+- **מניה:** התצוגה הקיימת נשארת כמו שהיא, ללא שום שינוי
+
+**תצוגת ETF חדשה:**
+- **Header:** שם ETF, טיקר, מחיר, badge "ETF"
+- **KPI Strip:** AUM (formatted), Expense Ratio, Inception Date, NAV
+- **Top Holdings Table:** טבלה עם Symbol (כ-TickerLink), Name, Weight %
+- **Sector Exposure:** Horizontal bar chart (Recharts) עם שמות סקטורים ואחוזים
+- **Country Exposure:** Horizontal bar chart עם מדינות ואחוזים
+- **News:** אותו רכיב חדשות קיים
+
+```text
+Layout ETF:
++--------------------------------------------------+
+| [Search] | ETF Name | "ETF" badge | Price | AUM  |
++--------------------------------------------------+
+| AUM | Expense Ratio | Inception | NAV            |
++--------------------------------------------------+
+| Top Holdings (table)     | Sector Exposure (bar) |
++--------------------------------------------------+
+| Country Exposure (bar)   | News Feed             |
++--------------------------------------------------+
+```
+
+### קבצים שישתנו
+1. `supabase/functions/analyze-fundamental/index.ts` -- הוספת ETF detection + ETF data fetching
+2. `src/pages/Market.tsx` -- הוספת ETF interface + תצוגה מותאמת
+
+### מה לא ישתנה
+- אין חיבור AI, אין Lovable AI, אין שום מודל שפה
+- אין שינוי לטבלאות DB
+- אין שינוי לניווט או routing
+- תצוגת מניות נשארת זהה לחלוטין
+- אותו FINNHUB_API_KEY קיים
 
