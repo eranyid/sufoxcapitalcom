@@ -13,7 +13,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart,
 } from 'recharts';
 import FinancialStatementsChart from '@/components/fundamentals/FinancialStatementsChart';
-import RevenueSegmentChart from '@/components/fundamentals/RevenueSegmentChart';
+
 
 interface FinancialPeriod {
   period: string;
@@ -558,8 +558,6 @@ export default function Market() {
               quarterlyStatements={data.quarterly_statements || []}
             />
 
-            {/* Revenue by Segment */}
-            <RevenueSegmentChart revenueSegments={data.revenue_segments || []} />
 
             {/* Financial Statements Table */}
             <Card className="bg-card/50 border-border">
