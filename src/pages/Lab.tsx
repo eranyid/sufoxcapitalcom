@@ -22,7 +22,11 @@ import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import { ScenariosIcon } from '@/components/icons/ScenariosIcon';
 import { ChartBuilderView } from '@/components/lab/ChartBuilderView';
 import { RebalanceTool } from '@/components/dashboard/RebalanceTool';
+import { MonteCarloSimulation } from '@/components/dashboard/MonteCarloSimulation';
+import { EfficientFrontier } from '@/components/dashboard/EfficientFrontier';
+import { BlackLittermanOptimizer } from '@/components/research/BlackLittermanOptimizer';
 import { cn } from '@/lib/utils';
+import { calculateAssetMonthlyReturns, calculateCorrelationMatrix } from '@/lib/calculations';
 import { 
   AnalyticsBlock, 
   AnalyticsPipeline,
@@ -87,7 +91,40 @@ import {
 
 export default function Lab() {
   // Get real portfolio data
-  const { valuations, transactions } = usePortfolio();
+  const { valuations, transactions, performanceMetrics, riskMetrics, settings, computedData } = usePortfolio();
+  
+  const hasData = riskMetrics !== null && performanceMetrics !== null;
+
+  const assetReturns = useMemo(() => {
+    if (transactions.length === 0 || valuations.length === 0) return undefined;
+    return calculateAssetMonthlyReturns(transactions, valuations);
+  }, [transactions, valuations]);
+
+  const correlationMatrix = useMemo(() => {
+    if (transactions.length === 0 || valuations.length === 0) return undefined;
+    const result = calculateCorrelationMatrix(transactions, valuations);
+    if (result.tickers.length < 2) return undefined;
+    return result;
+  }, [transactions, valuations]);
+
+  const assetWeights = useMemo(() => {
+    if (!computedData.holdings || computedData.holdings.length === 0) return undefined;
+    const totalValue = computedData.holdings.reduce((sum, h) => sum + h.currentValue, 0);
+    const weights: Record<string, number> = {};
+    computedData.holdings.forEach(h => {
+      weights[h.ticker] = totalValue > 0 ? h.currentValue / totalValue : 0;
+    });
+    return weights;
+  }, [computedData.holdings]);
+
+  const assetNames = useMemo(() => {
+    if (!computedData.holdings || computedData.holdings.length === 0) return undefined;
+    const names: Record<string, string> = {};
+    computedData.holdings.forEach(h => {
+      names[h.ticker] = h.name;
+    });
+    return names;
+  }, [computedData.holdings]);
   
   // Convert to analytics engine format
   const valuationData: ValuationData[] = useMemo(() => 
@@ -785,8 +822,23 @@ export default function Lab() {
               <RebalanceTool />
             </div>
           ) : labMode === 'research' ? (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <p className="text-sm font-mono">Research workspace — coming soon</p>
+            <div className="flex-1 overflow-auto p-4 space-y-4">
+              {hasData && (
+                <MonteCarloSimulation 
+                  monthlyReturns={performanceMetrics!.monthlyReturns.map(m => m.return)} 
+                  currentValue={performanceMetrics!.totalValue}
+                  portfolioCAGR={performanceMetrics!.twr > 0 ? performanceMetrics!.twr : undefined}
+                  portfolioVolatility={riskMetrics!.volatility}
+                  portfolioSharpe={riskMetrics!.sharpeRatio}
+                  riskFreeRate={settings.riskFreeRate}
+                  assetReturns={assetReturns}
+                  correlationMatrix={correlationMatrix}
+                  assetWeights={assetWeights}
+                  assetNames={assetNames}
+                />
+              )}
+              <EfficientFrontier />
+              <BlackLittermanOptimizer />
             </div>
           ) : null}
           
