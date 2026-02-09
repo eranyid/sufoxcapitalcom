@@ -19,7 +19,7 @@ export default function TradingViewEconomicCalendar({ height = 600 }: Props) {
     script.type = 'text/javascript';
     script.innerHTML = JSON.stringify({
       colorTheme: 'dark',
-      isTransparent: true,
+      isTransparent: false,
       width: '100%',
       height: '100%',
       locale: 'en',
