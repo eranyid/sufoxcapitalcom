@@ -467,32 +467,6 @@ export default function Lab() {
               >
                 ← Lab
               </Button>
-              <div className="flex items-center bg-muted rounded-md p-0.5 gap-0.5">
-                <button
-                  onClick={() => setLabMode('pipeline')}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors",
-                    labMode === 'pipeline'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <LabIcon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Pipeline</span>
-                </button>
-                <button
-                  onClick={() => setLabMode('chart')}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors",
-                    labMode === 'chart'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <ChartsIcon size={14} />
-                  <span className="hidden sm:inline">Chart</span>
-                </button>
-              </div>
 
               {labMode === 'pipeline' && (
               <>
