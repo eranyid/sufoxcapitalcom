@@ -99,7 +99,7 @@ export function LabLanding({ onSelectMode }: LabLandingProps) {
       </div>
 
       {/* Module Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-w-4xl w-full">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-w-4xl w-full">
         {modules.map((mod, index) => (
           <button
             key={mod.id}
