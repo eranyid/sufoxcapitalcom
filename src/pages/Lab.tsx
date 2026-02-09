@@ -734,7 +734,7 @@ export default function Lab() {
                 >
                   <ResearchIcon size={40} className="text-muted-foreground group-hover:text-primary transition-colors" />
                   <div className="text-center">
-                    <div className="text-sm font-semibold text-foreground">Research</div>
+                    <div className="text-sm font-semibold text-foreground">Deep Research</div>
                     <div className="text-xs text-muted-foreground mt-1">Deep dive analysis</div>
                   </div>
                 </button>
