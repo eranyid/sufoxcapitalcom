@@ -83,7 +83,7 @@ export function LabLanding({ onSelectMode }: LabLandingProps) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 overflow-auto">
+    <div className="flex-1 flex flex-col items-center md:justify-center p-4 sm:p-8 overflow-auto pt-6">
       {/* Header */}
       <div className="text-center mb-8 sm:mb-12 animate-fade-in">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-4">
