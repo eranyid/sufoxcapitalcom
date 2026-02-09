@@ -13,6 +13,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart,
 } from 'recharts';
 import FinancialStatementsChart from '@/components/fundamentals/FinancialStatementsChart';
+import RevenueSegmentChart from '@/components/fundamentals/RevenueSegmentChart';
 
 interface FinancialPeriod {
   period: string;
@@ -87,6 +88,7 @@ interface FundamentalData {
   annual_statements: FinancialPeriod[];
   quarterly_statements: FinancialPeriod[];
   news: NewsItem[];
+  revenue_segments: Array<{ period: string; segments: Array<{ name: string; value: number }> }>;
 }
 
 function fmt(n: number | null | undefined, decimals = 2, suffix = ''): string {
@@ -555,6 +557,9 @@ export default function Market() {
               annualStatements={data.annual_statements || []}
               quarterlyStatements={data.quarterly_statements || []}
             />
+
+            {/* Revenue by Segment */}
+            <RevenueSegmentChart revenueSegments={data.revenue_segments || []} />
 
             {/* Financial Statements Table */}
             <Card className="bg-card/50 border-border">

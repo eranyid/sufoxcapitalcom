@@ -193,13 +193,14 @@ serve(async (req) => {
     const fromStr = from.toISOString().split('T')[0];
 
     // Fetch all Finnhub endpoints in parallel (including quarterly + news)
-    const [profile, metrics, quote, annualFinancials, quarterlyFinancials, companyNews] = await Promise.all([
+    const [profile, metrics, quote, annualFinancials, quarterlyFinancials, companyNews, revenueBreakdown] = await Promise.all([
       fetchFinnhub(`/stock/profile2?symbol=${sym}`, FINNHUB_API_KEY),
       fetchFinnhub(`/stock/metric?symbol=${sym}&metric=all`, FINNHUB_API_KEY),
       fetchFinnhub(`/quote?symbol=${sym}`, FINNHUB_API_KEY),
       fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=annual`, FINNHUB_API_KEY),
       fetchFinnhub(`/stock/financials-reported?symbol=${sym}&freq=quarterly`, FINNHUB_API_KEY),
       fetchFinnhub(`/company-news?symbol=${sym}&from=${fromStr}&to=${toStr}`, FINNHUB_API_KEY).catch(() => []),
+      fetchFinnhub(`/stock/revenue-breakdown?symbol=${sym}`, FINNHUB_API_KEY).catch(() => ({ data: [] })),
     ]);
 
     console.log("Profile keys:", Object.keys(profile || {}));
@@ -231,6 +232,19 @@ serve(async (req) => {
         }))
       : [];
 
+    // Process revenue breakdown by segment
+    const revenueSegments = Array.isArray(revenueBreakdown?.data)
+      ? revenueBreakdown.data
+          .filter((entry: any) => entry.revenue && Array.isArray(entry.revenue))
+          .map((entry: any) => ({
+            period: entry.period || '',
+            segments: entry.revenue.map((seg: any) => ({
+              name: seg.name || 'Other',
+              value: seg.value ?? 0,
+            })),
+          }))
+          .reverse() // chronological order
+      : [];
     const fundamentals = {
       company_name: profile?.name || sym,
       ticker: profile?.ticker || sym,
@@ -271,6 +285,7 @@ serve(async (req) => {
       annual_statements,
       quarterly_statements,
       news,
+      revenue_segments: revenueSegments,
     };
 
     return new Response(JSON.stringify({ data: fundamentals }), {
