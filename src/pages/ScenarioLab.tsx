@@ -918,9 +918,19 @@ export default function ScenarioLab() {
     <div className="section-spacing">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg md:text-xl font-bold text-primary tracking-wide">SCENARIO LAB</h1>
-          <p className="text-[10px] md:text-xs text-muted-foreground font-mono">STRESS TEST • SCENARIO ANALYSIS</p>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground"
+            onClick={() => navigate('/lab')}
+          >
+            ← Lab
+          </Button>
+          <div>
+            <h1 className="text-lg md:text-xl font-bold text-primary tracking-wide">SCENARIO LAB</h1>
+            <p className="text-[10px] md:text-xs text-muted-foreground font-mono">STRESS TEST • SCENARIO ANALYSIS</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="font-mono text-[10px]">
