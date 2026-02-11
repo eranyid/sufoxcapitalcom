@@ -44,11 +44,11 @@ interface Company {
 
 // Conviction level config
 const CONVICTION_CONFIG: Record<string, { label: string; color: string }> = {
-  speculative: { label: 'Speculative', color: 'text-red-400 bg-red-500/20' },
-  starter: { label: 'Starter', color: 'text-orange-400 bg-orange-500/20' },
-  core: { label: 'Core', color: 'text-blue-400 bg-blue-500/20' },
-  high_conviction: { label: 'High Conviction', color: 'text-emerald-400 bg-emerald-500/20' },
-  top: { label: 'Top', color: 'text-amber-400 bg-amber-500/20' },
+  speculative: { label: 'Speculative', color: 'text-slate-400 bg-slate-500/20' },
+  low: { label: 'Low Conviction', color: 'text-amber-300 bg-amber-400/20' },
+  core: { label: 'Core', color: 'text-orange-400 bg-orange-500/20' },
+  high: { label: 'High Conviction', color: 'text-emerald-400 bg-emerald-500/20' },
+  top: { label: 'Top Conviction', color: 'text-green-300 bg-green-400/20' },
 };
 
 // Map URL params to asset_type values (supports multiple DB values per category)
