@@ -44,7 +44,9 @@ interface Company {
 
 // Conviction level config
 const CONVICTION_CONFIG: Record<string, { label: string; color: string }> = {
+  watchlist: { label: 'Watchlist', color: 'text-zinc-400 bg-zinc-500/20' },
   speculative: { label: 'Speculative', color: 'text-slate-400 bg-slate-500/20' },
+  starter: { label: 'Starter', color: 'text-sky-400 bg-sky-500/20' },
   low: { label: 'Low Conviction', color: 'text-amber-300 bg-amber-400/20' },
   core: { label: 'Core', color: 'text-orange-400 bg-orange-500/20' },
   high: { label: 'High Conviction', color: 'text-emerald-400 bg-emerald-500/20' },
