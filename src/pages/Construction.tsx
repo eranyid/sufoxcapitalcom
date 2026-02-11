@@ -242,7 +242,7 @@ export default function Construction() {
                     <Equal size={12} />
                     <span className="hidden xs:inline">Equal</span>
                   </Button>
-                  <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
+                  <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} existingNames={positions.map(p => p.name)} />
                   <Button
                     onClick={() => { setPhase3Complete(true); setCurrentPhase(4); }}
                     disabled={!isBalanced}
@@ -291,7 +291,7 @@ export default function Construction() {
                               </Button>
                             }
                           />
-                          <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} />
+                          <AddPositionDialog onAdd={handleAddPosition} existingAllocation={totalAllocation} existingNames={positions.map(p => p.name)} />
                         </div>
                       </CardContent>
                     </Card>
