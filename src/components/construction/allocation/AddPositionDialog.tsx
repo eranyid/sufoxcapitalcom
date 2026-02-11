@@ -334,7 +334,7 @@ export function AddPositionDialog({ onAdd, existingAllocation, existingNames = [
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, ticker, or sector..." className="pl-9 h-9" />
                 </div>
-                <ScrollArea className="flex-1 min-h-0 h-[320px] border rounded-lg">
+                <ScrollArea className="flex-1 min-h-0 h-[400px] border rounded-lg">
                   {loadingCompanies ? (
                     <div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>
                   ) : filtered.length === 0 ? (
