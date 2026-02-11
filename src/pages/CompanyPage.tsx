@@ -84,7 +84,9 @@ interface Task {
 }
 
 const CONVICTION_OPTIONS = [
+  { value: 'watchlist', label: 'Watchlist', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' },
   { value: 'speculative', label: 'Speculative', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30' },
+  { value: 'starter', label: 'Starter', color: 'bg-sky-500/20 text-sky-400 border-sky-500/30' },
   { value: 'low', label: 'Low Conviction', color: 'bg-amber-400/20 text-amber-300 border-amber-400/30' },
   { value: 'core', label: 'Core', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
   { value: 'high', label: 'High Conviction', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
