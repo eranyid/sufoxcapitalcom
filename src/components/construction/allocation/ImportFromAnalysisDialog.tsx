@@ -309,14 +309,16 @@ export function ImportFromAnalysisDialog({ onImport, existingNames, trigger }: I
                     const completeness = [hasAssetType, hasRegion, hasSector].filter(Boolean).length;
 
                     return (
-                      <label
+                      <div
                         key={c.id}
-                        className={`flex items-center gap-3 px-4 py-3 hover:bg-accent/30 cursor-pointer transition-colors ${isExisting ? 'opacity-50' : ''}`}
+                        onClick={() => !isExisting && toggleSelect(c.id)}
+                        className={`flex items-center gap-3 px-4 py-3 hover:bg-accent/30 cursor-pointer transition-colors ${isExisting ? 'opacity-50 pointer-events-none' : ''}`}
                       >
                         <Checkbox
                           checked={selected.has(c.id)}
                           onCheckedChange={() => toggleSelect(c.id)}
                           disabled={isExisting}
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -345,7 +347,7 @@ export function ImportFromAnalysisDialog({ onImport, existingNames, trigger }: I
                             </Badge>
                           )}
                         </div>
-                      </label>
+                      </div>
                     );
                   })}
                 </div>
