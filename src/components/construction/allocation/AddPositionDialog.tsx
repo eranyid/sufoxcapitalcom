@@ -212,7 +212,7 @@ export function AddPositionDialog({ onAdd, existingAllocation, existingNames = [
           Add Position
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Add Position
@@ -334,7 +334,7 @@ export function AddPositionDialog({ onAdd, existingAllocation, existingNames = [
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, ticker, or sector..." className="pl-9 h-9" />
                 </div>
-                <ScrollArea className="flex-1 min-h-0 h-[400px] border rounded-lg">
+                <div className="border rounded-lg max-h-[50vh] overflow-y-auto">
                   {loadingCompanies ? (
                     <div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>
                   ) : filtered.length === 0 ? (
@@ -369,7 +369,7 @@ export function AddPositionDialog({ onAdd, existingAllocation, existingNames = [
                       })}
                     </div>
                   )}
-                </ScrollArea>
+                </div>
                 <div className="flex justify-end pt-3">
                   <Button variant="outline" size="sm" onClick={resetAndClose}>Cancel</Button>
                 </div>
