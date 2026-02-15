@@ -169,15 +169,15 @@ export default function AnalysisLanding() {
             <ArrowRight className="w-3 h-3" />
           </button>
           <div className="h-4 w-px bg-border" />
-          <Button 
+          <button 
             onClick={() => setCreateOpen(true)} 
-            size="sm" 
-            className="gap-1.5"
+            className="group relative inline-flex items-center justify-center gap-1.5 px-5 h-8 text-[10px] font-bold font-mono text-foreground border border-primary/60 rounded-sm bg-transparent cursor-pointer transition-all duration-500 overflow-hidden hover:border-primary hover:shadow-[inset_0_0_20px_hsl(var(--primary)/0.35),0_0_15px_hsl(var(--primary)/0.15)] hover:text-primary"
           >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Add Company</span>
-            <span className="sm:hidden">Add</span>
-          </Button>
+            <span className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-all duration-500" />
+            <Plus size={14} className="relative z-10" />
+            <span className="relative z-10 hidden sm:inline">Add Company</span>
+            <span className="relative z-10 sm:hidden">Add</span>
+          </button>
         </div>
       </div>
 
