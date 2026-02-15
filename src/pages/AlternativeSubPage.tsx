@@ -17,6 +17,9 @@ import { DealStructuringSection } from '@/components/alternative/DealStructuring
 import { PortfolioInsightPanel } from '@/components/alternative/PortfolioInsightPanel';
 import { MarketIntelligencePanel } from '@/components/alternative/MarketIntelligencePanel';
 import { FutureExtensionsPanel } from '@/components/alternative/FutureExtensionsPanel';
+import { NewFundAnalysisDialog } from '@/components/alternative/NewFundAnalysisDialog';
+import { VintageYearChart } from '@/components/alternative/VintageYearChart';
+import { CommitmentPacingTool } from '@/components/alternative/CommitmentPacingTool';
 
 const META: Record<string, {
   title: string;
@@ -158,9 +161,7 @@ export default function AlternativeSubPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" className="gap-1.5 text-[10px] h-7">
-              <Search size={12} /> Analyze Fund
-            </Button>
+            <NewFundAnalysisDialog assetClass={meta.title} />
             <Button size="sm" variant="secondary" className="gap-1.5 text-[10px] h-7">
               <Calculator size={12} /> Run Calculator
             </Button>
@@ -197,7 +198,11 @@ export default function AlternativeSubPage() {
           {/* Tab 1: Fund Analysis & DD */}
           <TabsContent value="analysis">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-              <FundAnalysisSection />
+              <div className="space-y-5">
+                <FundAnalysisSection />
+                <VintageYearChart />
+                <CommitmentPacingTool />
+              </div>
               <div className="space-y-5">
                 <PortfolioInsightPanel />
                 <MarketIntelligencePanel />
