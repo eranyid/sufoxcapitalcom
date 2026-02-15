@@ -202,22 +202,6 @@ export default function AlternativeSelector() {
               </Card>
             ))}
 
-            {/* New Analysis Card */}
-            <Card
-              className="cursor-pointer border-dashed border-border/50 hover:border-primary/40 transition-all duration-200 animate-fade-in"
-              style={{ animationDelay: `${filtered.length * 50}ms`, animationFillMode: 'both' }}
-              onClick={handleNewFund}
-            >
-              <CardContent className="p-4 flex flex-col items-center justify-center h-full min-h-[140px] gap-3">
-                <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
-                  <Plus size={18} className="text-primary" />
-                </div>
-                <div className="text-center">
-                  <p className="text-[11px] font-semibold text-foreground">New Analysis</p>
-                  <p className="text-[9px] text-muted-foreground font-mono mt-0.5">Start fresh fund DD</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center py-16 gap-4">
