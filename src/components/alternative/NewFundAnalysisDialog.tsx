@@ -124,9 +124,12 @@ export function NewFundAnalysisDialog({ assetClass, onSubmit }: NewFundAnalysisD
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setStep(0); }}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5 text-[10px] h-7">
-          <Plus size={12} /> New Fund Analysis
-        </Button>
+        <button
+          className="group relative inline-flex items-center justify-center gap-1.5 px-4 h-8 text-[10px] font-bold font-mono text-foreground border-2 border-primary rounded-sm bg-transparent cursor-pointer transition-all duration-500 hover:shadow-[inset_0_0_25px_hsl(var(--primary)/0.4)] before:content-[''] before:absolute before:top-[80%] before:left-[3%] before:w-[95%] before:h-[40%] before:bg-card before:transition-transform before:duration-500 before:origin-center after:content-[''] after:absolute after:top-[-10px] after:left-[3%] after:w-[95%] after:h-[40%] after:bg-card after:transition-transform after:duration-500 after:origin-center hover:before:scale-0 hover:after:scale-0"
+        >
+          <Plus size={12} className="relative z-10" />
+          <span className="relative z-10">New Fund Analysis</span>
+        </button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         {/* Header */}
