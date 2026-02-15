@@ -11,27 +11,34 @@ import {
   ShieldCheck, Eye, Handshake, BarChart3, Clock, CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const fundTypes = [
-  'Private Equity', 'Venture Capital', 'Private Credit',
-  'Real Estate', 'Infrastructure', 'Secondaries & Co-investments',
-];
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
+  ResponsiveContainer, ReferenceLine
+} from 'recharts';
 
 const performanceMetrics = [
-  { label: 'Net IRR', value: '—', tooltip: 'Internal Rate of Return net of fees and carry. The most common measure of PE/VC fund performance.' },
-  { label: 'Gross IRR', value: '—', tooltip: 'Internal Rate of Return before fees and carry deductions.' },
-  { label: 'TVPI', value: '—', tooltip: 'Total Value to Paid-In Capital. Sum of distributions and residual value divided by paid-in capital.' },
-  { label: 'DPI', value: '—', tooltip: 'Distributions to Paid-In Capital. Realized cash returned to LPs relative to invested capital.' },
-  { label: 'RVPI', value: '—', tooltip: 'Residual Value to Paid-In Capital. Remaining NAV relative to invested capital.' },
-  { label: 'MOIC', value: '—', tooltip: 'Multiple on Invested Capital. Total value created per dollar invested.' },
-  { label: 'PME', value: '—', tooltip: 'Public Market Equivalent. Compares fund returns to a public benchmark index.' },
+  { label: 'Net IRR', value: '—', tooltip: 'Internal Rate of Return net of fees and carry.' },
+  { label: 'Gross IRR', value: '—', tooltip: 'Internal Rate of Return before fees and carry.' },
+  { label: 'TVPI', value: '—', tooltip: 'Total Value to Paid-In Capital.' },
+  { label: 'DPI', value: '—', tooltip: 'Distributions to Paid-In Capital.' },
+  { label: 'RVPI', value: '—', tooltip: 'Residual Value to Paid-In Capital.' },
+  { label: 'MOIC', value: '—', tooltip: 'Multiple on Invested Capital.' },
+  { label: 'PME', value: '—', tooltip: 'Public Market Equivalent vs benchmark.' },
 ];
 
+// Sample J-Curve data
+const jCurveData = Array.from({ length: 11 }, (_, y) => {
+  // Typical J-curve: negative first 3 years, then recovery
+  const nav = y <= 1 ? -5 * (y + 1) : y <= 3 ? -10 + (y - 1) * 6 : -10 + (y - 1) * 6 + (y - 3) * 4;
+  return { year: `Y${y}`, NAV: Math.round(nav), Cumulative: Math.round(nav * 0.8) };
+});
+
 const cashFlowEvents = [
-  { type: 'Capital Call', date: 'Pending', status: 'placeholder' },
-  { type: 'Distribution', date: 'Pending', status: 'placeholder' },
-  { type: 'NAV Update', date: 'Pending', status: 'placeholder' },
-  { type: 'Capital Call', date: 'Pending', status: 'placeholder' },
+  { type: 'Capital Call #1', date: 'Q1 2024', amount: '$15M', status: 'completed' },
+  { type: 'Capital Call #2', date: 'Q3 2024', amount: '$10M', status: 'completed' },
+  { type: 'NAV Update', date: 'Q4 2024', amount: '$28M', status: 'completed' },
+  { type: 'Distribution', date: 'Q1 2025', amount: '$3M', status: 'pending' },
+  { type: 'Capital Call #3', date: 'Q2 2025', amount: '$8M', status: 'upcoming' },
 ];
 
 const ddSections = [
@@ -51,7 +58,7 @@ const ddSections = [
     items: ['Leverage usage', 'Concentration risk', 'Exit dependency', 'Valuation methodology'],
   },
   {
-    title: 'Operational Due Diligence',
+    title: 'Operational DD',
     icon: Eye,
     items: ['Governance & controls', 'Reporting transparency', 'Conflicts of interest', 'Key person risk'],
   },
@@ -65,25 +72,6 @@ const ddSections = [
 export function FundAnalysisSection() {
   return (
     <div className="space-y-6">
-      {/* Fund Type Filter */}
-      <div>
-        <p className="terminal-label text-[9px] mb-2">FUND TYPE</p>
-        <div className="flex flex-wrap gap-1.5">
-          {fundTypes.map((ft, i) => (
-            <Badge
-              key={ft}
-              variant={i === 0 ? 'default' : 'outline'}
-              className={cn(
-                "text-[10px] cursor-pointer transition-all",
-                i === 0 ? "bg-primary/20 text-primary border-primary/30" : "hover:bg-muted/50"
-              )}
-            >
-              {ft}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
       {/* Fund Profile Panel */}
       <Card>
         <CardHeader className="pb-2">
@@ -95,14 +83,14 @@ export function FundAnalysisSection() {
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Strategy', value: '—', icon: Target },
-              { label: 'Vintage Year', value: '—', icon: Clock },
-              { label: 'Geography', value: '—', icon: Globe },
-              { label: 'Sector Focus', value: '—', icon: BarChart3 },
-              { label: 'Fund Size', value: '—', icon: DollarSign },
-              { label: 'GP Commitment', value: '—', icon: Handshake },
-              { label: 'LP Base', value: '—', icon: Users },
-              { label: 'Status', value: '—', icon: CheckCircle2 },
+              { label: 'Strategy', icon: Target },
+              { label: 'Vintage Year', icon: Clock },
+              { label: 'Geography', icon: Globe },
+              { label: 'Sector Focus', icon: BarChart3 },
+              { label: 'Fund Size', icon: DollarSign },
+              { label: 'GP Commitment', icon: Handshake },
+              { label: 'LP Base', icon: Users },
+              { label: 'Status', icon: CheckCircle2 },
             ].map((field) => {
               const Icon = field.icon;
               return (
@@ -141,32 +129,79 @@ export function FundAnalysisSection() {
         </div>
       </div>
 
-      {/* Cash Flow Timeline */}
+      {/* J-Curve Visualization */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-xs flex items-center gap-2">
             <TrendingUp size={14} className="text-primary" />
+            J-Curve Projection
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={jCurveData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="year" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                <RTooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 10 }}
+                />
+                <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                <Area
+                  type="monotone"
+                  dataKey="NAV"
+                  stroke="hsl(var(--primary))"
+                  fill="hsl(var(--primary))"
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[8px] text-muted-foreground font-mono mt-2 text-center">
+            Illustrative J-curve pattern — actual data will populate from fund records
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Cash Flow Timeline */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs flex items-center gap-2">
+            <DollarSign size={14} className="text-primary" />
             Cash Flow Timeline
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative pl-4 border-l border-border/50 space-y-4">
+          <div className="relative pl-4 border-l-2 border-border/50 space-y-4">
             {cashFlowEvents.map((evt, i) => (
               <div key={i} className="relative">
-                <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-muted border-2 border-border" />
+                <div className={cn(
+                  "absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2",
+                  evt.status === 'completed' ? "bg-success border-success/50" :
+                  evt.status === 'pending' ? "bg-primary border-primary/50" :
+                  "bg-muted border-border"
+                )} />
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[11px] font-medium">{evt.type}</p>
                     <p className="text-[9px] text-muted-foreground font-mono">{evt.date}</p>
                   </div>
-                  <Badge variant="outline" className="text-[8px]">Placeholder</Badge>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-foreground">{evt.amount}</span>
+                    <Badge variant="outline" className={cn(
+                      "text-[8px]",
+                      evt.status === 'completed' && "border-success/30 text-success",
+                      evt.status === 'pending' && "border-primary/30 text-primary",
+                      evt.status === 'upcoming' && "border-muted-foreground/30 text-muted-foreground",
+                    )}>
+                      {evt.status}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             ))}
-          </div>
-          {/* Chart placeholder */}
-          <div className="mt-4 h-32 bg-muted/20 border border-dashed border-border/50 rounded-sm flex items-center justify-center">
-            <p className="text-[10px] text-muted-foreground font-mono">Cash Flow Chart — Connect fund data</p>
           </div>
         </CardContent>
       </Card>

@@ -1,31 +1,35 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
-  CreditCard, Percent, Shield, AlertTriangle, BarChart3, TrendingUp
+  CreditCard, Shield, AlertTriangle, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, ReferenceLine, Legend
+} from 'recharts';
+
+function pf(v: string, fallback = 0) {
+  const n = parseFloat(v);
+  return isNaN(n) ? fallback : n;
+}
 
 const defaultInputs = {
   loanAmount: '100',
   ltv: '65',
   interestMargin: '5.50',
+  baseRate: '4.50',
   covenantDscr: '1.25',
   covenantLtv: '75',
   amortYears: '0',
+  maturityYears: '5',
   collateralValue: '155',
   recoveryRate: '60',
+  defaultProb: '3.0',
 };
-
-const covenantScenarios = [
-  { scenario: 'Base Case', dscr: '1.45x', ltv: '62%', status: 'pass' },
-  { scenario: '-10% Revenue', dscr: '1.18x', ltv: '68%', status: 'warning' },
-  { scenario: '-20% Revenue', dscr: '0.95x', ltv: '77%', status: 'breach' },
-  { scenario: 'Collateral -15%', dscr: '1.45x', ltv: '73%', status: 'warning' },
-];
 
 export function PrivateCreditCalculator() {
   const [inputs, setInputs] = useState(defaultInputs);
@@ -34,9 +38,72 @@ export function PrivateCreditCalculator() {
   const update = (key: string, val: string) =>
     setInputs((prev) => ({ ...prev, [key]: val }));
 
-  const equityCushion = inputs.collateralValue && inputs.loanAmount
-    ? (((parseFloat(inputs.collateralValue) - parseFloat(inputs.loanAmount)) / parseFloat(inputs.collateralValue)) * 100).toFixed(1)
-    : '—';
+  const model = useMemo(() => {
+    const loan = pf(inputs.loanAmount);
+    const ltv = pf(inputs.ltv) / 100;
+    const margin = pf(inputs.interestMargin) / 100;
+    const baseRate = pf(inputs.baseRate) / 100;
+    const covDscr = pf(inputs.covenantDscr);
+    const covLtv = pf(inputs.covenantLtv) / 100;
+    const collateral = pf(inputs.collateralValue);
+    const recovery = pf(inputs.recoveryRate) / 100;
+    const defProb = pf(inputs.defaultProb) / 100;
+    const maturity = Math.max(1, Math.round(pf(inputs.maturityYears)));
+    const amortYrs = pf(inputs.amortYears);
+    const isBullet = amortYrs === 0;
+
+    const allInYield = margin + baseRate;
+    const equityCushion = collateral > 0 ? ((collateral - loan) / collateral) * 100 : 0;
+    const expectedLoss = defProb * (1 - recovery) * loan;
+    const riskAdjReturn = allInYield - (defProb * (1 - recovery));
+
+    // Covenant breach scenarios
+    const scenarios = [
+      { scenario: 'Base Case', revShock: 0, collShock: 0 },
+      { scenario: '-10% Revenue', revShock: -0.10, collShock: 0 },
+      { scenario: '-20% Revenue', revShock: -0.20, collShock: 0 },
+      { scenario: '-30% Revenue', revShock: -0.30, collShock: 0 },
+      { scenario: 'Collateral -15%', revShock: 0, collShock: -0.15 },
+      { scenario: 'Stress: Rev -20%, Coll -15%', revShock: -0.20, collShock: -0.15 },
+    ];
+
+    // Assume base DSCR ~ 1.5 * (1 + revShock)
+    const baseDscr = 1.50;
+    const covenantResults = scenarios.map(s => {
+      const adjDscr = baseDscr * (1 + s.revShock);
+      const adjCollateral = collateral * (1 + s.collShock);
+      const adjLtv = adjCollateral > 0 ? (loan / adjCollateral) * 100 : 100;
+      const dscrPass = adjDscr >= covDscr;
+      const ltvPass = adjLtv / 100 <= covLtv;
+      const status = dscrPass && ltvPass ? 'pass' : (!dscrPass && !ltvPass) ? 'breach' : 'warning';
+      return { ...s, dscr: adjDscr.toFixed(2), ltv: `${adjLtv.toFixed(1)}%`, status };
+    });
+
+    // Recovery waterfall chart
+    const lossGivenDefault = loan * (1 - recovery);
+    const recoveryWaterfall = [
+      { name: 'Loan Amount', value: Math.round(loan), fill: 'hsl(var(--primary))' },
+      { name: 'Recovery Value', value: Math.round(loan * recovery), fill: 'hsl(142, 71%, 45%)' },
+      { name: 'Loss Given Default', value: Math.round(lossGivenDefault), fill: 'hsl(0, 72%, 55%)' },
+    ];
+
+    // Yield profile over maturity
+    const yieldProfile = Array.from({ length: maturity + 1 }, (_, y) => {
+      const cumInterest = allInYield * y * loan;
+      const cumExpLoss = defProb * (1 - recovery) * loan * y;
+      return {
+        year: `Y${y}`,
+        'Gross Yield': parseFloat((allInYield * 100).toFixed(2)),
+        'Risk-Adj Yield': parseFloat((riskAdjReturn * 100).toFixed(2)),
+        'Cumulative Income': Math.round(cumInterest),
+      };
+    });
+
+    return {
+      allInYield, equityCushion, expectedLoss, riskAdjReturn,
+      covenantResults, recoveryWaterfall, yieldProfile, loan
+    };
+  }, [inputs]);
 
   return (
     <Card className="border-primary/20">
@@ -73,7 +140,10 @@ export function PrivateCreditCalculator() {
               <InputField label="Loan Amount ($M)" value={inputs.loanAmount} onChange={(v) => update('loanAmount', v)} />
               <InputField label="LTV (%)" value={inputs.ltv} onChange={(v) => update('ltv', v)} />
               <InputField label="Interest Margin (%)" value={inputs.interestMargin} onChange={(v) => update('interestMargin', v)} />
-              <InputField label="Amortization (yrs, 0=bullet)" value={inputs.amortYears} onChange={(v) => update('amortYears', v)} />
+              <InputField label="Base Rate (%)" value={inputs.baseRate} onChange={(v) => update('baseRate', v)} />
+              <InputField label="Maturity (yrs)" value={inputs.maturityYears} onChange={(v) => update('maturityYears', v)} />
+              <InputField label="Amort (yrs, 0=bullet)" value={inputs.amortYears} onChange={(v) => update('amortYears', v)} />
+              <InputField label="Default Probability (%)" value={inputs.defaultProb} onChange={(v) => update('defaultProb', v)} />
             </div>
           </div>
 
@@ -92,14 +162,14 @@ export function PrivateCreditCalculator() {
 
           {/* Quick Outputs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <SummaryTile label="Expected Yield" value={`${inputs.interestMargin}%`} />
-            <SummaryTile label="Equity Cushion" value={`${equityCushion}%`} />
-            <SummaryTile label="Risk-Adj. Return" value="—" note="Run model" />
-            <SummaryTile label="Recovery Analysis" value="—" note="Run model" />
+            <SummaryTile label="All-In Yield" value={`${(model.allInYield * 100).toFixed(2)}%`} variant="success" />
+            <SummaryTile label="Equity Cushion" value={`${model.equityCushion.toFixed(1)}%`} />
+            <SummaryTile label="Risk-Adj. Return" value={`${(model.riskAdjReturn * 100).toFixed(2)}%`} />
+            <SummaryTile label="Expected Loss" value={`$${model.expectedLoss.toFixed(1)}M`} variant={model.expectedLoss > model.loan * 0.05 ? 'danger' : 'neutral'} />
           </div>
 
           {/* Covenant Breach Scenarios */}
-          <Card variant="panel" className="border-dashed">
+          <Card variant="panel">
             <CardHeader className="pb-1">
               <CardTitle className="text-[10px] flex items-center gap-1.5">
                 <AlertTriangle size={11} className="text-primary" /> Covenant Breach Scenarios
@@ -117,10 +187,10 @@ export function PrivateCreditCalculator() {
                     </tr>
                   </thead>
                   <tbody>
-                    {covenantScenarios.map((s) => (
+                    {model.covenantResults.map((s) => (
                       <tr key={s.scenario} className="border-b border-border/20">
                         <td className="p-1.5 text-foreground/80">{s.scenario}</td>
-                        <td className="text-center p-1.5">{s.dscr}</td>
+                        <td className="text-center p-1.5">{s.dscr}x</td>
                         <td className="text-center p-1.5">{s.ltv}</td>
                         <td className="text-center p-1.5">
                           <Badge
@@ -143,18 +213,48 @@ export function PrivateCreditCalculator() {
             </CardContent>
           </Card>
 
-          {/* Downside Recovery / Yield Charts */}
+          {/* Charts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Card variant="panel" className="border-dashed">
-              <CardContent className="p-4">
-                <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Downside Recovery Analysis</p>
-                <Skeleton className="h-28 w-full rounded-sm" />
+            <Card variant="panel">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px]">Recovery Waterfall</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-36">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={model.recoveryWaterfall}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 10 }} />
+                      <Bar dataKey="value" fill="hsl(var(--primary))">
+                        {model.recoveryWaterfall.map((entry, i) => (
+                          <rect key={i} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
-            <Card variant="panel" className="border-dashed">
-              <CardContent className="p-4">
-                <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Yield vs. Risk Profile</p>
-                <Skeleton className="h-28 w-full rounded-sm" />
+            <Card variant="panel">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px]">Yield Profile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-36">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={model.yieldProfile}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="year" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 10 }} />
+                      <Line type="monotone" dataKey="Gross Yield" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="Risk-Adj Yield" stroke="hsl(35, 92%, 55%)" strokeWidth={2} dot={{ r: 3 }} />
+                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -178,12 +278,16 @@ function InputField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-function SummaryTile({ label, value, note }: { label: string; value: string; note?: string }) {
+function SummaryTile({ label, value, variant = 'neutral' }: { label: string; value: string; variant?: 'neutral' | 'danger' | 'success' }) {
   return (
     <div className="kpi-card">
       <p className="terminal-label text-[9px]">{label}</p>
-      <p className="font-mono tabular-nums text-base mt-0.5 text-foreground">{value}</p>
-      {note && <p className="text-[8px] text-muted-foreground font-mono mt-0.5">{note}</p>}
+      <p className={cn(
+        "font-mono tabular-nums text-base mt-0.5",
+        variant === 'danger' ? "text-destructive" : variant === 'success' ? "text-success" : "text-foreground"
+      )}>
+        {value}
+      </p>
     </div>
   );
 }
