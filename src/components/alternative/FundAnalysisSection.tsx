@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,12 +13,8 @@ import {
 import { cn } from '@/lib/utils';
 
 const fundTypes = [
-  { label: 'Private Equity', route: 'private-equity' },
-  { label: 'Venture Capital', route: 'venture-capital' },
-  { label: 'Private Credit', route: 'private-credit' },
-  { label: 'Real Estate', route: 'real-estate' },
-  { label: 'Infrastructure', route: 'real-assets' },
-  { label: 'Secondaries & Co-investments', route: '' },
+  'Private Equity', 'Venture Capital', 'Private Credit',
+  'Real Estate', 'Infrastructure', 'Secondaries & Co-investments',
 ];
 
 const performanceMetrics = [
@@ -68,25 +63,22 @@ const ddSections = [
 ];
 
 export function FundAnalysisSection() {
-  const navigate = useNavigate();
-
   return (
     <div className="space-y-6">
-      {/* Fund Type Selector */}
+      {/* Fund Type Filter */}
       <div>
-        <p className="terminal-label text-[9px] mb-2">FUND TYPE — Click to open dedicated workspace</p>
+        <p className="terminal-label text-[9px] mb-2">FUND TYPE</p>
         <div className="flex flex-wrap gap-1.5">
           {fundTypes.map((ft, i) => (
             <Badge
-              key={ft.label}
+              key={ft}
               variant={i === 0 ? 'default' : 'outline'}
               className={cn(
                 "text-[10px] cursor-pointer transition-all",
                 i === 0 ? "bg-primary/20 text-primary border-primary/30" : "hover:bg-muted/50"
               )}
-              onClick={() => ft.route && navigate(`/alternative/${ft.route}`)}
             >
-              {ft.label}
+              {ft}
             </Badge>
           ))}
         </div>
