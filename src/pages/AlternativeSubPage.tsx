@@ -122,7 +122,7 @@ const META: Record<string, {
 };
 
 export default function AlternativeSubPage() {
-  const { assetClass } = useParams<{ assetClass: string }>();
+  const { assetClass, analysisId } = useParams<{ assetClass: string; analysisId: string }>();
   const navigate = useNavigate();
   const meta = META[assetClass || ''];
 
@@ -149,8 +149,8 @@ export default function AlternativeSubPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/alternative')} className="gap-1 text-[10px] h-7 px-2">
-              <ArrowLeft size={12} /> Hub
+            <Button variant="ghost" size="sm" onClick={() => navigate(`/alternative/${assetClass}`)} className="gap-1 text-[10px] h-7 px-2">
+              <ArrowLeft size={12} /> Back
             </Button>
             <div className="p-2 bg-primary/10 border border-primary/20 rounded-sm">
               <Icon size={18} className="text-primary" />
