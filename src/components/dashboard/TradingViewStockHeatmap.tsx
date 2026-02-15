@@ -20,7 +20,7 @@ const TradingViewStockHeatmap = () => {
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js';
     script.async = true;
     script.type = 'text/javascript';
-    script.onload = () => setTimeout(() => setLoading(false), 800);
+    script.onload = () => setTimeout(() => setLoading(false), 1200);
 
     script.innerHTML = JSON.stringify({
       exchanges: [],
