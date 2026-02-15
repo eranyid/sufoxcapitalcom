@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   ArrowLeft, Plus, Upload, Download, Filter, Search, Calculator,
   Building2, Rocket, CreditCard, Home, Landmark, BarChart3,
-  TrendingUp, Calendar, Users, Target, DollarSign, Clock, Briefcase
+  TrendingUp, Calendar, Users, Target, DollarSign, Clock, Briefcase, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FundAnalysisSection } from '@/components/alternative/FundAnalysisSection';
@@ -20,6 +20,7 @@ import { FutureExtensionsPanel } from '@/components/alternative/FutureExtensions
 import { NewFundAnalysisDialog } from '@/components/alternative/NewFundAnalysisDialog';
 import { VintageYearChart } from '@/components/alternative/VintageYearChart';
 import { CommitmentPacingTool } from '@/components/alternative/CommitmentPacingTool';
+import { DueDiligenceTab } from '@/components/alternative/DueDiligenceTab';
 
 const META: Record<string, {
   title: string;
@@ -190,6 +191,9 @@ export default function AlternativeSubPage() {
             <TabsTrigger value="portfolio" className="text-[11px] gap-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary">
               <BarChart3 size={12} /> Portfolio
             </TabsTrigger>
+            <TabsTrigger value="duediligence" className="text-[11px] gap-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary">
+              <Shield size={12} /> Due Diligence
+            </TabsTrigger>
             <TabsTrigger value="cashflows" className="text-[11px] gap-1.5 data-[state=active]:bg-primary/15 data-[state=active]:text-primary">
               <DollarSign size={12} /> Cash Flows
             </TabsTrigger>
@@ -296,6 +300,11 @@ export default function AlternativeSubPage() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Tab: Due Diligence */}
+          <TabsContent value="duediligence">
+            <DueDiligenceTab />
           </TabsContent>
 
           {/* Tab 4: Cash Flows */}
