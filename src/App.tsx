@@ -60,6 +60,8 @@ const Messages = lazy(() => import("./pages/Messages"));
 const ContextSelector = lazy(() => import("./pages/ContextSelector"));
 
 const Market = lazy(() => import("./pages/Market"));
+const AlternativeHub = lazy(() => import("./pages/AlternativeHub"));
+const AlternativeSubPage = lazy(() => import("./pages/AlternativeSubPage"));
 
 
 const queryClient = new QueryClient();
@@ -203,7 +205,17 @@ const App = () => (
                        <WorkspaceDetail />
                      </Suspense>
                    } />
-                  <Route path="/construction" element={
+                   <Route path="/alternative" element={
+                     <Suspense fallback={<DashboardLoadingSkeleton />}>
+                       <AlternativeHub />
+                     </Suspense>
+                   } />
+                   <Route path="/alternative/:assetClass" element={
+                     <Suspense fallback={<DashboardLoadingSkeleton />}>
+                       <AlternativeSubPage />
+                     </Suspense>
+                   } />
+                   <Route path="/construction" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Construction />
                     </Suspense>
