@@ -26,6 +26,7 @@ import { ConstructionIcon } from '@/components/icons/ConstructionIcon';
 import { ResearchIcon } from '@/components/icons/ResearchIcon';
 import { LabIcon } from '@/components/icons/LabIcon';
 import { MessagesIcon } from '@/components/icons/MessagesIcon';
+import { AlternativeIcon } from '@/components/icons/AlternativeIcon';
  import { WorkspacesIcon } from '@/components/icons/WorkspacesIcon';
 import { LucideIcon } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
@@ -33,7 +34,7 @@ import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface NavItem {
   path: string;
-  icon: LucideIcon | typeof LabIcon | typeof AnalysisIcon | typeof BackOfficeIcon | typeof CalendarIcon | typeof XRayIcon | typeof TransactionsIcon | typeof SettingsIcon | typeof PerformanceIcon | typeof ChartsIcon | typeof FxRatesIcon | typeof ValuationsIcon | typeof RiskIcon | typeof OverviewIcon | typeof PolicyIcon | typeof ScenariosIcon | typeof ReportsIcon | typeof ConstructionIcon | typeof ResearchIcon;
+  icon: any;
   label: string;
 }
 
@@ -60,6 +61,7 @@ const navGroups: NavGroup[] = [
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
        { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },
+      { path: '/alternative', icon: AlternativeIcon, label: 'Alternative' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
     ],
   },
