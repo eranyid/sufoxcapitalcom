@@ -1,6 +1,5 @@
 
 import {
-    Activity,
     Calendar,
     Clock,
     Database,
@@ -11,6 +10,7 @@ import {
     Square,
     Trash2
 } from "lucide-react";
+import { QuantIcon } from "@/components/icons/QuantIcon";
 import { useState } from "react";
 import {
     Area,
@@ -139,7 +139,7 @@ const ControlsPanel = () => {
             <CardHeader className="py-3 px-4 border-b bg-muted/30">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-                        <Activity className="h-4 w-4" /> Ingestion Controls
+                        <QuantIcon className="h-4 w-4" /> Ingestion Controls
                     </CardTitle>
                     <div className="text-xs text-muted-foreground">Session: {format(new Date(), 'yyyy-MM-dd')}</div>
                 </div>
