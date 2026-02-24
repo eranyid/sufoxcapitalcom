@@ -26,6 +26,7 @@ import { LabIcon } from '@/components/icons/LabIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { MessagesIcon } from '@/components/icons/MessagesIcon';
 import { FundamentalsIcon } from '@/components/icons/FundamentalsIcon';
+import { QuantIcon } from '@/components/icons/QuantIcon';
 import {
   Sheet,
   SheetContent,
@@ -44,6 +45,7 @@ const moreNavItems = [
   { path: '/research', icon: ResearchIcon, label: 'Research' },
   { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
   { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
+  { path: '/quant', icon: QuantIcon, label: 'Quant' },
   { path: '/lab', icon: LabIcon, label: 'Lab' },
   { path: '/backoffice', icon: Contact, label: 'Back Office' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
