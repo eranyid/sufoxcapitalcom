@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
-   ChevronLeft, ChevronRight, LogOut, Users, HelpCircle, ArrowLeftRight
+   ChevronLeft, ChevronRight, LogOut, Users, HelpCircle, ArrowLeftRight, Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -63,6 +63,7 @@ const navGroups: NavGroup[] = [
        { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },
       { path: '/alternative', icon: AlternativeIcon, label: 'Alternative' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
+      { path: '/quant', icon: Activity, label: 'Quant' },
     ],
   },
   {
