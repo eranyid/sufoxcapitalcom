@@ -3,15 +3,11 @@ import {
     Calendar,
     Clock,
     Database,
-    Pause,
-    Play,
-    RefreshCw,
     Search,
-    Square,
     Trash2,
     TrendingUp
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Dialog,
@@ -45,10 +41,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
-import { QuantIcon } from "@/components/icons/QuantIcon";
-import { cn } from "@/lib/utils";
 
 // --- Types ---
 interface QuantSession {
@@ -138,71 +131,8 @@ const KPIHeader = ({ session }: { session?: QuantSession }) => {
     );
 };
 
-const ControlsPanel = ({ session }: { session?: QuantSession }) => {
-    const [loading, setLoading] = useState<string | null>(null);
-    const queryClient = useQueryClient();
-
-    const handleAction = async (action: string) => {
-        setLoading(action);
-        try {
-            switch (action) {
-                case 'start': {
-                    // Call daily detector to create/schedule today's session
-                    const { data, error } = await supabase.functions.invoke('quant-daily-detector');
-                    if (error) throw error;
-                    toast.success(`Session result: ${data?.status || 'created'}`);
-                    break;
-                }
-                case 'pause': {
-                    if (!session?.id) { toast.error('No active session'); break; }
-                    const { error } = await supabase
-                        .from('quant_ingestion_sessions' as any)
-                        .update({ status: 'paused' })
-                        .eq('id', session.id);
-                    if (error) throw error;
-                    toast.success('Session paused');
-                    break;
-                }
-                case 'stop': {
-                    if (!session?.id) { toast.error('No active session'); break; }
-                    const { error } = await supabase
-                        .from('quant_ingestion_sessions' as any)
-                        .update({ status: 'stopped' })
-                        .eq('id', session.id);
-                    if (error) throw error;
-                    toast.success('Session stopped');
-                    break;
-                }
-                case 'force_tick': {
-                    const { data, error } = await supabase.functions.invoke('quant-minute-ingestion');
-                    if (error) throw error;
-                    toast.success(`Tick: ${data?.succeeded ?? 0} quotes collected, ${data?.failed ?? 0} failed`);
-                    break;
-                }
-                case 'refresh_universe': {
-                    toast.info('Refreshing universe... this may take a few minutes');
-                    const { data, error } = await supabase.functions.invoke('quant-metadata-refresh');
-                    if (error) throw error;
-                    toast.success(`Universe refreshed in ${data?.duration}ms`);
-                    break;
-                }
-            }
-            // Invalidate queries to refresh UI
-            queryClient.invalidateQueries({ queryKey: ['quant_session_today'] });
-            queryClient.invalidateQueries({ queryKey: ['quant_logs_today'] });
-            queryClient.invalidateQueries({ queryKey: ['quant_universe_count'] });
-        } catch (err: any) {
-            console.error(`Action ${action} failed:`, err);
-            toast.error(`${action} failed: ${err.message || 'Unknown error'}`);
-        } finally {
-            setLoading(null);
-        }
-    };
-
+const StatusPanel = ({ session }: { session?: QuantSession }) => {
     const isRunning = session?.status === 'running';
-    const isScheduled = session?.status === 'scheduled';
-    const canStart = !session || session.status === 'stopped' || session.status === 'completed' || session.status === 'skipped';
-    const canPauseStop = isRunning || isScheduled;
 
     return (
         <Card className="mb-6">
@@ -221,34 +151,10 @@ const ControlsPanel = ({ session }: { session?: QuantSession }) => {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-4 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleAction('start')} disabled={loading !== null || !canStart}>
-                        <Play className="h-4 w-4 mr-2 text-emerald-500" />
-                        {loading === 'start' ? 'Starting...' : 'Start Session'}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleAction('pause')} disabled={loading !== null || !canPauseStop}>
-                        <Pause className="h-4 w-4 mr-2 text-amber-500" />
-                        {loading === 'pause' ? 'Pausing...' : 'Pause'}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleAction('stop')} disabled={loading !== null || !canPauseStop}>
-                        <Square className="h-4 w-4 mr-2 text-destructive" /> 
-                        {loading === 'stop' ? 'Stopping...' : 'Stop'}
-                    </Button>
-                    <div className="w-px h-6 bg-border mx-2" />
-                    <Button size="sm" variant="secondary" onClick={() => handleAction('force_tick')} disabled={loading !== null}>
-                        <RefreshCw className={cn("h-4 w-4 mr-2", loading === 'force_tick' && 'animate-spin')} />
-                        {loading === 'force_tick' ? 'Running...' : 'Force Next Tick'}
-                    </Button>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                     <span className="text-xs text-muted-foreground">Universe:</span>
-                     <Button size="sm" variant="ghost" onClick={() => handleAction('refresh_universe')} disabled={loading !== null}>
-                        <Database className={cn("h-4 w-4 mr-2", loading === 'refresh_universe' && 'animate-spin')} />
-                        {loading === 'refresh_universe' ? 'Refreshing...' : 'Refresh Universe Now'}
-                     </Button>
-                </div>
+            <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">
+                    Ingestion runs automatically via scheduled jobs. Data refreshes at 12:00 ET, sessions start at 13:00 ET.
+                </p>
             </CardContent>
         </Card>
     );
@@ -516,8 +422,32 @@ const DataGovernancePanel = () => {
 export default function Quant() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedSymbol, setSelectedSymbol] = useState<QuantUniverseItem | null>(null);
+    const queryClient = useQueryClient();
 
-    // Poll for session status
+    // Realtime subscriptions — shared channels, no per-user filters
+    useEffect(() => {
+        const channel = supabase
+            .channel('quant-realtime')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'quant_ingestion_sessions'
+            }, () => {
+                queryClient.invalidateQueries({ queryKey: ['quant_session_today'] });
+            })
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'quant_ingestion_logs'
+            }, () => {
+                queryClient.invalidateQueries({ queryKey: ['quant_logs_today'] });
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [queryClient]);
+
+    // Fetch session — no user_id filter, shared global data
     const { data: session } = useQuery({
         queryKey: ['quant_session_today'],
         queryFn: async () => {
@@ -529,7 +459,7 @@ export default function Quant() {
                 .maybeSingle();
             return data as unknown as QuantSession;
         },
-        refetchInterval: 10000
+        refetchInterval: 30000 // Reduced polling — realtime handles updates
     });
 
     const { data: logs } = useQuery({
@@ -545,7 +475,7 @@ export default function Quant() {
                 .limit(20);
             return data as unknown as IngestionLog[];
         },
-        refetchInterval: 5000
+        refetchInterval: 30000 // Reduced polling — realtime handles updates
     });
 
     const { data: universe, isLoading: universeLoading } = useQuery({
@@ -586,7 +516,7 @@ export default function Quant() {
 
             <KPIHeader session={session} />
             
-            <ControlsPanel session={session} />
+            <StatusPanel session={session} />
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2 space-y-6">
