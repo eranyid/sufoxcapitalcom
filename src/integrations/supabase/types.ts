@@ -3211,6 +3211,8 @@ export type Database = {
         Returns: boolean
       }
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
+      pg_advisory_unlock_quant_ingestion: { Args: never; Returns: boolean }
+      pg_try_advisory_lock_quant_ingestion: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"

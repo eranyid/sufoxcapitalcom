@@ -21,6 +21,13 @@ serve(async (req) => {
     const finnhubKey = Deno.env.get('FINNHUB_API_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Advisory lock to prevent parallel execution
+    const { data: lockResult } = await supabase.rpc('pg_try_advisory_lock_quant_ingestion');
+    if (!lockResult) {
+      console.log('Another instance is already running. Exiting.');
+      return new Response(JSON.stringify({ status: 'locked' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const now = DateTime.now().toUTC();
     const todayStr = now.setZone('America/New_York').toFormat('yyyy-MM-dd');
 
@@ -36,6 +43,7 @@ serve(async (req) => {
     
     if (!session) {
         console.log('No active session for today. Exiting.');
+        await supabase.rpc('pg_advisory_unlock_quant_ingestion');
         return new Response(JSON.stringify({ status: 'no_session' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -52,6 +60,7 @@ serve(async (req) => {
                 .eq('id', session.id);
         }
         
+        await supabase.rpc('pg_advisory_unlock_quant_ingestion');
         return new Response(JSON.stringify({ status: 'outside_window' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -77,6 +86,7 @@ serve(async (req) => {
             .update({ status: 'completed', completed_at: now.toISO() })
             .eq('id', session.id);
         console.log(`All ${totalSymbols} symbols covered. Session complete.`);
+        await supabase.rpc('pg_advisory_unlock_quant_ingestion');
         return new Response(JSON.stringify({ status: 'completed', total: totalSymbols }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -206,6 +216,9 @@ serve(async (req) => {
 
     if (logError) console.error('Error writing logs:', logError);
 
+    // Release advisory lock
+    await supabase.rpc('pg_advisory_unlock_quant_ingestion');
+
     return new Response(JSON.stringify({ 
         status: 'success', 
         processed: symbolsToProcess.length, 
@@ -217,6 +230,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in minute ingestion:', error);
+    // Try to release lock on error
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const sb = createClient(supabaseUrl, supabaseKey);
+      await sb.rpc('pg_advisory_unlock_quant_ingestion');
+    } catch (_) { /* best effort */ }
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
