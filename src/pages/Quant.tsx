@@ -209,7 +209,7 @@ const ControlsPanel = ({ session }: { session?: QuantSession }) => {
             <CardHeader className="py-3 px-4 border-b bg-muted/30">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-                        <QuantIcon className="h-4 w-4" /> Ingestion Controls
+                        <Database className="h-4 w-4" /> Data Ingestion
                     </CardTitle>
                     <div className="flex items-center gap-2">
                         {session && (
@@ -580,7 +580,7 @@ export default function Quant() {
     return (
         <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Quant Module</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Data Module</h1>
                 <Badge variant="outline" className="font-mono">v1.0</Badge>
             </div>
 
