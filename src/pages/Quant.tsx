@@ -34,12 +34,13 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { QuantIcon } from "@/components/icons/QuantIcon";
+import { cn } from "@/lib/utils";
 
 // --- Types ---
 interface QuantSession {
@@ -129,11 +130,71 @@ const KPIHeader = ({ session }: { session?: QuantSession }) => {
     );
 };
 
-const ControlsPanel = () => {
+const ControlsPanel = ({ session }: { session?: QuantSession }) => {
+    const [loading, setLoading] = useState<string | null>(null);
+    const queryClient = useQueryClient();
+
     const handleAction = async (action: string) => {
-        toast.info(`Triggering ${action}...`);
-        // In real impl, this would call edge functions
+        setLoading(action);
+        try {
+            switch (action) {
+                case 'start': {
+                    // Call daily detector to create/schedule today's session
+                    const { data, error } = await supabase.functions.invoke('quant-daily-detector');
+                    if (error) throw error;
+                    toast.success(`Session result: ${data?.status || 'created'}`);
+                    break;
+                }
+                case 'pause': {
+                    if (!session?.id) { toast.error('No active session'); break; }
+                    const { error } = await supabase
+                        .from('quant_ingestion_sessions' as any)
+                        .update({ status: 'paused' })
+                        .eq('id', session.id);
+                    if (error) throw error;
+                    toast.success('Session paused');
+                    break;
+                }
+                case 'stop': {
+                    if (!session?.id) { toast.error('No active session'); break; }
+                    const { error } = await supabase
+                        .from('quant_ingestion_sessions' as any)
+                        .update({ status: 'stopped' })
+                        .eq('id', session.id);
+                    if (error) throw error;
+                    toast.success('Session stopped');
+                    break;
+                }
+                case 'force_tick': {
+                    const { data, error } = await supabase.functions.invoke('quant-minute-ingestion');
+                    if (error) throw error;
+                    toast.success(`Tick: ${data?.succeeded ?? 0} quotes collected, ${data?.failed ?? 0} failed`);
+                    break;
+                }
+                case 'refresh_universe': {
+                    toast.info('Refreshing universe... this may take a few minutes');
+                    const { data, error } = await supabase.functions.invoke('quant-metadata-refresh');
+                    if (error) throw error;
+                    toast.success(`Universe refreshed in ${data?.duration}ms`);
+                    break;
+                }
+            }
+            // Invalidate queries to refresh UI
+            queryClient.invalidateQueries({ queryKey: ['quant_session_today'] });
+            queryClient.invalidateQueries({ queryKey: ['quant_logs_today'] });
+            queryClient.invalidateQueries({ queryKey: ['quant_universe_count'] });
+        } catch (err: any) {
+            console.error(`Action ${action} failed:`, err);
+            toast.error(`${action} failed: ${err.message || 'Unknown error'}`);
+        } finally {
+            setLoading(null);
+        }
     };
+
+    const isRunning = session?.status === 'running';
+    const isScheduled = session?.status === 'scheduled';
+    const canStart = !session || session.status === 'stopped' || session.status === 'completed' || session.status === 'skipped';
+    const canPauseStop = isRunning || isScheduled;
 
     return (
         <Card className="mb-6">
@@ -142,30 +203,42 @@ const ControlsPanel = () => {
                     <CardTitle className="text-sm font-medium uppercase tracking-wider flex items-center gap-2">
                         <QuantIcon className="h-4 w-4" /> Ingestion Controls
                     </CardTitle>
-                    <div className="text-xs text-muted-foreground">Session: {format(new Date(), 'yyyy-MM-dd')}</div>
+                    <div className="flex items-center gap-2">
+                        {session && (
+                            <Badge variant={isRunning ? 'default' : 'outline'} className={isRunning ? 'bg-emerald-600' : ''}>
+                                {session.status?.toUpperCase()}
+                            </Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">Session: {format(new Date(), 'yyyy-MM-dd')}</span>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="p-4 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleAction('start')}>
-                        <Play className="h-4 w-4 mr-2 text-green-500" /> Start Session
+                    <Button size="sm" variant="outline" onClick={() => handleAction('start')} disabled={loading !== null || !canStart}>
+                        <Play className="h-4 w-4 mr-2 text-emerald-500" />
+                        {loading === 'start' ? 'Starting...' : 'Start Session'}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleAction('pause')}>
-                        <Pause className="h-4 w-4 mr-2 text-yellow-500" /> Pause
+                    <Button size="sm" variant="outline" onClick={() => handleAction('pause')} disabled={loading !== null || !canPauseStop}>
+                        <Pause className="h-4 w-4 mr-2 text-amber-500" />
+                        {loading === 'pause' ? 'Pausing...' : 'Pause'}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleAction('stop')}>
-                        <Square className="h-4 w-4 mr-2 text-red-500" /> Stop
+                    <Button size="sm" variant="outline" onClick={() => handleAction('stop')} disabled={loading !== null || !canPauseStop}>
+                        <Square className="h-4 w-4 mr-2 text-destructive" /> 
+                        {loading === 'stop' ? 'Stopping...' : 'Stop'}
                     </Button>
                     <div className="w-px h-6 bg-border mx-2" />
-                    <Button size="sm" variant="secondary" onClick={() => handleAction('force_tick')}>
-                        <RefreshCw className="h-4 w-4 mr-2" /> Force Next Tick
+                    <Button size="sm" variant="secondary" onClick={() => handleAction('force_tick')} disabled={loading !== null}>
+                        <RefreshCw className={cn("h-4 w-4 mr-2", loading === 'force_tick' && 'animate-spin')} />
+                        {loading === 'force_tick' ? 'Running...' : 'Force Next Tick'}
                     </Button>
                 </div>
                 
                 <div className="flex items-center gap-2">
                      <span className="text-xs text-muted-foreground">Universe:</span>
-                     <Button size="sm" variant="ghost" onClick={() => handleAction('refresh_universe')}>
-                        <Database className="h-4 w-4 mr-2" /> Refresh Universe Now
+                     <Button size="sm" variant="ghost" onClick={() => handleAction('refresh_universe')} disabled={loading !== null}>
+                        <Database className={cn("h-4 w-4 mr-2", loading === 'refresh_universe' && 'animate-spin')} />
+                        {loading === 'refresh_universe' ? 'Refreshing...' : 'Refresh Universe Now'}
                      </Button>
                 </div>
             </CardContent>
@@ -341,7 +414,7 @@ export default function Quant() {
 
             <KPIHeader session={session} />
             
-            <ControlsPanel />
+            <ControlsPanel session={session} />
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2 space-y-6">
