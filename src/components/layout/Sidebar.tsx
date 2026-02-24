@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
-   ChevronLeft, ChevronRight, LogOut, Users, HelpCircle, ArrowLeftRight, Activity
+   ChevronLeft, ChevronRight, LogOut, Users, HelpCircle, ArrowLeftRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -28,6 +28,7 @@ import { LabIcon } from '@/components/icons/LabIcon';
 import { MessagesIcon } from '@/components/icons/MessagesIcon';
 import { AlternativeIcon } from '@/components/icons/AlternativeIcon';
  import { WorkspacesIcon } from '@/components/icons/WorkspacesIcon';
+import { QuantIcon } from '@/components/icons/QuantIcon';
 import { LucideIcon } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
@@ -63,7 +64,7 @@ const navGroups: NavGroup[] = [
        { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },
       { path: '/alternative', icon: AlternativeIcon, label: 'Alternative' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
-      { path: '/quant', icon: Activity, label: 'Quant' },
+      { path: '/quant', icon: QuantIcon, label: 'Quant' },
     ],
   },
   {
