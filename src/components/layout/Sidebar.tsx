@@ -61,15 +61,15 @@ const navGroups: NavGroup[] = [
       { path: '/market', icon: FundamentalsIcon, label: 'Fundamentals' },
       { path: '/analysis', icon: AnalysisIcon, label: 'Analysis' },
       { path: '/construction', icon: ConstructionIcon, label: 'Construction' },
-       { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },
+      { path: '/workspaces', icon: WorkspacesIcon, label: 'Workspaces' },
       { path: '/alternative', icon: AlternativeIcon, label: 'Alternative' },
       { path: '/lab', icon: LabIcon, label: 'Lab' },
-      { path: '/quant', icon: QuantIcon, label: 'Quant' },
     ],
   },
   {
     title: 'DATA',
     items: [
+      { path: '/quant', icon: QuantIcon, label: 'Data' },
       { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
       { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
       { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
