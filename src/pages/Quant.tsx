@@ -38,7 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 
 // --- Types ---
 interface QuantSession {
@@ -351,27 +351,25 @@ export default function Quant() {
     });
 
     return (
-        <DashboardLayout>
-            <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold tracking-tight">Quant Module</h1>
-                    <Badge variant="outline" className="font-mono">v1.0</Badge>
-                </div>
+        <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold tracking-tight">Quant Module</h1>
+                <Badge variant="outline" className="font-mono">v1.0</Badge>
+            </div>
 
-                <KPIHeader session={session} />
-                
-                <ControlsPanel />
-                
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <div className="xl:col-span-2 space-y-6">
-                        <UniversePanel />
-                        <DataGovernancePanel />
-                    </div>
-                    <div>
-                        <IngestionLogsPanel logs={logs} />
-                    </div>
+            <KPIHeader session={session} />
+            
+            <ControlsPanel />
+            
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div className="xl:col-span-2 space-y-6">
+                    <UniversePanel />
+                    <DataGovernancePanel />
+                </div>
+                <div>
+                    <IngestionLogsPanel logs={logs} />
                 </div>
             </div>
-        </DashboardLayout>
+        </div>
     );
 }
