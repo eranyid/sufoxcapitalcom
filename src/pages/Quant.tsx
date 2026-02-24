@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { QuantIcon } from "@/components/icons/QuantIcon";
-import { Database, ArrowRight, Globe } from "lucide-react";
+import { Database, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const subModules = [
@@ -8,13 +8,7 @@ const subModules = [
     path: '/quant/data',
     label: 'Data',
     icon: Database,
-    description: 'Market data ingestion, session monitoring, and data governance.',
-  },
-  {
-    path: '/quant/universe',
-    label: 'Stock Universe',
-    icon: Globe,
-    description: 'Browse and search the full stock universe with advanced filters by sector, market cap, and more.',
+    description: 'Market data ingestion, session monitoring, stock universe, and data governance.',
   },
 ];
 

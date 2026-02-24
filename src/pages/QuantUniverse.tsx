@@ -1,12 +1,10 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
     Search,
     TrendingUp,
     Database,
     Filter,
     X,
-    ArrowLeft,
     ChevronDown,
 } from "lucide-react";
 import {
@@ -89,7 +87,6 @@ function matchesMarketCap(cap: number, range: string): boolean {
 }
 
 export default function QuantUniverse() {
-    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
     const [sectorFilter, setSectorFilter] = useState("all");
     const [marketCapFilter, setMarketCapFilter] = useState("all");
@@ -163,9 +160,6 @@ export default function QuantUniverse() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" onClick={() => navigate('/quant/data')} className="h-8 w-8">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
                     <Database className="h-5 w-5 text-primary" />
                     <h2 className="text-2xl font-bold tracking-tight">Stock Universe</h2>
                 </div>
