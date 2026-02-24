@@ -69,7 +69,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'DATA',
     items: [
-      { path: '/quant', icon: QuantIcon, label: 'Data' },
+      { path: '/quant', icon: QuantIcon, label: 'Quant' },
       { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
       { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
       { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
