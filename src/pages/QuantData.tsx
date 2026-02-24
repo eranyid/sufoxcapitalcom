@@ -508,11 +508,7 @@ export default function Quant() {
     });
 
     return (
-        <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Data Module</h1>
-                <Badge variant="outline" className="font-mono">v1.0</Badge>
-            </div>
+        <div className="space-y-6">
 
             <KPIHeader session={session} />
             
