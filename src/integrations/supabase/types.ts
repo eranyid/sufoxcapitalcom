@@ -1675,6 +1675,27 @@ export type Database = {
         }
         Relationships: []
       }
+      quant_analytics_cache: {
+        Row: {
+          cache_key: string
+          computed_at: string
+          result: Json
+          valid_until: string
+        }
+        Insert: {
+          cache_key: string
+          computed_at?: string
+          result: Json
+          valid_until: string
+        }
+        Update: {
+          cache_key?: string
+          computed_at?: string
+          result?: Json
+          valid_until?: string
+        }
+        Relationships: []
+      }
       quant_ingestion_logs: {
         Row: {
           created_at: string
@@ -3213,6 +3234,109 @@ export type Database = {
       is_user_approved: { Args: { _user_id: string }; Returns: boolean }
       pg_advisory_unlock_quant_ingestion: { Args: never; Returns: boolean }
       pg_try_advisory_lock_quant_ingestion: { Args: never; Returns: boolean }
+      quant_daily_closes: {
+        Args: { p_from: string; p_symbols?: string[]; p_to: string }
+        Returns: {
+          close_price: number
+          company_name: string
+          market_cap: number
+          market_cap_rank: number
+          sector: string
+          symbol: string
+          trade_date: string
+        }[]
+      }
+      quant_daily_returns: {
+        Args: { p_from: string; p_symbols?: string[]; p_to: string }
+        Returns: {
+          close_price: number
+          company_name: string
+          daily_return: number
+          market_cap: number
+          market_cap_rank: number
+          sector: string
+          symbol: string
+          trade_date: string
+        }[]
+      }
+      quant_intraday_vol_profile: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          avg_abs_return: number
+          minute_slot: string
+          sample_count: number
+        }[]
+      }
+      quant_intraday_window_returns: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          avg_return: number
+          sample_count: number
+          window_label: string
+        }[]
+      }
+      quant_market_breadth: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          pct_positive: number
+          positive_symbols: number
+          total_symbols: number
+          trade_date: string
+        }[]
+      }
+      quant_momentum_ranking: {
+        Args: { p_to: string }
+        Returns: {
+          company_name: string
+          market_cap: number
+          market_cap_rank: number
+          momentum_score: number
+          return_1m: number
+          return_1y: number
+          return_3m: number
+          return_5d: number
+          return_6m: number
+          sector: string
+          symbol: string
+        }[]
+      }
+      quant_sector_returns: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          avg_cum_return: number
+          sector: string
+          symbol_count: number
+          total_market_cap: number
+        }[]
+      }
+      quant_symbol_stats: {
+        Args: { p_from: string; p_symbols?: string[]; p_to: string }
+        Returns: {
+          ann_return: number
+          ann_vol: number
+          avg_daily_return: number
+          company_name: string
+          cum_return: number
+          cvar_95: number
+          kurtosis: number
+          market_cap: number
+          market_cap_rank: number
+          sector: string
+          sharpe: number
+          skewness: number
+          sortino: number
+          symbol: string
+          trading_days: number
+          var_95: number
+        }[]
+      }
+      quant_universe_returns: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          market_return: number
+          trade_date: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
