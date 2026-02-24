@@ -8,10 +8,11 @@ import {
     RefreshCw,
     Search,
     Square,
-    Trash2
+    Trash2,
+    ArrowRight
 } from "lucide-react";
-import { QuantIcon } from "@/components/icons/QuantIcon";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Area,
     AreaChart,
@@ -38,7 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
-
+import { QuantIcon } from "@/components/icons/QuantIcon";
 
 // --- Types ---
 interface QuantSession {
@@ -172,57 +173,38 @@ const ControlsPanel = () => {
     );
 };
 
-const UniversePanel = () => {
-    // Placeholder data
-    const { data: universe } = useQuery({
-        queryKey: ['quant_universe'],
+const UniverseLink = () => {
+    const navigate = useNavigate();
+    const { data: count } = useQuery({
+        queryKey: ['quant_universe_count'],
         queryFn: async () => {
-            const { data, error } = await supabase
+            const { count, error } = await supabase
                 .from('quant_universe' as any)
-                .select('*')
-                .eq('is_active', true)
-                .order('market_cap_rank', { ascending: true })
-                .limit(50);
+                .select('*', { count: 'exact', head: true })
+                .eq('is_active', true);
             if (error) throw error;
-            return data as unknown as QuantUniverseItem[];
+            return count || 0;
         }
     });
 
     return (
-        <Card className="mb-6">
-            <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-medium uppercase tracking-wider">Stock Universe</CardTitle>
-                <div className="flex items-center gap-2">
-                    <Input placeholder="Search symbol..." className="h-8 w-40" />
+        <Card
+            className="cursor-pointer hover:border-primary/50 transition-colors group"
+            onClick={() => navigate('/quant/universe')}
+        >
+            <CardContent className="p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Database className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <div className="text-sm font-semibold">Stock Universe</div>
+                        <div className="text-xs text-muted-foreground">
+                            {count ?? '—'} active symbols · S&P 500
+                        </div>
+                    </div>
                 </div>
-            </CardHeader>
-            <CardContent className="p-0">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[80px]">Rank</TableHead>
-                            <TableHead>Symbol</TableHead>
-                            <TableHead>Company</TableHead>
-                            <TableHead>Sector</TableHead>
-                            <TableHead>Market Cap</TableHead>
-                            <TableHead>Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {universe?.map((item) => (
-                            <TableRow key={item.id}>
-                                <TableCell>{item.market_cap_rank || item.rank}</TableCell>
-                                <TableCell className="font-bold">{item.symbol}</TableCell>
-                                <TableCell>{item.company_name}</TableCell>
-                                <TableCell>{item.sector}</TableCell>
-                                <TableCell>${(Number(item.market_cap) / 1000).toFixed(2)}B</TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className="text-green-500 border-green-500/30 bg-green-500/10">Active</Badge>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
             </CardContent>
         </Card>
     );
@@ -363,7 +345,7 @@ export default function Quant() {
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2 space-y-6">
-                    <UniversePanel />
+                    <UniverseLink />
                     <DataGovernancePanel />
                 </div>
                 <div>
