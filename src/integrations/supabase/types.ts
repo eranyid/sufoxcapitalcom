@@ -1884,6 +1884,8 @@ export type Database = {
           id: string
           is_active: boolean
           last_metadata_refresh: string | null
+          last_price: number | null
+          last_price_date: string | null
           market_cap: number | null
           market_cap_rank: number | null
           market_timezone: string
@@ -1899,6 +1901,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_metadata_refresh?: string | null
+          last_price?: number | null
+          last_price_date?: string | null
           market_cap?: number | null
           market_cap_rank?: number | null
           market_timezone?: string
@@ -1914,6 +1918,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_metadata_refresh?: string | null
+          last_price?: number | null
+          last_price_date?: string | null
           market_cap?: number | null
           market_cap_rank?: number | null
           market_timezone?: string

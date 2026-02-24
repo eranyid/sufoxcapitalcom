@@ -96,10 +96,10 @@ serve(async (req) => {
     const marketClose = now.set({ hour: marketCloseHour, minute: marketCloseMinute, second: 0, millisecond: 0 });
     const marketCloseUtc = marketClose.toUTC();
     
-    // Window covers full trading hours: 9:30 AM - close (16:00 or 13:00 ET)
-    const marketOpen = now.set({ hour: 9, minute: 30, second: 0, millisecond: 0 });
+    // Window covers last 3 hours of trading: 13:00 - 16:00 ET (or 10:00 - 13:00 ET for early close)
+    const windowStartET = now.set({ hour: marketCloseHour - 3, minute: 0, second: 0, millisecond: 0 });
     const windowEndUtc = marketCloseUtc;
-    const windowStartUtc = marketOpen.toUTC();
+    const windowStartUtc = windowStartET.toUTC();
     
     // Create session
     await createSession(
@@ -113,7 +113,7 @@ serve(async (req) => {
         marketCloseUtc.toISO(),
         windowStartUtc.toISO(),
         windowEndUtc.toISO(),
-        isEarlyClose ? 1050 : 1950 // 5 symbols/min × trading minutes (3.5h early / 6.5h normal)
+        isEarlyClose ? 900 : 900 // 5 symbols/min × 180 min = 900
     );
 
     return new Response(JSON.stringify({ status: 'scheduled', date: todayStr, window_start: windowStartUtc.toISO(), window_end: windowEndUtc.toISO() }), {
