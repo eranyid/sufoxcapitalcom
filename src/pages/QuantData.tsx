@@ -1,35 +1,15 @@
 
 import {
-    Calendar,
-    Clock,
     Database,
     Search,
     Trash2,
-    TrendingUp
+    ArrowRight
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import {
-    Area,
-    AreaChart,
-    CartesianGrid,
-    Line,
-    LineChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis
-} from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
     Table,
     TableBody,
@@ -160,172 +140,31 @@ const StatusPanel = ({ session }: { session?: QuantSession }) => {
     );
 };
 
-interface QuoteRecord {
-    timestamp_minute: string;
-    price: number;
-}
-
-const UniversePanel = ({ searchQuery, setSearchQuery, universe, isLoading, selectedSymbol, setSelectedSymbol, priceHistory, loadingHistory }: {
-    searchQuery: string;
-    setSearchQuery: (q: string) => void;
-    universe?: QuantUniverseItem[];
-    isLoading: boolean;
-    selectedSymbol: QuantUniverseItem | null;
-    setSelectedSymbol: (s: QuantUniverseItem | null) => void;
-    priceHistory?: QuoteRecord[];
-    loadingHistory: boolean;
-}) => {
-    const filtered = universe?.filter(
-        (item) =>
-            !searchQuery ||
-            item.symbol?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.sector?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const chartData = priceHistory?.map((q) => ({
-        time: format(new Date(q.timestamp_minute), "MM/dd HH:mm"),
-        price: Number(q.price),
-    })) || [];
-
+const UniverseLinkCard = ({ universeCount }: { universeCount: number }) => {
+    const navigate = useNavigate();
     return (
-        <>
-            <Card>
-                <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between">
-                    <CardTitle className="text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-                        <Database className="h-4 w-4" />
-                        Stock Universe
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="font-mono text-xs">
-                            {universe?.length || 0} symbols · Top 900 US
-                        </Badge>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-4 space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="relative flex-1 max-w-sm">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search symbol, company, or sector..."
-                                className="pl-9"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                            Showing {filtered?.length || 0} of {universe?.length || 0}
-                        </span>
-                    </div>
-                    <div className="max-h-[400px] overflow-auto border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[60px] sticky top-0 bg-card">Rank</TableHead>
-                                    <TableHead className="sticky top-0 bg-card">Symbol</TableHead>
-                                    <TableHead className="sticky top-0 bg-card">Company</TableHead>
-                                    <TableHead className="sticky top-0 bg-card">Sector</TableHead>
-                                    <TableHead className="sticky top-0 bg-card">Market Cap</TableHead>
-                                    <TableHead className="sticky top-0 bg-card">Last Price</TableHead>
-                                    <TableHead className="sticky top-0 bg-card w-[50px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    Array.from({ length: 5 }).map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell colSpan={7}>
-                                                <div className="h-4 bg-muted/50 rounded animate-pulse" />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : filtered?.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                            {searchQuery ? "No symbols match your search" : "Universe is empty. Run a metadata refresh to populate."}
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filtered?.map((item) => (
-                                        <TableRow key={item.id} className="group">
-                                            <TableCell className="font-mono text-xs text-muted-foreground">
-                                                {item.market_cap_rank || item.rank}
-                                            </TableCell>
-                                            <TableCell className="font-bold text-sm">{item.symbol}</TableCell>
-                                            <TableCell className="text-sm">{item.company_name}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="text-xs">{item.sector}</Badge>
-                                            </TableCell>
-                                            <TableCell className="font-mono text-sm">
-                                                ${(Number(item.market_cap) / 1e9).toFixed(1)}B
-                                            </TableCell>
-                                            <TableCell className="font-mono text-sm">
-                                                {item.last_price ? `$${Number(item.last_price).toFixed(2)}` : '—'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 opacity-50 group-hover:opacity-100"
-                                                    onClick={() => setSelectedSymbol(item)}
-                                                >
-                                                    <TrendingUp className="h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Price History Dialog */}
-            <Dialog open={!!selectedSymbol} onOpenChange={(o) => !o && setSelectedSymbol(null)}>
-                <DialogContent className="max-w-3xl">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5" />
-                            {selectedSymbol?.symbol} — {selectedSymbol?.company_name}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            Collected price history from Quant ingestion sessions
-                        </p>
-                        {loadingHistory ? (
-                            <div className="h-[300px] flex items-center justify-center text-muted-foreground">Loading...</div>
-                        ) : chartData.length === 0 ? (
-                            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                                No price history yet for {selectedSymbol?.symbol}
-                            </div>
-                        ) : (
-                            <div className="h-[300px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                                        <XAxis dataKey="time" tick={{ fontSize: 10 }} className="text-muted-foreground" />
-                                        <YAxis domain={['auto', 'auto']} tick={{ fontSize: 11 }} className="text-muted-foreground" />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
-                                            labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
-                                        />
-                                        <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" dot={false} strokeWidth={2} />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-                        {chartData.length > 0 && (
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>{chartData.length} data points</span>
-                                <span>First: {chartData[0]?.time} · Last: {chartData[chartData.length - 1]?.time}</span>
-                            </div>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </>
+        <Card
+            className="group cursor-pointer border-border/50 hover:border-primary/50 transition-colors"
+            onClick={() => navigate('/quant/universe')}
+        >
+            <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium uppercase tracking-wider flex items-center gap-2">
+                    <Database className="h-4 w-4" />
+                    Stock Universe
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="font-mono text-xs">
+                        {universeCount} symbols
+                    </Badge>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+            </CardHeader>
+            <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">
+                    Browse and search the full stock universe with advanced filters by sector, market cap, and more.
+                </p>
+            </CardContent>
+        </Card>
     );
 };
 
@@ -420,8 +259,6 @@ const DataGovernancePanel = () => {
 };
 
 export default function Quant() {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedSymbol, setSelectedSymbol] = useState<QuantUniverseItem | null>(null);
     const queryClient = useQueryClient();
 
     // Realtime subscriptions — shared channels, no per-user filters
@@ -459,7 +296,7 @@ export default function Quant() {
                 .maybeSingle();
             return data as unknown as QuantSession;
         },
-        refetchInterval: 30000 // Reduced polling — realtime handles updates
+        refetchInterval: 30000
     });
 
     const { data: logs } = useQuery({
@@ -475,10 +312,10 @@ export default function Quant() {
                 .limit(20);
             return data as unknown as IngestionLog[];
         },
-        refetchInterval: 30000 // Reduced polling — realtime handles updates
+        refetchInterval: 30000
     });
 
-    const { data: universe, isLoading: universeLoading } = useQuery({
+    const { data: universe } = useQuery({
         queryKey: ['quant_universe_full'],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -491,41 +328,14 @@ export default function Quant() {
         },
     });
 
-    const { data: priceHistory, isLoading: loadingHistory } = useQuery({
-        queryKey: ['quant_price_history', selectedSymbol?.symbol],
-        queryFn: async () => {
-            if (!selectedSymbol) return [];
-            const { data, error } = await supabase
-                .from('quant_quotes' as any)
-                .select('timestamp_minute, price')
-                .eq('symbol', selectedSymbol.symbol)
-                .order('timestamp_minute', { ascending: true })
-                .limit(500);
-            if (error) throw error;
-            return (data as unknown as QuoteRecord[]) || [];
-        },
-        enabled: !!selectedSymbol,
-    });
-
     return (
         <div className="space-y-6">
-
             <KPIHeader session={session} />
-            
             <StatusPanel session={session} />
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2 space-y-6">
-                    <UniversePanel
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        universe={universe}
-                        isLoading={universeLoading}
-                        selectedSymbol={selectedSymbol}
-                        setSelectedSymbol={setSelectedSymbol}
-                        priceHistory={priceHistory}
-                        loadingHistory={loadingHistory}
-                    />
+                    <UniverseLinkCard universeCount={universe?.length || 0} />
                     <DataGovernancePanel />
                 </div>
                 <div>
