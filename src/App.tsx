@@ -62,6 +62,14 @@ const ContextSelector = lazy(() => import("./pages/ContextSelector"));
 const Market = lazy(() => import("./pages/Market"));
 const Quant = lazy(() => import("./pages/Quant"));
 const QuantData = lazy(() => import("./pages/QuantData"));
+const QuantAnalyticsLanding = lazy(() => import("./pages/QuantAnalyticsLanding"));
+const QuantAnalyticsOverview = lazy(() => import("./pages/QuantAnalyticsOverview"));
+const QuantAnalyticsStock = lazy(() => import("./pages/QuantAnalyticsStock"));
+const QuantAnalyticsRisk = lazy(() => import("./pages/QuantAnalyticsRisk"));
+const QuantAnalyticsFactor = lazy(() => import("./pages/QuantAnalyticsFactor"));
+const QuantAnalyticsCrossSectional = lazy(() => import("./pages/QuantAnalyticsCrossSectional"));
+const QuantAnalyticsIntraday = lazy(() => import("./pages/QuantAnalyticsIntraday"));
+const QuantAnalyticsPairs = lazy(() => import("./pages/QuantAnalyticsPairs"));
 
 
 const AlternativeHub = lazy(() => import("./pages/AlternativeHub"));
@@ -197,6 +205,46 @@ const App = () => (
                     <Route path="data" element={
                       <Suspense fallback={<DashboardLoadingSkeleton />}>
                         <QuantData />
+                      </Suspense>
+                    } />
+                    <Route path="analytics" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <QuantAnalyticsLanding />
+                      </Suspense>
+                    } />
+                    <Route path="analytics/overview" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <QuantAnalyticsOverview />
+                      </Suspense>
+                    } />
+                    <Route path="analytics/stock" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <QuantAnalyticsStock />
+                      </Suspense>
+                    } />
+                    <Route path="analytics/risk" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <QuantAnalyticsRisk />
+                      </Suspense>
+                    } />
+                    <Route path="analytics/factor" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <QuantAnalyticsFactor />
+                      </Suspense>
+                    } />
+                    <Route path="analytics/cross-sectional" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <QuantAnalyticsCrossSectional />
+                      </Suspense>
+                    } />
+                    <Route path="analytics/intraday" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <QuantAnalyticsIntraday />
+                      </Suspense>
+                    } />
+                    <Route path="analytics/pairs" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <QuantAnalyticsPairs />
                       </Suspense>
                     } />
                   </Route>
