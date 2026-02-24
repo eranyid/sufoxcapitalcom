@@ -65,7 +65,22 @@ serve(async (req) => {
     // 1. Fetch next batch of symbols
     const cursor = session.cursor_position;
     
-    // Get active symbols ordered by rank
+    // Get total universe size
+    const { count: totalSymbols } = await supabase
+        .from('quant_universe')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+    // If cursor >= total symbols, we've covered all — mark session complete
+    if (cursor >= (totalSymbols || 0)) {
+        await supabase.from('quant_ingestion_sessions')
+            .update({ status: 'completed', completed_at: now.toISO() })
+            .eq('id', session.id);
+        console.log(`All ${totalSymbols} symbols covered. Session complete.`);
+        return new Response(JSON.stringify({ status: 'completed', total: totalSymbols }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Get active symbols ordered by rank — NO wrap-around
     const { data: symbols, error: symbolsError } = await supabase
         .from('quant_universe')
         .select('*')
@@ -75,26 +90,8 @@ serve(async (req) => {
 
     if (symbolsError) throw symbolsError;
 
-    let symbolsToProcess = symbols || [];
-    let newCursor = cursor + BATCH_SIZE;
-
-    // Handle wrap around if we ran out of symbols
-    if (symbolsToProcess.length < BATCH_SIZE) {
-        const remaining = BATCH_SIZE - symbolsToProcess.length;
-        const { data: extraSymbols, error: extraError } = await supabase
-            .from('quant_universe')
-            .select('*')
-            .eq('is_active', true)
-            .order('market_cap_rank', { ascending: true })
-            .range(0, remaining - 1);
-            
-        if (extraError) throw extraError;
-        
-        if (extraSymbols) {
-            symbolsToProcess = [...symbolsToProcess, ...extraSymbols];
-        }
-        newCursor = remaining;
-    }
+    const symbolsToProcess = symbols || [];
+    const newCursor = cursor + symbolsToProcess.length;
 
     // 2. Process symbols
     const timestampMinute = now.startOf('minute').toISO();
