@@ -62,7 +62,7 @@ const ContextSelector = lazy(() => import("./pages/ContextSelector"));
 const Market = lazy(() => import("./pages/Market"));
 const Quant = lazy(() => import("./pages/Quant"));
 const QuantData = lazy(() => import("./pages/QuantData"));
-const QuantUniverse = lazy(() => import("./pages/QuantUniverse"));
+
 
 const AlternativeHub = lazy(() => import("./pages/AlternativeHub"));
 const AlternativeSubPage = lazy(() => import("./pages/AlternativeSubPage"));
@@ -197,11 +197,6 @@ const App = () => (
                     <Route path="data" element={
                       <Suspense fallback={<DashboardLoadingSkeleton />}>
                         <QuantData />
-                      </Suspense>
-                    } />
-                    <Route path="universe" element={
-                      <Suspense fallback={<DashboardLoadingSkeleton />}>
-                        <QuantUniverse />
                       </Suspense>
                     } />
                   </Route>

@@ -3,10 +3,8 @@ import {
     Database,
     Search,
     Trash2,
-    ArrowRight
 } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +20,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import QuantUniverse from "./QuantUniverse";
 
 // --- Types ---
 interface QuantSession {
@@ -36,17 +36,6 @@ interface QuantSession {
     failure_rate_pct: number;
 }
 
-interface QuantUniverseItem {
-    id: string; // Added id matching DB
-    rank: number;
-    symbol: string;
-    company_name: string;
-    sector: string;
-    market_cap: number;
-    last_price?: number;
-    status: string;
-    market_cap_rank?: number; // Add optional property matching DB column
-}
 
 interface IngestionLog {
     id: string;
@@ -140,33 +129,6 @@ const StatusPanel = ({ session }: { session?: QuantSession }) => {
     );
 };
 
-const UniverseLinkCard = ({ universeCount }: { universeCount: number }) => {
-    const navigate = useNavigate();
-    return (
-        <Card
-            className="group cursor-pointer border-border/50 hover:border-primary/50 transition-colors"
-            onClick={() => navigate('/quant/universe')}
-        >
-            <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-                    <Database className="h-4 w-4" />
-                    Stock Universe
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="font-mono text-xs">
-                        {universeCount} symbols
-                    </Badge>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-            </CardHeader>
-            <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">
-                    Browse and search the full stock universe with advanced filters by sector, market cap, and more.
-                </p>
-            </CardContent>
-        </Card>
-    );
-};
 
 const IngestionLogsPanel = ({ logs }: { logs?: IngestionLog[] }) => {
     return (
@@ -315,33 +277,29 @@ export default function Quant() {
         refetchInterval: 30000
     });
 
-    const { data: universe } = useQuery({
-        queryKey: ['quant_universe_full'],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from('quant_universe' as any)
-                .select('*')
-                .eq('is_active', true)
-                .order('market_cap_rank', { ascending: true });
-            if (error) throw error;
-            return data as unknown as QuantUniverseItem[];
-        },
-    });
-
     return (
-        <div className="space-y-6">
-            <KPIHeader session={session} />
-            <StatusPanel session={session} />
-            
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div className="xl:col-span-2 space-y-6">
-                    <UniverseLinkCard universeCount={universe?.length || 0} />
-                    <DataGovernancePanel />
+        <Tabs defaultValue="ingestion" className="space-y-6">
+            <TabsList>
+                <TabsTrigger value="ingestion">Data Ingestion</TabsTrigger>
+                <TabsTrigger value="universe">Stock Universe</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="ingestion" className="space-y-6">
+                <KPIHeader session={session} />
+                <StatusPanel session={session} />
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div className="xl:col-span-2 space-y-6">
+                        <DataGovernancePanel />
+                    </div>
+                    <div>
+                        <IngestionLogsPanel logs={logs} />
+                    </div>
                 </div>
-                <div>
-                    <IngestionLogsPanel logs={logs} />
-                </div>
-            </div>
-        </div>
+            </TabsContent>
+
+            <TabsContent value="universe">
+                <QuantUniverse />
+            </TabsContent>
+        </Tabs>
     );
 }
