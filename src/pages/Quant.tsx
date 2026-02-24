@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { QuantIcon } from "@/components/icons/QuantIcon";
-import { Database, ArrowRight } from "lucide-react";
+import { Database, BarChart3, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const subModules = [
@@ -10,6 +10,12 @@ const subModules = [
     icon: Database,
     description: 'Market data ingestion, session monitoring, stock universe, and data governance.',
   },
+  {
+    path: '/quant/analytics',
+    label: 'Analytics',
+    icon: BarChart3,
+    description: 'Quantitative research workbench — statistical, cross-sectional, and factor analysis models.',
+  },
 ];
 
 export default function Quant() {
@@ -17,10 +23,23 @@ export default function Quant() {
   const navigate = useNavigate();
   const isLanding = location.pathname === '/quant';
 
+  const analyticsSubLabels: Record<string, string> = {
+    'overview': 'Overview',
+    'stock': 'Stock Analysis',
+    'risk': 'Risk & Performance',
+    'factor': 'Factor Analysis',
+    'cross-sectional': 'Cross-Sectional',
+    'intraday': 'Intraday Patterns',
+    'pairs': 'Pairs & Spreads',
+  };
+
   if (!isLanding) {
+    const parentModule = subModules.find(m => location.pathname.startsWith(m.path));
+    const analyticsChild = location.pathname.match(/\/quant\/analytics\/(.+)/)?.[1]?.split('?')[0];
+
     return (
       <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => navigate('/quant')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
@@ -29,9 +48,24 @@ export default function Quant() {
             <h1 className="text-3xl font-bold tracking-tight">Quant</h1>
           </button>
           <span className="text-muted-foreground text-2xl font-light">/</span>
-          <span className="text-2xl font-semibold text-muted-foreground">
-            {subModules.find(m => location.pathname.startsWith(m.path))?.label}
-          </span>
+          {analyticsChild ? (
+            <>
+              <button
+                onClick={() => navigate('/quant/analytics')}
+                className="text-2xl font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Analytics
+              </button>
+              <span className="text-muted-foreground text-2xl font-light">/</span>
+              <span className="text-2xl font-semibold text-muted-foreground">
+                {analyticsSubLabels[analyticsChild] || analyticsChild}
+              </span>
+            </>
+          ) : (
+            <span className="text-2xl font-semibold text-muted-foreground">
+              {parentModule?.label}
+            </span>
+          )}
         </div>
         <Outlet />
       </div>
