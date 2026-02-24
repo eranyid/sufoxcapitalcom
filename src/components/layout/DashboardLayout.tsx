@@ -23,7 +23,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-export function DashboardLayout() {
+interface DashboardLayoutProps {
+  children?: React.ReactNode;
+}
+
+export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { sampleDataMode } = usePortfolio();
@@ -256,7 +260,7 @@ export function DashboardLayout() {
                 : 'opacity-100 translate-y-0'
             }`}
           >
-            <Outlet />
+            {children || <Outlet />}
           </div>
         </main>
       </div>
