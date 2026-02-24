@@ -8,13 +8,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Seed list for initial population (S&P 500 top 20 sample + others as specified)
-// In production, this might come from a bigger list or dynamic fetch
-const SEED_SYMBOLS = [
-    "AAPL", "NVDA", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "BRK.B", "TSM", "LLY",
-    "AVGO", "JPM", "V", "XOM", "WMT", "UNH", "MA", "PG", "JNJ", "HD",
-    "COST", "ABBV", "ORCL", "BAC", "KO", "NFLX", "CRM", "AMD", "PEP", "CVX"
-];
+// Fetch S&P 500 + Russell 1000 overlap — target ~900 US large/mid cap stocks
+// We use Finnhub's index constituents endpoint to dynamically fetch the list
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -31,21 +26,54 @@ serve(async (req) => {
     const start = performance.now();
     const refreshDate = DateTime.now().toISODate();
 
-    // 1. Get list of symbols to refresh
-    // For now, we use the active symbols in DB, or if empty, the seed list
-    const { data: existingSymbols, error: fetchError } = await supabase
-        .from('quant_universe')
-        .select('symbol')
-        .eq('is_active', true);
+    // 1. Get list of symbols — fetch from Finnhub S&P 500 constituents + existing DB symbols
+    let symbolsToRefresh: string[] = [];
     
-    if (fetchError) throw fetchError;
-
-    let symbolsToRefresh = existingSymbols?.map(s => s.symbol) || [];
-    
-    if (symbolsToRefresh.length === 0) {
-        console.log('Universe empty, using seed list.');
-        symbolsToRefresh = SEED_SYMBOLS;
+    try {
+        // Fetch S&P 500 constituents from Finnhub
+        const sp500Res = await fetch(`https://finnhub.io/api/v1/index/constituents?symbol=^GSPC&token=${finnhubKey}`);
+        if (sp500Res.ok) {
+            const sp500Data = await sp500Res.json();
+            if (sp500Data.constituents) {
+                symbolsToRefresh = sp500Data.constituents;
+                console.log(`Fetched ${symbolsToRefresh.length} S&P 500 constituents`);
+            }
+        }
+        await new Promise(r => setTimeout(r, 1000));
+        
+        // Also fetch Russell 1000 for broader coverage (if available)
+        // Finnhub may not have all indices — fall back gracefully
+        try {
+            const r1000Res = await fetch(`https://finnhub.io/api/v1/index/constituents?symbol=^RUI&token=${finnhubKey}`);
+            if (r1000Res.ok) {
+                const r1000Data = await r1000Res.json();
+                if (r1000Data.constituents) {
+                    const existingSet = new Set(symbolsToRefresh);
+                    const newSymbols = r1000Data.constituents.filter((s: string) => !existingSet.has(s));
+                    symbolsToRefresh = [...symbolsToRefresh, ...newSymbols];
+                    console.log(`Added ${newSymbols.length} Russell 1000 symbols, total: ${symbolsToRefresh.length}`);
+                }
+            }
+        } catch (e) {
+            console.log('Russell 1000 fetch failed, continuing with S&P 500 only');
+        }
+    } catch (e) {
+        console.error('Failed to fetch index constituents:', e);
     }
+    
+    // Fallback: if API returned nothing, use existing DB symbols
+    if (symbolsToRefresh.length === 0) {
+        const { data: existingSymbols, error: fetchError } = await supabase
+            .from('quant_universe')
+            .select('symbol')
+            .eq('is_active', true);
+        if (fetchError) throw fetchError;
+        symbolsToRefresh = existingSymbols?.map(s => s.symbol) || [];
+        console.log(`Using ${symbolsToRefresh.length} existing DB symbols`);
+    }
+    
+    // Cap at 900 to stay within rate limits
+    symbolsToRefresh = symbolsToRefresh.slice(0, 900);
 
     let added = 0;
     let updated = 0;
@@ -70,18 +98,36 @@ serve(async (req) => {
                 continue;
             }
 
+            // Also fetch current quote for last_price
+            let lastPrice = null;
+            try {
+                await new Promise(r => setTimeout(r, 500));
+                const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubKey}`);
+                if (quoteRes.ok) {
+                    const quoteData = await quoteRes.json();
+                    if (quoteData.c > 0) lastPrice = quoteData.c;
+                }
+            } catch (e) {
+                console.log(`Quote fetch failed for ${symbol}, skipping price`);
+            }
+
             // Upsert
-            const { error: upsertError } = await supabase.from('quant_universe').upsert({
+            const upsertData: any = {
                 symbol: symbol,
                 company_name: profile.name,
                 sector: profile.finnhubIndustry,
-                market_cap: profile.marketCapitalization ? Math.round(profile.marketCapitalization * 1000000) : null, // Finnhub is in millions
+                market_cap: profile.marketCapitalization ? Math.round(profile.marketCapitalization * 1000000) : null, // Finnhub returns in millions
                 market_timezone: 'America/New_York',
                 exchange: profile.exchange,
                 currency: profile.currency,
                 is_active: true,
                 last_metadata_refresh: new Date().toISOString()
-            }, { onConflict: 'symbol' });
+            };
+            if (lastPrice !== null) {
+                upsertData.last_price = lastPrice;
+                upsertData.last_price_date = refreshDate;
+            }
+            const { error: upsertError } = await supabase.from('quant_universe').upsert(upsertData, { onConflict: 'symbol' });
 
             if (upsertError) {
                 console.error(`Error upserting ${symbol}:`, upsertError);

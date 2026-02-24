@@ -273,7 +273,7 @@ const UniverseLink = () => {
                     <div>
                         <div className="text-sm font-semibold">Stock Universe</div>
                         <div className="text-xs text-muted-foreground">
-                            {count ?? '—'} active symbols · S&P 500
+                            {count ?? '—'} active symbols · Top 900 US
                         </div>
                     </div>
                 </div>
