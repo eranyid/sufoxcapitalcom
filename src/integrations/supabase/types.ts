@@ -1675,6 +1675,254 @@ export type Database = {
         }
         Relationships: []
       }
+      quant_ingestion_logs: {
+        Row: {
+          created_at: string
+          error_details: Json | null
+          id: string
+          latency_ms: number | null
+          minute_utc: string
+          retry_count: number
+          session_id: string
+          status: string | null
+          symbols_attempted: string[]
+          symbols_failed: string[] | null
+          symbols_succeeded: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          latency_ms?: number | null
+          minute_utc: string
+          retry_count?: number
+          session_id: string
+          status?: string | null
+          symbols_attempted: string[]
+          symbols_failed?: string[] | null
+          symbols_succeeded?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          latency_ms?: number | null
+          minute_utc?: string
+          retry_count?: number
+          session_id?: string
+          status?: string | null
+          symbols_attempted?: string[]
+          symbols_failed?: string[] | null
+          symbols_succeeded?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quant_ingestion_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "quant_ingestion_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quant_ingestion_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          cursor_position: number
+          early_close: boolean
+          early_close_note: string | null
+          failure_rate_pct: number | null
+          id: string
+          is_trading_day: boolean
+          market_close_utc: string | null
+          notes: string | null
+          quotes_collected: number
+          quotes_target: number
+          session_date: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          window_end_utc: string | null
+          window_start_utc: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          cursor_position?: number
+          early_close?: boolean
+          early_close_note?: string | null
+          failure_rate_pct?: number | null
+          id?: string
+          is_trading_day: boolean
+          market_close_utc?: string | null
+          notes?: string | null
+          quotes_collected?: number
+          quotes_target?: number
+          session_date: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          window_end_utc?: string | null
+          window_start_utc?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          cursor_position?: number
+          early_close?: boolean
+          early_close_note?: string | null
+          failure_rate_pct?: number | null
+          id?: string
+          is_trading_day?: boolean
+          market_close_utc?: string | null
+          notes?: string | null
+          quotes_collected?: number
+          quotes_target?: number
+          session_date?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          window_end_utc?: string | null
+          window_start_utc?: string | null
+        }
+        Relationships: []
+      }
+      quant_metadata_refresh_log: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          refresh_date: string
+          status: string | null
+          symbols_added: number | null
+          symbols_deactivated: number | null
+          symbols_total: number | null
+          symbols_updated: number | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          refresh_date: string
+          status?: string | null
+          symbols_added?: number | null
+          symbols_deactivated?: number | null
+          symbols_total?: number | null
+          symbols_updated?: number | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          refresh_date?: string
+          status?: string | null
+          symbols_added?: number | null
+          symbols_deactivated?: number | null
+          symbols_total?: number | null
+          symbols_updated?: number | null
+        }
+        Relationships: []
+      }
+      quant_quotes: {
+        Row: {
+          api_response_time_ms: number | null
+          company_name: string
+          created_at: string
+          id: string
+          ingestion_latency_ms: number | null
+          market_cap: number | null
+          market_cap_rank: number | null
+          market_timezone: string | null
+          price: number
+          sector: string | null
+          symbol: string
+          timestamp_minute: string
+          timestamp_utc: string
+        }
+        Insert: {
+          api_response_time_ms?: number | null
+          company_name: string
+          created_at?: string
+          id?: string
+          ingestion_latency_ms?: number | null
+          market_cap?: number | null
+          market_cap_rank?: number | null
+          market_timezone?: string | null
+          price: number
+          sector?: string | null
+          symbol: string
+          timestamp_minute: string
+          timestamp_utc: string
+        }
+        Update: {
+          api_response_time_ms?: number | null
+          company_name?: string
+          created_at?: string
+          id?: string
+          ingestion_latency_ms?: number | null
+          market_cap?: number | null
+          market_cap_rank?: number | null
+          market_timezone?: string | null
+          price?: number
+          sector?: string | null
+          symbol?: string
+          timestamp_minute?: string
+          timestamp_utc?: string
+        }
+        Relationships: []
+      }
+      quant_universe: {
+        Row: {
+          company_name: string
+          created_at: string
+          currency: string
+          exchange: string | null
+          id: string
+          is_active: boolean
+          last_metadata_refresh: string | null
+          market_cap: number | null
+          market_cap_rank: number | null
+          market_timezone: string
+          sector: string | null
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          currency?: string
+          exchange?: string | null
+          id?: string
+          is_active?: boolean
+          last_metadata_refresh?: string | null
+          market_cap?: number | null
+          market_cap_rank?: number | null
+          market_timezone?: string
+          sector?: string | null
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          currency?: string
+          exchange?: string | null
+          id?: string
+          is_active?: boolean
+          last_metadata_refresh?: string | null
+          market_cap?: number | null
+          market_cap_rank?: number | null
+          market_timezone?: string
+          sector?: string | null
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           action: string
