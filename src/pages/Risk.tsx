@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 import { StaggeredContainer } from '@/components/StaggeredContainer';
 
 export default function Risk() {
-  const { performanceMetrics, riskMetrics, settings, transactions, valuations } = usePortfolio();
+  const { performanceMetrics, riskMetrics, settings, transactions, valuations, fxRates } = usePortfolio();
 
   const hasData = riskMetrics !== null && performanceMetrics !== null;
 
@@ -32,7 +32,19 @@ export default function Risk() {
     });
     
     const totalTraded = ytdTransactions.reduce((sum, t) => {
-      return sum + (t.quantity * t.pricePerUnit);
+      const localAmount = t.quantity * t.pricePerUnit;
+      // Convert to base currency
+      let amountBase = localAmount;
+      if (t.currency !== (settings.baseCurrency || 'USD')) {
+        if (t.fxRateAtEntry) {
+          amountBase = localAmount * t.fxRateAtEntry;
+        } else if (fxRates && fxRates[t.currency] && fxRates[t.currency] > 0) {
+          amountBase = (settings.baseCurrency || 'USD') === 'USD'
+            ? localAmount / fxRates[t.currency]
+            : localAmount * fxRates[t.currency];
+        }
+      }
+      return sum + amountBase;
     }, 0);
     
     // Calculate as percentage of current portfolio value
@@ -105,7 +117,7 @@ export default function Risk() {
       {hasData ? (
         <>
           {/* Risk Contribution */}
-          <RiskContributionTable transactions={transactions} valuations={valuations} />
+          <RiskContributionTable transactions={transactions} valuations={valuations} baseCurrency={settings.baseCurrency === 'ILS' ? 'ILS' : 'USD'} fxRates={fxRates} />
 
           {/* Drawdown Chart */}
           <DrawdownChart data={performanceMetrics.drawdownSeries} />
