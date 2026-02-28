@@ -80,9 +80,9 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
         const rateDate = `${selectedMonth}-01`;
         const { data: currentMonthData } = await supabase
           .from('fx_rates')
-          .select('from_currency, rate')
+          .select('to_currency, rate')
           .eq('user_id', user.id)
-          .eq('to_currency', 'USD')
+          .eq('from_currency', 'USD')
           .eq('rate_date', rateDate);
 
         const newRates: Record<CashCurrency, string> = {
@@ -96,7 +96,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
 
         if (currentMonthData) {
           for (const row of currentMonthData) {
-            const currency = row.from_currency as CashCurrency;
+            const currency = row.to_currency as CashCurrency;
             if (currency in newRates && currency !== 'USD') {
               newRates[currency] = Number(row.rate).toString();
             }
@@ -108,9 +108,9 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
         const lastMonthDate = format(subMonths(new Date(`${selectedMonth}-01`), 1), 'yyyy-MM-01');
         const { data: lastMonthData } = await supabase
           .from('fx_rates')
-          .select('from_currency, rate')
+          .select('to_currency, rate')
           .eq('user_id', user.id)
-          .eq('to_currency', 'USD')
+          .eq('from_currency', 'USD')
           .eq('rate_date', lastMonthDate);
 
         const lastRates: Record<CashCurrency, number | null> = {
@@ -124,7 +124,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
 
         if (lastMonthData) {
           for (const row of lastMonthData) {
-            const currency = row.from_currency as CashCurrency;
+            const currency = row.to_currency as CashCurrency;
             if (currency in lastRates && currency !== 'USD') {
               lastRates[currency] = Number(row.rate);
             }
@@ -212,7 +212,16 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
     try {
       const rateDate = `${selectedMonth}-01`;
 
-      // Delete existing rates for this month first
+      // Delete existing rates for this month first (both directions for cleanup)
+      await supabase
+        .from('fx_rates')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('from_currency', 'USD')
+        .eq('rate_date', rateDate)
+        .in('to_currency', CURRENCIES_TO_USD);
+
+      // Also clean up legacy wrong-direction entries
       await supabase
         .from('fx_rates')
         .delete()
@@ -221,11 +230,11 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
         .eq('rate_date', rateDate)
         .in('from_currency', CURRENCIES_TO_USD);
 
-      // Insert new rates
+      // Insert new rates in correct direction: USD → Currency
       const insertData = ratesToSave.map(r => ({
         user_id: user.id,
-        from_currency: r.fromCurrency,
-        to_currency: 'USD',
+        from_currency: 'USD',
+        to_currency: r.fromCurrency,
         rate: r.rate,
         rate_date: rateDate,
         source: 'manual'
