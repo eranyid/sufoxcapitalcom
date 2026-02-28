@@ -160,11 +160,24 @@ export function calculateMonthlyReturns(
       cashBalances, baseCurrency, fxRates
     );
     
-    // Calculate cash flows for the month
+    // Calculate cash flows for the month IN BASE CURRENCY
     const monthTxs = transactions.filter(tx => tx.date.startsWith(month));
     const cashFlow = monthTxs.reduce((sum, tx) => {
-      const amount = tx.quantity * tx.pricePerUnit + tx.fees;
-      return sum + (tx.transactionType === 'buy' ? amount : -amount);
+      const localAmount = tx.quantity * tx.pricePerUnit + tx.fees;
+      // Convert to base currency using entry FX rate or current rates
+      let amountBase: number;
+      if (tx.currency === (baseCurrency || 'USD')) {
+        amountBase = localAmount;
+      } else if (tx.fxRateAtEntry) {
+        amountBase = localAmount * tx.fxRateAtEntry;
+      } else if (fxRates && fxRates[tx.currency] && fxRates[tx.currency] > 0) {
+        amountBase = (baseCurrency || 'USD') === 'USD'
+          ? localAmount / fxRates[tx.currency]
+          : localAmount * fxRates[tx.currency];
+      } else {
+        amountBase = localAmount;
+      }
+      return sum + (tx.transactionType === 'buy' ? amountBase : -amountBase);
     }, 0);
     
     let monthReturn = 0;
@@ -471,24 +484,34 @@ export function calculateContributions(
     const tx = transactions.find(t => t.ticker === ticker);
     if (!tx || pos.quantity <= 0) continue;
     
-    const weight = totalValue > 0 ? (pos.totalCost / totalValue) : 0;
-    
-    // Simplified contribution calculation
-    const contribution = pos.realizedPL + (pos.quantity > 0 ? pos.quantity * pos.avgCost * 0.1 : 0);
-    
-    // Calculate P/L% from cost basis
+    // Calculate current value using latest valuation
     const val = latestVals[ticker];
+    let currentValue = 0;
     let plPercent = 0;
-    if (val && pos.avgCost > 0) {
-      const currentPrice = val.pricePerUnit * (val.fxRate || 1);
-      plPercent = ((currentPrice - pos.avgCost) / pos.avgCost) * 100;
+    
+    if (val) {
+      const fxRate = val.fxRate || 1;
+      currentValue = pos.quantity * val.pricePerUnit * fxRate;
+      
+      // Cost basis in base currency
+      const entryFx = tx.fxRateAtEntry || 1;
+      const costBasis = pos.totalCost * entryFx;
+      
+      if (costBasis > 0) {
+        plPercent = ((currentValue - costBasis) / costBasis) * 100;
+      }
     }
+    
+    const weight = totalValue > 0 ? (currentValue / totalValue) * 100 : 0;
+    
+    // Contribution = weight × asset P/L%
+    const contribution = currentValue > 0 && val ? (currentValue - pos.totalCost * (tx.fxRateAtEntry || 1)) : 0;
     
     contributions.push({
       ticker,
       name: tx.assetName,
       contribution,
-      weight: weight * 100,
+      weight,
       plPercent
     });
   }
@@ -753,13 +776,24 @@ export function calculatePerformanceMetrics(
   const maxDrawdown = Math.min(rawMaxDrawdown, 100); // Cap at 100% (can't lose more than everything)
   const winLossRatio = calculateWinLossRatio(transactions);
   
-  // Cash flows for IRR (based on holdings only)
-  const cashFlows = transactions.map(tx => ({
-    date: tx.date,
-    amount: tx.transactionType === 'buy' 
-      ? tx.quantity * tx.pricePerUnit + tx.fees 
-      : -(tx.quantity * tx.pricePerUnit - tx.fees)
-  }));
+  // Cash flows for IRR — MUST be in base currency
+  const cashFlows = transactions.map(tx => {
+    const localAmount = tx.quantity * tx.pricePerUnit + tx.fees;
+    let amountBase: number;
+    if (tx.currency === baseCurrency) {
+      amountBase = localAmount;
+    } else if (tx.fxRateAtEntry) {
+      amountBase = localAmount * tx.fxRateAtEntry;
+    } else if (fxRates && fxRates[tx.currency] && fxRates[tx.currency] > 0) {
+      amountBase = baseCurrency === 'USD' ? localAmount / fxRates[tx.currency] : localAmount * fxRates[tx.currency];
+    } else {
+      amountBase = localAmount;
+    }
+    return {
+      date: tx.date,
+      amount: tx.transactionType === 'buy' ? amountBase : -amountBase
+    };
+  });
   
   if (holdingsValue > 0) {
     cashFlows.push({ date: new Date().toISOString().slice(0, 10), amount: -holdingsValue });
@@ -1130,13 +1164,15 @@ function calculateCorrelation(x: number[], y: number[]): number {
 // Calculate risk contribution per asset
 export function calculateRiskContribution(
   transactions: Transaction[],
-  valuations: MonthlyValuation[]
+  valuations: MonthlyValuation[],
+  baseCurrency?: 'USD' | 'ILS',
+  fxRates?: FxRatesMap
 ): { ticker: string; name: string; weight: number; marginalRisk: number; riskContribution: number; riskPct: number }[] {
   const positions = calculatePositions(transactions);
   const latestVals = getLatestValuations(valuations);
   const assetReturns = calculateAssetMonthlyReturns(transactions, valuations);
   
-  // Calculate weights
+  // Calculate weights with proper FX conversion
   let totalValue = 0;
   const holdings: { ticker: string; name: string; value: number; weight: number }[] = [];
   
@@ -1146,12 +1182,18 @@ export function calculateRiskContribution(
     const tx = transactions.find(t => t.ticker === ticker);
     if (!val || !tx) continue;
     
-    const value = pos.quantity * val.pricePerUnit * (val.fxRate || 1);
+    // FX rate: from valuation, or from fxRates map, or 1
+    let fxRate = val.fxRate || 1;
+    if (!val.fxRate && tx.currency !== (baseCurrency || 'USD') && fxRates && fxRates[tx.currency] > 0) {
+      fxRate = (baseCurrency || 'USD') === 'USD' ? (1 / fxRates[tx.currency]) : fxRates[tx.currency];
+    }
+    
+    const value = pos.quantity * val.pricePerUnit * fxRate;
     totalValue += value;
     holdings.push({ ticker, name: tx.assetName, value, weight: 0 });
   }
   
-  holdings.forEach(h => h.weight = h.value / totalValue);
+  holdings.forEach(h => h.weight = totalValue > 0 ? h.value / totalValue : 0);
   
   // Calculate asset volatilities
   const assetVols: Record<string, number> = {};
@@ -1161,7 +1203,7 @@ export function calculateRiskContribution(
   }
   
   // Calculate portfolio volatility
-  const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
+  const monthlyReturns = calculateMonthlyReturns(transactions, valuations, undefined, baseCurrency, fxRates);
   const portfolioVol = calculateVolatility(monthlyReturns.map(r => r.return));
   
   // Risk contribution = weight * asset_vol * correlation_with_portfolio

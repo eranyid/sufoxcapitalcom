@@ -1,4 +1,4 @@
-import { calculateRiskContribution } from '@/lib/calculations';
+import { calculateRiskContribution, FxRatesMap } from '@/lib/calculations';
 import { Transaction, MonthlyValuation } from '@/types/investment';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ShieldAlert } from 'lucide-react';
@@ -6,10 +6,12 @@ import { ShieldAlert } from 'lucide-react';
 interface RiskContributionTableProps {
   transactions: Transaction[];
   valuations: MonthlyValuation[];
+  baseCurrency?: 'USD' | 'ILS';
+  fxRates?: FxRatesMap;
 }
 
-export function RiskContributionTable({ transactions, valuations }: RiskContributionTableProps) {
-  const riskContributions = calculateRiskContribution(transactions, valuations);
+export function RiskContributionTable({ transactions, valuations, baseCurrency, fxRates }: RiskContributionTableProps) {
+  const riskContributions = calculateRiskContribution(transactions, valuations, baseCurrency, fxRates);
 
   return (
     <div className="bloomberg-panel">
