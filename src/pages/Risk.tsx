@@ -7,7 +7,7 @@ import { FactorRiskChart } from '@/components/dashboard/FactorRiskChart';
 import { SystematicRiskPie } from '@/components/dashboard/SystematicRiskPie';
 import { FactorCorrelationHeatmap } from '@/components/dashboard/FactorCorrelationHeatmap';
 import { computeFactorModel } from '@/lib/factorModel';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
 import { Shield, AlertTriangle, Activity, TrendingDown, Target, Gauge, Crosshair, Layers, RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
 import { StaggeredContainer } from '@/components/StaggeredContainer';
@@ -17,10 +17,15 @@ export default function Risk() {
 
   const hasData = riskMetrics !== null && performanceMetrics !== null;
 
-  // Compute factor model results
+  // Compute factor model results with error protection
   const factorModelResults = useMemo(() => {
     if (!hasData) return null;
-    return computeFactorModel(transactions, valuations);
+    try {
+      return computeFactorModel(transactions, valuations);
+    } catch (e) {
+      console.error('[Risk] Factor model computation failed:', e);
+      return null;
+    }
   }, [transactions, valuations, hasData]);
 
   // Calculate YTD Turnover
