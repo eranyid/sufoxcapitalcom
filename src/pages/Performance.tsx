@@ -47,13 +47,10 @@ export default function Performance() {
     return { totalPL, marketPL, fxPL, costBasis, realizedPL, unrealizedPL };
   }, [computedData, performanceMetrics]);
 
-  // Total Return % = Last cumulative return (geometric linking of all monthly returns since inception)
-  // This equals YTD for users who started this year
-  const totalReturnFromCumulative = hasData && performanceMetrics.cumulativeReturns.length > 0
-    ? performanceMetrics.cumulativeReturns[performanceMetrics.cumulativeReturns.length - 1].return
-    : 0;
-  
-  const totalPLPercent = totalReturnFromCumulative;
+  // SINGLE SOURCE OF TRUTH: Total Return = cost-basis return from performanceMetrics
+  // This is (totalPL / totalCost) * 100 = unrealized % when no sells
+  // Matches Overview's YTD calculation for portfolios started in current year
+  const totalPLPercent = hasData ? performanceMetrics.totalReturn : 0;
   
   // Market and FX percentages relative to costBasis (consistent with how total is calculated)
   const marketPLPercent = plBreakdown.costBasis > 0 
@@ -69,15 +66,16 @@ export default function Performance() {
     
     const isNominal = fxMode === 'nominal';
     
-    // In Nominal mode, use marketPL (excludes FX)
-    // In Real mode, use cumulative return from inception
-    const totalReturn = isNominal ? marketPLPercent : totalReturnFromCumulative;
+    // In Nominal mode, use marketPL% (excludes FX)
+    // In Real mode, use cost-basis total return (includes FX)
+    // Both derived from the SAME performanceMetrics source
+    const totalReturn = isNominal ? marketPLPercent : performanceMetrics.totalReturn;
     
     return {
       ...performanceMetrics,
       totalReturn,
     };
-  }, [performanceMetrics, fxMode, marketPLPercent, totalReturnFromCumulative]);
+  }, [performanceMetrics, fxMode, marketPLPercent]);
 
   return (
     <div className="section-spacing animate-fade-in">

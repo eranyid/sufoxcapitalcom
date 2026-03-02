@@ -117,17 +117,13 @@ export function calculatePortfolioValue(
       const fxRate = valuation.fxRate || 1;
       holdingsValue += pos.quantity * valuation.pricePerUnit * fxRate;
     } else {
-      // Fallback: use avgCost with proper FX conversion
+      // CRITICAL FIX: For missing valuations, use cost basis in BASE currency
+      // This ensures no phantom returns are created when a valuation appears later.
+      // costBasis = totalCost (local) * entryFxRate → base currency
       const tx = transactions.find(t => t.ticker === ticker);
       if (tx) {
-        let fallbackFx = 1;
-        if (tx.currency !== (baseCurrency || 'USD') && fxRates) {
-          const rate = fxRates[tx.currency];
-          if (rate && rate > 0) {
-            fallbackFx = (baseCurrency || 'USD') === 'USD' ? (1 / rate) : rate;
-          }
-        }
-        holdingsValue += pos.quantity * pos.avgCost * fallbackFx;
+        const entryFx = tx.fxRateAtEntry || 1;
+        holdingsValue += pos.totalCost * entryFx;
       }
     }
   }
@@ -885,17 +881,11 @@ export function calculateYTDReturn(
     if (val) {
       holdingsMV += pos.quantity * val.pricePerUnit * (val.fxRate || 1);
     } else {
-      // Fallback to cost for assets without valuation
+      // Fallback to cost basis in base currency (same as calculatePortfolioValue)
       const tx = transactions.find(t => t.ticker === ticker);
       if (tx) {
-        let fallbackFx = 1;
-        if (tx.currency !== baseCurrency && fxRates) {
-          const rate = fxRates[tx.currency];
-          if (rate && rate > 0) {
-            fallbackFx = baseCurrency === 'USD' ? (1 / rate) : rate;
-          }
-        }
-        holdingsMV += pos.quantity * pos.avgCost * fallbackFx;
+        const entryFx = tx.fxRateAtEntry || 1;
+        holdingsMV += pos.totalCost * entryFx;
       }
     }
   }
@@ -965,14 +955,16 @@ export function calculateYTDReturn(
       } else {
         // totalCost is in local currency — convert using weighted avg entry FX
         // Calculate weighted average entry FX for this ticker
-        let totalQty = 0;
+        // Weight by cost (not quantity) for accurate FX rate averaging
+        let totalCostLocal = 0;
         let weightedFxSum = 0;
         for (const tx of buyTxs) {
           const fx = tx.fxRateAtEntry || 1;
-          weightedFxSum += tx.quantity * fx;
-          totalQty += tx.quantity;
+          const costLocal = tx.costLocal || (tx.quantity * tx.pricePerUnit + tx.fees);
+          weightedFxSum += costLocal * fx;
+          totalCostLocal += costLocal;
         }
-        const avgEntryFx = totalQty > 0 ? weightedFxSum / totalQty : 1;
+        const avgEntryFx = totalCostLocal > 0 ? weightedFxSum / totalCostLocal : 1;
         totalCostBase += pos.totalCost * avgEntryFx;
       }
     }
