@@ -1,111 +1,106 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { QuantIcon } from "@/components/icons/QuantIcon";
-import { Database, BarChart3, ArrowRight } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Database } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { lazy, Suspense } from "react";
+import { DashboardLoadingSkeleton } from "@/components/LoadingSkeleton";
 
-const subModules = [
-  {
-    path: '/quant/data',
-    label: 'Data',
-    icon: Database,
-    description: 'Market data ingestion, session monitoring, stock universe, and data governance.',
-  },
-  {
-    path: '/quant/analytics',
-    label: 'Analytics',
-    icon: BarChart3,
-    description: 'Quantitative research workbench — statistical, cross-sectional, and factor analysis models.',
-  },
-];
+const QuantAnalyticsLanding = lazy(() => import("./QuantAnalyticsLanding"));
+
+const analyticsSubLabels: Record<string, string> = {
+  'overview': 'Overview',
+  'stock': 'Stock Analysis',
+  'risk': 'Risk & Performance',
+  'factor': 'Factor Analysis',
+  'cross-sectional': 'Cross-Sectional',
+  'intraday': 'Intraday Patterns',
+  'pairs': 'Pairs & Spreads',
+};
 
 export default function Quant() {
   const location = useLocation();
   const navigate = useNavigate();
   const isLanding = location.pathname === '/quant';
+  const isData = location.pathname === '/quant/data';
+  const analyticsChild = location.pathname.match(/\/quant\/analytics\/(.+)/)?.[1]?.split('?')[0];
+  const isAnalyticsLanding = location.pathname === '/quant/analytics';
 
-  const analyticsSubLabels: Record<string, string> = {
-    'overview': 'Overview',
-    'stock': 'Stock Analysis',
-    'risk': 'Risk & Performance',
-    'factor': 'Factor Analysis',
-    'cross-sectional': 'Cross-Sectional',
-    'intraday': 'Intraday Patterns',
-    'pairs': 'Pairs & Spreads',
-  };
+  // Header with breadcrumbs
+  const renderHeader = () => (
+    <div className="flex items-center gap-3 flex-wrap">
+      <button
+        onClick={() => navigate('/quant')}
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+      >
+        <QuantIcon className="h-7 w-7 text-primary" />
+        <h1 className="text-3xl font-bold tracking-tight">Quant</h1>
+      </button>
 
-  if (!isLanding) {
-    const parentModule = subModules.find(m => location.pathname.startsWith(m.path));
-    const analyticsChild = location.pathname.match(/\/quant\/analytics\/(.+)/)?.[1]?.split('?')[0];
+      {/* Data button in header */}
+      <Button
+        variant={isData ? "secondary" : "ghost"}
+        size="sm"
+        className="ml-2 gap-1.5"
+        onClick={() => navigate('/quant/data')}
+      >
+        <Database className="h-4 w-4" />
+        Data
+      </Button>
 
-    return (
-      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-        <div className="flex items-center gap-3 flex-wrap">
+      {/* Breadcrumb segments for child routes */}
+      {isData && (
+        <>
+          <span className="text-muted-foreground text-2xl font-light">/</span>
+          <span className="text-2xl font-semibold text-muted-foreground">Data</span>
+        </>
+      )}
+      {analyticsChild && (
+        <>
+          <span className="text-muted-foreground text-2xl font-light">/</span>
           <button
             onClick={() => navigate('/quant')}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="text-2xl font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
-            <QuantIcon className="h-7 w-7 text-primary" />
-            <h1 className="text-3xl font-bold tracking-tight">Quant</h1>
+            Analytics
           </button>
           <span className="text-muted-foreground text-2xl font-light">/</span>
-          {analyticsChild ? (
-            <>
-              <button
-                onClick={() => navigate('/quant/analytics')}
-                className="text-2xl font-semibold text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Analytics
-              </button>
-              <span className="text-muted-foreground text-2xl font-light">/</span>
-              <span className="text-2xl font-semibold text-muted-foreground">
-                {analyticsSubLabels[analyticsChild] || analyticsChild}
-              </span>
-            </>
-          ) : (
-            <span className="text-2xl font-semibold text-muted-foreground">
-              {parentModule?.label}
-            </span>
-          )}
-        </div>
-        <Outlet />
+          <span className="text-2xl font-semibold text-muted-foreground">
+            {analyticsSubLabels[analyticsChild] || analyticsChild}
+          </span>
+        </>
+      )}
+    </div>
+  );
+
+  // At /quant → render analytics landing directly
+  if (isLanding) {
+    return (
+      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+        {renderHeader()}
+        <Suspense fallback={<DashboardLoadingSkeleton />}>
+          <QuantAnalyticsLanding />
+        </Suspense>
       </div>
     );
   }
 
-  return (
-    <div className="p-6 space-y-8 max-w-[1600px] mx-auto">
-      <div className="flex items-center gap-3">
-        <QuantIcon className="h-7 w-7 text-primary" />
-        <h1 className="text-3xl font-bold tracking-tight">Quant</h1>
+  // At /quant/analytics → redirect to /quant (avoid duplicate)
+  if (isAnalyticsLanding) {
+    return (
+      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+        {renderHeader()}
+        <Suspense fallback={<DashboardLoadingSkeleton />}>
+          <QuantAnalyticsLanding />
+        </Suspense>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {subModules.map((mod) => {
-          const Icon = mod.icon;
-          return (
-            <Card
-              key={mod.path}
-              className="group cursor-pointer border-border/50 hover:border-primary/50 transition-colors bg-card/80"
-              onClick={() => navigate(mod.path)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="p-2.5 rounded-lg bg-primary/10 border border-primary/20">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <CardTitle className="text-lg mt-3">{mod.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm leading-relaxed">
-                  {mod.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+  // All other child routes (data, analytics/*)
+  return (
+    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+      {renderHeader()}
+      <Outlet />
     </div>
   );
 }
