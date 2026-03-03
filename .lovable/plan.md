@@ -1,16 +1,31 @@
 
 
-## Add Card Background to STOCK HEATMAP and UPCOMING ECONOMIC EVENTS
+## Restructure: Quant → Analytics as Default
 
-Both sections will be wrapped in a `bg-card` container to match the dark card background used by the ECONOMIC INDICATORS widget, with a header bar styled consistently.
+### Current State
+- `/quant` shows a landing page with 2 cards: Data and Analytics
+- `/quant/analytics` shows the Analytics landing (7 category cards)
+- `/quant/data` shows Data page
+
+### New Structure
+- `/quant` → directly shows the Analytics landing page (the 7 category cards with time selector)
+- Add a "Data" button/link inside the Quant page header area to navigate to `/quant/data`
+- Remove the intermediate landing hub (the 2-card page)
 
 ### Changes
 
-**File: `src/pages/Research.tsx`**
+**1. `src/pages/Quant.tsx`** — Rewrite
+- When at `/quant` (landing), render the Analytics landing content directly (time selector + 7 category cards) instead of the current Data/Analytics card selector
+- Add a small "Data" link/button in the header area (next to the "Quant" title) that navigates to `/quant/data`
+- Keep the breadcrumb logic for child routes (`/quant/data`, `/quant/analytics/*`)
 
-1. **STOCK HEATMAP section (lines 29-33)**: Wrap in `bg-card border border-border` container with a styled header bar (`bg-secondary/50`) containing the title, matching the ECONOMIC INDICATORS pattern.
+**2. `src/App.tsx`** — Minor route cleanup
+- The `/quant/analytics` route currently renders `QuantAnalyticsLanding` — keep it as-is (so deep links still work), but the same content will also appear at `/quant` directly
 
-2. **UPCOMING ECONOMIC EVENTS section (lines 35-39)**: Same treatment -- `bg-card border border-border` container with a styled header bar.
+**3. No other files change.** The 7 analytics sub-pages, Data page, and all hooks remain untouched.
 
-Both headers will move inside the card container with the same `px-3 py-1.5 bg-secondary/50 border-b border-border` styling and `text-[10px] font-semibold text-primary uppercase tracking-wider` text style used by the ECONOMIC INDICATORS header.
+### Result
+- User navigates to Quant → sees Analytics hub immediately
+- "Data" button in the header → goes to `/quant/data`
+- All existing `/quant/analytics/*` deep links continue to work
 
