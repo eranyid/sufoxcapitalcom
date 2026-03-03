@@ -1,7 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { QuantIcon } from "@/components/icons/QuantIcon";
 import { Database } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { lazy, Suspense } from "react";
 import { DashboardLoadingSkeleton } from "@/components/LoadingSkeleton";
 
@@ -25,82 +24,74 @@ export default function Quant() {
   const analyticsChild = location.pathname.match(/\/quant\/analytics\/(.+)/)?.[1]?.split('?')[0];
   const isAnalyticsLanding = location.pathname === '/quant/analytics';
 
-  // Header with breadcrumbs
   const renderHeader = () => (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex items-center gap-4 flex-wrap">
+      {/* Logo + title */}
       <button
         onClick={() => navigate('/quant')}
-        className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
       >
-        <QuantIcon className="h-7 w-7 text-primary" />
-        <h1 className="text-3xl font-bold tracking-tight">Quant</h1>
+        <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20 
+                        group-hover:shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)] transition-all">
+          <QuantIcon className="h-5 w-5 text-primary" />
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight font-mono">QUANT</h1>
       </button>
 
-      {/* Data button in header */}
-      <Button
-        variant={isData ? "secondary" : "ghost"}
-        size="sm"
-        className="ml-2 gap-1.5"
-        onClick={() => navigate('/quant/data')}
-      >
-        <Database className="h-4 w-4" />
-        Data
-      </Button>
+      {/* Separator */}
+      <div className="h-6 w-px bg-border/60" />
 
-      {/* Breadcrumb segments for child routes */}
+      {/* Data nav button */}
+      <button
+        onClick={() => navigate('/quant/data')}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-mono tracking-wide
+                     transition-all duration-200 border
+                     ${isData
+                       ? 'bg-primary/15 border-primary/40 text-primary shadow-[0_0_10px_-4px_hsl(var(--primary)/0.3)]'
+                       : 'border-border/40 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/30'
+                     }`}
+      >
+        <Database className="h-3.5 w-3.5" />
+        DATA
+      </button>
+
+      {/* Breadcrumb segments */}
       {isData && (
         <>
-          <span className="text-muted-foreground text-2xl font-light">/</span>
-          <span className="text-2xl font-semibold text-muted-foreground">Data</span>
+          <span className="text-muted-foreground/40 text-lg font-light">/</span>
+          <span className="text-sm font-mono text-muted-foreground tracking-wide">DATA MODULE</span>
         </>
       )}
       {analyticsChild && (
         <>
-          <span className="text-muted-foreground text-2xl font-light">/</span>
+          <span className="text-muted-foreground/40 text-lg font-light">/</span>
           <button
             onClick={() => navigate('/quant')}
-            className="text-2xl font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            className="text-sm font-mono text-muted-foreground hover:text-foreground transition-colors tracking-wide"
           >
-            Analytics
+            ANALYTICS
           </button>
-          <span className="text-muted-foreground text-2xl font-light">/</span>
-          <span className="text-2xl font-semibold text-muted-foreground">
-            {analyticsSubLabels[analyticsChild] || analyticsChild}
+          <span className="text-muted-foreground/40 text-lg font-light">/</span>
+          <span className="text-sm font-mono text-primary/80 tracking-wide">
+            {(analyticsSubLabels[analyticsChild] || analyticsChild).toUpperCase()}
           </span>
         </>
       )}
     </div>
   );
 
-  // At /quant → render analytics landing directly
-  if (isLanding) {
-    return (
-      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-        {renderHeader()}
-        <Suspense fallback={<DashboardLoadingSkeleton />}>
-          <QuantAnalyticsLanding />
-        </Suspense>
-      </div>
-    );
-  }
+  const content = isLanding || isAnalyticsLanding ? (
+    <Suspense fallback={<DashboardLoadingSkeleton />}>
+      <QuantAnalyticsLanding />
+    </Suspense>
+  ) : (
+    <Outlet />
+  );
 
-  // At /quant/analytics → redirect to /quant (avoid duplicate)
-  if (isAnalyticsLanding) {
-    return (
-      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-        {renderHeader()}
-        <Suspense fallback={<DashboardLoadingSkeleton />}>
-          <QuantAnalyticsLanding />
-        </Suspense>
-      </div>
-    );
-  }
-
-  // All other child routes (data, analytics/*)
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       {renderHeader()}
-      <Outlet />
+      {content}
     </div>
   );
 }

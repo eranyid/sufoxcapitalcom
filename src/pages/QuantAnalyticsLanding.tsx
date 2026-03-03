@@ -1,126 +1,119 @@
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, BarChart3, LineChart, Shield, Layers, Grid3X3, Clock, GitBranch } from "lucide-react";
-import { TimePeriodSelector } from "@/components/quant-analytics/TimePeriodSelector";
-import { useState, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
-import { format, subMonths, subDays } from "date-fns";
 
 const categories = [
   {
     path: "overview",
     label: "Overview",
     icon: BarChart3,
-    description: "Market snapshot — sector heatmap, top/bottom performers, and breadth indicators for the selected period.",
+    description: "Market snapshot — sector heatmap, top/bottom performers, and breadth indicators.",
+    accent: "from-primary/20 to-primary/5",
   },
   {
     path: "stock",
     label: "Stock Analysis",
     icon: LineChart,
-    description: "Single-symbol deep dive — cumulative returns, rolling metrics, return distribution, and EWMA volatility.",
+    description: "Single-symbol deep dive — cumulative returns, rolling metrics, and EWMA volatility.",
+    accent: "from-primary/20 to-primary/5",
   },
   {
     path: "risk",
     label: "Risk & Performance",
     icon: Shield,
-    description: "Multi-symbol risk metrics — scatter plots, correlation matrix, drawdown analysis, VaR and CVaR.",
+    description: "Multi-symbol risk metrics — correlation matrix, drawdown analysis, VaR and CVaR.",
+    accent: "from-primary/20 to-primary/5",
   },
   {
     path: "factor",
     label: "Factor Analysis",
     icon: Layers,
-    description: "Systematic factor decomposition — OLS regressions, factor loadings, and rolling factor betas.",
+    description: "Systematic factor decomposition — OLS regressions, factor loadings, and rolling betas.",
+    accent: "from-primary/20 to-primary/5",
   },
   {
     path: "cross-sectional",
     label: "Cross-Sectional",
     icon: Grid3X3,
-    description: "Relative ranking — momentum scores, quintile analysis, sector rotation, and relative strength.",
+    description: "Relative ranking — momentum scores, quintile analysis, and sector rotation.",
+    accent: "from-primary/20 to-primary/5",
   },
   {
     path: "intraday",
     label: "Intraday Patterns",
     icon: Clock,
-    description: "Trading window behavior — volatility profile, closing momentum, MOC pressure, and time windows.",
+    description: "Trading window behavior — volatility profile, closing momentum, and MOC pressure.",
+    accent: "from-primary/20 to-primary/5",
   },
   {
     path: "pairs",
     label: "Pairs & Spreads",
     icon: GitBranch,
-    description: "Statistical arbitrage research — cointegration screening, spread z-scores, and signal logs.",
+    description: "Statistical arbitrage — cointegration screening, spread z-scores, and signal logs.",
+    accent: "from-primary/20 to-primary/5",
   },
 ];
 
 export default function QuantAnalyticsLanding() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const defaultTo = format(subDays(new Date(), 1), "yyyy-MM-dd");
-  const defaultFrom = format(subMonths(new Date(), 1), "yyyy-MM-dd");
-
-  const [from, setFrom] = useState(searchParams.get("from") || defaultFrom);
-  const [to, setTo] = useState(searchParams.get("to") || defaultTo);
-  const [activePreset, setActivePreset] = useState(searchParams.get("preset") || "1M");
-
-  const handlePeriodChange = useCallback(
-    (newFrom: string, newTo: string) => {
-      setFrom(newFrom);
-      setTo(newTo);
-    },
-    []
-  );
-
-  const handlePresetChange = useCallback(
-    (preset: string) => {
-      setActivePreset(preset);
-    },
-    []
-  );
 
   const navigateToCategory = (path: string) => {
-    navigate(`/quant/analytics/${path}?from=${from}&to=${to}&preset=${activePreset}`);
+    navigate(`/quant/analytics/${path}`);
   };
 
   return (
-    <div className="space-y-6">
-      <TimePeriodSelector
-        from={from}
-        to={to}
-        onPeriodChange={handlePeriodChange}
-        activePreset={activePreset}
-        onPresetChange={handlePresetChange}
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {categories.map((cat) => {
+    <div className="space-y-8">
+      {/* Grid of futuristic cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {categories.map((cat, i) => {
           const Icon = cat.icon;
           return (
-            <Card
+            <button
               key={cat.path}
-              className="group cursor-pointer border-border/50 hover:border-primary/50 transition-colors bg-card/80"
               onClick={() => navigateToCategory(cat.path)}
+              className="group relative text-left rounded-xl border border-border/40 hover:border-primary/60 
+                         bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-sm
+                         transition-all duration-300 hover:shadow-[0_0_30px_-8px_hsl(var(--primary)/0.3)]
+                         hover:scale-[1.02] p-5 overflow-hidden"
+              style={{ animationDelay: `${i * 60}ms` }}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="p-2.5 rounded-lg bg-primary/10 border border-primary/20">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              {/* Glow line at top */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent 
+                              opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              {/* Icon */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2.5 rounded-lg bg-primary/10 border border-primary/20 
+                                group-hover:bg-primary/20 group-hover:border-primary/40 
+                                group-hover:shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)]
+                                transition-all duration-300">
+                  <Icon className="h-5 w-5 text-primary" />
                 </div>
-                <CardTitle className="text-lg mt-3">{cat.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm leading-relaxed">
-                  {cat.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 -translate-x-2
+                                       group-hover:opacity-100 group-hover:translate-x-0 
+                                       transition-all duration-300" />
+              </div>
+
+              {/* Label */}
+              <h3 className="font-semibold text-sm tracking-wide uppercase text-primary mb-2
+                             font-mono">
+                {cat.label}
+              </h3>
+
+              {/* Description */}
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {cat.description}
+              </p>
+
+              {/* Bottom glow accent */}
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-primary/[0.03] to-transparent 
+                              opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            </button>
           );
         })}
       </div>
 
-      <p className="text-xs text-muted-foreground text-center italic">
-        This analysis is for research purposes only. Not investment advice.
+      <p className="text-[10px] text-muted-foreground/60 text-center font-mono tracking-wider uppercase">
+        Research purposes only · Not investment advice
       </p>
     </div>
   );
