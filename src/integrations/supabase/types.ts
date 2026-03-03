@@ -3321,6 +3321,7 @@ export type Database = {
           kurtosis: number
           market_cap: number
           market_cap_rank: number
+          max_drawdown: number
           sector: string
           sharpe: number
           skewness: number
