@@ -848,8 +848,15 @@ export default function Settings() {
                 <div className="grid gap-3 md:grid-cols-2">
                   <PreviewList title="Analysis Companies" rows={exportPreview.analysesCompanies} />
                   <PreviewList title="Research Entries" rows={exportPreview.researchEntries} />
+                  <PreviewList title="Decision Log" rows={exportPreview.decisions} />
                   <PreviewList title="Value Data" rows={exportPreview.valueData} />
                   <PreviewList title="Transactions" rows={exportPreview.transactions} />
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleDownloadPreview} disabled={isDownloadingPreview || isExportingData || isPreviewingExport} variant="outline">
+                    {isDownloadingPreview ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DatabaseIcon className="h-4 w-4 mr-2" />}
+                    Download Preview
+                  </Button>
                 </div>
               </div>
             )}
