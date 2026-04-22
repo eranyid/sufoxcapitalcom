@@ -28,6 +28,7 @@ type TransactionRow = SupabaseDatabase['public']['Tables']['transactions']['Row'
 type ValuationRow = SupabaseDatabase['public']['Tables']['valuations']['Row'];
 type CrmCompanyRow = SupabaseDatabase['public']['Tables']['crm_companies']['Row'];
 type ResearchEntryRow = SupabaseDatabase['public']['Tables']['company_research_entries']['Row'];
+type CompanyDecisionRow = SupabaseDatabase['public']['Tables']['company_decisions']['Row'];
 
 type ExportPayload = {
   export_version: number;
@@ -40,6 +41,7 @@ type ExportPayload = {
     analyses: {
       companies: CrmCompanyRow[];
       research_entries: ResearchEntryRow[];
+      decisions: CompanyDecisionRow[];
     };
     value_data: ValuationRow[];
     transactions: TransactionRow[];
@@ -49,6 +51,7 @@ type ExportPayload = {
 type ExportPreview = {
   analysesCompanies: Array<{ id: string; ticker: string | null }>;
   researchEntries: Array<{ id: string; ticker: string | null }>;
+  decisions: Array<{ id: string; ticker: string | null }>;
   valueData: Array<{ id: string; ticker: string | null }>;
   transactions: Array<{ id: string; ticker: string | null }>;
 };
@@ -130,6 +133,7 @@ export default function Settings() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [isPreviewingExport, setIsPreviewingExport] = useState(false);
+  const [isDownloadingPreview, setIsDownloadingPreview] = useState(false);
   const [exportPreview, setExportPreview] = useState<ExportPreview | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
@@ -381,6 +385,18 @@ export default function Settings() {
     });
   };
 
+  const downloadJsonFile = (fileName: string, payload: unknown) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = downloadUrl;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(downloadUrl);
+  };
+
   const buildExportPayload = async (): Promise<ExportPayload> => {
     if (!user) {
       throw new Error('You must be signed in to export data');
@@ -418,12 +434,16 @@ export default function Settings() {
       transactionsQuery = transactionsQuery.is('client_id', null);
     }
 
-    const [companiesResponse, valuationsResponse, transactionsResponse, researchResponse] = await Promise.all([
+    const [companiesResponse, valuationsResponse, transactionsResponse, researchResponse, decisionsResponse] = await Promise.all([
       companiesQuery,
       valuationsQuery,
       transactionsQuery,
       supabase
         .from('company_research_entries')
+        .select('*')
+        .eq('user_id', user.id),
+      supabase
+        .from('company_decisions')
         .select('*')
         .eq('user_id', user.id),
     ]);
@@ -432,11 +452,13 @@ export default function Settings() {
     if (valuationsResponse.error) throw valuationsResponse.error;
     if (transactionsResponse.error) throw transactionsResponse.error;
     if (researchResponse.error) throw researchResponse.error;
+    if (decisionsResponse.error) throw decisionsResponse.error;
 
     const companies = companiesResponse.data ?? [];
     const valueData = valuationsResponse.data ?? [];
     const transactionData = transactionsResponse.data ?? [];
     const researchEntries = researchResponse.data ?? [];
+    const companyDecisions = decisionsResponse.data ?? [];
 
     const exportedCompanyIds = new Set(companies.map((company) => company.id));
     const exportedTickers = new Set(
@@ -459,6 +481,18 @@ export default function Settings() {
       return false;
     });
 
+    const filteredDecisions = companyDecisions.filter((decision) => {
+      if (exportedCompanyIds.has(decision.company_id)) {
+        return true;
+      }
+
+      if (decision.ticker && exportedTickers.has(decision.ticker)) {
+        return true;
+      }
+
+      return false;
+    });
+
     return {
       export_version: 1,
       exported_at: new Date().toISOString(),
@@ -470,6 +504,7 @@ export default function Settings() {
         analyses: {
           companies: sortByFields<CrmCompanyRow>(companies, ['created_at', 'id']),
           research_entries: sortByFields<ResearchEntryRow>(filteredResearchEntries, ['created_at', 'id']),
+          decisions: sortByFields<CompanyDecisionRow>(filteredDecisions, ['decision_date', 'created_at', 'id']),
         },
         value_data: sortByFields<ValuationRow>(valueData, ['month', 'created_at', 'id']),
         transactions: sortByFields<TransactionRow>(transactionData, ['date', 'created_at', 'id']),
@@ -480,9 +515,39 @@ export default function Settings() {
   const buildExportPreview = (payload: ExportPayload): ExportPreview => ({
     analysesCompanies: payload.data.analyses.companies.map((row) => ({ id: row.id, ticker: row.ticker })),
     researchEntries: payload.data.analyses.research_entries.map((row) => ({ id: row.id, ticker: row.ticker })),
+    decisions: payload.data.analyses.decisions.map((row) => ({ id: row.id, ticker: row.ticker })),
     valueData: payload.data.value_data.map((row) => ({ id: row.id, ticker: row.ticker })),
     transactions: payload.data.transactions.map((row) => ({ id: row.id, ticker: row.ticker })),
   });
+
+  const handleDownloadPreview = async () => {
+    setIsDownloadingPreview(true);
+
+    try {
+      const payload = await buildExportPayload();
+      const previewPayload = {
+        export_version: payload.export_version,
+        exported_at: payload.exported_at,
+        scope: payload.scope,
+        counts: {
+          analysis_companies: payload.data.analyses.companies.length,
+          research_entries: payload.data.analyses.research_entries.length,
+          decisions: payload.data.analyses.decisions.length,
+          value_data: payload.data.value_data.length,
+          transactions: payload.data.transactions.length,
+        },
+        identifiers: buildExportPreview(payload),
+      };
+
+      downloadJsonFile('sufox_data_export_preview.json', previewPayload);
+      toast.success('Export preview downloaded');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to download export preview';
+      toast.error(message);
+    } finally {
+      setIsDownloadingPreview(false);
+    }
+  };
 
   const handlePreviewExport = async () => {
     setIsPreviewingExport(true);
@@ -505,16 +570,7 @@ export default function Settings() {
 
     try {
       const payload = await buildExportPayload();
-
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const downloadUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = downloadUrl;
-      anchor.download = 'sufox_data_export.json';
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(downloadUrl);
+      downloadJsonFile('sufox_data_export.json', payload);
 
       toast.success('Data export is ready');
     } catch (error) {
@@ -792,8 +848,15 @@ export default function Settings() {
                 <div className="grid gap-3 md:grid-cols-2">
                   <PreviewList title="Analysis Companies" rows={exportPreview.analysesCompanies} />
                   <PreviewList title="Research Entries" rows={exportPreview.researchEntries} />
+                  <PreviewList title="Decision Log" rows={exportPreview.decisions} />
                   <PreviewList title="Value Data" rows={exportPreview.valueData} />
                   <PreviewList title="Transactions" rows={exportPreview.transactions} />
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleDownloadPreview} disabled={isDownloadingPreview || isExportingData || isPreviewingExport} variant="outline">
+                    {isDownloadingPreview ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DatabaseIcon className="h-4 w-4 mr-2" />}
+                    Download Preview
+                  </Button>
                 </div>
               </div>
             )}
