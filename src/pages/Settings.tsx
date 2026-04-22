@@ -56,6 +56,21 @@ type ExportPreview = {
   transactions: Array<{ id: string; ticker: string | null }>;
 };
 
+type SaveFilePickerWindow = Window & typeof globalThis & {
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string;
+    types?: Array<{
+      description?: string;
+      accept: Record<string, string[]>;
+    }>;
+  }) => Promise<{
+    createWritable: () => Promise<{
+      write: (data: string | Blob) => Promise<void>;
+      close: () => Promise<void>;
+    }>;
+  }>;
+};
+
 const emailSchema = z.string().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
@@ -385,16 +400,43 @@ export default function Settings() {
     });
   };
 
-  const downloadJsonFile = (fileName: string, payload: unknown) => {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const downloadJsonFile = async (fileName: string, payload: unknown) => {
+    const jsonString = JSON.stringify(payload, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const pickerWindow = window as SaveFilePickerWindow;
+
+    if (pickerWindow.showSaveFilePicker && window.isSecureContext) {
+      const fileHandle = await pickerWindow.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [
+          {
+            description: 'JSON files',
+            accept: {
+              'application/json': ['.json'],
+            },
+          },
+        ],
+      });
+
+      const writable = await fileHandle.createWritable();
+      await writable.write(jsonString);
+      await writable.close();
+      return;
+    }
+
     const downloadUrl = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = downloadUrl;
     anchor.download = fileName;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener';
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(downloadUrl);
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(downloadUrl);
+    }, 1000);
   };
 
   const buildExportPayload = async (): Promise<ExportPayload> => {
@@ -539,7 +581,7 @@ export default function Settings() {
         identifiers: buildExportPreview(payload),
       };
 
-      downloadJsonFile('sufox_data_export_preview.json', previewPayload);
+      await downloadJsonFile('sufox_data_export_preview.json', previewPayload);
       toast.success('Export preview downloaded');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to download export preview';
@@ -570,7 +612,7 @@ export default function Settings() {
 
     try {
       const payload = await buildExportPayload();
-      downloadJsonFile('sufox_data_export.json', payload);
+      await downloadJsonFile('sufox_data_export.json', payload);
 
       toast.success('Data export is ready');
     } catch (error) {
