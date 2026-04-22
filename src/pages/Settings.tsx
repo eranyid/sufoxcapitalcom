@@ -29,6 +29,30 @@ type ValuationRow = SupabaseDatabase['public']['Tables']['valuations']['Row'];
 type CrmCompanyRow = SupabaseDatabase['public']['Tables']['crm_companies']['Row'];
 type ResearchEntryRow = SupabaseDatabase['public']['Tables']['company_research_entries']['Row'];
 
+type ExportPayload = {
+  export_version: number;
+  exported_at: string;
+  scope: {
+    type: 'personal' | 'client';
+    client_id: string | null;
+  };
+  data: {
+    analyses: {
+      companies: CrmCompanyRow[];
+      research_entries: ResearchEntryRow[];
+    };
+    value_data: ValuationRow[];
+    transactions: TransactionRow[];
+  };
+};
+
+type ExportPreview = {
+  analysesCompanies: Array<{ id: string; ticker: string | null }>;
+  researchEntries: Array<{ id: string; ticker: string | null }>;
+  valueData: Array<{ id: string; ticker: string | null }>;
+  transactions: Array<{ id: string; ticker: string | null }>;
+};
+
 const emailSchema = z.string().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
@@ -75,6 +99,8 @@ export default function Settings() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
+  const [isPreviewingExport, setIsPreviewingExport] = useState(false);
+  const [exportPreview, setExportPreview] = useState<ExportPreview | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Load profile data
@@ -325,105 +351,130 @@ export default function Settings() {
     });
   };
 
-  const handleExportData = async () => {
+  const buildExportPayload = async (): Promise<ExportPayload> => {
     if (!user) {
-      toast.error('You must be signed in to export data');
-      return;
+      throw new Error('You must be signed in to export data');
     }
 
     if (!isContextSet || !session.scope) {
-      toast.error('Select a personal or client context before exporting');
-      return;
+      throw new Error('Select a personal or client context before exporting');
     }
 
+    let companiesQuery = supabase
+      .from('crm_companies')
+      .select('*')
+      .eq('user_id', user.id)
+      .is('deleted_at', null);
+
+    let valuationsQuery = supabase
+      .from('valuations')
+      .select('*')
+      .eq('user_id', user.id)
+      .is('deleted_at', null);
+
+    let transactionsQuery = supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .is('deleted_at', null);
+
+    if (activeClientId) {
+      companiesQuery = companiesQuery.eq('client_id', activeClientId);
+      valuationsQuery = valuationsQuery.eq('client_id', activeClientId);
+      transactionsQuery = transactionsQuery.eq('client_id', activeClientId);
+    } else {
+      companiesQuery = companiesQuery.is('client_id', null);
+      valuationsQuery = valuationsQuery.is('client_id', null);
+      transactionsQuery = transactionsQuery.is('client_id', null);
+    }
+
+    const [companiesResponse, valuationsResponse, transactionsResponse, researchResponse] = await Promise.all([
+      companiesQuery,
+      valuationsQuery,
+      transactionsQuery,
+      supabase
+        .from('company_research_entries')
+        .select('*')
+        .eq('user_id', user.id),
+    ]);
+
+    if (companiesResponse.error) throw companiesResponse.error;
+    if (valuationsResponse.error) throw valuationsResponse.error;
+    if (transactionsResponse.error) throw transactionsResponse.error;
+    if (researchResponse.error) throw researchResponse.error;
+
+    const companies = companiesResponse.data ?? [];
+    const valueData = valuationsResponse.data ?? [];
+    const transactionData = transactionsResponse.data ?? [];
+    const researchEntries = researchResponse.data ?? [];
+
+    const exportedCompanyIds = new Set(companies.map((company) => company.id));
+    const exportedTickers = new Set(
+      [
+        ...companies.map((company) => company.ticker),
+        ...valueData.map((valuation) => valuation.ticker),
+        ...transactionData.map((transaction) => transaction.ticker),
+      ].filter((ticker): ticker is string => Boolean(ticker))
+    );
+
+    const filteredResearchEntries = researchEntries.filter((entry) => {
+      if (entry.company_id && exportedCompanyIds.has(entry.company_id)) {
+        return true;
+      }
+
+      if (!entry.company_id && entry.ticker && exportedTickers.has(entry.ticker)) {
+        return true;
+      }
+
+      return false;
+    });
+
+    return {
+      export_version: 1,
+      exported_at: new Date().toISOString(),
+      scope: {
+        type: session.scope,
+        client_id: activeClientId,
+      },
+      data: {
+        analyses: {
+          companies: sortByFields<CrmCompanyRow>(companies, ['created_at', 'id']),
+          research_entries: sortByFields<ResearchEntryRow>(filteredResearchEntries, ['created_at', 'id']),
+        },
+        value_data: sortByFields<ValuationRow>(valueData, ['month', 'created_at', 'id']),
+        transactions: sortByFields<TransactionRow>(transactionData, ['date', 'created_at', 'id']),
+      },
+    };
+  };
+
+  const buildExportPreview = (payload: ExportPayload): ExportPreview => ({
+    analysesCompanies: payload.data.analyses.companies.map((row) => ({ id: row.id, ticker: row.ticker })),
+    researchEntries: payload.data.analyses.research_entries.map((row) => ({ id: row.id, ticker: row.ticker })),
+    valueData: payload.data.value_data.map((row) => ({ id: row.id, ticker: row.ticker })),
+    transactions: payload.data.transactions.map((row) => ({ id: row.id, ticker: row.ticker })),
+  });
+
+  const handlePreviewExport = async () => {
+    setIsPreviewingExport(true);
+
+    try {
+      const payload = await buildExportPayload();
+      setExportPreview(buildExportPreview(payload));
+      toast.success('Export preview is ready');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to preview export data';
+      toast.error(message);
+      setExportPreview(null);
+    } finally {
+      setIsPreviewingExport(false);
+    }
+  };
+
+  const handleExportData = async () => {
     setIsExportingData(true);
 
     try {
-      let companiesQuery = supabase
-        .from('crm_companies')
-        .select('*')
-        .eq('user_id', user.id)
-        .is('deleted_at', null);
-
-      let valuationsQuery = supabase
-        .from('valuations')
-        .select('*')
-        .eq('user_id', user.id)
-        .is('deleted_at', null);
-
-      let transactionsQuery = supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .is('deleted_at', null);
-
-      if (activeClientId) {
-        companiesQuery = companiesQuery.eq('client_id', activeClientId);
-        valuationsQuery = valuationsQuery.eq('client_id', activeClientId);
-        transactionsQuery = transactionsQuery.eq('client_id', activeClientId);
-      } else {
-        companiesQuery = companiesQuery.is('client_id', null);
-        valuationsQuery = valuationsQuery.is('client_id', null);
-        transactionsQuery = transactionsQuery.is('client_id', null);
-      }
-
-      const [companiesResponse, valuationsResponse, transactionsResponse, researchResponse] = await Promise.all([
-        companiesQuery,
-        valuationsQuery,
-        transactionsQuery,
-        supabase
-          .from('company_research_entries')
-          .select('*')
-          .eq('user_id', user.id),
-      ]);
-
-      if (companiesResponse.error) throw companiesResponse.error;
-      if (valuationsResponse.error) throw valuationsResponse.error;
-      if (transactionsResponse.error) throw transactionsResponse.error;
-      if (researchResponse.error) throw researchResponse.error;
-
-      const companies = companiesResponse.data ?? [];
-      const valueData = valuationsResponse.data ?? [];
-      const transactionData = transactionsResponse.data ?? [];
-      const researchEntries = researchResponse.data ?? [];
-
-      const exportedCompanyIds = new Set(companies.map((company) => company.id));
-      const exportedTickers = new Set(
-        [
-          ...companies.map((company) => company.ticker),
-          ...valueData.map((valuation) => valuation.ticker),
-          ...transactionData.map((transaction) => transaction.ticker),
-        ].filter((ticker): ticker is string => Boolean(ticker))
-      );
-
-      const filteredResearchEntries = researchEntries.filter((entry) => {
-        if (entry.company_id && exportedCompanyIds.has(entry.company_id)) {
-          return true;
-        }
-
-        if (!entry.company_id && entry.ticker && exportedTickers.has(entry.ticker)) {
-          return true;
-        }
-
-        return false;
-      });
-
-      const payload = {
-        export_version: 1,
-        exported_at: new Date().toISOString(),
-        scope: {
-          type: session.scope,
-          client_id: activeClientId,
-        },
-        data: {
-          analyses: {
-            companies: sortByFields<CrmCompanyRow>(companies, ['created_at', 'id']),
-            research_entries: sortByFields<ResearchEntryRow>(filteredResearchEntries, ['created_at', 'id']),
-          },
-          value_data: sortByFields<ValuationRow>(valueData, ['month', 'created_at', 'id']),
-          transactions: sortByFields<TransactionRow>(transactionData, ['date', 'created_at', 'id']),
-        },
-      };
+      const payload = await buildExportPayload();
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const downloadUrl = URL.createObjectURL(blob);
