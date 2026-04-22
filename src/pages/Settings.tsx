@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { useSession } from '@/context/SessionContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database as SupabaseDatabase } from '@/integrations/supabase/types';
 import { Currency } from '@/types/investment';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar, TrendingUp, Rss, HelpCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database as DatabaseIcon, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar, TrendingUp, Rss, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
@@ -21,6 +23,11 @@ import { CalendarSettingsSection } from '@/components/calendar/CalendarSettingsS
 import { DataCleanupSection } from '@/components/settings/DataCleanupSection';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
+
+type TransactionRow = SupabaseDatabase['public']['Tables']['transactions']['Row'];
+type ValuationRow = SupabaseDatabase['public']['Tables']['valuations']['Row'];
+type CrmCompanyRow = SupabaseDatabase['public']['Tables']['crm_companies']['Row'];
+type ResearchEntryRow = SupabaseDatabase['public']['Tables']['company_research_entries']['Row'];
 
 const emailSchema = z.string().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
@@ -42,6 +49,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { settings, updateSettings, transactions, valuations, refreshMetrics, clearAllData, sampleDataMode, setSampleDataMode } = usePortfolio();
   const { user, signOut } = useAuth();
+  const { session, isContextSet } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [riskFreeRate, setRiskFreeRate] = useState(settings.riskFreeRate.toString());
@@ -66,6 +74,7 @@ export default function Settings() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isExportingData, setIsExportingData] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Load profile data
@@ -297,6 +306,144 @@ export default function Settings() {
     toast.success(enabled ? 'Sample data mode enabled' : 'Showing your data');
   };
 
+  const activeClientId = session.scope === 'client' ? session.clientId : null;
+
+  const sortByFields = <T extends Record<string, unknown>>(rows: T[], fields: Array<keyof T>) => {
+    return [...rows].sort((a, b) => {
+      for (const field of fields) {
+        const aValue = a[field];
+        const bValue = b[field];
+
+        const normalizedA = aValue == null ? '' : String(aValue);
+        const normalizedB = bValue == null ? '' : String(bValue);
+
+        if (normalizedA < normalizedB) return -1;
+        if (normalizedA > normalizedB) return 1;
+      }
+
+      return 0;
+    });
+  };
+
+  const handleExportData = async () => {
+    if (!user) {
+      toast.error('You must be signed in to export data');
+      return;
+    }
+
+    if (!isContextSet || !session.scope) {
+      toast.error('Select a personal or client context before exporting');
+      return;
+    }
+
+    setIsExportingData(true);
+
+    try {
+      let companiesQuery = supabase
+        .from('crm_companies')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('deleted_at', null);
+
+      let valuationsQuery = supabase
+        .from('valuations')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('deleted_at', null);
+
+      let transactionsQuery = supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('deleted_at', null);
+
+      if (activeClientId) {
+        companiesQuery = companiesQuery.eq('client_id', activeClientId);
+        valuationsQuery = valuationsQuery.eq('client_id', activeClientId);
+        transactionsQuery = transactionsQuery.eq('client_id', activeClientId);
+      } else {
+        companiesQuery = companiesQuery.is('client_id', null);
+        valuationsQuery = valuationsQuery.is('client_id', null);
+        transactionsQuery = transactionsQuery.is('client_id', null);
+      }
+
+      const [companiesResponse, valuationsResponse, transactionsResponse, researchResponse] = await Promise.all([
+        companiesQuery,
+        valuationsQuery,
+        transactionsQuery,
+        supabase
+          .from('company_research_entries')
+          .select('*')
+          .eq('user_id', user.id),
+      ]);
+
+      if (companiesResponse.error) throw companiesResponse.error;
+      if (valuationsResponse.error) throw valuationsResponse.error;
+      if (transactionsResponse.error) throw transactionsResponse.error;
+      if (researchResponse.error) throw researchResponse.error;
+
+      const companies = companiesResponse.data ?? [];
+      const valueData = valuationsResponse.data ?? [];
+      const transactionData = transactionsResponse.data ?? [];
+      const researchEntries = researchResponse.data ?? [];
+
+      const exportedCompanyIds = new Set(companies.map((company) => company.id));
+      const exportedTickers = new Set(
+        [
+          ...companies.map((company) => company.ticker),
+          ...valueData.map((valuation) => valuation.ticker),
+          ...transactionData.map((transaction) => transaction.ticker),
+        ].filter((ticker): ticker is string => Boolean(ticker))
+      );
+
+      const filteredResearchEntries = researchEntries.filter((entry) => {
+        if (entry.company_id && exportedCompanyIds.has(entry.company_id)) {
+          return true;
+        }
+
+        if (!entry.company_id && entry.ticker && exportedTickers.has(entry.ticker)) {
+          return true;
+        }
+
+        return false;
+      });
+
+      const payload = {
+        export_version: 1,
+        exported_at: new Date().toISOString(),
+        scope: {
+          type: session.scope,
+          client_id: activeClientId,
+        },
+        data: {
+          analyses: {
+            companies: sortByFields<CrmCompanyRow>(companies, ['created_at', 'id']),
+            research_entries: sortByFields<ResearchEntryRow>(filteredResearchEntries, ['created_at', 'id']),
+          },
+          value_data: sortByFields<ValuationRow>(valueData, ['month', 'created_at', 'id']),
+          transactions: sortByFields<TransactionRow>(transactionData, ['date', 'created_at', 'id']),
+        },
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = 'sufox_data_export.json';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success('Data export is ready');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to export data';
+      toast.error(message);
+    } finally {
+      setIsExportingData(false);
+    }
+  };
+
   return (
     <div className="section-spacing animate-fade-in max-w-4xl mx-auto">
       {/* Page Header */}
@@ -435,7 +582,7 @@ export default function Settings() {
         <Card className="bg-card/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Database className="h-4 w-4" /> Sample Data Mode
+              <DatabaseIcon className="h-4 w-4" /> Sample Data Mode
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -523,11 +670,34 @@ export default function Settings() {
       </Card>
 
       {/* ==================== DATA MANAGEMENT SECTION ==================== */}
-      <SectionHeader icon={Database} title="Data Management" />
+      <SectionHeader icon={DatabaseIcon} title="Data Management" />
       
       <div className="grid gap-4">
         {/* Data Cleanup */}
         <DataCleanupSection />
+
+        <Card className="bg-card/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <DatabaseIcon className="h-4 w-4" /> Data Export
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Export only your exact Analyses, Value Data, and Transactions for the active context as a migration-ready JSON file.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
+              <p className="text-sm font-medium text-foreground">Scope: Active context only</p>
+              <p className="text-xs text-muted-foreground">
+                Includes analysis companies, linked research entries, valuations, and transactions. Excludes settings, logs, UI state, and unrelated system data.
+              </p>
+            </div>
+            <Button onClick={handleExportData} disabled={isExportingData || !user || !isContextSet} className="gradient-gold text-primary-foreground">
+              {isExportingData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DatabaseIcon className="h-4 w-4 mr-2" />}
+              Export JSON
+            </Button>
+          </CardContent>
+        </Card>
         
         {/* Trash */}
         <Card className="bg-card/50">
