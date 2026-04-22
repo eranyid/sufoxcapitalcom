@@ -69,6 +69,36 @@ function SectionHeader({ icon: Icon, title }: { icon: typeof User; title: string
   );
 }
 
+function PreviewList({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: Array<{ id: string; ticker: string | null }>;
+}) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/40 p-3 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{rows.length} records</p>
+      </div>
+      <div className="max-h-36 overflow-y-auto space-y-2 pr-1">
+        {rows.length > 0 ? (
+          rows.map((row) => (
+            <div key={row.id} className="rounded-md bg-muted/30 px-2.5 py-2 text-xs text-muted-foreground">
+              <span className="text-foreground">ID:</span> {row.id}
+              <span className="mx-2 text-border">•</span>
+              <span className="text-foreground">Ticker:</span> {row.ticker || '—'}
+            </div>
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground">No records in this category for the active context.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const navigate = useNavigate();
   const { settings, updateSettings, transactions, valuations, refreshMetrics, clearAllData, sampleDataMode, setSampleDataMode } = usePortfolio();
@@ -743,10 +773,30 @@ export default function Settings() {
                 Includes analysis companies, linked research entries, valuations, and transactions. Excludes settings, logs, UI state, and unrelated system data.
               </p>
             </div>
-            <Button onClick={handleExportData} disabled={isExportingData || !user || !isContextSet} className="gradient-gold text-primary-foreground">
-              {isExportingData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DatabaseIcon className="h-4 w-4 mr-2" />}
-              Export JSON
-            </Button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button onClick={handlePreviewExport} disabled={isPreviewingExport || isExportingData || !user || !isContextSet} variant="outline" className="sm:flex-1">
+                {isPreviewingExport ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DatabaseIcon className="h-4 w-4 mr-2" />}
+                Preview Export
+              </Button>
+              <Button onClick={handleExportData} disabled={isPreviewingExport || isExportingData || !user || !isContextSet} className="gradient-gold text-primary-foreground sm:flex-1">
+                {isExportingData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DatabaseIcon className="h-4 w-4 mr-2" />}
+                Export JSON
+              </Button>
+            </div>
+            {exportPreview && (
+              <div className="space-y-3 rounded-lg border border-border/60 bg-card/30 p-4">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-medium text-foreground">Preview summary</p>
+                  <p className="text-xs text-muted-foreground">Counts and basic identifiers only</p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <PreviewList title="Analysis Companies" rows={exportPreview.analysesCompanies} />
+                  <PreviewList title="Research Entries" rows={exportPreview.researchEntries} />
+                  <PreviewList title="Value Data" rows={exportPreview.valueData} />
+                  <PreviewList title="Transactions" rows={exportPreview.transactions} />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
         
