@@ -4,7 +4,7 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { useSession } from '@/context/SessionContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database as SupabaseDatabase } from '@/integrations/supabase/types';
 import { Currency } from '@/types/investment';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar, TrendingUp, Rss, HelpCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database as DatabaseIcon, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar, TrendingUp, Rss, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
@@ -24,10 +24,10 @@ import { DataCleanupSection } from '@/components/settings/DataCleanupSection';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
-type TransactionRow = Database['public']['Tables']['transactions']['Row'];
-type ValuationRow = Database['public']['Tables']['valuations']['Row'];
-type CrmCompanyRow = Database['public']['Tables']['crm_companies']['Row'];
-type ResearchEntryRow = Database['public']['Tables']['company_research_entries']['Row'];
+type TransactionRow = SupabaseDatabase['public']['Tables']['transactions']['Row'];
+type ValuationRow = SupabaseDatabase['public']['Tables']['valuations']['Row'];
+type CrmCompanyRow = SupabaseDatabase['public']['Tables']['crm_companies']['Row'];
+type ResearchEntryRow = SupabaseDatabase['public']['Tables']['company_research_entries']['Row'];
 
 const emailSchema = z.string().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
@@ -582,7 +582,7 @@ export default function Settings() {
         <Card className="bg-card/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Database className="h-4 w-4" /> Sample Data Mode
+              <DatabaseIcon className="h-4 w-4" /> Sample Data Mode
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -670,7 +670,7 @@ export default function Settings() {
       </Card>
 
       {/* ==================== DATA MANAGEMENT SECTION ==================== */}
-      <SectionHeader icon={Database} title="Data Management" />
+      <SectionHeader icon={DatabaseIcon} title="Data Management" />
       
       <div className="grid gap-4">
         {/* Data Cleanup */}
@@ -679,7 +679,7 @@ export default function Settings() {
         <Card className="bg-card/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Database className="h-4 w-4" /> Data Export
+              <DatabaseIcon className="h-4 w-4" /> Data Export
             </CardTitle>
             <CardDescription className="text-xs">
               Export only your exact Analyses, Value Data, and Transactions for the active context as a migration-ready JSON file.
@@ -693,7 +693,7 @@ export default function Settings() {
               </p>
             </div>
             <Button onClick={handleExportData} disabled={isExportingData || !user || !isContextSet} className="gradient-gold text-primary-foreground">
-              {isExportingData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Database className="h-4 w-4 mr-2" />}
+              {isExportingData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DatabaseIcon className="h-4 w-4 mr-2" />}
               Export JSON
             </Button>
           </CardContent>
