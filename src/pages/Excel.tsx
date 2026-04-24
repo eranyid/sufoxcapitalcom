@@ -317,7 +317,11 @@ export default function Excel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, session.scope, activeClientId]);
 
-  const cursorPrompt = useMemo(() => (payload ? buildCursorPrompt(payload) : ''), [payload]);
+  const portfolioName = session.type === 'personal' ? 'Personal' : (activeClientName ?? 'Client');
+  const cursorPrompt = useMemo(
+    () => (payload ? buildCursorPrompt(payload, { portfolioName }) : ''),
+    [payload, portfolioName],
+  );
 
   const exportAllToXlsx = () => {
     if (!payload) {
