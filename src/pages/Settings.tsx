@@ -831,6 +831,140 @@ export default function Settings() {
     }
   };
 
+  const escapeCsvCell = (value: unknown): string => {
+    if (value === null || value === undefined) return '';
+    let str: string;
+    if (typeof value === 'object') {
+      try {
+        str = JSON.stringify(value);
+      } catch {
+        str = String(value);
+      }
+    } else {
+      str = String(value);
+    }
+    // Quote if contains comma, quote, newline, or carriage return
+    if (/[",\n\r]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const rowsToCsv = (rows: Record<string, unknown>[], preferredColumns?: string[]): string => {
+    if (rows.length === 0) {
+      // Still emit just the header line if columns are known, otherwise an empty file.
+      return preferredColumns ? preferredColumns.join(',') + '\r\n' : '';
+    }
+    // Compute column union across all rows, preserving preferred order first.
+    const seen = new Set<string>();
+    const columns: string[] = [];
+    if (preferredColumns) {
+      for (const col of preferredColumns) {
+        if (!seen.has(col)) {
+          seen.add(col);
+          columns.push(col);
+        }
+      }
+    }
+    for (const row of rows) {
+      for (const key of Object.keys(row)) {
+        if (!seen.has(key)) {
+          seen.add(key);
+          columns.push(key);
+        }
+      }
+    }
+    const lines: string[] = [];
+    lines.push(columns.join(','));
+    for (const row of rows) {
+      lines.push(columns.map((col) => escapeCsvCell(row[col])).join(','));
+    }
+    return lines.join('\r\n') + '\r\n';
+  };
+
+  const downloadCsvFile = (fileName: string, csvContent: string): { fileName: string; bytes: number } => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      throw new Error('Downloads are only available in the browser environment.');
+    }
+    // Prepend BOM for Excel UTF-8 compatibility (Hebrew/special chars).
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8' });
+    if (blob.size === 0) {
+      throw new Error('Generated CSV is empty (0 bytes). Aborting download.');
+    }
+    const downloadUrl = URL.createObjectURL(blob);
+    try {
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = fileName;
+      anchor.rel = 'noopener';
+      anchor.style.display = 'none';
+      document.body.appendChild(anchor);
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+      const dispatched = anchor.dispatchEvent(clickEvent);
+      anchor.remove();
+      if (!dispatched) {
+        throw new Error('Browser blocked the automatic download. Check pop-up/download permissions.');
+      }
+    } finally {
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 2000);
+    }
+    return { fileName, bytes: blob.size };
+  };
+
+  const handleExportTransactionsCsv = async () => {
+    if (!user || !isContextSet) {
+      toast.error('Select a personal or client context before exporting');
+      return;
+    }
+    setIsExportingTransactionsCsv(true);
+    try {
+      const payload = await buildExportPayload();
+      const rows = payload.data.transactions as unknown as Record<string, unknown>[];
+      const preferred = [
+        'date', 'ticker', 'asset_name', 'asset_type', 'transaction_type',
+        'quantity', 'price_per_unit', 'fees', 'currency',
+        'cost_local', 'cost_base', 'base_currency', 'fx_rate_at_entry',
+        'cash_impact_currency', 'cash_impact_amount',
+        'realized_pl_base', 'realized_fx_pl', 'geography', 'inception_year',
+        'linked_company_id', 'client_id', 'id', 'created_at', 'updated_at',
+      ];
+      const csv = rowsToCsv(rows, preferred);
+      const result = downloadCsvFile('sufox_transactions.csv', csv);
+      toast.success(`Transactions CSV saved (${rows.length} rows, ${formatBytes(result.bytes)})`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to export transactions CSV';
+      toast.error(message);
+    } finally {
+      setIsExportingTransactionsCsv(false);
+    }
+  };
+
+  const handleExportValuationsCsv = async () => {
+    if (!user || !isContextSet) {
+      toast.error('Select a personal or client context before exporting');
+      return;
+    }
+    setIsExportingValuationsCsv(true);
+    try {
+      const payload = await buildExportPayload();
+      const rows = payload.data.value_data as unknown as Record<string, unknown>[];
+      const preferred = [
+        'month', 'ticker', 'asset_name', 'asset_id', 'price_per_unit',
+        'fx_rate', 'yield_to_maturity', 'coupon_rate', 'duration',
+        'accrued_interest', 'maturity_date', 'linked_company_id',
+        'client_id', 'id', 'created_at', 'updated_at',
+      ];
+      const csv = rowsToCsv(rows, preferred);
+      const result = downloadCsvFile('sufox_monthly_valuations.csv', csv);
+      toast.success(`Monthly Valuations CSV saved (${rows.length} rows, ${formatBytes(result.bytes)})`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to export valuations CSV';
+      toast.error(message);
+    } finally {
+      setIsExportingValuationsCsv(false);
+    }
+  };
+
   const handleExportData = async () => {
     setIsExportingData(true);
 
