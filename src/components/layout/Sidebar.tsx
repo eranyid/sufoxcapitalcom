@@ -16,6 +16,7 @@ import { PerformanceIcon } from '@/components/icons/PerformanceIcon';
 import { FundamentalsIcon } from '@/components/icons/FundamentalsIcon';
 import { ChartsIcon } from '@/components/icons/ChartsIcon';
 import { FxRatesIcon } from '@/components/icons/FxRatesIcon';
+import { ExcelIcon } from '@/components/icons/ExcelIcon';
 import { ValuationsIcon } from '@/components/icons/ValuationsIcon';
 import { RiskIcon } from '@/components/icons/RiskIcon';
 import { OverviewIcon } from '@/components/icons/OverviewIcon';
@@ -73,6 +74,7 @@ const navGroups: NavGroup[] = [
       { path: '/transactions', icon: TransactionsIcon, label: 'Transactions' },
       { path: '/valuations', icon: ValuationsIcon, label: 'Valuations' },
       { path: '/fx-rates', icon: FxRatesIcon, label: 'FX Rates' },
+      { path: '/excel', icon: ExcelIcon, label: 'Excel' },
     ],
   },
   {
