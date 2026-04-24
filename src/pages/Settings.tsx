@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database as DatabaseIcon, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar, TrendingUp, Rss, HelpCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, Trash2, Database as DatabaseIcon, User, Mail, Lock, Loader2, Upload, AlertTriangle, LogOut, Bell, Scale, ChevronRight, Calendar, TrendingUp, Rss, HelpCircle, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
