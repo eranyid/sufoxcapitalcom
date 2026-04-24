@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Copy, Check, RefreshCw, FileSpreadsheet, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Copy, Check, RefreshCw, FileSpreadsheet, Loader2, Sparkles, AlertTriangle, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 import {
   fetchExcelPayload, formatCell, rowsToTSV, rowsToCSV, rowsToJSON,
   TRANSACTIONS_COLS, VALUATIONS_COLS, COMPANIES_COLS, RESEARCH_COLS, DECISIONS_COLS,
