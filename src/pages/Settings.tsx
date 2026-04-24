@@ -967,7 +967,58 @@ export default function Settings() {
     }
   };
 
-  const handleExportData = async () => {
+  const handleExportXlsx = async () => {
+    if (!user || !isContextSet) {
+      toast.error('Select a personal or client context before exporting');
+      return;
+    }
+    setIsExportingXlsx(true);
+    try {
+      const payload = await buildExportPayload();
+      const workbookPayload: WorkbookPayload = {
+        exported_at: payload.exported_at,
+        scope: payload.scope,
+        data: {
+          transactions: payload.data.transactions as unknown as Record<string, unknown>[],
+          value_data: payload.data.value_data as unknown as Record<string, unknown>[],
+          analyses: {
+            companies: payload.data.analyses.companies as unknown as Record<string, unknown>[],
+            research_entries: payload.data.analyses.research_entries as unknown as Record<string, unknown>[],
+            decisions: payload.data.analyses.decisions as unknown as Record<string, unknown>[],
+          },
+        },
+      };
+      const blob = workbookToBlob(workbookPayload);
+      if (blob.size === 0) throw new Error('Generated workbook is empty.');
+      const today = new Date().toISOString().slice(0, 10);
+      const fileName = `sufox_data_export_${today}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      try {
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.rel = 'noopener';
+        anchor.style.display = 'none';
+        document.body.appendChild(anchor);
+        anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        anchor.remove();
+      } finally {
+        window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+      const totalRows =
+        workbookPayload.data.transactions.length +
+        workbookPayload.data.value_data.length +
+        workbookPayload.data.analyses.companies.length +
+        workbookPayload.data.analyses.research_entries.length +
+        workbookPayload.data.analyses.decisions.length;
+      toast.success(`Excel workbook saved (${totalRows} rows, ${formatBytes(blob.size)})`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to export Excel workbook';
+      toast.error(message);
+    } finally {
+      setIsExportingXlsx(false);
+    }
+  };
     setIsExportingData(true);
 
     try {
