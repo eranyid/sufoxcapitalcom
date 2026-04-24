@@ -51,13 +51,29 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-function CopyButton({ getText, label }: { getText: () => string; label: string }) {
+function CopyButton({
+  getText,
+  label,
+  blocked = false,
+  blockedReason,
+}: {
+  getText: () => string;
+  label: string;
+  blocked?: boolean;
+  blockedReason?: string;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <Button
       size="sm"
       variant="outline"
+      title={blocked ? blockedReason : undefined}
+      className={blocked ? 'border-destructive/60 text-destructive hover:text-destructive' : undefined}
       onClick={async () => {
+        if (blocked) {
+          toast.error(blockedReason ?? 'Fix validation issues before copying');
+          return;
+        }
         const ok = await copyToClipboard(getText());
         if (ok) {
           setCopied(true);
