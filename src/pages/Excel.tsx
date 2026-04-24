@@ -151,13 +151,14 @@ function SheetView({ sheet, payload }: { sheet: SheetKey; payload: ExcelPayload 
 export default function Excel() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const session = useSession();
+  const { session } = useSession();
   const [payload, setPayload] = useState<ExcelPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<SheetKey>('transactions');
 
-  const activeClientId = session.scope === 'client' ? session.activeClient?.id ?? null : null;
+  const activeClientId = session.scope === 'client' ? session.clientId : null;
+  const activeClientName = session.clientName;
 
   const load = async () => {
     if (!user || !session.scope) return;
@@ -227,7 +228,7 @@ export default function Excel() {
           <CardDescription>
             {payload ? (
               <>
-                {payload.scope.type === 'personal' ? 'Personal context' : `Client: ${session.activeClient?.name ?? payload.scope.client_id}`}
+                {payload.scope.type === 'personal' ? 'Personal context' : `Client: ${activeClientName ?? payload.scope.client_id}`}
                 {' · '}Exported {new Date(payload.exported_at).toLocaleString()}
               </>
             ) : loading ? 'Loading…' : 'Waiting for data…'}
