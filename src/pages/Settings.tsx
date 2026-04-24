@@ -1019,6 +1019,8 @@ export default function Settings() {
       setIsExportingXlsx(false);
     }
   };
+
+  const handleExportData = async () => {
     setIsExportingData(true);
 
     try {
