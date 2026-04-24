@@ -566,63 +566,9 @@ export default function Settings() {
       throw new Error('Generated file is empty (0 bytes). Aborting download.');
     }
 
-    const pickerWindow = window as SaveFilePickerWindow;
-    const hasSavePicker = typeof pickerWindow.showSaveFilePicker === 'function';
-
-    // Try the native Save dialog when available.
-    if (hasSavePicker) {
-      if (!window.isSecureContext) {
-        throw new Error(
-          'Native Save dialog requires a secure context (HTTPS or localhost). Please open the app over HTTPS and try again.'
-        );
-      }
-
-      try {
-        emit({
-          phase: 'awaiting-save-dialog',
-          message: `Waiting for Save dialog (${formatBytes(blob.size)})…`,
-          bytes: blob.size,
-        });
-
-        const fileHandle = await pickerWindow.showSaveFilePicker!({
-          suggestedName: fileName,
-          types: [
-            {
-              description: 'JSON files',
-              accept: { 'application/json': ['.json'] },
-            },
-          ],
-        });
-
-        emit({
-          phase: 'writing-file',
-          message: 'Writing file to disk…',
-          bytes: blob.size,
-          method: 'save-picker',
-        });
-
-        const writable = await fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-
-        return { method: 'save-picker', fileName, bytes: blob.size };
-      } catch (pickerError) {
-        // User aborted the dialog — surface clearly without falling back.
-        if (pickerError instanceof DOMException && pickerError.name === 'AbortError') {
-          throw new Error('Download cancelled — Save dialog was dismissed.');
-        }
-
-        // Any other failure (e.g. SecurityError inside an iframe) → fall through to anchor.
-        const reason = pickerError instanceof Error ? pickerError.message : String(pickerError);
-        console.warn(`[Settings] showSaveFilePicker failed, falling back to anchor download: ${reason}`);
-      }
-    }
-
     emit({
       phase: 'fallback-download',
-      message: hasSavePicker
-        ? 'Save dialog unavailable — using browser download fallback…'
-        : 'Save dialog not supported — using browser download fallback…',
+      message: `Saving to your Downloads folder (${formatBytes(blob.size)})…`,
       bytes: blob.size,
       method: 'anchor-fallback',
     });
