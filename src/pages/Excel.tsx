@@ -162,12 +162,13 @@ export default function Excel() {
 
   const load = async () => {
     if (!user || !session.scope) return;
+    const scope = session.scope;
     setLoading(true);
     setError(null);
     try {
       const p = await fetchExcelPayload({
         userId: user.id,
-        scope: session.scope,
+        scope,
         clientId: activeClientId,
       });
       setPayload(p);
