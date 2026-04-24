@@ -653,8 +653,10 @@ export default function Settings() {
         identifiers: buildExportPreview(payload),
       };
 
-      await downloadJsonFile('sufox_data_export_preview.json', previewPayload);
-      toast.success('Export preview downloaded');
+      const result = await downloadJsonFile('sufox_data_export_preview.json', previewPayload);
+      toast.success(
+        `Preview saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to download export preview';
       toast.error(message);
@@ -684,9 +686,11 @@ export default function Settings() {
 
     try {
       const payload = await buildExportPayload();
-      await downloadJsonFile('sufox_data_export.json', payload);
+      const result = await downloadJsonFile('sufox_data_export.json', payload);
 
-      toast.success('Data export is ready');
+      toast.success(
+        `Export saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to export data';
       toast.error(message);
