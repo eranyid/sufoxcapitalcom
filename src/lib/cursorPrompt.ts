@@ -103,7 +103,15 @@ function sampleRow(rows: Record<string, unknown>[], cols: string[]): string {
   return JSON.stringify(obj, null, 2);
 }
 
-export function buildCursorPrompt(payload: ExcelPayload): string {
+export interface BuildCursorPromptOptions {
+  /** Display name of the active portfolio/client (e.g. "Personal" or "Acme Family Office"). */
+  portfolioName?: string;
+}
+
+export function buildCursorPrompt(
+  payload: ExcelPayload,
+  options: BuildCursorPromptOptions = {},
+): string {
   const { data, scope, exported_at } = payload;
   const counts = {
     transactions: data.transactions.length,
@@ -113,6 +121,17 @@ export function buildCursorPrompt(payload: ExcelPayload): string {
     decisions: data.decisions.length,
   };
 
+  const isPersonal = scope.type === 'personal';
+  const portfolioName =
+    options.portfolioName?.trim() ||
+    (isPersonal ? 'Personal' : (scope.client_id ?? 'Unknown Client'));
+  const scopeLine = isPersonal
+    ? `personal (no client_id; rows where client_id IS NULL)`
+    : `client (client_id=${scope.client_id ?? 'UNKNOWN'})`;
+  const filterRule = isPersonal
+    ? `Only ingest rows where \`client_id\` is NULL or omitted. Reject rows that carry a non-null client_id.`
+    : `Only ingest rows where \`client_id = "${scope.client_id ?? 'UNKNOWN'}"\`. Reject rows with any other client_id (or null).`;
+
   return `# SUFOX Capital — External Data Sink Specification
 
 You are building an external data ingestion target for the SUFOX Capital
@@ -121,10 +140,14 @@ management system). The user will paste tabular data (TSV/CSV/JSON) copied
 from the source system into your interface, and you must store it with the
 **exact** schema defined below.
 
-## Source context
-- Exported at: ${exported_at}
-- Scope: ${scope.type}${scope.client_id ? ` (client_id=${scope.client_id})` : ' (personal)'}
-- Row counts: transactions=${counts.transactions}, valuations=${counts.valuations}, companies=${counts.companies}, research=${counts.research_entries}, decisions=${counts.decisions}
+## Active dataset (must match exactly)
+- **Portfolio name:** ${portfolioName}
+- **Scope:** ${scopeLine}
+- **Exported at:** ${exported_at}
+- **Row counts at export:** transactions=${counts.transactions}, valuations=${counts.valuations}, companies=${counts.companies}, research=${counts.research_entries}, decisions=${counts.decisions}
+
+> Scope filter rule: ${filterRule}
+> The external store should namespace this dataset under \`portfolio = "${portfolioName}"\` so future pulls overwrite the same partition cleanly.
 
 ## Hard requirements
 
