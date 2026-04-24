@@ -424,10 +424,20 @@ export default function Settings() {
     bytes: number;
   };
 
-  const downloadJsonFile = async (fileName: string, payload: unknown): Promise<DownloadResult> => {
+  const downloadJsonFile = async (
+    fileName: string,
+    payload: unknown,
+    onProgress?: (update: Partial<DownloadProgress> & { phase: DownloadPhase; message: string }) => void
+  ): Promise<DownloadResult> => {
+    const emit = (update: Partial<DownloadProgress> & { phase: DownloadPhase; message: string }) => {
+      onProgress?.(update);
+    };
+
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       throw new Error('Downloads are only available in the browser environment.');
     }
+
+    emit({ phase: 'serializing', message: 'Serializing JSON payload…' });
 
     let jsonString: string;
     try {
@@ -458,6 +468,12 @@ export default function Settings() {
       }
 
       try {
+        emit({
+          phase: 'awaiting-save-dialog',
+          message: `Waiting for Save dialog (${formatBytes(blob.size)})…`,
+          bytes: blob.size,
+        });
+
         const fileHandle = await pickerWindow.showSaveFilePicker!({
           suggestedName: fileName,
           types: [
@@ -466,6 +482,13 @@ export default function Settings() {
               accept: { 'application/json': ['.json'] },
             },
           ],
+        });
+
+        emit({
+          phase: 'writing-file',
+          message: 'Writing file to disk…',
+          bytes: blob.size,
+          method: 'save-picker',
         });
 
         const writable = await fileHandle.createWritable();
@@ -484,6 +507,15 @@ export default function Settings() {
         console.warn(`[Settings] showSaveFilePicker failed, falling back to anchor download: ${reason}`);
       }
     }
+
+    emit({
+      phase: 'fallback-download',
+      message: hasSavePicker
+        ? 'Save dialog unavailable — using browser download fallback…'
+        : 'Save dialog not supported — using browser download fallback…',
+      bytes: blob.size,
+      method: 'anchor-fallback',
+    });
 
     // Anchor-based fallback. Verify the URL was created and the click was dispatched.
     let downloadUrl: string;
