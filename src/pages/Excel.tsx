@@ -319,6 +319,45 @@ export default function Excel() {
 
   const cursorPrompt = useMemo(() => (payload ? buildCursorPrompt(payload) : ''), [payload]);
 
+  const exportAllToXlsx = () => {
+    if (!payload) {
+      toast.error('No data loaded yet');
+      return;
+    }
+    try {
+      const wb = XLSX.utils.book_new();
+      (Object.keys(SHEETS) as SheetKey[]).forEach((key) => {
+        const { cols, pick, label } = SHEETS[key];
+        const rows = pick(payload);
+        // Build AOA: header row + each row formatted via formatCell for stable, paste-friendly values
+        const aoa: unknown[][] = [
+          cols,
+          ...rows.map((r) => cols.map((c) => formatCell(c, r[c]))),
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        // Reasonable column widths
+        ws['!cols'] = cols.map((c) => ({ wch: Math.min(Math.max(c.length + 2, 12), 40) }));
+        XLSX.utils.book_append_sheet(wb, ws, label.slice(0, 31)); // Excel sheet-name limit
+      });
+
+      const scopeLabel =
+        payload.scope.type === 'personal'
+          ? 'personal'
+          : `client-${(activeClientName ?? payload.scope.client_id ?? 'unknown')
+              .toString()
+              .replace(/[^a-z0-9-_]+/gi, '-')
+              .toLowerCase()}`;
+      const stamp = new Date().toISOString().slice(0, 10);
+      const filename = `sufox-export-${scopeLabel}-${stamp}.xlsx`;
+
+      XLSX.writeFile(wb, filename);
+      toast.success(`Exported ${filename}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Export failed';
+      toast.error(msg);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-[1800px] mx-auto">
       <Helmet>
