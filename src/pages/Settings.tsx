@@ -1316,6 +1316,20 @@ export default function Settings() {
                 {isExportingXlsx ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
                 Download Excel Workbook
               </Button>
+              <div className="pt-1 border-t border-primary/20 space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  Download not working? Open the in-app Excel View instead — view all data in copy-paste-ready tables.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/excel')}
+                  disabled={!user || !isContextSet}
+                  className="w-full"
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Open Excel View (in-app)
+                </Button>
+              </div>
             </div>
 
             <div className="rounded-lg border border-border/60 bg-card/30 p-3 space-y-3">

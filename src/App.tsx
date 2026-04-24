@@ -51,6 +51,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FXRates = lazy(() => import("./pages/FXRates"));
 const Lab = lazy(() => import("./pages/Lab"));
+const Excel = lazy(() => import("./pages/Excel"));
 
 const Calendar = lazy(() => import("./pages/Calendar"));
 const Messages = lazy(() => import("./pages/Messages"));
@@ -195,6 +196,11 @@ const App = () => (
                   <Route path="/lab" element={
                     <Suspense fallback={<DashboardLoadingSkeleton />}>
                       <Lab />
+                    </Suspense>
+                  } />
+                  <Route path="/excel" element={
+                    <Suspense fallback={<DashboardLoadingSkeleton />}>
+                      <Excel />
                     </Suspense>
                   } />
                   <Route path="/quant" element={
