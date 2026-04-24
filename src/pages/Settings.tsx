@@ -21,6 +21,7 @@ import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { CalendarSettingsSection } from '@/components/calendar/CalendarSettingsSection';
 import { DataCleanupSection } from '@/components/settings/DataCleanupSection';
+import { workbookToBlob, type WorkbookPayload } from '@/lib/xlsxExport';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
@@ -280,6 +281,7 @@ export default function Settings() {
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [isExportingTransactionsCsv, setIsExportingTransactionsCsv] = useState(false);
   const [isExportingValuationsCsv, setIsExportingValuationsCsv] = useState(false);
+  const [isExportingXlsx, setIsExportingXlsx] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Load profile data
