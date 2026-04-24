@@ -71,6 +71,23 @@ type SaveFilePickerWindow = Window & typeof globalThis & {
   }>;
 };
 
+type DownloadPhase =
+  | 'building'
+  | 'serializing'
+  | 'awaiting-save-dialog'
+  | 'writing-file'
+  | 'fallback-download'
+  | 'done'
+  | 'error';
+
+type DownloadProgress = {
+  label: string;
+  phase: DownloadPhase;
+  message: string;
+  bytes?: number;
+  method?: 'save-picker' | 'anchor-fallback';
+};
+
 const emailSchema = z.string().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
@@ -83,6 +100,116 @@ function SectionHeader({ icon: Icon, title }: { icon: typeof User; title: string
       </div>
       <h2 className="text-lg font-semibold text-foreground uppercase tracking-wide">{title}</h2>
       <div className="flex-1 h-px bg-border ml-2" />
+    </div>
+  );
+}
+
+const PHASE_STEPS: Array<{ phase: DownloadPhase; label: string }> = [
+  { phase: 'building', label: 'Build payload' },
+  { phase: 'serializing', label: 'Serialize JSON' },
+  { phase: 'awaiting-save-dialog', label: 'Save dialog' },
+  { phase: 'writing-file', label: 'Write file' },
+  { phase: 'done', label: 'Done' },
+];
+
+function DownloadProgressPanel({
+  progress,
+  onDismiss,
+}: {
+  progress: DownloadProgress;
+  onDismiss: () => void;
+}) {
+  const isError = progress.phase === 'error';
+  const isFallback = progress.phase === 'fallback-download' || progress.method === 'anchor-fallback';
+  const isDone = progress.phase === 'done';
+  const isActive = !isDone && !isError;
+
+  // Build step list — replace "Save dialog" / "Write file" with "Browser download" when fallback path is used.
+  const steps = isFallback
+    ? [
+        { phase: 'building' as DownloadPhase, label: 'Build payload' },
+        { phase: 'serializing' as DownloadPhase, label: 'Serialize JSON' },
+        { phase: 'fallback-download' as DownloadPhase, label: 'Browser download (fallback)' },
+        { phase: 'done' as DownloadPhase, label: 'Done' },
+      ]
+    : PHASE_STEPS;
+
+  const activeIndex = steps.findIndex((s) => s.phase === progress.phase);
+  const completedThrough = isDone ? steps.length - 1 : Math.max(activeIndex, 0);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`rounded-lg border p-4 space-y-3 ${
+        isError
+          ? 'border-destructive/50 bg-destructive/10'
+          : isDone
+          ? 'border-primary/40 bg-primary/5'
+          : 'border-border/60 bg-muted/20'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {isActive && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          {isDone && (
+            <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-bold">
+              ✓
+            </div>
+          )}
+          {isError && <AlertTriangle className="h-4 w-4 text-destructive" />}
+          <p className="text-sm font-medium text-foreground">
+            {progress.label} —{' '}
+            {isError ? 'Failed' : isDone ? 'Complete' : 'In progress'}
+          </p>
+        </div>
+        {(isDone || isError) && (
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onDismiss}>
+            Dismiss
+          </Button>
+        )}
+      </div>
+
+      <p className={`text-xs ${isError ? 'text-destructive' : 'text-muted-foreground'}`}>
+        {progress.message}
+      </p>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {steps.map((step, idx) => {
+          const completed = idx < completedThrough || (isDone && idx <= completedThrough);
+          const current = !isDone && !isError && idx === activeIndex;
+          return (
+            <div key={step.phase} className="flex items-center gap-1.5">
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] uppercase tracking-wide font-mono border ${
+                  completed
+                    ? 'bg-primary/15 border-primary/40 text-primary'
+                    : current
+                    ? 'bg-muted border-border text-foreground animate-pulse'
+                    : 'bg-transparent border-border/40 text-muted-foreground'
+                }`}
+              >
+                {idx + 1}. {step.label}
+              </span>
+              {idx < steps.length - 1 && <span className="text-border text-xs">›</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      {(progress.bytes || progress.method) && (
+        <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground font-mono">
+          {progress.bytes ? <span>Size: {progress.bytes < 1024 ? `${progress.bytes} B` : progress.bytes < 1024 * 1024 ? `${(progress.bytes / 1024).toFixed(1)} KB` : `${(progress.bytes / (1024 * 1024)).toFixed(2)} MB`}</span> : null}
+          {progress.method && (
+            <span>
+              Method:{' '}
+              <span className={progress.method === 'anchor-fallback' ? 'text-primary' : 'text-foreground'}>
+                {progress.method === 'save-picker' ? 'Native Save dialog' : 'Browser download (fallback)'}
+              </span>
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -150,6 +277,7 @@ export default function Settings() {
   const [isPreviewingExport, setIsPreviewingExport] = useState(false);
   const [isDownloadingPreview, setIsDownloadingPreview] = useState(false);
   const [exportPreview, setExportPreview] = useState<ExportPreview | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Load profile data
@@ -406,10 +534,20 @@ export default function Settings() {
     bytes: number;
   };
 
-  const downloadJsonFile = async (fileName: string, payload: unknown): Promise<DownloadResult> => {
+  const downloadJsonFile = async (
+    fileName: string,
+    payload: unknown,
+    onProgress?: (update: Partial<DownloadProgress> & { phase: DownloadPhase; message: string }) => void
+  ): Promise<DownloadResult> => {
+    const emit = (update: Partial<DownloadProgress> & { phase: DownloadPhase; message: string }) => {
+      onProgress?.(update);
+    };
+
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       throw new Error('Downloads are only available in the browser environment.');
     }
+
+    emit({ phase: 'serializing', message: 'Serializing JSON payload…' });
 
     let jsonString: string;
     try {
@@ -440,6 +578,12 @@ export default function Settings() {
       }
 
       try {
+        emit({
+          phase: 'awaiting-save-dialog',
+          message: `Waiting for Save dialog (${formatBytes(blob.size)})…`,
+          bytes: blob.size,
+        });
+
         const fileHandle = await pickerWindow.showSaveFilePicker!({
           suggestedName: fileName,
           types: [
@@ -448,6 +592,13 @@ export default function Settings() {
               accept: { 'application/json': ['.json'] },
             },
           ],
+        });
+
+        emit({
+          phase: 'writing-file',
+          message: 'Writing file to disk…',
+          bytes: blob.size,
+          method: 'save-picker',
         });
 
         const writable = await fileHandle.createWritable();
@@ -466,6 +617,15 @@ export default function Settings() {
         console.warn(`[Settings] showSaveFilePicker failed, falling back to anchor download: ${reason}`);
       }
     }
+
+    emit({
+      phase: 'fallback-download',
+      message: hasSavePicker
+        ? 'Save dialog unavailable — using browser download fallback…'
+        : 'Save dialog not supported — using browser download fallback…',
+      bytes: blob.size,
+      method: 'anchor-fallback',
+    });
 
     // Anchor-based fallback. Verify the URL was created and the click was dispatched.
     let downloadUrl: string;
@@ -634,32 +794,74 @@ export default function Settings() {
     transactions: payload.data.transactions.map((row) => ({ id: row.id, ticker: row.ticker })),
   });
 
+  const runDownload = async (
+    label: string,
+    fileName: string,
+    buildPayload: () => Promise<unknown>
+  ) => {
+    setDownloadProgress({ label, phase: 'building', message: 'Gathering data from your context…' });
+
+    try {
+      const payload = await buildPayload();
+
+      const result = await downloadJsonFile(fileName, payload, (update) => {
+        setDownloadProgress((prev) => ({
+          label: prev?.label ?? label,
+          phase: update.phase,
+          message: update.message,
+          bytes: update.bytes ?? prev?.bytes,
+          method: update.method ?? prev?.method,
+        }));
+      });
+
+      setDownloadProgress({
+        label,
+        phase: 'done',
+        message: `Saved ${fileName} (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}.`,
+        bytes: result.bytes,
+        method: result.method,
+      });
+
+      toast.success(
+        `${label} saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
+      );
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `Failed to download ${label.toLowerCase()}`;
+      setDownloadProgress((prev) => ({
+        label,
+        phase: 'error',
+        message,
+        bytes: prev?.bytes,
+        method: prev?.method,
+      }));
+      toast.error(message);
+      throw error;
+    }
+  };
+
   const handleDownloadPreview = async () => {
     setIsDownloadingPreview(true);
 
     try {
-      const payload = await buildExportPayload();
-      const previewPayload = {
-        export_version: payload.export_version,
-        exported_at: payload.exported_at,
-        scope: payload.scope,
-        counts: {
-          analysis_companies: payload.data.analyses.companies.length,
-          research_entries: payload.data.analyses.research_entries.length,
-          decisions: payload.data.analyses.decisions.length,
-          value_data: payload.data.value_data.length,
-          transactions: payload.data.transactions.length,
-        },
-        identifiers: buildExportPreview(payload),
-      };
-
-      const result = await downloadJsonFile('sufox_data_export_preview.json', previewPayload);
-      toast.success(
-        `Preview saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to download export preview';
-      toast.error(message);
+      await runDownload('Preview', 'sufox_data_export_preview.json', async () => {
+        const payload = await buildExportPayload();
+        return {
+          export_version: payload.export_version,
+          exported_at: payload.exported_at,
+          scope: payload.scope,
+          counts: {
+            analysis_companies: payload.data.analyses.companies.length,
+            research_entries: payload.data.analyses.research_entries.length,
+            decisions: payload.data.analyses.decisions.length,
+            value_data: payload.data.value_data.length,
+            transactions: payload.data.transactions.length,
+          },
+          identifiers: buildExportPreview(payload),
+        };
+      });
+    } catch {
+      // already surfaced via runDownload
     } finally {
       setIsDownloadingPreview(false);
     }
@@ -685,15 +887,9 @@ export default function Settings() {
     setIsExportingData(true);
 
     try {
-      const payload = await buildExportPayload();
-      const result = await downloadJsonFile('sufox_data_export.json', payload);
-
-      toast.success(
-        `Export saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to export data';
-      toast.error(message);
+      await runDownload('Export', 'sufox_data_export.json', async () => buildExportPayload());
+    } catch {
+      // already surfaced via runDownload
     } finally {
       setIsExportingData(false);
     }
@@ -957,6 +1153,12 @@ export default function Settings() {
                 Export JSON
               </Button>
             </div>
+            {downloadProgress && (
+              <DownloadProgressPanel
+                progress={downloadProgress}
+                onDismiss={() => setDownloadProgress(null)}
+              />
+            )}
             {exportPreview && (
               <div className="space-y-3 rounded-lg border border-border/60 bg-card/30 p-4">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
