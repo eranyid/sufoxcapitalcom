@@ -53,6 +53,32 @@ export const DECISIONS_COLS = [
   'risks_breaks_thesis', 'tags', 'id', 'created_at', 'updated_at',
 ];
 
+/**
+ * Required columns per sheet for client-side validation.
+ * A row is "invalid" if any of these fields is null/undefined/empty string.
+ * Mirrors the NOT NULL constraints in the database schema for the relevant tables.
+ */
+export const REQUIRED_COLS: Record<string, string[]> = {
+  transactions: ['date', 'ticker', 'transaction_type', 'quantity', 'price_per_unit', 'currency'],
+  valuations:   ['month', 'ticker', 'price_per_unit'],
+  companies:    ['company_name', 'status', 'group_name'],
+  research:     ['title', 'entry_type'],
+  decisions:    ['decision_date', 'decision_type', 'rationale'],
+};
+
+/** Returns true when a value is considered "missing" for validation purposes. */
+export function isMissing(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string' && value.trim() === '') return true;
+  if (Array.isArray(value) && value.length === 0) return false; // empty array is OK
+  return false;
+}
+
+/** Returns the list of required fields missing from a row, given a sheet's required cols. */
+export function getMissingFields(row: Row, requiredCols: string[]): string[] {
+  return requiredCols.filter((c) => isMissing(row[c]));
+}
+
 const DATE_FIELDS = new Set([
   'date', 'created_at', 'updated_at', 'deleted_at',
   'rate_date', 'price_date', 'decision_date',
