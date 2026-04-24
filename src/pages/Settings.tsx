@@ -1043,6 +1043,12 @@ export default function Settings() {
                 Export JSON
               </Button>
             </div>
+            {downloadProgress && (
+              <DownloadProgressPanel
+                progress={downloadProgress}
+                onDismiss={() => setDownloadProgress(null)}
+              />
+            )}
             {exportPreview && (
               <div className="space-y-3 rounded-lg border border-border/60 bg-card/30 p-4">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
