@@ -71,6 +71,23 @@ type SaveFilePickerWindow = Window & typeof globalThis & {
   }>;
 };
 
+type DownloadPhase =
+  | 'building'
+  | 'serializing'
+  | 'awaiting-save-dialog'
+  | 'writing-file'
+  | 'fallback-download'
+  | 'done'
+  | 'error';
+
+type DownloadProgress = {
+  label: string;
+  phase: DownloadPhase;
+  message: string;
+  bytes?: number;
+  method?: 'save-picker' | 'anchor-fallback';
+};
+
 const emailSchema = z.string().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
