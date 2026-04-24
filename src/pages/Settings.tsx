@@ -1242,6 +1242,38 @@ export default function Settings() {
                 Export JSON
               </Button>
             </div>
+
+            <div className="rounded-lg border border-border/60 bg-card/30 p-3 space-y-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <FileSpreadsheet className="h-4 w-4 text-primary" />
+                  CSV Spreadsheets
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Download Transactions or Monthly Valuations as a spreadsheet (opens in Excel, Numbers, Google Sheets).
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button
+                  onClick={handleExportTransactionsCsv}
+                  disabled={isExportingTransactionsCsv || isExportingValuationsCsv || !user || !isContextSet}
+                  variant="outline"
+                  className="sm:flex-1"
+                >
+                  {isExportingTransactionsCsv ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+                  Transactions CSV
+                </Button>
+                <Button
+                  onClick={handleExportValuationsCsv}
+                  disabled={isExportingTransactionsCsv || isExportingValuationsCsv || !user || !isContextSet}
+                  variant="outline"
+                  className="sm:flex-1"
+                >
+                  {isExportingValuationsCsv ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+                  Monthly Valuations CSV
+                </Button>
+              </div>
+            </div>
             {downloadProgress && (
               <DownloadProgressPanel
                 progress={downloadProgress}
