@@ -93,6 +93,35 @@ function CopyButton({
 function SheetView({ sheet, payload }: { sheet: SheetKey; payload: ExcelPayload }) {
   const { cols, pick, label } = SHEETS[sheet];
   const rows = useMemo(() => pick(payload), [pick, payload]);
+  const requiredCols = REQUIRED_COLS[sheet] ?? [];
+  const requiredSet = useMemo(() => new Set(requiredCols), [requiredCols]);
+
+  // Per-row missing-fields map (computed once per rows change).
+  const rowIssues = useMemo(
+    () => rows.map((r) => getMissingFields(r, requiredCols)),
+    [rows, requiredCols]
+  );
+
+  const invalidRowCount = useMemo(
+    () => rowIssues.reduce((acc, miss) => acc + (miss.length > 0 ? 1 : 0), 0),
+    [rowIssues]
+  );
+
+  // Aggregate which fields are missing across all invalid rows (for the banner summary).
+  const missingFieldCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    rowIssues.forEach((miss) => miss.forEach((f) => { counts[f] = (counts[f] ?? 0) + 1; }));
+    return counts;
+  }, [rowIssues]);
+
+  const [allowCopyAnyway, setAllowCopyAnyway] = useState(false);
+  // Reset override when switching tabs / data reloads.
+  useEffect(() => { setAllowCopyAnyway(false); }, [sheet, rows]);
+
+  const hasIssues = invalidRowCount > 0;
+  const copyBlocked = hasIssues && !allowCopyAnyway;
+  const blockedReason = `${invalidRowCount} row(s) missing required fields. Fix data or enable "Copy anyway".`;
+
   const tsv = useMemo(() => rowsToTSV(rows, cols), [rows, cols]);
   const csv = useMemo(() => rowsToCSV(rows, cols), [rows, cols]);
   const json = useMemo(() => rowsToJSON(rows, cols), [rows, cols]);
@@ -111,28 +140,93 @@ function SheetView({ sheet, payload }: { sheet: SheetKey; payload: ExcelPayload 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h3 className="text-base font-semibold">{label}</h3>
           <Badge variant="secondary">{rows.length.toLocaleString()} rows</Badge>
           <Badge variant="outline">{cols.length} cols</Badge>
+          {requiredCols.length > 0 && (
+            hasIssues ? (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                {invalidRowCount} invalid
+              </Badge>
+            ) : (
+              <Badge className="bg-success text-success-foreground gap-1">
+                <Check className="h-3 w-3" /> All required fields present
+              </Badge>
+            )
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <CopyButton getText={() => tsv} label="Copy TSV (best for Excel)" />
-          <CopyButton getText={() => csv} label="Copy CSV" />
-          <CopyButton getText={() => json} label="Copy JSON" />
+          <CopyButton
+            getText={() => tsv}
+            label="Copy TSV (best for Excel)"
+            blocked={copyBlocked}
+            blockedReason={blockedReason}
+          />
+          <CopyButton
+            getText={() => csv}
+            label="Copy CSV"
+            blocked={copyBlocked}
+            blockedReason={blockedReason}
+          />
+          <CopyButton
+            getText={() => json}
+            label="Copy JSON"
+            blocked={copyBlocked}
+            blockedReason={blockedReason}
+          />
           <Button size="sm" variant="ghost" onClick={selectAllInTable}>
             Select all in table
           </Button>
         </div>
       </div>
 
+      {hasIssues && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/5 p-3 text-xs space-y-2">
+          <div className="flex items-start gap-2 text-destructive">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-semibold">
+                {invalidRowCount} of {rows.length} row(s) are missing required fields.
+              </p>
+              <p className="text-foreground/80">
+                Missing per field:{' '}
+                {Object.entries(missingFieldCounts)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([f, n]) => `${f} (${n})`)
+                  .join(' · ')}
+              </p>
+              <p className="text-muted-foreground">
+                Required for <strong>{label}</strong>: {requiredCols.join(', ')}.
+                Invalid cells are highlighted in red below.
+              </p>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none text-foreground">
+            <input
+              type="checkbox"
+              checked={allowCopyAnyway}
+              onChange={(e) => setAllowCopyAnyway(e.target.checked)}
+              className="h-3.5 w-3.5 accent-destructive"
+            />
+            Copy anyway (I accept the data is incomplete)
+          </label>
+        </div>
+      )}
+
       <div className="rounded-md border border-border bg-card overflow-auto max-h-[65vh]">
         <table id={`excel-table-${sheet}`} className="w-full text-xs font-mono">
           <thead className="sticky top-0 bg-muted/95 backdrop-blur z-10">
             <tr className="border-b border-border">
               {cols.map((c) => (
-                <th key={c} className="px-2 py-1.5 text-left font-semibold text-foreground/90 whitespace-nowrap">
+                <th
+                  key={c}
+                  className="px-2 py-1.5 text-left font-semibold text-foreground/90 whitespace-nowrap"
+                  title={requiredSet.has(c) ? 'Required field' : undefined}
+                >
                   {c}
+                  {requiredSet.has(c) && <span className="text-destructive ml-0.5">*</span>}
                 </th>
               ))}
             </tr>
@@ -145,18 +239,36 @@ function SheetView({ sheet, payload }: { sheet: SheetKey; payload: ExcelPayload 
                 </td>
               </tr>
             ) : (
-              rows.map((r, i) => (
-                <tr key={(r.id as string) ?? i} className="border-b border-border/60 hover:bg-muted/40">
-                  {cols.map((c) => {
-                    const v = formatCell(c, r[c]);
-                    return (
-                      <td key={c} className="px-2 py-1 align-top whitespace-nowrap text-foreground">
-                        {v.length > 80 ? <span title={v}>{v.slice(0, 80)}…</span> : v}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
+              rows.map((r, i) => {
+                const missing = rowIssues[i];
+                const rowInvalid = missing.length > 0;
+                return (
+                  <tr
+                    key={(r.id as string) ?? i}
+                    className={
+                      'border-b border-border/60 hover:bg-muted/40 ' +
+                      (rowInvalid ? 'bg-destructive/5' : '')
+                    }
+                  >
+                    {cols.map((c) => {
+                      const v = formatCell(c, r[c]);
+                      const cellMissing = requiredSet.has(c) && missing.includes(c);
+                      return (
+                        <td
+                          key={c}
+                          className={
+                            'px-2 py-1 align-top whitespace-nowrap text-foreground ' +
+                            (cellMissing ? 'bg-destructive/20 text-destructive font-semibold' : '')
+                          }
+                          title={cellMissing ? `Required field "${c}" is missing` : undefined}
+                        >
+                          {cellMissing ? '⚠ missing' : v.length > 80 ? <span title={v}>{v.slice(0, 80)}…</span> : v}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
