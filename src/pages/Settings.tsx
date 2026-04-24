@@ -212,6 +212,7 @@ function DownloadProgressPanel({
       )}
     </div>
   );
+}
 
 function PreviewList({
   title,
