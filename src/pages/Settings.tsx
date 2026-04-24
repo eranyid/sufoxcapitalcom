@@ -278,6 +278,8 @@ export default function Settings() {
   const [isDownloadingPreview, setIsDownloadingPreview] = useState(false);
   const [exportPreview, setExportPreview] = useState<ExportPreview | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
+  const [isExportingTransactionsCsv, setIsExportingTransactionsCsv] = useState(false);
+  const [isExportingValuationsCsv, setIsExportingValuationsCsv] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Load profile data
