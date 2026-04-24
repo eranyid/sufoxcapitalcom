@@ -400,43 +400,115 @@ export default function Settings() {
     });
   };
 
-  const downloadJsonFile = async (fileName: string, payload: unknown) => {
-    const jsonString = JSON.stringify(payload, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const pickerWindow = window as SaveFilePickerWindow;
+  type DownloadResult = {
+    method: 'save-picker' | 'anchor-fallback';
+    fileName: string;
+    bytes: number;
+  };
 
-    if (pickerWindow.showSaveFilePicker && window.isSecureContext) {
-      const fileHandle = await pickerWindow.showSaveFilePicker({
-        suggestedName: fileName,
-        types: [
-          {
-            description: 'JSON files',
-            accept: {
-              'application/json': ['.json'],
-            },
-          },
-        ],
-      });
-
-      const writable = await fileHandle.createWritable();
-      await writable.write(jsonString);
-      await writable.close();
-      return;
+  const downloadJsonFile = async (fileName: string, payload: unknown): Promise<DownloadResult> => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      throw new Error('Downloads are only available in the browser environment.');
     }
 
-    const downloadUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = downloadUrl;
-    anchor.download = fileName;
-    anchor.target = '_blank';
-    anchor.rel = 'noopener';
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+    let jsonString: string;
+    try {
+      jsonString = JSON.stringify(payload, null, 2);
+    } catch (serializationError) {
+      const message = serializationError instanceof Error ? serializationError.message : 'Unknown serialization error';
+      throw new Error(`Failed to serialize export payload to JSON: ${message}`);
+    }
 
-    window.setTimeout(() => {
-      URL.revokeObjectURL(downloadUrl);
-    }, 1000);
+    if (!jsonString || jsonString.length === 0) {
+      throw new Error('Export payload produced an empty JSON string. Aborting download.');
+    }
+
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    if (blob.size === 0) {
+      throw new Error('Generated file is empty (0 bytes). Aborting download.');
+    }
+
+    const pickerWindow = window as SaveFilePickerWindow;
+    const hasSavePicker = typeof pickerWindow.showSaveFilePicker === 'function';
+
+    // Try the native Save dialog when available.
+    if (hasSavePicker) {
+      if (!window.isSecureContext) {
+        throw new Error(
+          'Native Save dialog requires a secure context (HTTPS or localhost). Please open the app over HTTPS and try again.'
+        );
+      }
+
+      try {
+        const fileHandle = await pickerWindow.showSaveFilePicker!({
+          suggestedName: fileName,
+          types: [
+            {
+              description: 'JSON files',
+              accept: { 'application/json': ['.json'] },
+            },
+          ],
+        });
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+
+        return { method: 'save-picker', fileName, bytes: blob.size };
+      } catch (pickerError) {
+        // User aborted the dialog — surface clearly without falling back.
+        if (pickerError instanceof DOMException && pickerError.name === 'AbortError') {
+          throw new Error('Download cancelled — Save dialog was dismissed.');
+        }
+
+        // Any other failure (e.g. SecurityError inside an iframe) → fall through to anchor.
+        const reason = pickerError instanceof Error ? pickerError.message : String(pickerError);
+        console.warn(`[Settings] showSaveFilePicker failed, falling back to anchor download: ${reason}`);
+      }
+    }
+
+    // Anchor-based fallback. Verify the URL was created and the click was dispatched.
+    let downloadUrl: string;
+    try {
+      downloadUrl = URL.createObjectURL(blob);
+    } catch (urlError) {
+      const reason = urlError instanceof Error ? urlError.message : String(urlError);
+      throw new Error(`Failed to create download URL: ${reason}`);
+    }
+
+    if (!downloadUrl) {
+      throw new Error('Failed to create download URL for the export file.');
+    }
+
+    try {
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = fileName;
+      anchor.rel = 'noopener';
+      anchor.style.display = 'none';
+      document.body.appendChild(anchor);
+
+      // Use a real MouseEvent so the browser treats this as a user-driven click.
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+      const dispatched = anchor.dispatchEvent(clickEvent);
+      anchor.remove();
+
+      if (!dispatched) {
+        throw new Error('Browser blocked the automatic download. Check pop-up/download permissions.');
+      }
+    } finally {
+      window.setTimeout(() => {
+        URL.revokeObjectURL(downloadUrl);
+      }, 2000);
+    }
+
+    return { method: 'anchor-fallback', fileName, bytes: blob.size };
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   const buildExportPayload = async (): Promise<ExportPayload> => {
@@ -581,8 +653,10 @@ export default function Settings() {
         identifiers: buildExportPreview(payload),
       };
 
-      await downloadJsonFile('sufox_data_export_preview.json', previewPayload);
-      toast.success('Export preview downloaded');
+      const result = await downloadJsonFile('sufox_data_export_preview.json', previewPayload);
+      toast.success(
+        `Preview saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to download export preview';
       toast.error(message);
@@ -612,9 +686,11 @@ export default function Settings() {
 
     try {
       const payload = await buildExportPayload();
-      await downloadJsonFile('sufox_data_export.json', payload);
+      const result = await downloadJsonFile('sufox_data_export.json', payload);
 
-      toast.success('Data export is ready');
+      toast.success(
+        `Export saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to export data';
       toast.error(message);
