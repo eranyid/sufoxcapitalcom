@@ -150,6 +150,7 @@ export default function Settings() {
   const [isPreviewingExport, setIsPreviewingExport] = useState(false);
   const [isDownloadingPreview, setIsDownloadingPreview] = useState(false);
   const [exportPreview, setExportPreview] = useState<ExportPreview | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Load profile data
