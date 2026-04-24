@@ -684,32 +684,74 @@ export default function Settings() {
     transactions: payload.data.transactions.map((row) => ({ id: row.id, ticker: row.ticker })),
   });
 
+  const runDownload = async (
+    label: string,
+    fileName: string,
+    buildPayload: () => Promise<unknown>
+  ) => {
+    setDownloadProgress({ label, phase: 'building', message: 'Gathering data from your context…' });
+
+    try {
+      const payload = await buildPayload();
+
+      const result = await downloadJsonFile(fileName, payload, (update) => {
+        setDownloadProgress((prev) => ({
+          label: prev?.label ?? label,
+          phase: update.phase,
+          message: update.message,
+          bytes: update.bytes ?? prev?.bytes,
+          method: update.method ?? prev?.method,
+        }));
+      });
+
+      setDownloadProgress({
+        label,
+        phase: 'done',
+        message: `Saved ${fileName} (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}.`,
+        bytes: result.bytes,
+        method: result.method,
+      });
+
+      toast.success(
+        `${label} saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
+      );
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `Failed to download ${label.toLowerCase()}`;
+      setDownloadProgress((prev) => ({
+        label,
+        phase: 'error',
+        message,
+        bytes: prev?.bytes,
+        method: prev?.method,
+      }));
+      toast.error(message);
+      throw error;
+    }
+  };
+
   const handleDownloadPreview = async () => {
     setIsDownloadingPreview(true);
 
     try {
-      const payload = await buildExportPayload();
-      const previewPayload = {
-        export_version: payload.export_version,
-        exported_at: payload.exported_at,
-        scope: payload.scope,
-        counts: {
-          analysis_companies: payload.data.analyses.companies.length,
-          research_entries: payload.data.analyses.research_entries.length,
-          decisions: payload.data.analyses.decisions.length,
-          value_data: payload.data.value_data.length,
-          transactions: payload.data.transactions.length,
-        },
-        identifiers: buildExportPreview(payload),
-      };
-
-      const result = await downloadJsonFile('sufox_data_export_preview.json', previewPayload);
-      toast.success(
-        `Preview saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to download export preview';
-      toast.error(message);
+      await runDownload('Preview', 'sufox_data_export_preview.json', async () => {
+        const payload = await buildExportPayload();
+        return {
+          export_version: payload.export_version,
+          exported_at: payload.exported_at,
+          scope: payload.scope,
+          counts: {
+            analysis_companies: payload.data.analyses.companies.length,
+            research_entries: payload.data.analyses.research_entries.length,
+            decisions: payload.data.analyses.decisions.length,
+            value_data: payload.data.value_data.length,
+            transactions: payload.data.transactions.length,
+          },
+          identifiers: buildExportPreview(payload),
+        };
+      });
+    } catch {
+      // already surfaced via runDownload
     } finally {
       setIsDownloadingPreview(false);
     }
@@ -735,15 +777,9 @@ export default function Settings() {
     setIsExportingData(true);
 
     try {
-      const payload = await buildExportPayload();
-      const result = await downloadJsonFile('sufox_data_export.json', payload);
-
-      toast.success(
-        `Export saved (${formatBytes(result.bytes)}) via ${result.method === 'save-picker' ? 'Save dialog' : 'browser download'}`
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to export data';
-      toast.error(message);
+      await runDownload('Export', 'sufox_data_export.json', async () => buildExportPayload());
+    } catch {
+      // already surfaced via runDownload
     } finally {
       setIsExportingData(false);
     }
