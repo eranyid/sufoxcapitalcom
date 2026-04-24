@@ -21,6 +21,7 @@ import { z } from 'zod';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { CalendarSettingsSection } from '@/components/calendar/CalendarSettingsSection';
 import { DataCleanupSection } from '@/components/settings/DataCleanupSection';
+import { workbookToBlob, type WorkbookPayload } from '@/lib/xlsxExport';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'ZAR', 'OTHER'];
 
@@ -280,6 +281,7 @@ export default function Settings() {
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [isExportingTransactionsCsv, setIsExportingTransactionsCsv] = useState(false);
   const [isExportingValuationsCsv, setIsExportingValuationsCsv] = useState(false);
+  const [isExportingXlsx, setIsExportingXlsx] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Load profile data
@@ -965,6 +967,59 @@ export default function Settings() {
     }
   };
 
+  const handleExportXlsx = async () => {
+    if (!user || !isContextSet) {
+      toast.error('Select a personal or client context before exporting');
+      return;
+    }
+    setIsExportingXlsx(true);
+    try {
+      const payload = await buildExportPayload();
+      const workbookPayload: WorkbookPayload = {
+        exported_at: payload.exported_at,
+        scope: payload.scope,
+        data: {
+          transactions: payload.data.transactions as unknown as Record<string, unknown>[],
+          value_data: payload.data.value_data as unknown as Record<string, unknown>[],
+          analyses: {
+            companies: payload.data.analyses.companies as unknown as Record<string, unknown>[],
+            research_entries: payload.data.analyses.research_entries as unknown as Record<string, unknown>[],
+            decisions: payload.data.analyses.decisions as unknown as Record<string, unknown>[],
+          },
+        },
+      };
+      const blob = workbookToBlob(workbookPayload);
+      if (blob.size === 0) throw new Error('Generated workbook is empty.');
+      const today = new Date().toISOString().slice(0, 10);
+      const fileName = `sufox_data_export_${today}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      try {
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.rel = 'noopener';
+        anchor.style.display = 'none';
+        document.body.appendChild(anchor);
+        anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        anchor.remove();
+      } finally {
+        window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+      const totalRows =
+        workbookPayload.data.transactions.length +
+        workbookPayload.data.value_data.length +
+        workbookPayload.data.analyses.companies.length +
+        workbookPayload.data.analyses.research_entries.length +
+        workbookPayload.data.analyses.decisions.length;
+      toast.success(`Excel workbook saved (${totalRows} rows, ${formatBytes(blob.size)})`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to export Excel workbook';
+      toast.error(message);
+    } finally {
+      setIsExportingXlsx(false);
+    }
+  };
+
   const handleExportData = async () => {
     setIsExportingData(true);
 
@@ -1240,6 +1295,26 @@ export default function Settings() {
               <Button onClick={handleExportData} disabled={isPreviewingExport || isExportingData || !user || !isContextSet} className="gradient-gold text-primary-foreground sm:flex-1">
                 {isExportingData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DatabaseIcon className="h-4 w-4 mr-2" />}
                 Export JSON
+              </Button>
+            </div>
+
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <FileSpreadsheet className="h-4 w-4 text-primary" />
+                  Excel Workbook (.xlsx)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Multi-sheet workbook with all data — ready for BI tools (Power BI, Tableau), CRMs, and external systems.
+                </p>
+              </div>
+              <Button
+                onClick={handleExportXlsx}
+                disabled={isExportingXlsx || !user || !isContextSet}
+                className="gradient-gold text-primary-foreground w-full"
+              >
+                {isExportingXlsx ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+                Download Excel Workbook
               </Button>
             </div>
 
