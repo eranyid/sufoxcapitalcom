@@ -1298,6 +1298,26 @@ export default function Settings() {
               </Button>
             </div>
 
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <FileSpreadsheet className="h-4 w-4 text-primary" />
+                  Excel Workbook (.xlsx)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Multi-sheet workbook with all data — ready for BI tools (Power BI, Tableau), CRMs, and external systems.
+                </p>
+              </div>
+              <Button
+                onClick={handleExportXlsx}
+                disabled={isExportingXlsx || !user || !isContextSet}
+                className="gradient-gold text-primary-foreground w-full"
+              >
+                {isExportingXlsx ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+                Download Excel Workbook
+              </Button>
+            </div>
+
             <div className="rounded-lg border border-border/60 bg-card/30 p-3 space-y-3">
               <div className="space-y-0.5">
                 <p className="text-sm font-medium text-foreground flex items-center gap-2">
