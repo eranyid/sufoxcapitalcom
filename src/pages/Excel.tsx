@@ -317,7 +317,7 @@ export default function Excel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, session.scope, activeClientId]);
 
-  const portfolioName = session.type === 'personal' ? 'Personal' : (activeClientName ?? 'Client');
+  const portfolioName = session.scope === 'personal' ? 'Personal' : (activeClientName ?? 'Client');
   const cursorPrompt = useMemo(
     () => (payload ? buildCursorPrompt(payload, { portfolioName }) : ''),
     [payload, portfolioName],
