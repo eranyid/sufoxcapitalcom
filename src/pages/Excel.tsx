@@ -380,10 +380,16 @@ export default function Excel() {
             </p>
           </div>
         </div>
-        <Button onClick={load} disabled={loading} size="sm">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={exportAllToXlsx} disabled={!payload || loading} size="sm" variant="default">
+            <Download className="h-4 w-4" />
+            Export All to .xlsx
+          </Button>
+          <Button onClick={load} disabled={loading} size="sm" variant="outline">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {error && (
