@@ -1090,25 +1090,11 @@ export default function Settings() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
-              <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                <DatabaseIcon className="h-4 w-4 text-primary" />
-                Where will the file be saved?
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <DatabaseIcon className="h-4 w-4 text-primary flex-shrink-0" />
+                The file will be saved directly to your browser's <span className="font-mono text-foreground">Downloads</span> folder.
               </p>
-              <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
-                <li>
-                  <span className="text-foreground">Native Save dialog</span> (Chrome/Edge over HTTPS): a system "Save As" window opens — you choose the folder yourself (Desktop, Documents, etc.).
-                </li>
-                <li>
-                  <span className="text-foreground">Browser download fallback</span> (Safari, Firefox, embedded previews): the file downloads silently to your browser's default <span className="font-mono text-foreground">Downloads</span> folder (usually <span className="font-mono">~/Downloads</span> on Mac/Linux or <span className="font-mono">C:\Users\&lt;you&gt;\Downloads</span> on Windows).
-                </li>
-                {typeof window !== 'undefined' && window.self !== window.top && (
-                  <li className="text-primary">
-                    ⚠ You're viewing this inside an embedded preview — the Save dialog is blocked here. The file will go straight to your <span className="font-mono">Downloads</span> folder. Open the published app in its own browser tab to get the Save dialog.
-                  </li>
-                )}
-                <li>Check your browser's downloads bar/tray (⌘⇧J on Mac Chrome, Ctrl+J on Windows) to see the file and click "Show in folder".</li>
-              </ul>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button onClick={handlePreviewExport} disabled={isPreviewingExport || isExportingData || !user || !isContextSet} variant="outline" className="sm:flex-1">
