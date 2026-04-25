@@ -427,7 +427,7 @@ export default function Excel() {
           </CardHeader>
           <CardContent>
             <Tabs value={tab} onValueChange={(v) => setTab(v as SheetKey)}>
-              <TabsList className="grid grid-cols-5 w-full max-w-3xl">
+              <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full max-w-4xl">
                 {(Object.keys(SHEETS) as SheetKey[]).map((k) => (
                   <TabsTrigger key={k} value={k}>
                     {SHEETS[k].label}
