@@ -12,20 +12,21 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import {
   fetchExcelPayload, formatCell, rowsToTSV, rowsToCSV, rowsToJSON,
-  TRANSACTIONS_COLS, VALUATIONS_COLS, COMPANIES_COLS, RESEARCH_COLS, DECISIONS_COLS,
+  TRANSACTIONS_COLS, VALUATIONS_COLS, COMPANIES_COLS, RESEARCH_COLS, DECISIONS_COLS, CAPITAL_LEDGER_COLS,
   REQUIRED_COLS, getMissingFields,
   type ExcelPayload, type Row,
 } from '@/lib/excelExportData';
 import { buildCursorPrompt } from '@/lib/cursorPrompt';
 
-type SheetKey = 'transactions' | 'valuations' | 'companies' | 'research' | 'decisions';
+type SheetKey = 'transactions' | 'valuations' | 'companies' | 'research' | 'decisions' | 'capital_ledger';
 
 const SHEETS: Record<SheetKey, { label: string; cols: string[]; pick: (p: ExcelPayload) => Row[] }> = {
-  transactions: { label: 'Transactions', cols: TRANSACTIONS_COLS, pick: (p) => p.data.transactions },
-  valuations:   { label: 'Valuations',   cols: VALUATIONS_COLS,   pick: (p) => p.data.valuations },
-  companies:    { label: 'Companies',    cols: COMPANIES_COLS,    pick: (p) => p.data.companies },
-  research:     { label: 'Research',     cols: RESEARCH_COLS,     pick: (p) => p.data.research_entries },
-  decisions:    { label: 'Decisions',    cols: DECISIONS_COLS,    pick: (p) => p.data.decisions },
+  transactions:   { label: 'Transactions',   cols: TRANSACTIONS_COLS,   pick: (p) => p.data.transactions },
+  valuations:     { label: 'Valuations',     cols: VALUATIONS_COLS,     pick: (p) => p.data.valuations },
+  companies:      { label: 'Companies',      cols: COMPANIES_COLS,      pick: (p) => p.data.companies },
+  research:       { label: 'Research',       cols: RESEARCH_COLS,       pick: (p) => p.data.research_entries },
+  decisions:      { label: 'Decisions',      cols: DECISIONS_COLS,      pick: (p) => p.data.decisions },
+  capital_ledger: { label: 'Cash Ledger',    cols: CAPITAL_LEDGER_COLS, pick: (p) => p.data.capital_ledger },
 };
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -426,7 +427,7 @@ export default function Excel() {
           </CardHeader>
           <CardContent>
             <Tabs value={tab} onValueChange={(v) => setTab(v as SheetKey)}>
-              <TabsList className="grid grid-cols-5 w-full max-w-3xl">
+              <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full max-w-4xl">
                 {(Object.keys(SHEETS) as SheetKey[]).map((k) => (
                   <TabsTrigger key={k} value={k}>
                     {SHEETS[k].label}

@@ -11,6 +11,7 @@ export type ExcelPayload = {
     companies: Row[];
     research_entries: Row[];
     decisions: Row[];
+    capital_ledger: Row[];
   };
 };
 
@@ -53,17 +54,25 @@ export const DECISIONS_COLS = [
   'risks_breaks_thesis', 'tags', 'id', 'created_at', 'updated_at',
 ];
 
+export const CAPITAL_LEDGER_COLS = [
+  'created_at', 'entry_type', 'currency', 'amount',
+  'running_balance', 'fx_rate_used', 'base_currency', 'amount_base',
+  'description', 'transaction_id', 'metadata',
+  'client_id', 'id',
+];
+
 /**
  * Required columns per sheet for client-side validation.
  * A row is "invalid" if any of these fields is null/undefined/empty string.
  * Mirrors the NOT NULL constraints in the database schema for the relevant tables.
  */
 export const REQUIRED_COLS: Record<string, string[]> = {
-  transactions: ['date', 'ticker', 'transaction_type', 'quantity', 'price_per_unit', 'currency'],
-  valuations:   ['month', 'ticker', 'price_per_unit'],
-  companies:    ['company_name', 'status', 'group_name'],
-  research:     ['title', 'entry_type'],
-  decisions:    ['decision_date', 'decision_type', 'rationale'],
+  transactions:   ['date', 'ticker', 'transaction_type', 'quantity', 'price_per_unit', 'currency'],
+  valuations:     ['month', 'ticker', 'price_per_unit'],
+  companies:      ['company_name', 'status', 'group_name'],
+  research:       ['title', 'entry_type'],
+  decisions:      ['decision_date', 'decision_type', 'rationale'],
+  capital_ledger: ['created_at', 'entry_type', 'currency', 'amount'],
 };
 
 /** Returns true when a value is considered "missing" for validation purposes. */
@@ -152,23 +161,27 @@ export async function fetchExcelPayload(params: {
   let companiesQuery = supabase.from('crm_companies').select('*').eq('user_id', userId).is('deleted_at', null);
   let valuationsQuery = supabase.from('valuations').select('*').eq('user_id', userId).is('deleted_at', null);
   let transactionsQuery = supabase.from('transactions').select('*').eq('user_id', userId).is('deleted_at', null);
+  let ledgerQuery = supabase.from('capital_ledger').select('*').eq('user_id', userId).order('created_at', { ascending: true });
 
   if (clientId) {
     companiesQuery = companiesQuery.eq('client_id', clientId);
     valuationsQuery = valuationsQuery.eq('client_id', clientId);
     transactionsQuery = transactionsQuery.eq('client_id', clientId);
+    ledgerQuery = ledgerQuery.eq('client_id', clientId);
   } else {
     companiesQuery = companiesQuery.is('client_id', null);
     valuationsQuery = valuationsQuery.is('client_id', null);
     transactionsQuery = transactionsQuery.is('client_id', null);
+    ledgerQuery = ledgerQuery.is('client_id', null);
   }
 
-  const [companiesRes, valuationsRes, transactionsRes, researchRes, decisionsRes] = await Promise.all([
+  const [companiesRes, valuationsRes, transactionsRes, researchRes, decisionsRes, ledgerRes] = await Promise.all([
     companiesQuery,
     valuationsQuery,
     transactionsQuery,
     supabase.from('company_research_entries').select('*').eq('user_id', userId),
     supabase.from('company_decisions').select('*').eq('user_id', userId),
+    ledgerQuery,
   ]);
 
   if (companiesRes.error) throw companiesRes.error;
@@ -176,12 +189,14 @@ export async function fetchExcelPayload(params: {
   if (transactionsRes.error) throw transactionsRes.error;
   if (researchRes.error) throw researchRes.error;
   if (decisionsRes.error) throw decisionsRes.error;
+  if (ledgerRes.error) throw ledgerRes.error;
 
   const companies = (companiesRes.data ?? []) as Row[];
   const valuations = (valuationsRes.data ?? []) as Row[];
   const transactions = (transactionsRes.data ?? []) as Row[];
   const researchAll = (researchRes.data ?? []) as Row[];
   const decisionsAll = (decisionsRes.data ?? []) as Row[];
+  const capital_ledger = (ledgerRes.data ?? []) as Row[];
 
   const companyIds = new Set(companies.map(c => c.id as string));
   const tickers = new Set<string>([
@@ -205,6 +220,6 @@ export async function fetchExcelPayload(params: {
   return {
     exported_at: new Date().toISOString(),
     scope: { type: scope, client_id: clientId },
-    data: { transactions, valuations, companies, research_entries, decisions },
+    data: { transactions, valuations, companies, research_entries, decisions, capital_ledger },
   };
 }
