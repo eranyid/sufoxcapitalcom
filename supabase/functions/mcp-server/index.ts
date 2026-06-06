@@ -1,14 +1,9 @@
 import { Hono } from "https://deno.land/x/hono@v4.3.11/mod.ts";
 import { McpServer, StreamableHttpTransport } from "npm:mcp-lite@^0.10.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.2";
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 
 const app = new Hono();
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 // Helper: create an authenticated supabase client from the request's auth header
 function getSupabaseClient(authHeader: string | null) {
@@ -29,7 +24,9 @@ function getSupabaseClient(authHeader: string | null) {
   });
 }
 
-// We need to authenticate per-request, so we store auth context
+// Per-request auth context. Supabase Edge Functions process one request per
+// isolate at a time, so a module-level variable is safe here. If this were a
+// long-running server, use AsyncLocalStorage instead to avoid race conditions.
 let currentAuthHeader: string | null = null;
 
 const mcpServer = new McpServer({
@@ -395,12 +392,14 @@ mcpServer.tool({
 const transport = new StreamableHttpTransport();
 
 app.all("/*", async (c) => {
+  const corsHeaders = getCorsHeaders(c.req.raw);
+
   // Capture auth header for tool handlers
   currentAuthHeader = c.req.header("Authorization") || null;
 
   // Handle CORS
   if (c.req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleCorsOptions(c.req.raw);
   }
 
   try {
