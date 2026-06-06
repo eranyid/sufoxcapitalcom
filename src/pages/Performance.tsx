@@ -11,6 +11,7 @@ import { StaggeredContainer } from '@/components/StaggeredContainer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, Target, Award, Percent, ArrowRightLeft, DollarSign } from 'lucide-react';
 import { useMemo } from 'react';
+import { formatCurrency as _formatCurrency, formatPercent } from '@/lib/formatters';
 
 export default function Performance() {
   const { transactions, valuations, performanceMetrics, settings, computedData } = usePortfolio();
@@ -18,10 +19,7 @@ export default function Performance() {
   const monthlyReturns = calculateMonthlyReturns(transactions, valuations);
   const contributions = calculateContributions(transactions, monthlyReturns, valuations);
 
-  const formatPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: settings.baseCurrency || 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0
-  }).format(value);
+  const formatCurrency = (value: number) => _formatCurrency(value, { currency: settings.baseCurrency || 'USD' });
 
   const hasData = performanceMetrics !== null;
 

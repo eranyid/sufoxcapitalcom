@@ -5,6 +5,7 @@ import type { PortfolioHolding } from '@/lib/portfolioEngine';
 import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { formatCurrency, formatPercent } from '@/lib/formatters';
 
 // Default branding values for fallback
 const FALLBACK_BRANDING = {
@@ -21,15 +22,6 @@ const FALLBACK_BRANDING = {
   tableHeaderTextColor: '#374151',
   tableRowAltBgColor: '#F9FAFB',
   tableBorderColor: '#E5E7EB',
-};
-
-// Local formatting helpers
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-};
-
-const formatPercent = (value: number): string => {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 };
 
 interface Props {

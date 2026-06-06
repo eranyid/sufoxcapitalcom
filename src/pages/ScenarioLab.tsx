@@ -53,7 +53,8 @@ import {
   getScenarioTypeColor,
   getHorizonLabel 
 } from '@/data/scenarios';
-import { runScenario, ScenarioResult, formatCurrency, formatPctWithSign } from '@/lib/scenarioEngine';
+import { runScenario, ScenarioResult } from '@/lib/scenarioEngine';
+import { formatCurrency, formatPercent as formatPctWithSign } from '@/lib/formatters';
 import { CorrelationSpikeChart } from '@/components/dashboard/CorrelationSpikeChart';
 import { cn } from '@/lib/utils';
 

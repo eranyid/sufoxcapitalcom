@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatPercent } from '@/lib/formatters';
 
 interface MonthlyReturn {
   month: string;
@@ -46,7 +47,7 @@ export function PerformanceCalendarHeatmap({ data }: PerformanceCalendarHeatmapP
     }
   };
 
-  const formatPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+
 
   return (
     <div className="bloomberg-panel">

@@ -5,6 +5,7 @@ import { ScenarioResult } from '@/lib/scenarioEngine';
 import { shockTargetMeta, getHorizonLabel } from '@/data/scenarios';
 import { FactorModelResults } from '@/lib/factorModel';
 import { format } from 'date-fns';
+import { formatCurrency, formatPercent } from '@/lib/formatters';
 
 // Monte Carlo Results interface for PDF
 export interface MonteCarloResultsForPDF {
@@ -774,18 +775,7 @@ export function generatePDFReport(data: ReportData) {
   doc.save(`SUFOX_Portfolio_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 }
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
-function formatPercent(value: number): string {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-}
 
 // Scenario Report PDF Export
 export function generateScenarioPDFReport(result: ScenarioResult) {

@@ -5,14 +5,7 @@ import { PerformanceMetrics, RiskMetrics } from '@/types/investment';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ScatterChart, Scatter, ZAxis, ReferenceLine } from 'recharts';
 import { TrendingUp, TrendingDown, FileImage } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-};
-
-const formatPercent = (value: number): string => {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-};
+import { formatCurrency, formatPercent } from '@/lib/formatters';
 
 // Generate harmonized chart colors array from branding
 const getChartColors = (branding: ReportBranding): string[] => {

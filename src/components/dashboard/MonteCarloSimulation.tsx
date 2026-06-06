@@ -25,6 +25,7 @@ import {
   MultivariateSimulationResult,
   isStructuredError,
 } from '@/lib/monteCarloEngine';
+import { formatCompactCurrency, formatPercent } from '@/lib/formatters';
 
 interface MonteCarloSimulationProps {
   monthlyReturns: number[];
@@ -142,17 +143,7 @@ function generateDistribution(sortedValues: number[], numBins: number = 30): Dis
   return bins;
 }
 
-function formatCurrency(value: number): string {
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(1)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
-  return `$${value.toFixed(0)}`;
-}
-
-function formatPercent(value: number): string {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
-}
+const formatCurrency = formatCompactCurrency;
 
 function validateManualInputs(inputs: ManualInputs): ValidationErrors {
   const errors: ValidationErrors = {};

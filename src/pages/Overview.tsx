@@ -25,6 +25,7 @@ import { computeFactorModel } from '@/lib/factorModel';
 import { calculateYTDReturn, LedgerEntryForYTD } from '@/lib/calculations';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, TrendingDown, Activity, BarChart3, FileText } from 'lucide-react';
+import { formatCurrency, formatPercent } from '@/lib/formatters';
 
 // Monte Carlo helper functions
 function toLogReturns(simpleReturns: number[]): number[] {
@@ -166,18 +167,7 @@ export default function Overview() {
     return computeFactorModel(transactions, valuations);
   }, [transactions, valuations]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
-  };
 
-  const formatPercent = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-  };
 
 
   const hasData = performanceMetrics !== null;

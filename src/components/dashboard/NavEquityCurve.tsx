@@ -3,6 +3,8 @@ import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
 import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { Transaction, MonthlyValuation, CashBalances } from '@/types/investment';
 import { cn } from '@/lib/utils';
+import { formatCompactCurrency } from '@/lib/formatters';
+import { CURRENCY_SYMBOLS } from '@/lib/currencies';
 
 interface NavEquityCurveProps {
   transactions: Transaction[];
@@ -144,23 +146,15 @@ export function NavEquityCurve({
   // Check for cash data completeness
   const hasCashData = cashBalances.USD > 0 || cashBalances.EUR > 0 || cashBalances.ILS > 0;
 
-  const formatCurrency = (value: number) => {
-    const prefix = baseCurrency === 'USD' ? '$' : '₪';
-    if (value >= 1000000) {
-      return `${prefix}${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `${prefix}${(value / 1000).toFixed(0)}K`;
-    }
-    return `${prefix}${value.toFixed(0)}`;
-  };
+  const currencyPrefix = CURRENCY_SYMBOLS[baseCurrency || 'USD'] || '$';
+  const formatCurrency = (value: number) => formatCompactCurrency(value, currencyPrefix);
 
   const formatFullCurrency = (value: number) => {
-    const prefix = baseCurrency === 'USD' ? '$' : '₪';
     return new Intl.NumberFormat('en-US', {
       style: 'decimal',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value).replace(/^/, prefix);
+    }).format(value).replace(/^/, currencyPrefix);
   };
 
   if (navSeries.length === 0) {

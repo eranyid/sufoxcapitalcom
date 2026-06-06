@@ -29,6 +29,7 @@ import {
   Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CURRENCY_SYMBOLS } from '@/lib/currencies';
 
 const CURRENCY_OPTIONS = ['ALL', 'USD', 'EUR', 'ILS', 'GBP', 'CHF', 'JPY'] as const;
 const CURRENCY_LIST = ['USD', 'EUR', 'ILS', 'GBP', 'CHF', 'JPY'] as const;
@@ -68,14 +69,7 @@ const ENTRY_TYPE_CONFIG: Record<LedgerEntryType, {
   FEE: { icon: Receipt, colorClass: 'text-destructive', label: 'Fee' },
 };
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$',
-  EUR: '€',
-  ILS: '₪',
-  GBP: '£',
-  CHF: 'Fr',
-  JPY: '¥',
-};
+
 
 interface CapitalLedgerViewProps {
   className?: string;

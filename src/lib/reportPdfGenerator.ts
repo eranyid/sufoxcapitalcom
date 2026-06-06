@@ -4,15 +4,7 @@ import type { Report } from '@/types/reports';
 import type { ReportBlock, ReportBranding as WYSIWYGBranding } from '@/types/reportBuilder';
 import type { PortfolioHolding } from '@/lib/portfolioEngine';
 import type { PerformanceMetrics, RiskMetrics } from '@/types/investment';
-
-// Local formatting helpers
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-};
-
-const formatPercent = (value: number): string => {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-};
+import { formatCurrency, formatPercent } from '@/lib/formatters';
 
 interface GeneratePDFOptions {
   report: Report;

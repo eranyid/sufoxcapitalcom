@@ -8,6 +8,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getFxRate, getDefaultFxRate } from './fxService';
+import { formatAmountWithSymbol } from '@/lib/formatters';
 import { CashBalances, Transaction } from '@/types/investment';
 
 export interface TradeValidationInput {
@@ -242,17 +243,7 @@ function getCashCurrency(assetCurrency: string, cashBalances: CashBalances): str
 }
 
 function formatCurrency(amount: number, currency: string): string {
-  const symbols: Record<string, string> = {
-    USD: '$',
-    EUR: '€',
-    ILS: '₪',
-    GBP: '£',
-    CHF: 'CHF ',
-    JPY: '¥'
-  };
-
-  const symbol = symbols[currency] || currency + ' ';
-  return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatAmountWithSymbol(amount, currency);
 }
 
 /**

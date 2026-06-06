@@ -20,6 +20,7 @@ import { PreTradeCheck } from '@/components/dashboard/PreTradeCheck';
 import { TradeValidationPanel } from '@/components/transactions/TradeValidationPanel';
 import { calculateHoldingsFromTransactions } from '@/lib/transactionValidator';
 import { toast } from 'sonner';
+import { formatCurrencyPrecise } from '@/lib/formatters';
 
 const ASSET_TYPES: AssetType[] = ['equity', 'bond', 'commodity', 'crypto', 'real_estate', 'cash', 'alternative', 'etf', 'mutual_fund', 'private_equity', 'private_debt', 'hedge_fund'];
 const TRANSACTION_TYPES: TransactionType[] = ['buy', 'sell'];
@@ -406,9 +407,7 @@ export default function Transactions() {
     }
   };
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD'
-  }).format(value);
+  const formatCurrency = formatCurrencyPrecise;
 
   const isSellMode = form.transactionType === 'sell';
   const canSubmitBuy = !isSellMode && form.linkedCompanyId && companies.length > 0;

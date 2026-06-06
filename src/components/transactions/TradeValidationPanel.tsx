@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { CashBalances } from '@/types/investment';
 import { validateTradeSync, TradeValidationResult } from '@/lib/transactionValidator';
 import { getDefaultFxRate } from '@/lib/fxService';
+import { formatAmountWithSymbol } from '@/lib/formatters';
 
 interface TradeValidationPanelProps {
   userId: string;
@@ -66,13 +67,7 @@ export function TradeValidationPanel({
   const { isValid, errors, warnings, calculatedValues } = validation;
   const isBuy = transactionType === 'buy';
 
-  const formatCurrency = (amount: number, currency: string) => {
-    const symbols: Record<string, string> = {
-      USD: '$', EUR: '€', ILS: '₪', GBP: '£', CHF: 'CHF ', JPY: '¥'
-    };
-    const symbol = symbols[currency] || currency + ' ';
-    return `${symbol}${Math.abs(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = formatAmountWithSymbol;
 
   return (
     <div className={cn(
