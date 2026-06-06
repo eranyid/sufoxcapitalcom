@@ -101,7 +101,8 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
       
       toast.success('Chart exported as PNG');
     } catch (error) {
-      toast.error('Failed to export chart');
+      console.error('PNG export error:', error);
+      toast.error('Failed to export chart as PNG');
     }
   }, [state.metric]);
   
@@ -127,7 +128,8 @@ export function ChartCanvas({ result, state, isCalculating }: ChartCanvasProps) 
       
       toast.success('Chart exported as PDF');
     } catch (error) {
-      toast.error('Failed to export chart');
+      console.error('PDF export error:', error);
+      toast.error('Failed to export chart as PDF');
     }
   }, [state.metric]);
   

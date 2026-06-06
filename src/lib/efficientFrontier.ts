@@ -785,7 +785,8 @@ export function calculateEfficientFrontier(
           });
         }
       } catch (e) {
-        // Skip problematic points
+        // Skip problematic points in frontier computation (e.g. singular matrices)
+        console.debug('Skipping frontier point due to computation error:', e);
         continue;
       }
     }

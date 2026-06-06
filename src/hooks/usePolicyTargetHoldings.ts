@@ -40,6 +40,7 @@ export function usePolicyTargetHoldings() {
       setHoldings((data || []).map(d => ({ ...d, target_weight: Number(d.target_weight) })));
     } catch (err) {
       console.error('Error fetching policy target holdings:', err);
+      toast.error('Failed to load policy target holdings');
     } finally {
       setIsLoading(false);
     }

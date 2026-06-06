@@ -90,6 +90,7 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
       }
     } catch (error) {
       console.error('Error fetching target allocations:', error);
+      toast.error('Failed to load target allocations');
     } finally {
       setIsLoading(false);
     }
@@ -302,6 +303,7 @@ export function useTargetAllocation(): UseTargetAllocationReturn {
       };
     } catch (error) {
       console.error('Error loading target:', error);
+      toast.error('Failed to load target allocation details');
       return null;
     }
   };

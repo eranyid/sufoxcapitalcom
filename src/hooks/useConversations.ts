@@ -121,10 +121,11 @@ export function useConversations() {
       setConversations(enriched);
     } catch (err) {
       console.error('Error fetching conversations:', err);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to load conversations' });
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, toast]);
 
   useEffect(() => {
     fetchConversations();
@@ -233,6 +234,7 @@ export function useMessages(conversationId: string | null) {
         .eq('user_id', user.id);
     } catch (err) {
       console.error('Error fetching messages:', err);
+      setMessages([]);
     } finally {
       setLoading(false);
     }

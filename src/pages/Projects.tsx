@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import type { ProjectPriority, ProjectHealth } from '@/types/projects';
 
@@ -118,7 +119,8 @@ export default function Projects() {
       .single();
 
     if (error) {
-      console.error(error);
+      console.error('Error creating project:', error);
+      toast.error(error.message || 'Failed to create project');
       return false;
     }
 
