@@ -47,6 +47,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/formatters';
 
 interface Company {
   id: string;
@@ -405,14 +406,7 @@ export default function CompanyPage() {
     toast.success('Task unlinked');
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+
 
   const getConvictionColor = (level: string | null) => {
     const opt = CONVICTION_OPTIONS.find(o => o.value === level);

@@ -353,18 +353,5 @@ export function compareScenarios(
   return scenarios.map(scenario => runScenario(scenario, transactions, valuations));
 }
 
-// Format currency
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value);
-}
-
-// Format percentage with sign
-export function formatPctWithSign(value: number): string {
-  const sign = value >= 0 ? '+' : '';
-  return `${sign}${value.toFixed(2)}%`;
-}
+// Re-export formatters for backward compatibility
+export { formatCurrency, formatPercent as formatPctWithSign } from '@/lib/formatters';

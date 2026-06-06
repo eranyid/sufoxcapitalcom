@@ -15,6 +15,7 @@ import { useIsraelCPI } from '@/hooks/useIsraelCPI';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { differenceInDays, parseISO, format } from 'date-fns';
+import { formatCompactCurrency } from '@/lib/formatters';
 
 // Israeli tax rate on REAL capital gains
 const ISRAEL_CGT_RATE = 0.25; // 25% flat rate
@@ -717,11 +718,7 @@ export function RebalanceTool() {
     };
   }, [showAnalysis, currentHoldings, newPositions, totalPortfolioValue, minTradeSize, selectTaxOptimizedLots, totalTargetWeight, cpiError]);
 
-  const formatCurrency = (value: number) => {
-    if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-    if (Math.abs(value) >= 1e3) return `$${(value / 1e3).toFixed(1)}K`;
-    return `$${value.toFixed(0)}`;
-  };
+  const formatCurrency = formatCompactCurrency;
 
   const formatWeight = (value: number) => `${value.toFixed(2)}%`;
 

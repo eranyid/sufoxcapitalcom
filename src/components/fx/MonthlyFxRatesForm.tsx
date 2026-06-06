@@ -12,17 +12,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { CashCurrency } from '@/types/investment';
 import { getDefaultFxRate } from '@/lib/fxService';
 import { usePortfolio } from '@/context/PortfolioContext';
+import { formatCurrency } from '@/lib/formatters';
+import { CURRENCY_NAMES } from '@/lib/currencies';
 // All currencies except USD (which is the base)
 const CURRENCIES_TO_USD: CashCurrency[] = ['EUR', 'ILS', 'GBP', 'CHF', 'JPY'];
 
-const CURRENCY_NAMES: Record<CashCurrency, string> = {
-  USD: 'US Dollar',
-  EUR: 'Euro',
-  ILS: 'Israeli Shekel',
-  GBP: 'British Pound',
-  CHF: 'Swiss Franc',
-  JPY: 'Japanese Yen'
-};
+
 
 interface MonthlyFxRatesFormProps {
   onRatesSaved?: () => void;
@@ -182,14 +177,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
   };
 
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
-  };
+
 
   const handleSaveAll = async () => {
     if (!user) return;

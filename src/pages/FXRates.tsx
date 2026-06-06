@@ -17,15 +17,7 @@ import { format } from 'date-fns';
 import { getSupportedCurrencies, getDefaultFxRate, FxRate } from '@/lib/fxService';
 import { CashCurrency } from '@/types/investment';
 import { MonthlyFxRatesForm } from '@/components/fx/MonthlyFxRatesForm';
-
-const CURRENCY_SYMBOLS: Record<CashCurrency, string> = {
-  USD: '$', EUR: '€', ILS: '₪', GBP: '£', CHF: 'Fr', JPY: '¥'
-};
-
-const CURRENCY_NAMES: Record<CashCurrency, string> = {
-  USD: 'US Dollar', EUR: 'Euro', ILS: 'Israeli Shekel',
-  GBP: 'British Pound', CHF: 'Swiss Franc', JPY: 'Japanese Yen'
-};
+import { CURRENCY_SYMBOLS, CURRENCY_NAMES } from '@/lib/currencies';
 
 const AUTO_PAIRS = ['USD/EUR', 'USD/ILS', 'USD/GBP', 'USD/CHF', 'USD/JPY'];
 

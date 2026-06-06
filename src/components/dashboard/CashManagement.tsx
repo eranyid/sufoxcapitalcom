@@ -7,24 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-const CURRENCY_SYMBOLS: Record<CashCurrency, string> = {
-  USD: '$',
-  EUR: '€',
-  ILS: '₪',
-  GBP: '£',
-  CHF: 'Fr',
-  JPY: '¥'
-};
-
-const CURRENCY_NAMES: Record<CashCurrency, string> = {
-  USD: 'US Dollar',
-  EUR: 'Euro',
-  ILS: 'Israeli Shekel',
-  GBP: 'British Pound',
-  CHF: 'Swiss Franc',
-  JPY: 'Japanese Yen'
-};
+import { CURRENCY_SYMBOLS, CURRENCY_NAMES } from '@/lib/currencies';
 
 // Approximate exchange rates (in real app, fetch from API)
 const EXCHANGE_RATES: Record<CashCurrency, Record<CashCurrency, number>> = {

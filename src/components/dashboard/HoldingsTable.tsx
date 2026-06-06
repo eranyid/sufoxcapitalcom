@@ -19,6 +19,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Building2, Briefcase, AlertTriangle } 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TickerLink } from '@/components/TickerLink';
+import { formatCurrencyPrecise, formatPercent } from '@/lib/formatters';
 
 interface HoldingsTableProps {
   transactions: Transaction[];
@@ -210,18 +211,7 @@ export function HoldingsTable({ transactions, valuations }: HoldingsTableProps) 
       : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
-  };
-
-  const formatPercent = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-  };
+  const formatCurrency = formatCurrencyPrecise;
 
   const formatQuantity = (value: number) => {
     return value % 1 === 0 ? value.toString() : value.toFixed(4);

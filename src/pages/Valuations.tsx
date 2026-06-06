@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { CrmCompany } from '@/types/crm';
+import { formatCurrencyPrecise } from '@/lib/formatters';
 
 interface EditFormState {
   ticker: string;
@@ -222,9 +223,7 @@ export default function Valuations() {
     return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
   }, [valuations]);
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD'
-  }).format(value);
+  const formatCurrency = formatCurrencyPrecise;
 
   return (
     <div className="section-spacing animate-fade-in">

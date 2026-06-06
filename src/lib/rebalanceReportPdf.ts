@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import { formatCompactCurrency, formatPercent, formatCurrencyPrecise } from '@/lib/formatters';
 
 // Bloomberg Terminal Theme Colors
 const THEME = {
@@ -218,19 +219,10 @@ const tableStyles = {
   margin: { left: 14, right: 14 },
 };
 
-function formatCurrency(value: number): string {
-  if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-  if (Math.abs(value) >= 1e3) return `$${(value / 1e3).toFixed(1)}K`;
-  return `$${value.toFixed(0)}`;
-}
+const formatCurrency = formatCompactCurrency;
 
 function formatFullCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
-}
-
-function formatPercent(value: number): string {
-  const sign = value >= 0 ? '+' : '';
-  return `${sign}${value.toFixed(2)}%`;
+  return formatCurrencyPrecise(value);
 }
 
 function addKPIBox(doc: jsPDF, x: number, y: number, width: number, label: string, value: string, colorType: 'accent' | 'positive' | 'negative' | 'blue' | 'white' = 'white') {

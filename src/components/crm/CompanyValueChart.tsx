@@ -12,6 +12,7 @@ import {
   ReferenceDot,
 } from 'recharts';
 import { Transaction, MonthlyValuation } from '@/types/investment';
+import { formatCompactCurrency } from '@/lib/formatters';
 
 interface CompanyValueChartProps {
   transactions: Transaction[];
@@ -120,11 +121,7 @@ export function CompanyValueChart({ transactions, valuations, ticker }: CompanyV
     );
   }
 
-  const formatCurrency = (val: number) => {
-    if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
-    if (val >= 1000) return `$${(val / 1000).toFixed(0)}K`;
-    return `$${val.toFixed(0)}`;
-  };
+  const formatCurrency = formatCompactCurrency;
 
   return (
     <div className="h-[200px]">

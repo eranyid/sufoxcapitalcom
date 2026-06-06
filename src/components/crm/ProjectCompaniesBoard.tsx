@@ -63,6 +63,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { formatCurrency } from '@/lib/formatters';
 
 interface Props {
   projectId: string;
@@ -333,14 +334,7 @@ export default function ProjectCompaniesBoard({ projectId }: Props) {
     return holdingsMap.get(ticker.toUpperCase()) || null;
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+
 
   const handleDuplicate = async (company: CrmCompany) => {
     if (!user) return;
