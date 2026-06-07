@@ -100,6 +100,7 @@ export function PipelineSummary({ wizardData, erResults, positions, saveToPolicy
         navigate('/policy');
       }
     } catch (err) {
+      console.error('Error exporting to policy:', err);
       toast.error('Failed to export');
     }
   };

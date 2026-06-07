@@ -49,6 +49,7 @@ export function useNeedsProfile() {
         }
       } catch (error) {
         console.error('Error fetching needs profile:', error);
+        toast.error('Failed to load needs profile');
       } finally {
         setIsLoading(false);
       }

@@ -175,7 +175,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .update({ last_sign_in_at: new Date().toISOString() })
         .eq('id', data.user.id)
-        .then(() => {});
+        .then(({ error: updateError }) => {
+          if (updateError) {
+            console.error('Failed to update last sign-in timestamp:', updateError);
+          }
+        });
     }
 
     toast({

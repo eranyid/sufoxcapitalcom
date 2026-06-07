@@ -45,6 +45,7 @@ export function useFamilyOfficeProfile() {
       }
     } catch (error) {
       console.error('Error fetching family office profile:', error);
+      toast.error('Failed to load Family Office profile');
     } finally {
       setIsLoading(false);
     }

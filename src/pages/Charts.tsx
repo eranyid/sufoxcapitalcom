@@ -113,6 +113,7 @@ export default function Charts() {
       localStorage.setItem('chart-saved-views', JSON.stringify(savedViews));
       toast.success('View saved');
     } catch (error) {
+      console.error('Error saving chart view:', error);
       toast.error('Failed to save view');
     }
   }, [state]);

@@ -133,6 +133,7 @@ export function MonthlyFxRatesForm({ onRatesSaved }: MonthlyFxRatesFormProps) {
         setLastMonthRates(lastRates);
       } catch (error) {
         console.error('Failed to load FX rates:', error);
+        toast.error('Failed to load monthly FX rates');
       } finally {
         setIsLoading(false);
       }

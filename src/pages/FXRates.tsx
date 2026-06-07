@@ -96,7 +96,8 @@ export default function FXRates() {
         }))
       );
     } catch (error: any) {
-      toast.error('Failed to load FX rates');
+      console.error('Error loading FX rates:', error);
+      toast.error(error?.message || 'Failed to load FX rates');
     } finally {
       setIsLoading(false);
     }
@@ -154,6 +155,7 @@ export default function FXRates() {
       }
     } catch (err) {
       console.error('[FXRates] Failed to fetch auto rates:', err);
+      setFetchStatus('error');
     }
   };
 

@@ -30,6 +30,7 @@ interface PortfolioContextType {
   cashBalances: CashBalances;
   sampleDataMode: boolean;
   loading: boolean;
+  error: string | null;
   // NEW: Computed portfolio data - Single Source of Truth
   computedData: ComputedPortfolioData;
   // NEW: Dynamic FX rates from user entries
@@ -76,6 +77,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [fxRates, setFxRates] = useState<FxRatesMap>(DEFAULT_FX_RATES);
   const [previousMonthFxRates, setPreviousMonthFxRates] = useState<FxRatesMap>(DEFAULT_FX_RATES);
 
@@ -269,6 +271,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error loading data:', error);
+        const message = error instanceof Error ? error.message : 'Failed to load portfolio data';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -325,6 +329,9 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       setPreviousMonthFxRates(prevRates);
     } catch (error) {
       console.error('Failed to load FX rates:', error);
+      // Fall back to defaults so the UI doesn't break, but surface the issue
+      setFxRates(DEFAULT_FX_RATES);
+      setPreviousMonthFxRates(DEFAULT_FX_RATES);
     }
   }, [user, isContextSet, activeClientId]);
 
@@ -1214,6 +1221,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       cashBalances,
       sampleDataMode,
       loading,
+      error,
       computedData, // NEW: Single Source of Truth
       setSampleDataMode,
       addTransaction,
