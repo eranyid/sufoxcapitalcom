@@ -11,6 +11,10 @@ export interface MilestoneTemplate {
   description: string;
   icon: string;
   milestones: MilestoneTemplateDef[];
+  /** True for user-defined templates stored in the milestone_templates table. */
+  custom?: boolean;
+  /** DB row id when this template is custom. */
+  id?: string;
 }
 
 export const MILESTONE_TEMPLATES: MilestoneTemplate[] = [
@@ -91,3 +95,40 @@ export const MILESTONE_TEMPLATES: MilestoneTemplate[] = [
     milestones: [],
   },
 ];
+
+/**
+ * Keyword → template-key map used to suggest a template from a project's
+ * name, description, and labels. First match wins, in declaration order.
+ */
+const SUGGESTION_RULES: { keywords: string[]; templateKey: string }[] = [
+  { keywords: ['onboard', 'investor', 'client', 'kyc'], templateKey: 'client_onboarding' },
+  { keywords: ['compliance', 'regulatory', 'filing', '13f', 'form pf', 'sec', 'audit'], templateKey: 'regulatory_filing' },
+  { keywords: ['rebalance', 'allocation', 'optimization', 'portfolio'], templateKey: 'portfolio_rebalance' },
+  { keywords: ['fund', 'operations', 'launch', 'setup', 'infrastructure'], templateKey: 'fund_operations' },
+  { keywords: ['due diligence', 'diligence', 'screening', 'investment', 'evaluation', 'research'], templateKey: 'investment_due_diligence' },
+];
+
+/**
+ * Suggests the most relevant built-in template based on a project's metadata.
+ * Returns null when nothing matches (caller can fall back to Custom/Blank).
+ */
+export function suggestTemplate(input: {
+  name?: string | null;
+  description?: string | null;
+  labels?: string[] | null;
+}): MilestoneTemplate | null {
+  const haystack = [
+    input.name || '',
+    input.description || '',
+    ...(input.labels || []),
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  for (const rule of SUGGESTION_RULES) {
+    if (rule.keywords.some(kw => haystack.includes(kw))) {
+      return MILESTONE_TEMPLATES.find(t => t.key === rule.templateKey) || null;
+    }
+  }
+  return null;
+}

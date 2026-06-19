@@ -1621,6 +1621,39 @@ export type Database = {
           },
         ]
       }
+      milestone_templates: {
+        Row: {
+          id: string
+          user_id: string
+          label: string
+          description: string | null
+          icon: string
+          milestones: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          label: string
+          description?: string | null
+          icon?: string
+          milestones?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          label?: string
+          description?: string | null
+          icon?: string
+          milestones?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       project_milestones: {
         Row: {
           id: string

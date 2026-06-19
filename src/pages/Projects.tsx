@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FolderKanban, Plus, Search, Calendar, Trash2 } from 'lucide-react';
+import { FolderKanban, Plus, Search, Calendar, Trash2, Sparkles, X } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,9 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { ProjectHealthBadge } from '@/components/projects/ProjectHealthBadge';
 import { ProjectPriorityBadge } from '@/components/projects/ProjectPriorityBadge';
-import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
+import { CreateProjectDialog, type CreateProjectData } from '@/components/projects/CreateProjectDialog';
+import { BatchGenerateDialog } from '@/components/projects/BatchGenerateDialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +31,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import type { ProjectPriority, ProjectHealth } from '@/types/projects';
 
 interface ProjectStats {
@@ -48,6 +50,8 @@ export default function Projects() {
   const [createOpen, setCreateOpen] = useState(false);
   const [projectStats, setProjectStats] = useState<ProjectStats>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchOpen, setBatchOpen] = useState(false);
 
   const projectToDelete = deleteId ? projects.find(p => p.id === deleteId) : null;
 
@@ -96,13 +100,7 @@ export default function Projects() {
     fetchTaskStats();
   }, [user, projects]);
 
-  const handleCreate = async (data: {
-    name: string;
-    description?: string;
-    priority: ProjectPriority;
-    health_status: ProjectHealth;
-    target_date?: string;
-  }) => {
+  const handleCreate = async (data: CreateProjectData) => {
     if (!user) return false;
 
     const { data: newProject, error } = await supabase
@@ -124,6 +122,25 @@ export default function Projects() {
       return false;
     }
 
+    // Optionally generate milestones from the chosen template.
+    if (data.milestoneTemplate && data.milestoneTemplate.milestones.length > 0) {
+      const base = data.milestoneStartDate ? new Date(data.milestoneStartDate) : new Date();
+      const rows = data.milestoneTemplate.milestones.map((m, i) => ({
+        project_id: newProject.id,
+        user_id: user.id,
+        title: m.title,
+        description: m.description,
+        due_date: m.dayOffset !== null ? format(addDays(base, m.dayOffset), 'yyyy-MM-dd') : null,
+        sort_order: i,
+        template_key: data.milestoneTemplate!.key,
+      }));
+      const { error: msError } = await supabase.from('project_milestones').insert(rows);
+      if (msError) {
+        console.error('Error generating milestones:', msError);
+        toast.error('Project created, but milestone generation failed');
+      }
+    }
+
     refetch();
     navigate(`/backoffice/projects/${newProject.id}`);
     return true;
@@ -131,9 +148,34 @@ export default function Projects() {
 
   const filteredProjects = projects.filter(p => {
     const query = searchQuery.toLowerCase();
-    return p.name.toLowerCase().includes(query) || 
+    return p.name.toLowerCase().includes(query) ||
            (p.description && p.description.toLowerCase().includes(query));
   });
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allFilteredSelected = filteredProjects.length > 0 && filteredProjects.every(p => selectedIds.has(p.id));
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => {
+      if (allFilteredSelected) {
+        const next = new Set(prev);
+        filteredProjects.forEach(p => next.delete(p.id));
+        return next;
+      }
+      const next = new Set(prev);
+      filteredProjects.forEach(p => next.add(p.id));
+      return next;
+    });
+  };
+
+  const selectedProjects = projects.filter(p => selectedIds.has(p.id));
 
   if (loading) {
     return (
@@ -154,6 +196,28 @@ export default function Projects() {
           New Project
         </Button>
       </div>
+
+      {/* Bulk selection action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium">{selectedIds.size} selected</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-muted-foreground"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              <X size={14} />
+              Clear
+            </Button>
+          </div>
+          <Button size="sm" className="gap-1.5" onClick={() => setBatchOpen(true)}>
+            <Sparkles size={14} />
+            Generate Milestones
+          </Button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative w-full max-w-sm">
@@ -186,6 +250,13 @@ export default function Projects() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={allFilteredSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all"
+                  />
+                </TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground">Name</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[110px]">Health</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide text-muted-foreground w-[90px]">Priority</TableHead>
@@ -203,6 +274,13 @@ export default function Projects() {
                     className="cursor-pointer group transition-colors hover:bg-muted/50"
                     onClick={() => navigate(`/backoffice/projects/${project.id}`)}
                   >
+                    <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.has(project.id)}
+                        onCheckedChange={() => toggleSelected(project.id)}
+                        aria-label={`Select ${project.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="py-3">
                       <div>
                         <span className="font-medium text-foreground group-hover:text-primary transition-colors">
@@ -267,6 +345,14 @@ export default function Projects() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreate={handleCreate}
+      />
+
+      {/* Batch Generate Milestones Dialog */}
+      <BatchGenerateDialog
+        open={batchOpen}
+        onOpenChange={setBatchOpen}
+        projects={selectedProjects}
+        onGenerated={() => setSelectedIds(new Set())}
       />
 
       {/* Delete Confirmation Dialog */}

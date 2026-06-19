@@ -41,6 +41,7 @@ const AnalysisLanding = lazy(() => import("./pages/AnalysisLanding"));
 const CompanyPage = lazy(() => import("./pages/CompanyPage"));
 const Projects = lazy(() => import("./pages/Projects"));
 const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const Milestones = lazy(() => import("./pages/Milestones"));
 const Reports = lazy(() => import("./pages/Reports"));
 const ReportBuilder = lazy(() => import("./pages/ReportBuilder"));
 const Trash = lazy(() => import("./pages/Trash"));
@@ -336,6 +337,11 @@ const App = () => (
                     <Route path="projects/:id" element={
                       <Suspense fallback={<DashboardLoadingSkeleton />}>
                         <ProjectDetail />
+                      </Suspense>
+                    } />
+                    <Route path="milestones" element={
+                      <Suspense fallback={<DashboardLoadingSkeleton />}>
+                        <Milestones />
                       </Suspense>
                     } />
                   </Route>

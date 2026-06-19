@@ -13,7 +13,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { MILESTONE_TEMPLATES, type MilestoneTemplate } from '@/lib/milestoneTemplates';
+import { MILESTONE_TEMPLATES, suggestTemplate, type MilestoneTemplate } from '@/lib/milestoneTemplates';
+import { useMilestoneTemplates } from '@/hooks/useMilestoneTemplates';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Search: <Search size={20} />,
@@ -31,6 +32,10 @@ interface GenerateMilestonesDialogProps {
   projectStartDate?: string | null;
   hasMilestones: boolean;
   onClearAll: () => Promise<boolean>;
+  /** Project metadata used to suggest a relevant template. */
+  projectName?: string | null;
+  projectDescription?: string | null;
+  projectLabels?: string[] | null;
 }
 
 export function GenerateMilestonesDialog({
@@ -40,13 +45,19 @@ export function GenerateMilestonesDialog({
   projectStartDate,
   hasMilestones,
   onClearAll,
+  projectName,
+  projectDescription,
+  projectLabels,
 }: GenerateMilestonesDialogProps) {
+  const { templates: customTemplates } = useMilestoneTemplates();
   const [selected, setSelected] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(projectStartDate || '');
   const [generating, setGenerating] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
 
-  const selectedTemplate = MILESTONE_TEMPLATES.find(t => t.key === selected);
+  const templates = [...MILESTONE_TEMPLATES, ...customTemplates];
+  const selectedTemplate = templates.find(t => t.key === selected);
+  const suggested = suggestTemplate({ name: projectName, description: projectDescription, labels: projectLabels });
 
   const handleGenerate = async () => {
     if (!selectedTemplate) return;
@@ -106,9 +117,23 @@ export function GenerateMilestonesDialog({
             </p>
           </div>
 
+          {/* Smart suggestion */}
+          {suggested && selected !== suggested.key && (
+            <button
+              type="button"
+              onClick={() => setSelected(suggested.key)}
+              className="flex items-center gap-2 w-full text-left p-3 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors"
+            >
+              <Sparkles size={16} className="text-primary shrink-0" />
+              <span className="text-sm">
+                Suggested for this project: <span className="font-medium">{suggested.label}</span>
+              </span>
+            </button>
+          )}
+
           {/* Template grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {MILESTONE_TEMPLATES.map(template => {
+            {templates.map(template => {
               const isSelected = selected === template.key;
               return (
                 <button
