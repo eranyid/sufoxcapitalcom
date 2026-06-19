@@ -1,6 +1,7 @@
 export type ProjectHealth = 'on_track' | 'at_risk' | 'off_track';
 export type ProjectPriority = 'low' | 'medium' | 'high';
 export type ProjectStatus = 'active' | 'completed' | 'on_hold' | 'cancelled';
+export type MilestoneStatus = 'pending' | 'in_progress' | 'completed' | 'skipped';
 
 export interface Project {
   id: string;
@@ -29,6 +30,27 @@ export interface ProjectUpdate {
   status: ProjectHealth;
   created_at: string;
 }
+
+export interface ProjectMilestone {
+  id: string;
+  project_id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  status: MilestoneStatus;
+  due_date: string | null;
+  sort_order: number;
+  template_key: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const MILESTONE_STATUS_OPTIONS: { value: MilestoneStatus; label: string }[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'skipped', label: 'Skipped' },
+];
 
 export const HEALTH_OPTIONS: { value: ProjectHealth; label: string }[] = [
   { value: 'on_track', label: 'On Track' },
