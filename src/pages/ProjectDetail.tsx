@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Calendar, Users, Tag, Edit2, Trash2, Plus, 
-  MessageSquare, ChevronDown, ChevronUp, Sparkles 
+  MessageSquare, ChevronDown, ChevronUp, Sparkles, List, GanttChart 
 } from 'lucide-react';
 import { useProject } from '@/hooks/useProjects';
 import { useProjectUpdates } from '@/hooks/useProjectUpdates';
@@ -40,6 +40,7 @@ import { ProjectHealthBadge } from '@/components/projects/ProjectHealthBadge';
 import { ProjectPriorityBadge } from '@/components/projects/ProjectPriorityBadge';
 import { ProjectProgressPanel } from '@/components/projects/ProjectProgressPanel';
 import { MilestoneList } from '@/components/projects/MilestoneList';
+import { MilestoneGanttChart } from '@/components/projects/MilestoneGanttChart';
 import { GenerateMilestonesDialog } from '@/components/projects/GenerateMilestonesDialog';
 import { HEALTH_OPTIONS, PRIORITY_OPTIONS, STATUS_OPTIONS } from '@/types/projects';
 import type { ProjectHealth, ProjectPriority, ProjectStatus } from '@/types/projects';
@@ -66,6 +67,7 @@ export default function ProjectDetail() {
   const [newUpdateStatus, setNewUpdateStatus] = useState<ProjectHealth>('on_track');
   const [showAllUpdates, setShowAllUpdates] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
+  const [milestoneView, setMilestoneView] = useState<'list' | 'gantt'>('list');
 
   // Edit form state
   const [editName, setEditName] = useState('');
@@ -275,15 +277,46 @@ export default function ProjectDetail() {
 
           {/* Milestones */}
           {milestones.length > 0 ? (
-            <MilestoneList
-              milestones={milestones}
-              completedCount={completedCount}
-              totalCount={totalCount}
-              percentComplete={milestonePercent}
-              onUpdateStatus={(id, status) => updateMilestone(id, { status })}
-              onDelete={deleteMilestone}
-              onAdd={addMilestone}
-            />
+            <div className="space-y-0">
+              {/* View toggle */}
+              <div className="flex items-center justify-end gap-1 mb-2">
+                <Button
+                  variant={milestoneView === 'list' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setMilestoneView('list')}
+                  title="List view"
+                >
+                  <List size={14} />
+                </Button>
+                <Button
+                  variant={milestoneView === 'gantt' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setMilestoneView('gantt')}
+                  title="Gantt chart"
+                >
+                  <GanttChart size={14} />
+                </Button>
+              </div>
+
+              {milestoneView === 'list' ? (
+                <MilestoneList
+                  milestones={milestones}
+                  completedCount={completedCount}
+                  totalCount={totalCount}
+                  percentComplete={milestonePercent}
+                  onUpdateStatus={(id, status) => updateMilestone(id, { status })}
+                  onDelete={deleteMilestone}
+                  onAdd={addMilestone}
+                />
+              ) : (
+                <MilestoneGanttChart
+                  milestones={milestones}
+                  projectStartDate={project.start_date}
+                />
+              )}
+            </div>
           ) : (
             <div className="border border-dashed border-border rounded-lg p-6 flex flex-col items-center text-center">
               <Sparkles size={24} className="text-muted-foreground mb-2" />
