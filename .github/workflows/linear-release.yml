@@ -1,6 +1,7 @@
 # Report merged commits to Linear as a continuous release (Backend Production).
 # Requires: LINEAR_ACCESS_KEY secret (pipeline access key from Linear).
 # Docs: https://github.com/linear/linear-release-action
+# Pipeline: Backend Production
 
 name: Linear Release
 
