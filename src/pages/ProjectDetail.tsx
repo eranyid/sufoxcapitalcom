@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Calendar, Users, Tag, Edit2, Trash2, Plus, 
-  MessageSquare, ChevronDown, ChevronUp 
+  MessageSquare, ChevronDown, ChevronUp, Sparkles 
 } from 'lucide-react';
 import { useProject } from '@/hooks/useProjects';
 import { useProjectUpdates } from '@/hooks/useProjectUpdates';
 import { useProjectTasks } from '@/hooks/useProjectTasks';
+import { useProjectMilestones } from '@/hooks/useProjectMilestones';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,6 +39,8 @@ import {
 import { ProjectHealthBadge } from '@/components/projects/ProjectHealthBadge';
 import { ProjectPriorityBadge } from '@/components/projects/ProjectPriorityBadge';
 import { ProjectProgressPanel } from '@/components/projects/ProjectProgressPanel';
+import { MilestoneList } from '@/components/projects/MilestoneList';
+import { GenerateMilestonesDialog } from '@/components/projects/GenerateMilestonesDialog';
 import { HEALTH_OPTIONS, PRIORITY_OPTIONS, STATUS_OPTIONS } from '@/types/projects';
 import type { ProjectHealth, ProjectPriority, ProjectStatus } from '@/types/projects';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -50,6 +53,11 @@ export default function ProjectDetail() {
   const { project, loading, updateProject } = useProject(id);
   const { updates, addUpdate, deleteUpdate } = useProjectUpdates(id);
   const { tasks, stats } = useProjectTasks(id);
+  const {
+    milestones, addMilestone, updateMilestone, deleteMilestone,
+    generateFromTemplate, clearAllMilestones,
+    completedCount, totalCount, percentComplete: milestonePercent,
+  } = useProjectMilestones(id);
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -57,6 +65,7 @@ export default function ProjectDetail() {
   const [newUpdateText, setNewUpdateText] = useState('');
   const [newUpdateStatus, setNewUpdateStatus] = useState<ProjectHealth>('on_track');
   const [showAllUpdates, setShowAllUpdates] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
 
   // Edit form state
   const [editName, setEditName] = useState('');
@@ -264,6 +273,35 @@ export default function ProjectDetail() {
             )}
           </div>
 
+          {/* Milestones */}
+          {milestones.length > 0 ? (
+            <MilestoneList
+              milestones={milestones}
+              completedCount={completedCount}
+              totalCount={totalCount}
+              percentComplete={milestonePercent}
+              onUpdateStatus={(id, status) => updateMilestone(id, { status })}
+              onDelete={deleteMilestone}
+              onAdd={addMilestone}
+            />
+          ) : (
+            <div className="border border-dashed border-border rounded-lg p-6 flex flex-col items-center text-center">
+              <Sparkles size={24} className="text-muted-foreground mb-2" />
+              <h3 className="text-sm font-semibold">No milestones yet</h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                Generate milestones from a template or add them manually.
+              </p>
+              <Button
+                size="sm"
+                className="mt-4 gap-1.5"
+                onClick={() => setGenerateOpen(true)}
+              >
+                <Sparkles size={14} />
+                Generate Milestones
+              </Button>
+            </div>
+          )}
+
           {/* Linked Tasks */}
           <div className="border border-border rounded-lg p-4 md:p-6 bg-card">
             <h3 className="text-sm font-semibold mb-3 text-foreground">Linked Issues</h3>
@@ -298,6 +336,19 @@ export default function ProjectDetail() {
         {/* Right column - progress panel */}
         <div className="space-y-4">
           <ProjectProgressPanel {...stats} />
+
+          {/* Generate milestones button in sidebar */}
+          {milestones.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-1.5"
+              onClick={() => setGenerateOpen(true)}
+            >
+              <Sparkles size={14} />
+              Regenerate Milestones
+            </Button>
+          )}
         </div>
       </div>
 
@@ -426,6 +477,16 @@ export default function ProjectDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Generate Milestones Dialog */}
+      <GenerateMilestonesDialog
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+        onGenerate={generateFromTemplate}
+        projectStartDate={project.start_date}
+        hasMilestones={milestones.length > 0}
+        onClearAll={clearAllMilestones}
+      />
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
