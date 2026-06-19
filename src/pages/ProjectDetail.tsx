@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Calendar, Users, Tag, Edit2, Trash2, Plus, 
-  MessageSquare, ChevronDown, ChevronUp, Sparkles, List, GanttChart 
+import {
+  ArrowLeft, Calendar, Users, Tag, Edit2, Trash2, Plus,
+  MessageSquare, ChevronDown, ChevronUp, Sparkles, List, GanttChart
 } from 'lucide-react';
 import { useProject } from '@/hooks/useProjects';
 import { useProjectUpdates } from '@/hooks/useProjectUpdates';
@@ -41,6 +41,7 @@ import { ProjectPriorityBadge } from '@/components/projects/ProjectPriorityBadge
 import { ProjectProgressPanel } from '@/components/projects/ProjectProgressPanel';
 import { MilestoneList } from '@/components/projects/MilestoneList';
 import { MilestoneGanttChart } from '@/components/projects/MilestoneGanttChart';
+import { milestonesToGanttBars } from '@/lib/milestoneGantt';
 import { GenerateMilestonesDialog } from '@/components/projects/GenerateMilestonesDialog';
 import { HEALTH_OPTIONS, PRIORITY_OPTIONS, STATUS_OPTIONS } from '@/types/projects';
 import type { ProjectHealth, ProjectPriority, ProjectStatus } from '@/types/projects';
@@ -277,9 +278,9 @@ export default function ProjectDetail() {
 
           {/* Milestones */}
           {milestones.length > 0 ? (
-            <div className="space-y-0">
-              {/* View toggle */}
-              <div className="flex items-center justify-end gap-1 mb-2">
+            <div className="space-y-3">
+              {/* List / Gantt toggle */}
+              <div className="flex items-center justify-end gap-1">
                 <Button
                   variant={milestoneView === 'list' ? 'secondary' : 'ghost'}
                   size="icon"
@@ -294,7 +295,7 @@ export default function ProjectDetail() {
                   size="icon"
                   className="h-7 w-7"
                   onClick={() => setMilestoneView('gantt')}
-                  title="Gantt chart"
+                  title="Gantt view"
                 >
                   <GanttChart size={14} />
                 </Button>
@@ -310,11 +311,20 @@ export default function ProjectDetail() {
                   onDelete={deleteMilestone}
                   onAdd={addMilestone}
                 />
-              ) : (
+              ) : milestonesToGanttBars(milestones, project.start_date).length > 0 ? (
                 <MilestoneGanttChart
-                  milestones={milestones}
-                  projectStartDate={project.start_date}
+                  rows={[
+                    {
+                      groupId: project.id,
+                      groupLabel: project.name,
+                      bars: milestonesToGanttBars(milestones, project.start_date),
+                    },
+                  ]}
                 />
+              ) : (
+                <p className="text-sm text-muted-foreground italic px-1">
+                  Add due dates to milestones to see them on the timeline.
+                </p>
               )}
             </div>
           ) : (
@@ -519,6 +529,9 @@ export default function ProjectDetail() {
         projectStartDate={project.start_date}
         hasMilestones={milestones.length > 0}
         onClearAll={clearAllMilestones}
+        projectName={project.name}
+        projectDescription={project.description}
+        projectLabels={project.labels}
       />
 
       {/* Delete Confirmation */}
