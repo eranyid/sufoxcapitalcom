@@ -1,0 +1,28 @@
+# Report merged commits to Linear as a continuous release (Backend Production).
+# Requires: LINEAR_ACCESS_KEY secret (pipeline access key from Linear).
+# Docs: https://github.com/linear/linear-release-action
+
+name: Linear Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  linear-release:
+    name: Report Release to Linear
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync release
+        uses: linear/linear-release-action@v0
+        with:
+          access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
