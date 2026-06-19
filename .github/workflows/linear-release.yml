@@ -1,7 +1,7 @@
-# Report merged commits to Linear as a continuous release (Backend Production).
-# Requires: LINEAR_ACCESS_KEY secret (pipeline access key from Linear).
+# Report merged commits to Linear as a continuous release.
+# Requires: LINEAR_ACCESS_KEY + LINEAR_QA_ACCESS_KEY secrets.
 # Docs: https://github.com/linear/linear-release-action
-# Pipeline: Backend Production
+# Pipelines: Backend Production, QA Candidate
 
 name: Linear Release
 
@@ -23,7 +23,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Sync release
+      - name: Sync release – Backend Production
         uses: linear/linear-release-action@v0
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
+
+      - name: Sync release – QA Candidate
+        uses: linear/linear-release-action@v0
+        with:
+          access_key: ${{ secrets.LINEAR_QA_ACCESS_KEY }}
